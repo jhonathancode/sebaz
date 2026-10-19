@@ -1,6 +1,10 @@
+"use client";
+
+import { useRef, useState } from "react";
+
 /**
- * Botón que despliega un campo de motivo antes de ejecutar la acción
- * (anular, devolver, reabrir). Funciona sin JavaScript.
+ * Botón que abre una ventana para escribir el motivo antes de ejecutar la
+ * acción (anular, devolver, reabrir). El motivo queda en el historial.
  */
 export default function Motivo({
   accion,
@@ -8,30 +12,60 @@ export default function Motivo({
   ayuda,
   campos,
   peligro = true,
+  titulo,
 }: {
   accion: (fd: FormData) => Promise<void>;
   boton: string;
   ayuda: string;
   campos: Record<string, string>;
   peligro?: boolean;
+  titulo?: string;
 }) {
+  const ref = useRef<HTMLDialogElement>(null);
+  const [texto, setTexto] = useState("");
+  const corto = texto.trim().length < 10;
+
   return (
-    <details className="no-imprimir" style={{ display: "inline-block" }}>
-      <summary className={`btn${peligro ? " peligro" : ""}`} style={{ listStyle: "none" }}>
+    <>
+      <button type="button" className={`btn no-imprimir${peligro ? " peligro" : ""}`} onClick={() => ref.current?.showModal()}>
         {boton}
-      </summary>
-      <form action={accion} className="panel" style={{ marginTop: 6, padding: 10, display: "flex", flexDirection: "column", gap: 8, maxWidth: 420, background: "#fff" }}>
-        {Object.entries(campos).map(([k, v]) => (
-          <input key={k} type="hidden" name={k} value={v} />
-        ))}
-        <label className="campo">
-          {ayuda}
-          <textarea name="motivo" required minLength={10} placeholder="Mínimo 10 caracteres" />
-        </label>
-        <button className={`btn${peligro ? " peligro" : " primario"}`} type="submit">
-          Confirmar: {boton.toLowerCase()}
-        </button>
-      </form>
-    </details>
+      </button>
+      <dialog ref={ref} className="dialogo" aria-label={titulo ?? boton} onClose={() => setTexto("")}>
+        <form action={accion}>
+          {Object.entries(campos).map(([k, v]) => (
+            <input key={k} type="hidden" name={k} value={v} />
+          ))}
+          <div className="dialogo-cab">{titulo ?? boton}</div>
+          <div className="dialogo-cuerpo">
+            {peligro && (
+              <p className="tenue" style={{ margin: 0 }}>
+                No se borra: queda registrado como anulado, con su motivo, quién lo hizo y cuándo.
+              </p>
+            )}
+            <label className="campo">
+              {ayuda}
+              <textarea
+                name="motivo"
+                required
+                minLength={10}
+                autoFocus
+                value={texto}
+                onChange={(e) => setTexto(e.target.value)}
+                placeholder="Escriba el motivo (mínimo 10 caracteres)"
+              />
+            </label>
+            <span className="pequeno tenue">{texto.trim().length} / 10 caracteres mínimo</span>
+          </div>
+          <div className="dialogo-pie">
+            <button type="button" className="btn" onClick={() => ref.current?.close()}>
+              Cancelar
+            </button>
+            <button type="submit" className={`btn ${peligro ? "peligro" : "primario"}`} disabled={corto}>
+              Confirmar: {boton.toLowerCase()}
+            </button>
+          </div>
+        </form>
+      </dialog>
+    </>
   );
 }

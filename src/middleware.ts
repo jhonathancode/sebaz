@@ -23,20 +23,21 @@ export async function middleware(request: NextRequest) {
     },
   );
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  // getClaims verifica la firma de la sesión en el propio servidor (sin ir a
+  // Supabase en cada clic) y la renueva cuando está por vencer.
+  const { data } = await supabase.auth.getClaims();
+  const hayUsuario = !!data?.claims?.sub;
 
   const ruta = request.nextUrl.pathname;
   const esPublica = PUBLICAS.some((p) => ruta.startsWith(p));
 
-  if (!user && !esPublica) {
+  if (!hayUsuario && !esPublica) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";
     url.search = "";
     return NextResponse.redirect(url);
   }
-  if (user && ruta === "/login") {
+  if (hayUsuario && ruta === "/login") {
     const url = request.nextUrl.clone();
     url.pathname = "/";
     url.search = "";
@@ -46,5 +47,5 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/((?!_next/static|_next/image|favicon.ico|.*\\.(?:png|jpg|svg|ico)$).*)"],
+  matcher: ["/((?!_next/static|_next/image|favicon.ico|.*\\.(?:png|jpg|svg|ico|woff2?)$).*)"],
 };

@@ -70,6 +70,13 @@ export default async function Expediente({ params, searchParams }: { params: Par
   const conformidad = (conformidades ?? []).find((c) => !c.anulado);
   const cp = (cps ?? []).find((c) => c.estado !== "anulado");
   const elegida = (cotizaciones ?? []).find((c) => c.elegida && !c.anulado);
+  const docs = [
+    { clave: "requerimiento", nombre: "Cuadro de requerimiento", numero: `N° ${num3(e.numero)}-${e.anio}`, listo: true },
+    { clave: "cotizaciones", nombre: "Cuadro comparativo", numero: `${(cotizaciones ?? []).filter((c) => !c.anulado).length} cotizaciones`, listo: (cotizaciones ?? []).some((c) => !c.anulado) },
+    { clave: "orden", nombre: e.tipo === "compra" ? "Orden de compra" : "Orden de servicio", numero: orden ? `N° ${num3(orden.numero)}-${orden.anio}` : "", listo: !!orden },
+    { clave: "conformidad", nombre: "Memorando de conformidad", numero: conformidad ? `N° ${num3(conformidad.memorando_numero)}-${conformidad.anio}` : "", listo: !!conformidad },
+    { clave: "comprobante", nombre: "Comprobante de pago", numero: cp ? codigoCP(cp.numero, cp.origen) : "", listo: !!cp },
+  ];
   const fase = sp.fase ?? e.fase;
   const anulado = e.estado === "anulado";
   const puedeRegistrar = tiene(ctx, "admin", "tesorero", "contador", "alcalde") && !anulado;
@@ -99,9 +106,27 @@ export default async function Expediente({ params, searchParams }: { params: Par
         </h1>
         <Estado valor={e.estado} />
         <span className="espacio" />
-        <Link className="btn" href={`/expedientes/${id}/imprimir?doc=requerimiento`}>Imprimir requerimiento</Link>
+        {e.estado === "borrador" && puedeAprobar && (
+          <form action={cambiarEstadoExpediente}>
+            <input type="hidden" name="id" value={id} />
+            <input type="hidden" name="accion" value="aprobar" />
+            <button className="btn primario" type="submit">Aprobar requerimiento</button>
+          </form>
+        )}
+        {e.estado === "aprobado" && puedeAprobar && !orden && (
+          <Motivo accion={cambiarEstadoExpediente} boton="Devolver" titulo="Devolver el requerimiento a borrador" ayuda="¿Por qué se devuelve?" campos={{ id, accion: "devolver" }} peligro={false} />
+        )}
+        {(e.estado === "borrador" || e.estado === "aprobado") && puedeRegistrar && !cp && (
+          <Motivo accion={cambiarEstadoExpediente} boton="Anular" titulo={`Anular el expediente ${num3(e.numero)}-${e.anio}`} ayuda="Motivo de la anulación" campos={{ id, accion: "anular" }} />
+        )}
+        <Link className="btn" href={`/expedientes/${id}/documentos`}>Ver documentos</Link>
         <Link className="btn" href="/expedientes">Cerrar</Link>
       </div>
+      {cp && (e.estado === "borrador" || e.estado === "aprobado") && (
+        <div className="aviso info no-imprimir">
+          Para anular este expediente, primero anule su comprobante de pago.
+        </div>
+      )}
       <Avisos ok={sp.ok} error={sp.error} />
       {e.motivo_devolucion && e.estado === "borrador" && (
         <div className="aviso error">Devuelto: {e.motivo_devolucion}</div>
@@ -160,24 +185,9 @@ export default async function Expediente({ params, searchParams }: { params: Par
                   </tfoot>
                 </table>
               </div>
-              <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-                {e.estado === "borrador" && puedeAprobar && (
-                  <form action={cambiarEstadoExpediente}>
-                    <input type="hidden" name="id" value={id} />
-                    <input type="hidden" name="accion" value="aprobar" />
-                    <button className="btn primario" type="submit">Aprobar requerimiento</button>
-                  </form>
-                )}
-                {e.estado === "borrador" && !puedeAprobar && (
-                  <span className="aviso info">Pendiente de aprobación del alcalde.</span>
-                )}
-                {e.estado === "aprobado" && puedeAprobar && !orden && (
-                  <Motivo accion={cambiarEstadoExpediente} boton="Devolver a borrador" ayuda="¿Por qué se devuelve?" campos={{ id, accion: "devolver" }} peligro={false} />
-                )}
-                {(e.estado === "borrador" || e.estado === "aprobado") && puedeRegistrar && !cp && (
-                  <Motivo accion={cambiarEstadoExpediente} boton="Anular expediente" ayuda="Motivo de la anulación" campos={{ id, accion: "anular" }} />
-                )}
-              </div>
+              {e.estado === "borrador" && !puedeAprobar && (
+                <div className="aviso info">Pendiente de aprobación del alcalde.</div>
+              )}
             </>
           )}
 
@@ -253,7 +263,7 @@ export default async function Expediente({ params, searchParams }: { params: Par
                       <div className="tenue">Anulada: {o.anulado_motivo}</div>
                     ) : (
                       <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-                        <Link className="btn" href={`/expedientes/${id}/imprimir?doc=orden`}>Imprimir orden</Link>
+                        <Link className="btn" href={`/expedientes/${id}/documentos?doc=orden`}>Ver orden</Link>
                         {!conformidad && puedeRegistrar && (
                           <Motivo accion={anularRegistro} boton="Anular orden" ayuda="Motivo" campos={{ expediente_id: id, tabla: "ordenes", registro_id: o.id, fase: "orden" }} />
                         )}
@@ -293,7 +303,7 @@ export default async function Expediente({ params, searchParams }: { params: Par
                       <div className="tenue">Anulado: {c.anulado_motivo}</div>
                     ) : (
                       <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-                        <Link className="btn" href={`/expedientes/${id}/imprimir?doc=memorando`}>Imprimir memorando</Link>
+                        <Link className="btn" href={`/expedientes/${id}/documentos?doc=conformidad`}>Ver memorando</Link>
                         {!cp && puedeRegistrar && (
                           <Motivo accion={anularRegistro} boton="Anular conformidad" ayuda="Motivo" campos={{ expediente_id: id, tabla: "conformidades", registro_id: c.id, fase: "conformidad" }} />
                         )}
@@ -366,6 +376,28 @@ export default async function Expediente({ params, searchParams }: { params: Par
         </div>
 
         <aside className="lateral">
+          <section className="panel">
+            <div className="panel-cab">Documentos del expediente</div>
+            <div className="panel-cuerpo" style={{ paddingTop: 4, paddingBottom: 4 }}>
+              <ul className="lista-docs">
+                {docs.map((d) => (
+                  <li key={d.clave}>
+                    <span className={d.listo ? "si" : "tenue"} aria-hidden="true">{d.listo ? "✓" : "○"}</span>
+                    <span className="nombre-doc">
+                      {d.nombre}
+                      <small>{d.listo ? d.numero : "Aún no existe"}</small>
+                    </span>
+                    {d.listo && (
+                      <Link className="btn" href={`/expedientes/${id}/documentos?doc=${d.clave}`}>Ver</Link>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            </div>
+            <div className="panel-cuerpo" style={{ paddingTop: 0 }}>
+              <Link className="btn primario" href={`/expedientes/${id}/documentos?doc=todo`}>Ver expediente completo</Link>
+            </div>
+          </section>
           <section className="panel">
             <div className="panel-cab">Revisión</div>
             <ul className="panel-cuerpo" style={{ listStyle: "none", margin: 0, gap: 6 }}>

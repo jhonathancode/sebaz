@@ -79,12 +79,13 @@ export default async function Expedientes({ searchParams }: { searchParams: Para
               <th>Fase</th>
               <th>Estado</th>
               <th className="num">Monto S/</th>
+              <th></th>
             </tr>
           </thead>
           <tbody>
             {filas.length === 0 && (
               <tr>
-                <td colSpan={8} className="tenue">No hay expedientes en este mes.</td>
+                <td colSpan={9} className="tenue">No hay expedientes en este mes.</td>
               </tr>
             )}
             {filas.map((e) => (
@@ -97,6 +98,7 @@ export default async function Expedientes({ searchParams }: { searchParams: Para
                 <td>{FASES[e.fase]}</td>
                 <td><Estado valor={e.estado} /></td>
                 <td className="num tachar">{soles(e.monto)}</td>
+                <td><Link href={`/expedientes/${e.id}/documentos`} title="Ver todos los documentos">Documentos</Link></td>
               </tr>
             ))}
           </tbody>
@@ -104,6 +106,7 @@ export default async function Expedientes({ searchParams }: { searchParams: Para
             <tr>
               <td colSpan={7}>Total vigente del mes</td>
               <td className="num">{soles(total)}</td>
+              <td></td>
             </tr>
           </tfoot>
         </table>

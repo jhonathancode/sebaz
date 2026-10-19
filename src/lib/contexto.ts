@@ -36,59 +36,61 @@ export type Contexto = {
   mcp: Mcp | null;
   mcps: { id: string; nombre: string }[];
   roles: Rol[];
+  /** Cargo como sale en documentos (o el nombre del rol si no se escribió). */
+  cargos: string[];
   fuentes: Fuente[];
 };
 
 export const COOKIE_MCP = "mcp_actual";
 
-/** Usuario, MCP elegida y roles. Se calcula una vez por petición. */
+/** Usuario, MCP elegida y roles. Se calcula una vez por petición, con 2 consultas en paralelo. */
 export const obtenerContexto = cache(async (): Promise<Contexto> => {
   const supabase = await supabaseServidor();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) redirect("/login");
-
-  const { data: perfil } = await supabase.from("perfiles").select("nombre, es_soporte").eq("id", user.id).single();
+  const { data: sesion } = await supabase.auth.getClaims();
+  const claims = sesion?.claims;
+  if (!claims?.sub) redirect("/login");
+  const userId = claims.sub;
 
   const hoy = new Date().toISOString().slice(0, 10);
-  const { data: membresias } = await supabase
-    .from("miembros")
-    .select("mcp_id, rol, desde, hasta, mcps(id, nombre)")
-    .eq("user_id", user.id)
-    .eq("activo", true)
-    .lte("desde", hoy);
+  const [{ data: perfil }, { data: membresias }, cookieStore] = await Promise.all([
+    supabase.from("perfiles").select("nombre, es_soporte").eq("id", userId).single(),
+    supabase
+      .from("miembros")
+      .select("mcp_id, rol, cargo, desde, hasta, mcps(*, fuentes(*))")
+      .eq("user_id", userId)
+      .eq("activo", true)
+      .lte("desde", hoy),
+    cookies(),
+  ]);
 
+  type McpConFuentes = Mcp & { fuentes: Fuente[] };
   const vigentes = (membresias ?? []).filter((m) => !m.hasta || m.hasta >= hoy);
-  const mapa = new Map<string, string>();
+  const mapa = new Map<string, McpConFuentes>();
   for (const m of vigentes) {
-    const mc = m.mcps as unknown as { id: string; nombre: string } | null;
-    if (mc) mapa.set(mc.id, mc.nombre);
+    const mc = m.mcps as unknown as McpConFuentes | null;
+    if (mc) mapa.set(mc.id, mc);
   }
-  const mcps = [...mapa].map(([id, nombre]) => ({ id, nombre }));
+  const mcps = [...mapa.values()].map((m) => ({ id: m.id, nombre: m.nombre }));
 
-  const cookieStore = await cookies();
   const elegida = cookieStore.get(COOKIE_MCP)?.value;
   const mcpId = mcps.find((m) => m.id === elegida)?.id ?? mcps[0]?.id ?? null;
-
+  const completa = mcpId ? mapa.get(mcpId)! : null;
   let mcp: Mcp | null = null;
   let fuentes: Fuente[] = [];
-  if (mcpId) {
-    const [{ data: datosMcp }, { data: datosFuentes }] = await Promise.all([
-      supabase.from("mcps").select("*").eq("id", mcpId).single(),
-      supabase.from("fuentes").select("*").eq("mcp_id", mcpId).eq("activo", true).order("tipo"),
-    ]);
-    mcp = datosMcp as Mcp | null;
-    fuentes = (datosFuentes ?? []) as Fuente[];
+  if (completa) {
+    const { fuentes: fs, ...resto } = completa;
+    mcp = resto;
+    fuentes = (fs ?? []).filter((f) => f.activo).sort((a, b) => a.tipo.localeCompare(b.tipo));
   }
 
   return {
-    userId: user.id,
-    nombre: perfil?.nombre ?? user.email ?? "",
+    userId,
+    nombre: perfil?.nombre || (claims.email as string | undefined) || "",
     esSoporte: perfil?.es_soporte ?? false,
     mcp,
     mcps,
     roles: vigentes.filter((m) => m.mcp_id === mcpId).map((m) => m.rol as Rol),
+    cargos: vigentes.filter((m) => m.mcp_id === mcpId).map((m) => m.cargo || NOMBRE_ROL[m.rol as Rol]),
     fuentes,
   };
 });

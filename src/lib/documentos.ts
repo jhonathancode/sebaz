@@ -31,7 +31,7 @@ export type ClaveDoc = "requerimiento" | "cotizaciones" | "orden" | "conformidad
 /** Lista de documentos del expediente, en el orden del archivo físico. */
 export function listaDocumentos(d: Awaited<ReturnType<typeof cargarExpediente>>) {
   const { e, cotizaciones, orden, conformidad, cp } = d;
-  return [
+  const lista = [
     {
       clave: "requerimiento" as ClaveDoc,
       nombre: "Cuadro de requerimiento",
@@ -63,4 +63,5 @@ export function listaDocumentos(d: Awaited<ReturnType<typeof cargarExpediente>>)
       listo: !!cp,
     },
   ];
+  return e?.tipo === "pago_fijo" ? lista.filter((x) => x.clave === "requerimiento" || x.clave === "comprobante") : lista;
 }

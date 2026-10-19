@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import Avisos from "@/components/Avisos";
 import Estado from "@/components/Estado";
 import Motivo from "@/components/Motivo";
+import CamposRequerimiento from "@/components/formularios/CamposRequerimiento";
 import VentanaFlotante from "@/components/VentanaFlotante";
 import SelectFuncion from "@/components/SelectFuncion";
 import { SUSTENTOS } from "@/lib/catalogos";
@@ -13,6 +14,8 @@ import {
   agregarCotizacion,
   anularRegistro,
   cambiarEstadoExpediente,
+  copiarExpediente,
+  editarRequerimiento,
   elegirCotizacion,
   emitirConformidad,
   emitirOrden,
@@ -20,7 +23,13 @@ import {
 } from "../acciones";
 
 type Params = Promise<{ id: string }>;
-type Busqueda = Promise<{ fase?: string; ok?: string; error?: string }>;
+type Busqueda = Promise<{ fase?: string; ok?: string; error?: string; editar?: string }>;
+
+const TIPO_GASTO: Record<string, string> = {
+  compra: "Compra de bienes",
+  servicio: "Servicio externo temporal",
+  pago_fijo: "Pago fijo (dietas, personal)",
+};
 
 const PASOS = [
   { id: "requerimiento", texto: "Requerimiento" },
@@ -71,14 +80,17 @@ export default async function Expediente({ params, searchParams }: { params: Par
   const conformidad = (conformidades ?? []).find((c) => !c.anulado);
   const cp = (cps ?? []).find((c) => c.estado !== "anulado");
   const elegida = (cotizaciones ?? []).find((c) => c.elegida && !c.anulado);
-  const docs = [
+  const fijo = e.tipo === "pago_fijo";
+  const todosDocs = [
     { clave: "requerimiento", nombre: "Cuadro de requerimiento", numero: `N° ${num3(e.numero)}-${e.anio}`, listo: true },
     { clave: "cotizaciones", nombre: "Cuadro comparativo", numero: `${(cotizaciones ?? []).filter((c) => !c.anulado).length} cotizaciones`, listo: (cotizaciones ?? []).some((c) => !c.anulado) },
     { clave: "orden", nombre: e.tipo === "compra" ? "Orden de compra" : "Orden de servicio", numero: orden ? `N° ${num3(orden.numero)}-${orden.anio}` : "", listo: !!orden },
     { clave: "conformidad", nombre: "Memorando de conformidad", numero: conformidad ? `N° ${num3(conformidad.memorando_numero)}-${conformidad.anio}` : "", listo: !!conformidad },
     { clave: "comprobante", nombre: "Comprobante de pago", numero: cp ? codigoCP(cp.numero, cp.origen) : "", listo: !!cp },
   ];
-  const fase = sp.fase ?? e.fase;
+  const docs = fijo ? todosDocs.filter((d) => d.clave === "requerimiento" || d.clave === "comprobante") : todosDocs;
+  const pasos = fijo ? PASOS.filter((p) => p.id === "requerimiento" || p.id === "comprobante") : PASOS;
+  const fase = sp.fase ?? (fijo && e.estado === "aprobado" ? "comprobante" : e.fase);
   const anulado = e.estado === "anulado";
   const puedeRegistrar = tiene(ctx, "admin", "tesorero", "contador", "alcalde") && !anulado;
   const puedeAprobar = tiene(ctx, "alcalde", "admin");
@@ -120,6 +132,31 @@ export default async function Expediente({ params, searchParams }: { params: Par
         {(e.estado === "borrador" || e.estado === "aprobado") && puedeRegistrar && !cp && (
           <Motivo accion={cambiarEstadoExpediente} boton="Anular" titulo={`Anular el expediente ${num3(e.numero)}-${e.anio}`} ayuda="Motivo de la anulación" campos={{ id, accion: "anular" }} />
         )}
+        {e.estado === "borrador" && puedeRegistrar && (
+          <VentanaFlotante boton="Editar requerimiento" titulo={`Editar requerimiento ${num3(e.numero)}-${e.anio}`} accion={editarRequerimiento} textoGuardar="Guardar cambios" abierta={sp.editar === "1"} ancha claseBoton="btn contorno">
+            <input type="hidden" name="id" value={id} />
+            <CamposRequerimiento
+              fuentes={ctx.fuentes}
+              valores={{
+                fecha: e.fecha,
+                tipo: e.tipo,
+                fuente_id: e.fuente_id,
+                area_usuaria: e.area_usuaria,
+                meta: e.meta,
+                clasificador: e.clasificador,
+                descripcion: e.descripcion,
+                items: vigentes.map((i) => ({ cantidad: Number(i.cantidad), unidad: i.unidad, descripcion: i.descripcion, precio_unitario: Number(i.precio_unitario) })),
+              }}
+            />
+            <p className="pequeno tenue" style={{ margin: 0 }}>Los ítems anteriores no se borran: quedan anulados en el historial.</p>
+          </VentanaFlotante>
+        )}
+        {tiene(ctx, "admin", "tesorero", "contador", "alcalde") && (
+          <form action={copiarExpediente}>
+            <input type="hidden" name="id" value={id} />
+            <button className="btn" type="submit" title="Crea un expediente nuevo con estos mismos datos">Copiar como nuevo</button>
+          </form>
+        )}
         <Link className="btn" href={`/expedientes/${id}/documentos`}>Ver documentos</Link>
         <Link className="btn" href="/expedientes">Cerrar</Link>
       </div>
@@ -130,14 +167,14 @@ export default async function Expediente({ params, searchParams }: { params: Par
       )}
       <Avisos ok={sp.ok} error={sp.error} />
       {e.motivo_devolucion && e.estado === "borrador" && (
-        <div className="aviso error">Devuelto: {e.motivo_devolucion}</div>
+        <div className="aviso error">Devuelto por el alcalde: {e.motivo_devolucion}. Corríjalo con «Editar requerimiento» y vuelva a pedir la aprobación.</div>
       )}
-      {anulado && <div className="aviso error">Anulado: {e.anulado_motivo} · {fechaHora(e.anulado_en)}</div>}
+      {anulado && <div className="aviso error">Anulado: {e.anulado_motivo} · {fechaHora(e.anulado_en)}. Para volver a registrarlo con los datos corregidos, use «Copiar como nuevo».</div>}
 
       <section className="barra" aria-label="Datos generales" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(190px, 1fr))" }}>
         <Dato t="Fecha" v={fecha(e.fecha)} />
-        <Dato t="Tipo" v={e.tipo === "compra" ? "Compra" : "Servicio"} />
-        <Dato t="Municipalidad que transfiere" v={(e.fuentes as { municipalidad: string } | null)?.municipalidad ?? "—"} />
+        <Dato t="Tipo de gasto" v={TIPO_GASTO[e.tipo] ?? e.tipo} />
+        <Dato t="Se paga con" v={(e.fuentes as { municipalidad: string } | null)?.municipalidad ?? "—"} />
         <Dato t="Área usuaria" v={e.area_usuaria ?? "—"} />
         <Dato t="Meta / actividad" v={e.meta ?? "—"} />
         <Dato t="Específica del gasto" v={e.clasificador ?? "—"} />
@@ -167,7 +204,7 @@ export default async function Expediente({ params, searchParams }: { params: Par
       </section>
 
       <div className="pestanas" role="tablist" aria-label="Fases del expediente">
-        {PASOS.map((p) => (
+        {pasos.map((p) => (
           <Link
             key={p.id}
             href={`/expedientes/${id}?fase=${p.id}`}
@@ -370,16 +407,25 @@ export default async function Expediente({ params, searchParams }: { params: Par
                   <Estado valor={c.estado} />
                 </div>
               ))}
-              {!cp && puedeRegistrar && (
-                conformidad ? (
+              {!cp && puedeRegistrar && e.estado !== "aprobado" && (
+                <div className="aviso info">El comprobante de pago se genera cuando el alcalde aprueba el requerimiento.</div>
+              )}
+              {!cp && puedeRegistrar && e.estado === "aprobado" && (
+                conformidad || fijo ? (
                   <form action={generarComprobante} className="panel">
-                    <div className="panel-cab">Generar comprobante de pago por S/ {soles(orden?.monto)}</div>
+                    <div className="panel-cab">Generar comprobante de pago por S/ {soles(fijo ? total : orden?.monto)}</div>
                     <div className="panel-cuerpo rejilla">
                       <input type="hidden" name="expediente_id" value={id} />
+                      {fijo && (
+                        <>
+                          <label className="campo">Beneficiario (a quién se paga)<input name="beneficiario" required placeholder="Nombre completo" /></label>
+                          <label className="campo">DNI o RUC del beneficiario<input name="beneficiario_doc" inputMode="numeric" maxLength={11} /></label>
+                        </>
+                      )}
                       <label className="campo">Fecha<input type="date" name="fecha" defaultValue={hoyISO()} required /></label>
                       <label className="campo">
                         Sustento
-                        <select name="sustento_tipo" defaultValue="FAC">
+                        <select name="sustento_tipo" defaultValue={fijo ? "REC" : "FAC"}>
                           {SUSTENTOS.filter((s) => s.codigo !== "DJ" && s.codigo !== "PM").map((s) => (
                             <option key={s.codigo} value={s.codigo}>{s.nombre}</option>
                           ))}
@@ -403,10 +449,15 @@ export default async function Expediente({ params, searchParams }: { params: Par
           <div className="panel-cab">Revisión del expediente</div>
           <ul className="panel-cuerpo lista-check" style={{ padding: 14 }}>
             <Check ok={e.estado !== "borrador"} t="Requerimiento aprobado por el alcalde" />
-            <Check ok={(cotizaciones ?? []).filter((c) => !c.anulado).length >= 3} t="Tres cotizaciones" />
-            <Check ok={!!elegida} t="Proveedor elegido" />
-            <Check ok={!!orden} t="Orden emitida" />
-            <Check ok={!!conformidad} t="Conformidad emitida" />
+            {!fijo && (
+              <>
+                <Check ok={(cotizaciones ?? []).filter((c) => !c.anulado).length >= 3} t="Tres cotizaciones (recomendado)" />
+                <Check ok={!!elegida} t="Proveedor elegido" />
+                <Check ok={!!orden} t="Orden emitida" />
+                <Check ok={!!conformidad} t="Conformidad emitida" />
+              </>
+            )}
+            {fijo && <li className="tenue">Pago fijo: no lleva cotizaciones, orden ni conformidad.</li>}
             <Check ok={!!cp} t="Comprobante de pago generado" />
           </ul>
         </section>

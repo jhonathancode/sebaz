@@ -123,15 +123,15 @@ export default async function Ingresos({ searchParams }: { searchParams: ParamsA
           <div className="tabla-marco">
             <table className="tabla" style={{ minWidth: 820 }}>
               <thead>
-                <tr><th>N° recibo</th><th>Fecha</th><th>Rubro</th><th>Pagador</th><th>Concepto</th><th>Estado</th><th className="num">Monto S/</th></tr>
+                <tr><th>N° recibo</th><th>Fecha</th><th>Rubro</th><th>Pagador</th><th>Concepto</th><th>Estado</th><th className="num">Monto S/</th><th className="num">Acciones</th></tr>
               </thead>
               <tbody>
                 {filas.length === 0 && (
-                  <tr><td colSpan={7} className="tenue">{delMes.length ? "Ningún recibo coincide con el filtro." : "No hay recibos este mes."}</td></tr>
+                  <tr><td colSpan={8} className="tenue">{delMes.length ? "Ningún recibo coincide con el filtro." : "No hay recibos este mes."}</td></tr>
                 )}
                 {filas.map((r) => (
                   <tr key={r.id} className={r.estado === "anulado" ? "anulado" : undefined}>
-                    <td><Link href={`/ingresos/${r.id}`}>{String(r.numero).padStart(4, "0")}</Link></td>
+                    <td style={{ fontWeight: 600 }}>{String(r.numero).padStart(4, "0")}</td>
                     <td>{fecha(r.fecha)}</td>
                     <td>{RUBRO[r.rubro]}</td>
                     <td>
@@ -144,11 +144,12 @@ export default async function Ingresos({ searchParams }: { searchParams: ParamsA
                     </td>
                     <td><Estado valor={r.estado} /></td>
                     <td className="num tachar">{soles(r.monto)}</td>
+                    <td><div className="acciones-fila"><Link className="btn chico contorno" href={`/ingresos/${r.id}`}>Ver recibo</Link></div></td>
                   </tr>
                 ))}
               </tbody>
               <tfoot>
-                <tr><td colSpan={6}>Total vigente mostrado</td><td className="num">{soles(filas.filter((f) => f.estado !== "anulado").reduce((s, f) => s + Number(f.monto), 0))}</td></tr>
+                <tr><td colSpan={6}>Total vigente mostrado</td><td className="num">{soles(filas.filter((f) => f.estado !== "anulado").reduce((s, f) => s + Number(f.monto), 0))}</td><td></td></tr>
               </tfoot>
             </table>
           </div>

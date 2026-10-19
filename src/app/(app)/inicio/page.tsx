@@ -37,6 +37,10 @@ export default async function Inicio() {
     ? (caja.caja_chica_gastos as { monto: number; anulado: boolean }[]).filter((g) => !g.anulado).reduce((s, g) => s + Number(g.monto), 0)
     : 0;
   const alcalde = tiene(ctx, "alcalde");
+  const propios = ctx.fuentes.find((f) => f.tipo === "propios");
+  const gastadoPropios = lista
+    .filter((c) => c.fuente_id === propios?.id && c.fecha >= desde)
+    .reduce((s, c) => s + Number(c.importe), 0);
 
   // Gastos del mes por función (para el informe de Chanchamayo)
   const delMes = lista.filter((c) => c.fecha >= desde);
@@ -108,7 +112,7 @@ export default async function Inicio() {
       <section aria-label="Rendición del mes">
         <h2 style={{ marginBottom: 10 }}>Rendición del mes</h2>
         <div className="rejilla-2">
-          {ctx.fuentes.map((f) => {
+          {ctx.fuentes.filter((f) => f.tipo !== "propios").map((f) => {
             const deLaFuente = lista.filter((c) => c.fuente_id === f.id && c.estado !== "rendido");
             const listo = deLaFuente.filter((c) => c.estado === "aprobado" && c.cheque).reduce((s, c) => s + Number(c.importe), 0);
             const tramite = deLaFuente.filter((c) => !(c.estado === "aprobado" && c.cheque)).reduce((s, c) => s + Number(c.importe), 0);
@@ -138,8 +142,8 @@ export default async function Inicio() {
                       {tramite > 0 && <div className="tramite" style={{ width: `${(tramite / base) * 100}%` }} title={`En trámite: S/ ${soles(tramite)}`} />}
                     </div>
                     <div className="leyenda">
-                      <span><i style={{ background: "var(--verde)" }} />Listo <b>{soles(listo)}</b></span>
-                      <span><i style={{ background: "var(--verde-claro)" }} />En trámite <b>{soles(tramite)}</b></span>
+                      <span><i style={{ background: "var(--primario)" }} />Listo <b>{soles(listo)}</b></span>
+                      <span><i style={{ background: "var(--primario-claro)" }} />En trámite <b>{soles(tramite)}</b></span>
                       <span><i style={{ background: "var(--pista)", border: "1px solid var(--borde)" }} />Por cubrir <b>{soles(falta)}</b></span>
                     </div>
                   </>
@@ -147,6 +151,20 @@ export default async function Inicio() {
               </Link>
             );
           })}
+          {propios && (
+            <Link className="tarjeta" href="/ingresos" style={{ gap: 10 }}>
+              <span className="etiqueta">Ingresos propios del mes</span>
+              <div style={{ display: "flex", alignItems: "baseline", gap: 8, flexWrap: "wrap" }}>
+                <span className="valor">S/ {soles(totalIngresos - gastadoPropios)}</span>
+                <span className="detalle">disponible</span>
+              </div>
+              <div className="leyenda">
+                <span>Recaudado <b>{soles(totalIngresos)}</b></span>
+                <span>Gastado <b>{soles(gastadoPropios)}</b></span>
+                <span>Recibos <b>{(ingresos ?? []).length}</b></span>
+              </div>
+            </Link>
+          )}
         </div>
       </section>
 

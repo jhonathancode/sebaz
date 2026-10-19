@@ -22,7 +22,7 @@ export type Mcp = {
 export type Fuente = {
   id: string;
   mcp_id: string;
-  tipo: "distrito" | "provincia";
+  tipo: "distrito" | "provincia" | "propios";
   municipalidad: string;
   monto_mensual: number;
   formato: "perene" | "chanchamayo" | "general";

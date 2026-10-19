@@ -13,33 +13,40 @@ function funcionCategoria(fd: FormData) {
 
 const ruta = (id: string, fase?: string) => `/expedientes/${id}${fase ? `?fase=${fase}` : ""}`;
 
-export async function crearExpediente(fd: FormData) {
-  const ctx = await contextoMcp();
-  const supabase = await supabaseServidor();
-
+/** Lee las filas de ítems del formulario (las vacías se ignoran). */
+function leerItems(fd: FormData, volverA: string) {
   const items: { item: number; cantidad: number; unidad: string; descripcion: string; precio_unitario: number }[] = [];
-  for (let i = 1; i <= 10; i++) {
+  for (let i = 1; i <= 30; i++) {
     const descripcion = texto(fd, `desc_${i}`);
     if (!descripcion) continue;
     const cantidad = numero(fd, `cant_${i}`) ?? 0;
     const precio = numero(fd, `precio_${i}`) ?? 0;
-    if (cantidad <= 0) volver("/expedientes?nuevo=1", "error", `Ítem ${i}: la cantidad debe ser mayor que cero.`);
+    if (cantidad <= 0) volver(volverA, "error", `Ítem ${i}: la cantidad debe ser mayor que cero.`);
     items.push({ item: items.length + 1, cantidad, unidad: texto(fd, `und_${i}`) ?? "UND", descripcion, precio_unitario: precio });
   }
-  if (items.length === 0) volver("/expedientes?nuevo=1", "error", "Agregue al menos un ítem al requerimiento.");
+  if (items.length === 0) volver(volverA, "error", "Agregue al menos un ítem al requerimiento.");
+  return items;
+}
 
+function leerCabecera(fd: FormData) {
+  return {
+    fecha: texto(fd, "fecha"),
+    tipo: texto(fd, "tipo") ?? "compra",
+    descripcion: texto(fd, "descripcion"),
+    area_usuaria: texto(fd, "area_usuaria"),
+    fuente_id: texto(fd, "fuente_id"),
+    meta: texto(fd, "meta"),
+    clasificador: texto(fd, "clasificador"),
+  };
+}
+
+export async function crearExpediente(fd: FormData) {
+  const ctx = await contextoMcp();
+  const supabase = await supabaseServidor();
+  const items = leerItems(fd, "/expedientes?nuevo=1");
   const { data, error } = await supabase
     .from("expedientes")
-    .insert({
-      mcp_id: ctx.mcp.id,
-      fecha: texto(fd, "fecha"),
-      tipo: texto(fd, "tipo") ?? "servicio",
-      descripcion: texto(fd, "descripcion"),
-      area_usuaria: texto(fd, "area_usuaria"),
-      fuente_id: texto(fd, "fuente_id"),
-      meta: texto(fd, "meta"),
-      clasificador: texto(fd, "clasificador"),
-    })
+    .insert({ mcp_id: ctx.mcp.id, ...leerCabecera(fd) })
     .select("id")
     .single();
   if (error || !data) volver("/expedientes?nuevo=1", "error", mensajeError(error));
@@ -51,6 +58,61 @@ export async function crearExpediente(fd: FormData) {
 
   revalidatePath("/expedientes");
   volver(ruta(data.id), "ok", "Requerimiento registrado. Envíelo al alcalde para su aprobación.");
+}
+
+/** Corrige un requerimiento en borrador: los ítems anteriores quedan anulados en el historial. */
+export async function editarRequerimiento(fd: FormData) {
+  const ctx = await contextoMcp();
+  const supabase = await supabaseServidor();
+  const id = texto(fd, "id")!;
+  const destino = `/expedientes/${id}?editar=1`;
+  const items = leerItems(fd, destino);
+  const { error } = await supabase.from("expedientes").update(leerCabecera(fd)).eq("id", id);
+  if (error) volver(destino, "error", mensajeError(error));
+  const { error: e1 } = await supabase.from("expediente_items").update({ anulado: true }).eq("expediente_id", id).eq("anulado", false);
+  if (e1) volver(destino, "error", mensajeError(e1));
+  const { error: e2 } = await supabase
+    .from("expediente_items")
+    .insert(items.map((it) => ({ ...it, mcp_id: ctx.mcp.id, expediente_id: id })));
+  if (e2) volver(destino, "error", mensajeError(e2));
+  revalidatePath("/expedientes");
+  volver(ruta(id), "ok", "Requerimiento corregido. Queda pendiente de aprobación del alcalde.");
+}
+
+/** Crea un expediente nuevo con los mismos datos (por ejemplo, después de anular uno con error). */
+export async function copiarExpediente(fd: FormData) {
+  const ctx = await contextoMcp();
+  const supabase = await supabaseServidor();
+  const id = texto(fd, "id")!;
+  const { data: e } = await supabase
+    .from("expedientes")
+    .select("tipo, descripcion, area_usuaria, fuente_id, meta, clasificador, expediente_items(item, cantidad, unidad, descripcion, precio_unitario, anulado)")
+    .eq("id", id)
+    .single();
+  if (!e) volver(ruta(id), "error", "Expediente no encontrado.");
+  const { data: nuevo, error } = await supabase
+    .from("expedientes")
+    .insert({
+      mcp_id: ctx.mcp.id,
+      tipo: e.tipo,
+      descripcion: e.descripcion,
+      area_usuaria: e.area_usuaria,
+      fuente_id: e.fuente_id,
+      meta: e.meta,
+      clasificador: e.clasificador,
+    })
+    .select("id")
+    .single();
+  if (error || !nuevo) volver(ruta(id), "error", mensajeError(error));
+  const items = (e.expediente_items as { item: number; cantidad: number; unidad: string; descripcion: string; precio_unitario: number; anulado: boolean }[])
+    .filter((i) => !i.anulado)
+    .sort((a, b) => a.item - b.item)
+    .map((i, n) => ({ item: n + 1, cantidad: i.cantidad, unidad: i.unidad, descripcion: i.descripcion, precio_unitario: i.precio_unitario }));
+  if (items.length) {
+    await supabase.from("expediente_items").insert(items.map((it) => ({ ...it, mcp_id: ctx.mcp.id, expediente_id: nuevo.id })));
+  }
+  revalidatePath("/expedientes");
+  volver(`/expedientes/${nuevo.id}?editar=1`, "ok", "Se creó un expediente nuevo con los mismos datos. Corrija lo necesario y guarde.");
 }
 
 export async function cambiarEstadoExpediente(fd: FormData) {
@@ -195,18 +257,41 @@ export async function generarComprobante(fd: FormData) {
   const destino = ruta(id, "comprobante");
   const { data: exp } = await supabase
     .from("expedientes")
-    .select("fuente_id, descripcion, clasificador")
+    .select("tipo, fuente_id, descripcion, clasificador, expediente_items(total, anulado)")
     .eq("id", id)
     .single();
-  const { data: orden } = await supabase
-    .from("ordenes")
-    .select("monto, concepto, proveedores(razon_social, num_doc)")
-    .eq("expediente_id", id)
-    .eq("anulado", false)
-    .maybeSingle();
-  if (!exp || !orden) volver(destino, "error", "Falta la orden del expediente.");
-  if (!exp.fuente_id) volver(destino, "error", "El expediente no tiene municipalidad que transfiere (fuente).");
-  const prov = orden.proveedores as unknown as { razon_social: string; num_doc: string } | null;
+  if (!exp) volver(destino, "error", "Expediente no encontrado.");
+  if (!exp.fuente_id) volver(destino, "error", "El expediente no indica con qué se paga.");
+
+  let beneficiario: string | null;
+  let beneficiarioDoc: string | null;
+  let concepto: string;
+  let importe: number;
+  if (exp.tipo === "pago_fijo") {
+    // Pago fijo: sin orden; el beneficiario se escribe aquí y el monto es el del requerimiento.
+    beneficiario = texto(fd, "beneficiario");
+    beneficiarioDoc = (texto(fd, "beneficiario_doc") ?? "").replace(/\D/g, "") || null;
+    if (!beneficiario) volver(destino, "error", "Escriba a quién se paga.");
+    concepto = exp.descripcion;
+    importe = (exp.expediente_items as { total: number; anulado: boolean }[])
+      .filter((i) => !i.anulado)
+      .reduce((s, i) => s + Number(i.total), 0);
+  } else {
+    const { data: orden } = await supabase
+      .from("ordenes")
+      .select("monto, concepto, proveedores(razon_social, num_doc)")
+      .eq("expediente_id", id)
+      .eq("anulado", false)
+      .maybeSingle();
+    if (!orden) volver(destino, "error", "Falta la orden del expediente.");
+    const prov = orden.proveedores as unknown as { razon_social: string; num_doc: string } | null;
+    beneficiario = prov?.razon_social ?? "";
+    beneficiarioDoc = prov?.num_doc ?? null;
+    concepto = orden.concepto;
+    importe = Number(orden.monto);
+  }
+  if (importe <= 0) volver(destino, "error", "El monto del requerimiento debe ser mayor que cero.");
+
   const { data, error } = await supabase
     .from("comprobantes_pago")
     .insert({
@@ -215,14 +300,14 @@ export async function generarComprobante(fd: FormData) {
       origen: "expediente",
       expediente_id: id,
       fuente_id: exp.fuente_id,
-      beneficiario: prov?.razon_social ?? "",
-      beneficiario_doc: prov?.num_doc,
-      concepto: orden.concepto,
-      importe: orden.monto,
+      beneficiario,
+      beneficiario_doc: beneficiarioDoc,
+      concepto,
+      importe,
       partida: exp.clasificador,
-      ...funcionCategoria(fd),
       sustento_tipo: texto(fd, "sustento_tipo"),
       sustento_numero: texto(fd, "sustento_numero"),
+      ...funcionCategoria(fd),
     })
     .select("id")
     .single();

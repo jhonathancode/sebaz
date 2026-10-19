@@ -21,6 +21,7 @@ type CP = {
   concepto: string;
   importe: number;
   funcion: string | null;
+  fuente_id: string;
   categoria: string | null;
 };
 
@@ -41,7 +42,7 @@ export default async function Informe({
 
   const { data: items } = await supabase
     .from("rendicion_items")
-    .select("activo, comprobantes_pago(id, numero, origen, fecha, cheque, beneficiario, concepto, importe, funcion, categoria)")
+    .select("activo, comprobantes_pago(id, numero, origen, fecha, cheque, beneficiario, concepto, importe, funcion, categoria, fuente_id)")
     .eq("rendicion_id", id);
   const cps = (items ?? [])
     .filter((i) => i.activo || r.estado === "anulada")
@@ -49,6 +50,11 @@ export default async function Informe({
     .filter(Boolean)
     .sort((a, b) => a.fecha.localeCompare(b.fecha) || a.numero - b.numero);
   const totalGastos = cps.reduce((s, c) => s + Number(c.importe), 0);
+  const propiosId = ctx.fuentes.find((f) => f.tipo === "propios")?.id;
+  const cpsTransferencia = cps.filter((c) => c.fuente_id !== propiosId);
+  const cpsPropios = cps.filter((c) => c.fuente_id === propiosId);
+  const gastosTransferencia = cpsTransferencia.reduce((s, c) => s + Number(c.importe), 0);
+  const gastosPropios = cpsPropios.reduce((s, c) => s + Number(c.importe), 0);
 
   const { desde, hasta } = rangoPeriodo(r.periodo);
   const { data: ingresos } = await supabase
@@ -212,13 +218,13 @@ export default async function Informe({
               <tr><th>Total ingresos del mes</th><th className="num">{soles(r.transferencia)}</th></tr>
             </tbody>
           </table>
-          <TablaCps cps={cps} />
+          <TablaCps cps={cpsTransferencia} />
           <table className="formato" style={{ maxWidth: 480 }}>
             <thead><tr><th colSpan={2}>Saldos</th></tr></thead>
             <tbody>
               <tr><td>Total ingresos</td><td className="num">{soles(r.transferencia)}</td></tr>
-              <tr><td>Total gastos</td><td className="num">{soles(totalGastos)}</td></tr>
-              <tr><th>Saldo del mes</th><th className="num">{soles(Number(r.transferencia) - totalGastos)}</th></tr>
+              <tr><td>Total gastos</td><td className="num">{soles(gastosTransferencia)}</td></tr>
+              <tr><th>Saldo del mes</th><th className="num">{soles(Number(r.transferencia) - gastosTransferencia)}</th></tr>
             </tbody>
           </table>
 
@@ -231,6 +237,20 @@ export default async function Informe({
                 return v ? <tr key={rb.codigo}><td>{rb.nombre}</td><td className="num">{soles(v)}</td></tr> : null;
               })}
               <tr><th>Total ingresos del mes (copias, cuotas de los pobladores, etc.)</th><th className="num">{soles(totalRdr)}</th></tr>
+            </tbody>
+          </table>
+          <div style={{ fontWeight: 600, marginTop: 8 }}>Gastos con recursos directamente recaudados</div>
+          {cpsPropios.length > 0 ? (
+            <TablaCps cps={cpsPropios} />
+          ) : (
+            <table className="formato"><tbody><tr><td>Sin gastos con estos recursos en el mes</td><td className="num" style={{ width: 140 }}>0.00</td></tr></tbody></table>
+          )}
+          <table className="formato" style={{ maxWidth: 480 }}>
+            <thead><tr><th colSpan={2}>Saldos</th></tr></thead>
+            <tbody>
+              <tr><td>Total ingresos</td><td className="num">{soles(totalRdr)}</td></tr>
+              <tr><td>Total gastos</td><td className="num">{soles(gastosPropios)}</td></tr>
+              <tr><th>Saldo del mes</th><th className="num">{soles(totalRdr - gastosPropios)}</th></tr>
             </tbody>
           </table>
           <Firmas nombres={["TESORERO(A)", "ALCALDE"]} />

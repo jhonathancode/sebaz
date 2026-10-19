@@ -86,7 +86,7 @@ export default async function Expedientes({ searchParams }: { searchParams: Para
               <th>Fase</th>
               <th>Estado</th>
               <th className="num">Monto S/</th>
-              <th></th>
+              <th className="num">Acciones</th>
             </tr>
           </thead>
           <tbody>
@@ -97,15 +97,20 @@ export default async function Expedientes({ searchParams }: { searchParams: Para
             )}
             {filas.map((e) => (
               <tr key={e.id} className={e.estado === "anulado" ? "anulado" : undefined}>
-                <td><Link href={`/expedientes/${e.id}`}>{num3(e.numero)}-{e.anio}</Link></td>
+                <td style={{ fontWeight: 600 }}>{num3(e.numero)}-{e.anio}</td>
                 <td>{fecha(e.fecha)}</td>
-                <td>{e.tipo === "compra" ? "Compra" : "Servicio"}</td>
+                <td>{e.tipo === "compra" ? "Compra" : e.tipo === "servicio" ? "Servicio" : "Pago fijo"}</td>
                 <td className="envolver tachar">{e.descripcion}</td>
                 <td>{e.area_usuaria ?? "—"}</td>
                 <td>{FASES[e.fase]}</td>
                 <td><Estado valor={e.estado} /></td>
                 <td className="num tachar">{soles(e.monto)}</td>
-                <td><Link href={`/expedientes/${e.id}/documentos`} title="Ver todos los documentos">Documentos</Link></td>
+                <td>
+                  <div className="acciones-fila">
+                    <Link className="btn chico contorno" href={`/expedientes/${e.id}`}>Abrir</Link>
+                    <Link className="btn chico" href={`/expedientes/${e.id}/documentos`}>Documentos</Link>
+                  </div>
+                </td>
               </tr>
             ))}
           </tbody>

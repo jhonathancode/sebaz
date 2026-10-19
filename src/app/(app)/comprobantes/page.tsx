@@ -40,7 +40,7 @@ export default async function Comprobantes({ searchParams }: { searchParams: Par
         <form method="get" style={{ display: "contents" }}>
         <label className="campo">Mes<input type="month" name="mes" defaultValue={periodo} /></label>
         <label className="campo">
-          Municipalidad que transfiere
+          Se paga con
           <select name="fuente" defaultValue={sp.fuente ?? ""}>
             <option value="">Todas</option>
             {ctx.fuentes.map((f) => (
@@ -71,30 +71,31 @@ export default async function Comprobantes({ searchParams }: { searchParams: Par
           <thead>
             <tr>
               <th>N° CP</th><th>Fecha</th><th>Origen</th><th>Fuente</th><th>Beneficiario</th><th>Concepto</th>
-              <th>N° cheque</th><th>Estado</th><th className="num">Importe S/</th>
+              <th>N° cheque</th><th>Estado</th><th className="num">Importe S/</th><th className="num">Acciones</th>
             </tr>
           </thead>
           <tbody>
-            {filas.length === 0 && <tr><td colSpan={9} className="tenue">No hay comprobantes en este mes.</td></tr>}
+            {filas.length === 0 && <tr><td colSpan={10} className="tenue">No hay comprobantes en este mes.</td></tr>}
             {filas.map((c) => {
               const f = c.fuentes as unknown as { municipalidad: string; tipo: string } | null;
               return (
                 <tr key={c.id} className={c.estado === "anulado" ? "anulado" : undefined}>
-                  <td><Link href={`/comprobantes/${c.id}`}>{codigoCP(c.numero, c.origen)}</Link></td>
+                  <td style={{ fontWeight: 600 }}>{codigoCP(c.numero, c.origen)}</td>
                   <td>{fecha(c.fecha)}</td>
                   <td>{ORIGEN[c.origen]}</td>
-                  <td>{f?.tipo === "distrito" ? "Distrito" : "Provincia"}</td>
+                  <td>{f?.tipo === "distrito" ? "Distrito" : f?.tipo === "provincia" ? "Provincia" : "Ingresos propios"}</td>
                   <td>{c.beneficiario}</td>
                   <td className="envolver tachar">{c.concepto}</td>
                   <td>{c.cheque ?? <span className="falta">Pendiente</span>}</td>
                   <td><Estado valor={c.estado} /></td>
                   <td className="num tachar">{soles(c.importe)}</td>
+                  <td><div className="acciones-fila"><Link className="btn chico contorno" href={`/comprobantes/${c.id}`}>Abrir</Link></div></td>
                 </tr>
               );
             })}
           </tbody>
           <tfoot>
-            <tr><td colSpan={8}>Total vigente</td><td className="num">{soles(total)}</td></tr>
+            <tr><td colSpan={8}>Total vigente</td><td className="num">{soles(total)}</td><td></td></tr>
           </tfoot>
         </table>
       </div>

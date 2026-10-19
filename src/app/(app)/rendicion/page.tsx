@@ -12,7 +12,9 @@ export default async function Rendicion({ searchParams }: { searchParams: Params
   const ctx = await contextoMcp();
   const supabase = await supabaseServidor();
   const periodo = sp.mes ?? periodoActual();
-  const fuente = ctx.fuentes.find((f) => f.id === sp.fuente) ?? ctx.fuentes.find((f) => f.tipo === "distrito") ?? ctx.fuentes[0];
+  const municipalidades = ctx.fuentes.filter((f) => f.tipo !== "propios");
+  const propios = ctx.fuentes.find((f) => f.tipo === "propios");
+  const fuente = municipalidades.find((f) => f.id === sp.fuente) ?? municipalidades.find((f) => f.tipo === "distrito") ?? municipalidades[0];
 
   if (!fuente) {
     return <div className="aviso info">La MCP no tiene municipalidades que transfieren configuradas. Pida a soporte que las registre.</div>;
@@ -32,9 +34,9 @@ export default async function Rendicion({ searchParams }: { searchParams: Params
   if (!vigente) {
     const { data: cps } = await supabase
       .from("comprobantes_pago")
-      .select("id, numero, origen, fecha, beneficiario, concepto, importe, cheque, estado")
+      .select("id, numero, origen, fecha, beneficiario, concepto, importe, cheque, estado, fuente_id")
       .eq("mcp_id", ctx.mcp.id)
-      .eq("fuente_id", fuente.id)
+      .in("fuente_id", [fuente.id, ...(propios ? [propios.id] : [])])
       .in("estado", ["borrador", "aprobado"])
       .lte("fecha", hasta)
       .order("fecha");
@@ -50,6 +52,7 @@ export default async function Rendicion({ searchParams }: { searchParams: Params
         importe: Number(c.importe),
         disponible: !motivo,
         motivo,
+        propio: c.fuente_id === propios?.id,
       };
     });
   }
@@ -67,7 +70,7 @@ export default async function Rendicion({ searchParams }: { searchParams: Params
       <Avisos ok={sp.ok} error={sp.error} />
 
       <div className="pestanas" role="tablist" aria-label="Municipalidad que transfiere">
-        {ctx.fuentes.map((f) => (
+        {municipalidades.map((f) => (
           <Link key={f.id} role="tab" aria-selected={f.id === fuente.id} className={f.id === fuente.id ? "activo" : undefined} href={`/rendicion?mes=${periodo}&fuente=${f.id}`}>
             {f.tipo === "distrito" ? "Distrito" : "Provincia"}: {f.municipalidad} · S/ {soles(f.monto_mensual)}
           </Link>

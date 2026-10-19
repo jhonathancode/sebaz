@@ -12,6 +12,8 @@ export type FilaCP = {
   importe: number;
   disponible: boolean;
   motivo?: string;
+  /** Pagado con ingresos propios (sale aparte en el informe). */
+  propio?: boolean;
 };
 
 const fmt = (n: number) => n.toLocaleString("es-PE", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -38,7 +40,9 @@ export default function SelectorRendicion({
   const disponibles = filas.filter((f) => f.disponible);
   const [marcados, setMarcados] = useState<Set<string>>(() => new Set(disponibles.map((f) => f.id)));
 
-  const total = useMemo(() => filas.filter((f) => marcados.has(f.id)).reduce((s, f) => s + f.importe, 0), [filas, marcados]);
+  const total = useMemo(() => filas.filter((f) => marcados.has(f.id) && !f.propio).reduce((s, f) => s + f.importe, 0), [filas, marcados]);
+  const totalPropios = useMemo(() => filas.filter((f) => marcados.has(f.id) && f.propio).reduce((s, f) => s + f.importe, 0), [filas, marcados]);
+  const hayPropios = filas.some((f) => f.propio);
   const saldo = transferencia - total;
   const pct = transferencia ? Math.min(100, Math.round((total / transferencia) * 100)) : 0;
   const todos = disponibles.length > 0 && disponibles.every((f) => marcados.has(f.id));
@@ -75,12 +79,12 @@ export default function SelectorRendicion({
                       onChange={() => setMarcados(todos ? new Set() : new Set(disponibles.map((f) => f.id)))}
                     />
                   </th>
-                  <th>N° CP</th><th>Fecha</th><th>N° cheque</th><th>Beneficiario</th><th>Concepto</th><th className="num">Importe S/</th><th>Situación</th>
+                  <th>N° CP</th><th>Fecha</th><th>N° cheque</th><th>Beneficiario</th><th>Concepto</th><th>Se pagó con</th><th className="num">Importe S/</th><th>Situación</th>
                 </tr>
               </thead>
               <tbody>
                 {filas.length === 0 && (
-                  <tr><td colSpan={8} className="tenue">No hay comprobantes de pago de esta municipalidad pendientes de rendir.</td></tr>
+                  <tr><td colSpan={9} className="tenue">No hay comprobantes de pago de esta municipalidad pendientes de rendir.</td></tr>
                 )}
                 {filas.map((f) => (
                   <tr key={f.id} className={marcados.has(f.id) ? "marcado" : !f.disponible ? "anulado" : undefined}>
@@ -98,6 +102,7 @@ export default function SelectorRendicion({
                     <td>{f.cheque ?? "—"}</td>
                     <td>{f.beneficiario}</td>
                     <td className="envolver">{f.concepto}</td>
+                    <td>{f.propio ? <span className="estado abierta">Ingresos propios</span> : "Transferencia"}</td>
                     <td className="num">{fmt(f.importe)}</td>
                     <td>{f.disponible ? <span className="si">Listo</span> : <span className="no">{f.motivo}</span>}</td>
                   </tr>
@@ -113,11 +118,14 @@ export default function SelectorRendicion({
           <table className="tabla">
             <tbody>
               <tr><td>Transferencia de {municipalidad}</td><td className="num">{fmt(transferencia)}</td></tr>
-              <tr><td>Comprobantes marcados ({marcados.size})</td><td className="num">{fmt(total)}</td></tr>
+              <tr><td>Pagado con la transferencia</td><td className="num">{fmt(total)}</td></tr>
               <tr style={{ fontWeight: 600, background: saldo < 0 ? "var(--rojo-fondo)" : saldo === 0 ? "var(--verde-fondo)" : "var(--ambar-fondo)" }}>
                 <td>Saldo por rendir</td>
                 <td className="num">{fmt(saldo)}</td>
               </tr>
+              {hayPropios && (
+                <tr><td>Pagado con ingresos propios <span className="tenue pequeno">(sale aparte)</span></td><td className="num">{fmt(totalPropios)}</td></tr>
+              )}
             </tbody>
           </table>
           <div className="panel-cuerpo">
@@ -126,7 +134,7 @@ export default function SelectorRendicion({
               <span>{pct} %</span>
             </div>
             <div style={{ height: 12, background: "var(--linea)", borderRadius: 6, overflow: "hidden" }}>
-              <div style={{ width: `${pct}%`, height: "100%", background: "var(--verde)" }} />
+              <div style={{ width: `${pct}%`, height: "100%", background: "var(--primario)" }} />
             </div>
             {saldo < 0 && <div className="aviso error">Lo marcado pasa lo transferido en S/ {fmt(-saldo)}.</div>}
             {puedeGenerar && (

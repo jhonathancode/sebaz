@@ -64,7 +64,7 @@ export default async function CajaChica({ searchParams }: { searchParams: Params
         <form method="get" style={{ display: "contents" }}>
         <label className="campo">Mes<input type="month" name="mes" defaultValue={periodo} /></label>
         <label className="campo">
-          Fondo de la transferencia de
+          Fondo pagado con
           <select name="fuente" defaultValue={fuenteId}>
             {ctx.fuentes.map((f) => (
               <option key={f.id} value={f.id}>{f.municipalidad}</option>
@@ -189,7 +189,7 @@ export default async function CajaChica({ searchParams }: { searchParams: Params
               <div className="panel-cuerpo">
                 <div style={{ display: "flex", justifyContent: "space-between" }} className="pequeno tenue"><span>Gastado</span><span>{pct} %</span></div>
                 <div style={{ height: 12, background: "var(--linea)", borderRadius: 6, overflow: "hidden" }}>
-                  <div style={{ width: `${Math.min(pct, 100)}%`, height: "100%", background: "var(--verde)" }} />
+                  <div style={{ width: `${Math.min(pct, 100)}%`, height: "100%", background: "var(--primario)" }} />
                 </div>
                 <div className="pequeno">Responsable: {(caja.perfiles as { nombre: string } | null)?.nombre}</div>
                 {cp && (

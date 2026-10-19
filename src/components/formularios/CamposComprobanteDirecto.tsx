@@ -14,7 +14,7 @@ export default function CamposComprobanteDirecto({ fuentes }: { fuentes: Fuente[
       <div className="rejilla">
         <label className="campo">Fecha<input type="date" name="fecha" defaultValue={hoyISO()} required /></label>
         <label className="campo">
-          Municipalidad que transfiere
+          Se paga con
           <select name="fuente_id" required>
             {fuentes.map((f) => (
               <option key={f.id} value={f.id}>{f.municipalidad}</option>

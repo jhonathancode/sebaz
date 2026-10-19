@@ -145,14 +145,14 @@ export default async function Configuracion({ searchParams }: { searchParams: Pa
           </section>
 
           <section className="panel">
-            <div className="panel-cab">Municipalidades que transfieren</div>
+            <div className="panel-cab">Con qué se paga</div>
             <div className="tabla-marco" style={{ border: "none", borderRadius: 0 }}>
               <table className="tabla">
                 <tbody>
                   {ctx.fuentes.map((f) => (
                     <tr key={f.id}>
                       <td className="envolver" style={{ minWidth: 0 }}>{f.municipalidad}</td>
-                      <td className="num">S/ {soles(f.monto_mensual)}</td>
+                      <td className="num">{f.tipo === "propios" ? "Variable" : `S/ ${soles(f.monto_mensual)}`}</td>
                     </tr>
                   ))}
                 </tbody>

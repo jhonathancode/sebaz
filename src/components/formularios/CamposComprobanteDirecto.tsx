@@ -1,4 +1,5 @@
 import SelectFuncion from "@/components/SelectFuncion";
+import { nombreFuente } from "./CamposRequerimiento";
 import { CLASIFICADORES, SUSTENTOS } from "@/lib/catalogos";
 import type { Fuente } from "@/lib/contexto";
 import { hoyISO } from "@/lib/formato";
@@ -17,7 +18,7 @@ export default function CamposComprobanteDirecto({ fuentes }: { fuentes: Fuente[
           Se paga con
           <select name="fuente_id" required>
             {fuentes.map((f) => (
-              <option key={f.id} value={f.id}>{f.municipalidad}</option>
+              <option key={f.id} value={f.id}>{nombreFuente(f)}</option>
             ))}
           </select>
         </label>

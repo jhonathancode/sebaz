@@ -1,8 +1,8 @@
 import { CLASIFICADORES } from "@/lib/catalogos";
 import type { Fuente } from "@/lib/contexto";
 import { hoyISO } from "@/lib/formato";
+import ItemsRequerimiento from "./ItemsRequerimiento";
 
-/** Campos del requerimiento (se usan dentro de una ventana flotante). */
 export type ValoresRequerimiento = {
   fecha: string;
   tipo: string;
@@ -14,74 +14,97 @@ export type ValoresRequerimiento = {
   items: { cantidad: number; unidad: string; descripcion: string; precio_unitario: number }[];
 };
 
+const TIPOS = [
+  { valor: "compra", titulo: "Compra de bienes", texto: "Útiles, materiales, combustible. Lleva cotizaciones y orden de compra." },
+  { valor: "servicio", titulo: "Servicio externo", texto: "Un trabajo por un tiempo: alquiler, mantenimiento, asesoría. Lleva cotizaciones y orden de servicio." },
+  { valor: "pago_fijo", titulo: "Pago fijo", texto: "Dietas del alcalde y regidores, personal contratado. No lleva cotizaciones." },
+];
+
+/** Nombre corto y claro de cada fuente de dinero. */
+export function nombreFuente(f: Fuente) {
+  if (f.tipo === "propios") return "Ingresos propios";
+  const lugar = f.municipalidad.replace(/^municipalidad (distrital|provincial) de /i, "");
+  return `Transferencia de ${lugar}`;
+}
+
+function detalleFuente(f: Fuente) {
+  if (f.tipo === "propios") return "Lo recaudado por la MCP: copias, constancias, alquileres";
+  return f.tipo === "distrito" ? "Municipalidad distrital" : "Municipalidad provincial";
+}
+
+/** Formulario del requerimiento, en preguntas simples. */
 export default function CamposRequerimiento({ fuentes, valores }: { fuentes: Fuente[]; valores?: ValoresRequerimiento }) {
-  const filas = Array.from({ length: Math.max(8, (valores?.items.length ?? 0) + 2) }, (_, i) => i + 1);
-  const it = (i: number) => valores?.items[i - 1];
+  const tipo = valores?.tipo ?? "compra";
+  const fuente = valores?.fuente_id ?? fuentes.find((f) => f.tipo === "distrito")?.id ?? fuentes[0]?.id;
+  const hayPropios = fuentes.some((f) => f.tipo === "propios");
+
   return (
     <>
-      <div className="rejilla">
-        <label className="campo">
-          Fecha
-          <input type="date" name="fecha" defaultValue={valores?.fecha ?? hoyISO()} required />
-        </label>
-        <label className="campo ancho">
-          Tipo de gasto
-          <select name="tipo" defaultValue={valores?.tipo ?? "compra"}>
-            <option value="compra">Compra de bienes · con cotizaciones y orden de compra</option>
-            <option value="servicio">Servicio externo temporal · con cotizaciones y orden de servicio</option>
-            <option value="pago_fijo">Pago fijo · dietas, alcalde, personal contratado (sin cotizaciones)</option>
-          </select>
-        </label>
-        <label className="campo">
-          Se paga con
-          <select name="fuente_id" required defaultValue={valores?.fuente_id ?? undefined}>
-            {fuentes.map((f) => (
-              <option key={f.id} value={f.id}>{f.municipalidad}</option>
-            ))}
-          </select>
-        </label>
-        <label className="campo">
-          Unidad orgánica / área usuaria
-          <input name="area_usuaria" defaultValue={valores?.area_usuaria ?? ""} placeholder="Gerencia de Administración" />
-        </label>
-        <label className="campo">
-          Meta / actividad
-          <input name="meta" defaultValue={valores?.meta ?? ""} placeholder="Secretaría general" />
-        </label>
-        <label className="campo">
-          Específica del gasto
-          <select name="clasificador" defaultValue={valores?.clasificador ?? "2.3 Bienes y servicios"}>
-            {CLASIFICADORES.map((c) => (
-              <option key={c}>{c}</option>
-            ))}
-          </select>
-        </label>
-        <label className="campo ancho">
-          Descripción del requerimiento
-          <input name="descripcion" required defaultValue={valores?.descripcion ?? ""} placeholder="Ej.: Servicio de tesorería del mes de octubre" />
-        </label>
-      </div>
-      <div>
-        <div className="etiqueta" style={{ marginBottom: 6 }}>Detalle · las filas vacías no se guardan</div>
-        <div className="tabla-marco">
-          <table className="tabla" style={{ minWidth: 680 }}>
-            <thead>
-              <tr><th>IT</th><th>Cantidad</th><th>Unidad</th><th>Descripción detallada</th><th className="num">P. unitario referencial</th></tr>
-            </thead>
-            <tbody>
-              {filas.map((i) => (
-                <tr key={i}>
-                  <td style={{ verticalAlign: "middle" }}>{i}</td>
-                  <td><input name={`cant_${i}`} defaultValue={it(i)?.cantidad ?? ""} inputMode="decimal" style={{ width: 80 }} aria-label={`Cantidad ítem ${i}`} /></td>
-                  <td><input name={`und_${i}`} defaultValue={it(i)?.unidad ?? ""} placeholder="UND" style={{ width: 80 }} aria-label={`Unidad ítem ${i}`} /></td>
-                  <td style={{ width: "60%" }}><input name={`desc_${i}`} defaultValue={it(i)?.descripcion ?? ""} style={{ width: "100%" }} aria-label={`Descripción ítem ${i}`} /></td>
-                  <td className="num"><input name={`precio_${i}`} defaultValue={it(i)?.precio_unitario ?? ""} inputMode="decimal" style={{ width: 110, textAlign: "right" }} aria-label={`Precio ítem ${i}`} /></td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+      <fieldset className="pregunta">
+        <legend>1. ¿Qué tipo de gasto es?</legend>
+        <div className="opciones">
+          {TIPOS.map((t) => (
+            <label key={t.valor} className="opcion">
+              <input type="radio" name="tipo" value={t.valor} defaultChecked={t.valor === tipo} required />
+              <span className="opcion-titulo">{t.titulo}</span>
+              <span className="opcion-texto">{t.texto}</span>
+            </label>
+          ))}
         </div>
-      </div>
+      </fieldset>
+
+      <fieldset className="pregunta">
+        <legend>2. ¿Con qué dinero se paga?</legend>
+        <div className="opciones">
+          {fuentes.map((f) => (
+            <label key={f.id} className="opcion">
+              <input type="radio" name="fuente_id" value={f.id} defaultChecked={f.id === fuente} required />
+              <span className="opcion-titulo">{nombreFuente(f)}</span>
+              <span className="opcion-texto">{detalleFuente(f)}</span>
+            </label>
+          ))}
+        </div>
+        {!hayPropios && <p className="pequeno tenue" style={{ margin: "6px 0 0" }}>La opción «Ingresos propios» aparece cuando soporte termina de configurar la MCP.</p>}
+      </fieldset>
+
+      <fieldset className="pregunta">
+        <legend>3. ¿Para qué es?</legend>
+        <label className="campo">
+          Escriba en una línea para qué es este gasto
+          <input name="descripcion" required defaultValue={valores?.descripcion ?? ""} placeholder="Ej.: Compra de útiles de oficina para la tesorería" />
+        </label>
+      </fieldset>
+
+      <fieldset className="pregunta">
+        <legend>4. ¿Qué se necesita y cuánto cuesta?</legend>
+        <ItemsRequerimiento inicial={valores?.items} />
+      </fieldset>
+
+      <details className="pregunta mas-datos">
+        <summary>Datos para el formato (fecha, área, meta, específica del gasto)</summary>
+        <div className="rejilla" style={{ marginTop: 10 }}>
+          <label className="campo">
+            Fecha
+            <input type="date" name="fecha" defaultValue={valores?.fecha ?? hoyISO()} required />
+          </label>
+          <label className="campo">
+            Área que lo pide
+            <input name="area_usuaria" defaultValue={valores?.area_usuaria ?? ""} placeholder="Tesorería, alcaldía, regiduría..." />
+          </label>
+          <label className="campo">
+            Meta o actividad
+            <input name="meta" defaultValue={valores?.meta ?? ""} placeholder="Opcional" />
+          </label>
+          <label className="campo">
+            Específica del gasto
+            <select name="clasificador" defaultValue={valores?.clasificador ?? "2.3 Bienes y servicios"}>
+              {CLASIFICADORES.map((c) => (
+                <option key={c}>{c}</option>
+              ))}
+            </select>
+          </label>
+        </div>
+      </details>
     </>
   );
 }

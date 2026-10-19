@@ -1,9 +1,12 @@
 import Link from "next/link";
 import Avisos, { type ParamsAviso } from "@/components/Avisos";
 import Estado from "@/components/Estado";
+import CamposRequerimiento from "@/components/formularios/CamposRequerimiento";
+import VentanaFlotante from "@/components/VentanaFlotante";
 import { contextoMcp } from "@/lib/contexto";
 import { fecha, nombrePeriodo, num3, periodoActual, rangoPeriodo, soles } from "@/lib/formato";
 import { supabaseServidor } from "@/lib/supabase/server";
+import { crearExpediente } from "./acciones";
 
 const FASES: Record<string, string> = {
   requerimiento: "Requerimiento",
@@ -43,7 +46,8 @@ export default async function Expedientes({ searchParams }: { searchParams: Para
         <h1>Expedientes · {nombrePeriodo(periodo)}</h1>
       </div>
       <Avisos ok={sp.ok} error={sp.error} />
-      <form className="barra" method="get">
+      <div className="barra">
+        <form method="get" style={{ display: "contents" }}>
         <label className="campo">
           Mes
           <input type="month" name="mes" defaultValue={periodo} />
@@ -63,9 +67,12 @@ export default async function Expedientes({ searchParams }: { searchParams: Para
           <input name="q" defaultValue={sp.q ?? ""} placeholder="Descripción del requerimiento" />
         </label>
         <button className="btn" type="submit">Filtrar</button>
+        </form>
         <span className="espacio" />
-        <Link className="btn primario" href="/expedientes/nuevo">Nuevo requerimiento</Link>
-      </form>
+        <VentanaFlotante boton="Nuevo requerimiento" titulo="Nuevo requerimiento" accion={crearExpediente} textoGuardar="Guardar requerimiento" abierta={sp.nuevo === "1"} ancha>
+          <CamposRequerimiento fuentes={ctx.fuentes} />
+        </VentanaFlotante>
+      </div>
 
       <div className="tabla-marco">
         <table className="tabla" style={{ minWidth: 900 }}>

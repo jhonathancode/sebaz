@@ -1,9 +1,12 @@
 import Link from "next/link";
 import Avisos, { type ParamsAviso } from "@/components/Avisos";
 import Estado from "@/components/Estado";
+import CamposComprobanteDirecto from "@/components/formularios/CamposComprobanteDirecto";
+import VentanaFlotante from "@/components/VentanaFlotante";
 import { contextoMcp } from "@/lib/contexto";
 import { codigoCP, fecha, nombrePeriodo, periodoActual, rangoPeriodo, soles } from "@/lib/formato";
 import { supabaseServidor } from "@/lib/supabase/server";
+import { crearComprobanteDirecto } from "./acciones";
 
 const ORIGEN: Record<string, string> = { expediente: "Expediente", caja_chica: "Caja chica", directo: "Directo" };
 
@@ -33,7 +36,8 @@ export default async function Comprobantes({ searchParams }: { searchParams: Par
         <h1>Comprobantes de pago · {nombrePeriodo(periodo)}</h1>
       </div>
       <Avisos ok={sp.ok} error={sp.error} />
-      <form className="barra" method="get">
+      <div className="barra">
+        <form method="get" style={{ display: "contents" }}>
         <label className="campo">Mes<input type="month" name="mes" defaultValue={periodo} /></label>
         <label className="campo">
           Municipalidad que transfiere
@@ -55,9 +59,12 @@ export default async function Comprobantes({ searchParams }: { searchParams: Par
           </select>
         </label>
         <button className="btn" type="submit">Filtrar</button>
+        </form>
         <span className="espacio" />
-        <Link className="btn primario" href="/comprobantes/nuevo">Nuevo comprobante directo</Link>
-      </form>
+        <VentanaFlotante boton="Nuevo comprobante directo" titulo="Nuevo comprobante de pago directo" accion={crearComprobanteDirecto} textoGuardar="Guardar en borrador" abierta={sp.nuevo === "1"}>
+          <CamposComprobanteDirecto fuentes={ctx.fuentes} />
+        </VentanaFlotante>
+      </div>
 
       <div className="tabla-marco">
         <table className="tabla" style={{ minWidth: 1000 }}>

@@ -2,6 +2,7 @@ import Link from "next/link";
 import Avisos, { type ParamsAviso } from "@/components/Avisos";
 import Estado from "@/components/Estado";
 import Motivo from "@/components/Motivo";
+import VentanaFlotante from "@/components/VentanaFlotante";
 import { SUSTENTOS } from "@/lib/catalogos";
 import { contextoMcp, tiene } from "@/lib/contexto";
 import { codigoCP, fecha, hoyISO, nombrePeriodo, periodoActual, soles } from "@/lib/formato";
@@ -73,6 +74,29 @@ export default async function CajaChica({ searchParams }: { searchParams: Params
         <button className="btn" type="submit">Ver</button>
         </form>
         <span className="espacio" />
+        {caja && abierta && puede && (
+          <VentanaFlotante boton="Registrar gasto" titulo="Registrar un gasto de caja chica" accion={agregarGasto} textoGuardar="Agregar gasto" claseBoton="btn">
+            <input type="hidden" name="caja_id" value={caja.id} />
+            <input type="hidden" name="periodo" value={periodo} />
+            <input type="hidden" name="fuente_id" value={fuenteId} />
+            <div className="rejilla">
+              <label className="campo">Fecha<input type="date" name="fecha" required defaultValue={hoyISO().startsWith(periodo) ? hoyISO() : `${periodo}-01`} /></label>
+              <label className="campo">
+                Sustento
+                <select name="sustento_tipo" defaultValue="DJ">
+                  {SUSTENTOS.map((x) => (
+                    <option key={x.codigo} value={x.codigo}>{x.nombre}</option>
+                  ))}
+                </select>
+              </label>
+              <label className="campo">N° del documento (no para DJ)<input name="sustento_numero" placeholder="B001-3516" /></label>
+              <label className="campo">Razón social o comisionado<input name="razon_social" required /></label>
+              <label className="campo ancho">Concepto<input name="concepto" required placeholder="Salida a Perené: verificación de documentos para la rendición" /></label>
+              <label className="campo">Monto S/<input name="monto" required inputMode="decimal" /></label>
+            </div>
+            <p className="pequeno tenue" style={{ margin: 0 }}>Saldo disponible del fondo: S/ {soles(saldo)}. Con declaración jurada, el formato se imprime desde la lista.</p>
+          </VentanaFlotante>
+        )}
         {caja && (
           <Link className="btn" href={`/caja-chica/${caja.id}/relacion`}>Imprimir relación</Link>
         )}
@@ -88,25 +112,26 @@ export default async function CajaChica({ searchParams }: { searchParams: Params
 
       {!caja && (
         puede ? (
-          <form action={abrirCaja} className="panel" style={{ maxWidth: 720 }}>
-            <div className="panel-cab">Abrir el fondo del mes</div>
-            <div className="panel-cuerpo rejilla">
+          <div className="aviso info" style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
+            <span style={{ flex: 1 }}>Aún no se abre el fondo de caja chica de este mes.</span>
+            <VentanaFlotante boton="Abrir fondo del mes" titulo="Abrir el fondo de caja chica" accion={abrirCaja} textoGuardar="Abrir fondo">
               <input type="hidden" name="periodo" value={periodo} />
               <input type="hidden" name="fuente_id" value={fuenteId} />
-              <label className="campo">Monto del fondo S/<input name="monto_fondo" required inputMode="decimal" placeholder="2000.00" /></label>
-              <label className="campo">
-                Responsable del fondo
-                <select name="responsable_id" required>
-                  {(responsables ?? []).map((r) => (
-                    <option key={r.user_id + r.rol} value={r.user_id}>
-                      {(r.perfiles as unknown as { nombre: string } | null)?.nombre}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <div style={{ display: "flex", alignItems: "flex-end" }}><button className="btn primario" type="submit">Abrir fondo</button></div>
-            </div>
-          </form>
+              <div className="rejilla-2">
+                <label className="campo">Monto del fondo S/<input name="monto_fondo" required inputMode="decimal" placeholder="2000.00" /></label>
+                <label className="campo">
+                  Responsable del fondo
+                  <select name="responsable_id" required>
+                    {(responsables ?? []).map((r) => (
+                      <option key={r.user_id + r.rol} value={r.user_id}>
+                        {(r.perfiles as unknown as { nombre: string } | null)?.nombre}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              </div>
+            </VentanaFlotante>
+          </div>
         ) : (
           <div className="aviso info">No hay fondo de caja chica abierto este mes.</div>
         )
@@ -149,30 +174,6 @@ export default async function CajaChica({ searchParams }: { searchParams: Params
               </table>
             </div>
 
-            {abierta && puede && (
-              <form action={agregarGasto} className="panel">
-                <div className="panel-cab">Registrar un gasto</div>
-                <div className="panel-cuerpo rejilla">
-                  <input type="hidden" name="caja_id" value={caja.id} />
-                  <input type="hidden" name="periodo" value={periodo} />
-                  <input type="hidden" name="fuente_id" value={fuenteId} />
-                  <label className="campo">Fecha<input type="date" name="fecha" required defaultValue={hoyISO().startsWith(periodo) ? hoyISO() : `${periodo}-01`} /></label>
-                  <label className="campo">
-                    Sustento
-                    <select name="sustento_tipo" defaultValue="DJ">
-                      {SUSTENTOS.map((s) => (
-                        <option key={s.codigo} value={s.codigo}>{s.nombre}</option>
-                      ))}
-                    </select>
-                  </label>
-                  <label className="campo">N° del documento (no para DJ)<input name="sustento_numero" placeholder="B001-3516" /></label>
-                  <label className="campo">Razón social o comisionado<input name="razon_social" required /></label>
-                  <label className="campo ancho">Concepto<input name="concepto" required placeholder="Salida a Perené: verificación de documentos para la rendición" /></label>
-                  <label className="campo">Monto S/<input name="monto" required inputMode="decimal" /></label>
-                  <div style={{ display: "flex", alignItems: "flex-end" }}><button className="btn primario" type="submit">Agregar gasto</button></div>
-                </div>
-              </form>
-            )}
           </div>
 
           <aside className="lateral">

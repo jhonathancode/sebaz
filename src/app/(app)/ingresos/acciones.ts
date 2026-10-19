@@ -9,9 +9,9 @@ export async function emitirRecibo(fd: FormData) {
   const ctx = await contextoMcp();
   const supabase = await supabaseServidor();
   const monto = numero(fd, "monto");
-  if (!monto || monto <= 0) volver("/ingresos", "error", "Escriba el monto.");
+  if (!monto || monto <= 0) volver("/ingresos?nuevo=1", "error", "Escriba el monto.");
   const doc = (texto(fd, "pagador_doc") ?? "").replace(/\D/g, "");
-  if (doc && doc.length !== 8 && doc.length !== 11) volver("/ingresos", "error", "El DNI tiene 8 dígitos y el RUC 11.");
+  if (doc && doc.length !== 8 && doc.length !== 11) volver("/ingresos?nuevo=1", "error", "El DNI tiene 8 dígitos y el RUC 11.");
   const { data, error } = await supabase
     .from("ingresos")
     .insert({
@@ -25,7 +25,7 @@ export async function emitirRecibo(fd: FormData) {
     })
     .select("id")
     .single();
-  if (error || !data) volver("/ingresos", "error", mensajeError(error));
+  if (error || !data) volver("/ingresos?nuevo=1", "error", mensajeError(error));
   revalidatePath("/ingresos");
   volver(`/ingresos/${data.id}`, "ok", "Recibo de ingreso emitido.");
 }

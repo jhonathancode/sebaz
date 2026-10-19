@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import Avisos from "@/components/Avisos";
 import Estado from "@/components/Estado";
 import Motivo from "@/components/Motivo";
+import VentanaFlotante from "@/components/VentanaFlotante";
 import SelectFuncion from "@/components/SelectFuncion";
 import { SUSTENTOS } from "@/lib/catalogos";
 import { contextoMcp, tiene } from "@/lib/contexto";
@@ -144,6 +145,27 @@ export default async function Expediente({ params, searchParams }: { params: Par
         <Dato t="Monto del requerimiento" v={`S/ ${soles(total)}`} />
       </section>
 
+      <section className="docs-franja" aria-label="Documentos del expediente">
+        {docs.map((d) => (
+          <div key={d.clave} className={`doc-tarjeta${d.listo ? " listo" : ""}`}>
+            <div className="doc-nombre">
+              <span className={d.listo ? "si" : "tenue"} aria-hidden="true">{d.listo ? "✓" : "○"}</span> {d.nombre}
+            </div>
+            <div className="pequeno tenue">{d.listo ? d.numero : "Aún no existe"}</div>
+            {d.listo ? (
+              <Link className="btn" href={`/expedientes/${id}/documentos?doc=${d.clave}`}>Ver</Link>
+            ) : (
+              <span className="btn" aria-disabled="true" style={{ opacity: 0.45, cursor: "default" }}>Ver</span>
+            )}
+          </div>
+        ))}
+        <div className="doc-tarjeta todo">
+          <div className="doc-nombre">Expediente completo</div>
+          <div className="pequeno tenue">Todos los documentos, listos para imprimir</div>
+          <Link className="btn primario" href={`/expedientes/${id}/documentos?doc=todo`}>Ver todo</Link>
+        </div>
+      </section>
+
       <div className="pestanas" role="tablist" aria-label="Fases del expediente">
         {PASOS.map((p) => (
           <Link
@@ -159,8 +181,7 @@ export default async function Expediente({ params, searchParams }: { params: Par
         ))}
       </div>
 
-      <div className="columnas">
-        <div className="principal">
+      <div className="fase-contenido">
           {fase === "requerimiento" && (
             <>
               <div className="tabla-marco">
@@ -226,18 +247,20 @@ export default async function Expediente({ params, searchParams }: { params: Par
               </div>
               {e.estado !== "aprobado" && <div className="aviso info">Las cotizaciones se eligen cuando el alcalde aprueba el requerimiento.</div>}
               {puedeRegistrar && !orden && (
-                <form action={agregarCotizacion} className="panel">
-                  <div className="panel-cab">Agregar cotización</div>
-                  <div className="panel-cuerpo rejilla">
+                <div>
+                  <VentanaFlotante boton="Agregar cotización" titulo="Agregar cotización" accion={agregarCotizacion} textoGuardar="Agregar cotización">
                     <input type="hidden" name="expediente_id" value={id} />
-                    <label className="campo">RUC o DNI<input name="num_doc" required inputMode="numeric" placeholder="11 u 8 dígitos" /></label>
-                    <label className="campo">Razón social (si es nuevo)<input name="razon_social" /></label>
-                    <label className="campo">Dirección (si es nuevo)<input name="direccion" /></label>
-                    <label className="campo">Monto S/<input name="monto" required inputMode="decimal" /></label>
-                    <label className="campo">Plazo<input name="plazo" placeholder="Inmediato" /></label>
-                    <div style={{ display: "flex", alignItems: "flex-end" }}><button className="btn primario" type="submit">Agregar</button></div>
-                  </div>
-                </form>
+                    <div className="rejilla-2">
+                      <label className="campo">RUC o DNI del proveedor<input name="num_doc" required inputMode="numeric" maxLength={11} placeholder="11 u 8 dígitos" /></label>
+                      <label className="campo">Razón social (si es proveedor nuevo)<input name="razon_social" /></label>
+                      <label className="campo">Dirección (si es nuevo)<input name="direccion" /></label>
+                      <label className="campo">Teléfono (si es nuevo)<input name="telefono" inputMode="tel" /></label>
+                      <label className="campo">Monto cotizado S/<input name="monto" required inputMode="decimal" /></label>
+                      <label className="campo">Plazo<input name="plazo" placeholder="Inmediato" /></label>
+                    </div>
+                    <p className="pequeno tenue" style={{ margin: 0 }}>Si el RUC ya está registrado en la MCP, se usan sus datos guardados.</p>
+                  </VentanaFlotante>
+                </div>
               )}
             </>
           )}
@@ -373,60 +396,34 @@ export default async function Expediente({ params, searchParams }: { params: Par
               )}
             </>
           )}
-        </div>
+      </div>
 
-        <aside className="lateral">
-          <section className="panel">
-            <div className="panel-cab">Documentos del expediente</div>
-            <div className="panel-cuerpo" style={{ paddingTop: 4, paddingBottom: 4 }}>
-              <ul className="lista-docs">
-                {docs.map((d) => (
-                  <li key={d.clave}>
-                    <span className={d.listo ? "si" : "tenue"} aria-hidden="true">{d.listo ? "✓" : "○"}</span>
-                    <span className="nombre-doc">
-                      {d.nombre}
-                      <small>{d.listo ? d.numero : "Aún no existe"}</small>
-                    </span>
-                    {d.listo && (
-                      <Link className="btn" href={`/expedientes/${id}/documentos?doc=${d.clave}`}>Ver</Link>
-                    )}
-                  </li>
-                ))}
-              </ul>
-            </div>
-            <div className="panel-cuerpo" style={{ paddingTop: 0 }}>
-              <Link className="btn primario" href={`/expedientes/${id}/documentos?doc=todo`}>Ver expediente completo</Link>
-            </div>
-          </section>
-          <section className="panel">
-            <div className="panel-cab">Revisión</div>
-            <ul className="panel-cuerpo" style={{ listStyle: "none", margin: 0, gap: 6 }}>
-              <Check ok={e.estado !== "borrador"} t="Requerimiento aprobado por el alcalde" />
-              <Check ok={(cotizaciones ?? []).filter((c) => !c.anulado).length >= 3} t="Tres cotizaciones" />
-              <Check ok={!!elegida} t="Proveedor elegido" />
-              <Check ok={!!orden} t="Orden emitida" />
-              <Check ok={!!conformidad} t="Conformidad emitida" />
-              <Check ok={!!cp} t="Comprobante de pago generado" />
-            </ul>
-          </section>
-          {historial && historial.length > 0 && (
-            <section className="panel">
-              <div className="panel-cab">Historial</div>
-              <div className="panel-cuerpo pequeno">
-                {historial.map((h, i) => (
-                  <div key={i}>
-                    <span className="tenue">{fechaHora(h.en)}</span>
-                    <br />
-                    {usuarios.get(h.user_id) ?? "Sistema"} {h.accion === "crear" ? "registró" : "modificó"} {nombreTabla[h.tabla] ?? h.tabla}
-                    {h.tabla === "expedientes" && h.accion === "editar" && (h.despues as { estado?: string })?.estado
-                      ? ` (${(h.despues as { estado: string }).estado})`
-                      : ""}
-                  </div>
-                ))}
+      <div className="rejilla-2" style={{ alignItems: "start" }}>
+        <section className="panel">
+          <div className="panel-cab">Revisión del expediente</div>
+          <ul className="panel-cuerpo lista-check" style={{ padding: 14 }}>
+            <Check ok={e.estado !== "borrador"} t="Requerimiento aprobado por el alcalde" />
+            <Check ok={(cotizaciones ?? []).filter((c) => !c.anulado).length >= 3} t="Tres cotizaciones" />
+            <Check ok={!!elegida} t="Proveedor elegido" />
+            <Check ok={!!orden} t="Orden emitida" />
+            <Check ok={!!conformidad} t="Conformidad emitida" />
+            <Check ok={!!cp} t="Comprobante de pago generado" />
+          </ul>
+        </section>
+        <section className="panel">
+          <div className="panel-cab">Historial</div>
+          <div className="panel-cuerpo pequeno historial">
+            {(historial ?? []).length === 0 && <span className="tenue">El historial lo ven el administrador y el alcalde.</span>}
+            {(historial ?? []).map((h, i) => (
+              <div key={i}>
+                <span className="tenue">{fechaHora(h.en)}</span> · {usuarios.get(h.user_id) ?? "Sistema"} {h.accion === "crear" ? "registró" : "modificó"} {nombreTabla[h.tabla] ?? h.tabla}
+                {h.tabla === "expedientes" && h.accion === "editar" && (h.despues as { estado?: string })?.estado
+                  ? ` (${(h.despues as { estado: string }).estado})`
+                  : ""}
               </div>
-            </section>
-          )}
-        </aside>
+            ))}
+          </div>
+        </section>
       </div>
     </>
   );

@@ -23,10 +23,10 @@ export async function crearExpediente(fd: FormData) {
     if (!descripcion) continue;
     const cantidad = numero(fd, `cant_${i}`) ?? 0;
     const precio = numero(fd, `precio_${i}`) ?? 0;
-    if (cantidad <= 0) volver("/expedientes/nuevo", "error", `Ítem ${i}: la cantidad debe ser mayor que cero.`);
+    if (cantidad <= 0) volver("/expedientes?nuevo=1", "error", `Ítem ${i}: la cantidad debe ser mayor que cero.`);
     items.push({ item: items.length + 1, cantidad, unidad: texto(fd, `und_${i}`) ?? "UND", descripcion, precio_unitario: precio });
   }
-  if (items.length === 0) volver("/expedientes/nuevo", "error", "Agregue al menos un ítem al requerimiento.");
+  if (items.length === 0) volver("/expedientes?nuevo=1", "error", "Agregue al menos un ítem al requerimiento.");
 
   const { data, error } = await supabase
     .from("expedientes")
@@ -42,7 +42,7 @@ export async function crearExpediente(fd: FormData) {
     })
     .select("id")
     .single();
-  if (error || !data) volver("/expedientes/nuevo", "error", mensajeError(error));
+  if (error || !data) volver("/expedientes?nuevo=1", "error", mensajeError(error));
 
   const { error: e2 } = await supabase
     .from("expediente_items")

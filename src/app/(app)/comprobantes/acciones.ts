@@ -15,7 +15,7 @@ export async function crearComprobanteDirecto(fd: FormData) {
   const ctx = await contextoMcp();
   const supabase = await supabaseServidor();
   const importe = numero(fd, "importe");
-  if (!importe || importe <= 0) volver("/comprobantes/nuevo", "error", "Escriba el importe.");
+  if (!importe || importe <= 0) volver("/comprobantes?nuevo=1", "error", "Escriba el importe.");
   const { data, error } = await supabase
     .from("comprobantes_pago")
     .insert({
@@ -35,7 +35,7 @@ export async function crearComprobanteDirecto(fd: FormData) {
     })
     .select("id")
     .single();
-  if (error || !data) volver("/comprobantes/nuevo", "error", mensajeError(error));
+  if (error || !data) volver("/comprobantes?nuevo=1", "error", mensajeError(error));
   revalidatePath("/comprobantes");
   volver(`/comprobantes/${data.id}`, "ok", "Comprobante de pago registrado en borrador.");
 }

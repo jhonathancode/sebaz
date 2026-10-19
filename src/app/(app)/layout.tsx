@@ -1,8 +1,8 @@
 import { cookies } from "next/headers";
-import Link from "next/link";
 import { redirect } from "next/navigation";
 import BotonTema from "@/components/BotonTema";
 import Menu, { type ItemMenu } from "@/components/Menu";
+import MenuUsuario, { type EnlaceMenu } from "@/components/MenuUsuario";
 import { COOKIE_MCP, obtenerContexto } from "@/lib/contexto";
 import { APP_NOMBRE } from "@/lib/formato";
 import { supabaseServidor } from "@/lib/supabase/server";
@@ -25,21 +25,29 @@ export default async function MarcoApp({ children }: { children: React.ReactNode
   const [ctx, cookieStore] = await Promise.all([obtenerContexto(), cookies()]);
   const tema = cookieStore.get("tema")?.value;
 
-  const items: ItemMenu[] = [];
+  // Trabajo diario arriba; administración bajo el nombre del usuario.
+  const items: ItemMenu[] = ctx.mcp
+    ? [
+        { href: "/inicio", texto: "Inicio" },
+        { href: "/expedientes", texto: "Expedientes" },
+        { href: "/comprobantes", texto: "Comprobantes de pago" },
+        { href: "/caja-chica", texto: "Caja chica" },
+        { href: "/ingresos", texto: "Ingresos" },
+        { href: "/rendicion", texto: "Rendición" },
+      ]
+    : ctx.esSoporte
+      ? [{ href: "/soporte", texto: "Panel de soporte" }]
+      : [];
+
+  const enlaces: EnlaceMenu[] = [{ href: "/cuenta", texto: "Mi cuenta y contraseña", grupo: "cuenta" }];
   if (ctx.mcp) {
-    items.push(
-      { href: "/inicio", texto: "Inicio" },
-      { href: "/expedientes", texto: "Expedientes" },
-      { href: "/comprobantes", texto: "Comprobantes de pago" },
-      { href: "/caja-chica", texto: "Caja chica" },
-      { href: "/ingresos", texto: "Ingresos" },
-      { href: "/rendicion", texto: "Rendición" },
-      { href: "/responsables", texto: "Responsables" },
-      { href: "/configuracion", texto: "Configuración" },
-      { href: "/auditoria", texto: "Auditoría" },
+    enlaces.push(
+      { href: "/responsables", texto: "Responsables y relevos", grupo: "administracion" },
+      { href: "/configuracion", texto: "Configuración de la MCP", grupo: "administracion" },
+      { href: "/auditoria", texto: "Auditoría", grupo: "administracion" },
     );
   }
-  if (ctx.esSoporte) items.push({ href: "/soporte", texto: "Soporte" });
+  if (ctx.esSoporte) enlaces.push({ href: "/soporte", texto: "Panel de soporte", grupo: "soporte" });
 
   const cargo = [...ctx.cargos, ...(ctx.esSoporte ? ["Soporte"] : [])].join(" · ") || "Sin cargo vigente";
 
@@ -57,28 +65,18 @@ export default async function MarcoApp({ children }: { children: React.ReactNode
           </div>
         </div>
         <div className="acciones">
-          {ctx.mcps.length > 1 && (
-            <form action={cambiarMcp} style={{ display: "flex", gap: 6, alignItems: "center" }}>
-              <label className="sub" htmlFor="mcp-sel">MCP</label>
-              <select id="mcp-sel" name="mcp" defaultValue={ctx.mcp?.id}>
-                {ctx.mcps.map((m) => (
-                  <option key={m.id} value={m.id}>{m.nombre}</option>
-                ))}
-              </select>
-              <button className="boton-cabecera" type="submit">Cambiar</button>
-            </form>
-          )}
           <BotonTema inicial={tema === "dark" || tema === "light" ? tema : null} />
-          <Link className="usuario" href="/cuenta" title="Mi cuenta">
-            <span className="avatar" aria-hidden="true">{iniciales(ctx.nombre)}</span>
-            <span>
-              <span className="usuario-nombre">{ctx.nombre}</span>
-              <span className="sub">{cargo}</span>
-            </span>
-          </Link>
-          <form action={salir}>
-            <button className="boton-cabecera" type="submit">Salir</button>
-          </form>
+          <MenuUsuario
+            nombre={ctx.nombre}
+            cargo={cargo}
+            mcp={ctx.mcp?.nombre ?? null}
+            iniciales={iniciales(ctx.nombre)}
+            enlaces={enlaces}
+            mcps={ctx.mcps}
+            mcpActual={ctx.mcp?.id ?? null}
+            cambiarMcp={cambiarMcp}
+            salir={salir}
+          />
         </div>
       </header>
       <Menu items={items} />

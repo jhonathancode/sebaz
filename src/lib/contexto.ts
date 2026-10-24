@@ -69,7 +69,9 @@ export const obtenerContexto = cache(async (): Promise<Contexto> => {
   ]);
 
   type McpConFuentes = Mcp & { fuentes: Fuente[] };
-  const vigentes = (membresias ?? []).filter((m) => !m.hasta || m.hasta >= hoy);
+  // El dueño del sistema no trabaja dentro de ninguna MCP: solo ve su panel de clientes.
+  const esSuperadmin = !!perfil?.es_superadmin;
+  const vigentes = esSuperadmin ? [] : (membresias ?? []).filter((m) => !m.hasta || m.hasta >= hoy);
   const mapa = new Map<string, McpConFuentes>();
   for (const m of vigentes) {
     const mc = m.mcps as unknown as McpConFuentes | null;
@@ -92,7 +94,7 @@ export const obtenerContexto = cache(async (): Promise<Contexto> => {
     userId,
     nombre: perfil?.nombre || (claims.email as string | undefined) || "",
     esSoporte: !!(perfil?.es_soporte || perfil?.es_superadmin),
-    esSuperadmin: !!perfil?.es_superadmin,
+    esSuperadmin,
     mcp,
     mcps,
     roles: vigentes.filter((m) => m.mcp_id === mcpId).map((m) => m.rol as Rol),
@@ -104,7 +106,7 @@ export const obtenerContexto = cache(async (): Promise<Contexto> => {
 /** Exige una MCP elegida; si no hay, manda a la pantalla que corresponda. */
 export async function contextoMcp() {
   const ctx = await obtenerContexto();
-  if (!ctx.mcp) redirect(ctx.esSoporte ? "/soporte" : "/sin-acceso");
+  if (!ctx.mcp) redirect(ctx.esSuperadmin ? "/superadmin" : ctx.esSoporte ? "/soporte" : "/sin-acceso");
   return ctx as Contexto & { mcp: Mcp };
 }
 

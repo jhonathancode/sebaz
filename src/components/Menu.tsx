@@ -64,8 +64,35 @@ const ICONOS: Record<string, React.ReactNode> = {
   ),
   "/superadmin": (
     <>
-      <path d="M12 3 3 7.5l9 4.5 9-4.5Z" />
-      <path d="m3 12 9 4.5 9-4.5M3 16.5 12 21l9-4.5" />
+      <path d="M3 21h18" />
+      <path d="M5 21V9l7-5 7 5v12" />
+      <path d="M9 21v-5h6v5M9 11.5h.01M15 11.5h.01" />
+    </>
+  ),
+  "/superadmin/pagos": (
+    <>
+      <rect x="2.5" y="5.5" width="19" height="13" rx="2" />
+      <circle cx="12" cy="12" r="2.6" />
+      <path d="M6 9v6M18 9v6" />
+    </>
+  ),
+  "/superadmin/planes": (
+    <>
+      <path d="M20.5 13.5 13.5 20.5a1.5 1.5 0 0 1-2.1 0L3 12.1V3h9.1l8.4 8.4a1.5 1.5 0 0 1 0 2.1Z" />
+      <circle cx="7.5" cy="7.5" r="1.4" />
+    </>
+  ),
+  "/superadmin/usuarios": (
+    <>
+      <circle cx="12" cy="8" r="4" />
+      <path d="M4 21a8 8 0 0 1 16 0" />
+    </>
+  ),
+  "/superadmin/equipo": (
+    <>
+      <circle cx="9" cy="8" r="3.5" />
+      <path d="M2.5 20a6.5 6.5 0 0 1 13 0" />
+      <path d="M16 4.5a3.5 3.5 0 0 1 0 7M18 14.5a6.5 6.5 0 0 1 3.5 5.5" />
     </>
   ),
   "/aprobaciones": (
@@ -142,8 +169,13 @@ export function BotonMenu({ dentro = false }: { dentro?: boolean }) {
 
 export type DatosMcpMenu = { nombre: string; ruc: string | null; logo: string | null } | null;
 
-export default function Menu({ items, abajo = [], nuevo = true, mcp }: { items: ItemMenu[]; abajo?: ItemMenu[]; nuevo?: boolean; mcp: DatosMcpMenu }) {
+export default function Menu({ items, abajo = [], nuevo = true, mcp, panel }: { items: ItemMenu[]; abajo?: ItemMenu[]; nuevo?: boolean; mcp: DatosMcpMenu; panel?: string }) {
   const ruta = usePathname();
+  // Se marca la opción que más se parece a la ruta (así «Clientes» no queda marcado en «Pagos»).
+  const actual = [...items, ...abajo]
+    .map((i) => i.href)
+    .filter((h) => ruta === h || ruta.startsWith(h + "/"))
+    .sort((a, b) => b.length - a.length)[0];
 
   // En celular, al cambiar de página se cierra el menú.
   useEffect(() => {
@@ -178,6 +210,17 @@ export default function Menu({ items, abajo = [], nuevo = true, mcp }: { items: 
           </div>
         )}
 
+        {!mcp && panel && (
+          <div className="lm-mcp">
+            <div className="lm-escudo"><span aria-hidden="true">{panel.slice(0, 2).toUpperCase()}</span></div>
+            <div className="lm-mcp-texto">
+              <strong>{panel}</strong>
+              <span>Panel de administración</span>
+            </div>
+            <BotonMenu dentro />
+          </div>
+        )}
+
         {nuevo && (
           <Link href="/expedientes?nuevo=1" className="lm-nuevo">
             <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="square" aria-hidden="true">
@@ -187,10 +230,10 @@ export default function Menu({ items, abajo = [], nuevo = true, mcp }: { items: 
           </Link>
         )}
 
-        <div className="lm-titulo">Trabajo diario</div>
+        <div className="lm-titulo">{mcp ? "Trabajo diario" : "Administración"}</div>
         <ul>
           {items.map((i) => {
-            const activo = ruta === i.href || ruta.startsWith(i.href + "/");
+            const activo = actual === i.href;
             return (
               <li key={i.href}>
                 <Link href={i.href} className={activo ? "activo" : undefined} aria-current={activo ? "page" : undefined}>
@@ -214,7 +257,7 @@ export default function Menu({ items, abajo = [], nuevo = true, mcp }: { items: 
             </summary>
             <ul>
               {abajo.map((i) => {
-                const activo = ruta === i.href || ruta.startsWith(i.href + "/");
+                const activo = actual === i.href;
                 return (
                   <li key={i.href}>
                     <Link href={i.href} className={activo ? "activo" : undefined} aria-current={activo ? "page" : undefined}>

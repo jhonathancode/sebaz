@@ -3,7 +3,6 @@ import Avisos, { type ParamsAviso } from "@/components/Avisos";
 import { obtenerContexto } from "@/lib/contexto";
 import { fecha, nombrePeriodo, periodoActual, rangoPeriodo, soles } from "@/lib/formato";
 import { supabaseServidor } from "@/lib/supabase/server";
-import Pestanas from "../Pestanas";
 
 /** Todos los pagos de clientes de un mes. */
 export default async function Pagos({ searchParams }: { searchParams: ParamsAviso }) {
@@ -29,7 +28,6 @@ export default async function Pagos({ searchParams }: { searchParams: ParamsAvis
         <form className="selector-mes" method="get"><input type="month" name="mes" defaultValue={mes} aria-label="Mes" /><button className="btn chico" type="submit">Ver</button></form>
       </div>
       <Avisos ok={sp.ok} error={sp.error} />
-      <Pestanas activa="/superadmin/pagos" />
       <div className="kpis">
         <div className="kpi azul"><span className="k-et">Cobrado en {nombrePeriodo(mes)}</span><span className="k-val">S/ {soles(total)}</span><span className="k-det">{vigentes.length} pago(s)</span></div>
       </div>

@@ -6,7 +6,6 @@ import { fecha, periodoActual, soles } from "@/lib/formato";
 import { estadoCliente, mensual } from "@/lib/superadmin";
 import { supabaseServidor } from "@/lib/supabase/server";
 import { crearMcp } from "../soporte/acciones";
-import Pestanas from "./Pestanas";
 
 const FILTROS = [
   { v: "", t: "Todos" },
@@ -66,8 +65,8 @@ export default async function Superadmin({ searchParams }: { searchParams: Param
     <>
       <div className="cab-vista">
         <div>
-          <h1>Superadmin</h1>
-          <div className="sub">Clientes, planes, pagos y usuarios de todo el sistema. No se ven los gastos ni las rendiciones de las MCP.</div>
+          <h1>Clientes</h1>
+          <div className="sub">Las municipalidades que usan el sistema: su plan, su vencimiento y sus pagos. Aquí no se ven sus gastos ni sus rendiciones.</div>
         </div>
         <span className="espacio" />
         <VentanaFlotante boton="+ Nuevo cliente" titulo="Nuevo cliente (MCP)" accion={crearMcp} textoGuardar="Dar de alta" claseBoton="btn primario grande" ancha>
@@ -102,7 +101,6 @@ export default async function Superadmin({ searchParams }: { searchParams: Param
         </VentanaFlotante>
       </div>
       <Avisos ok={sp.ok} error={sp.error} />
-      <Pestanas activa="/superadmin" />
 
       <div className="kpis">
         <div className="kpi azul"><span className="k-et">Ingreso mensual</span><span className="k-val">S/ {soles(mrr)}</span><span className="k-det">{activos.length} cliente(s) pagando</span></div>

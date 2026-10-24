@@ -9,7 +9,6 @@ import { fecha, fechaHora, hoyISO, soles } from "@/lib/formato";
 import { estadoCliente, mensual } from "@/lib/superadmin";
 import { supabaseServicio, supabaseServidor } from "@/lib/supabase/server";
 import { anularPago, cambiarEstadoCliente, guardarSuscripcion, registrarPago } from "../../acciones";
-import Pestanas from "../../Pestanas";
 
 const MEDIOS = [["transferencia", "Transferencia"], ["yape", "Yape"], ["plin", "Plin"], ["deposito", "Depósito"], ["efectivo", "Efectivo"], ["otro", "Otro"]];
 
@@ -74,7 +73,6 @@ export default async function Cliente({ params, searchParams }: { params: Promis
         )}
       </div>
       <Avisos ok={sp.ok} error={sp.error} />
-      <Pestanas activa="/superadmin" />
 
       <div className="kpis">
         <div className="kpi azul"><span className="k-et">Plan</span><span className="k-val">{planActual?.nombre ?? "—"}</span><span className="k-det">S/ {soles(s?.precio ?? 0)} {s?.ciclo === "anual" ? "al año" : "al mes"} · S/ {soles(mensual(Number(s?.precio ?? 0), s?.ciclo ?? "mensual"))} /mes</span></div>

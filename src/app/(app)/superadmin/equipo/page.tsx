@@ -3,7 +3,6 @@ import BotonConfirmar from "@/components/BotonConfirmar";
 import { obtenerContexto } from "@/lib/contexto";
 import { supabaseServidor } from "@/lib/supabase/server";
 import { cambiarSoporte } from "../acciones";
-import Pestanas from "../Pestanas";
 
 /** Equipo de soporte: activa MCP, capacita y ayuda; no ve gastos ni rendiciones. */
 export default async function Equipo({ searchParams }: { searchParams: ParamsAviso }) {
@@ -18,7 +17,6 @@ export default async function Equipo({ searchParams }: { searchParams: ParamsAvi
         <div><h1>Equipo de soporte</h1><div className="sub">Activan las MCP, crean accesos, registran relevos y responden dudas. No ven gastos ni rendiciones.</div></div>
       </div>
       <Avisos ok={sp.ok} error={sp.error} />
-      <Pestanas activa="/superadmin/equipo" />
       <form action={cambiarSoporte} className="barra" style={{ maxWidth: 640 }}>
         <input type="hidden" name="dar" value="1" />
         <label className="campo" style={{ flex: 1 }}>Correo de la persona (ya debe tener usuario)<input name="correo" type="email" required /></label>

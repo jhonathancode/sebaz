@@ -6,7 +6,6 @@ import { NOMBRE_ROL, obtenerContexto, type Rol } from "@/lib/contexto";
 import { fechaHora } from "@/lib/formato";
 import { supabaseServicio, supabaseServidor } from "@/lib/supabase/server";
 import { bloquearUsuario, nuevaClave } from "../acciones";
-import Pestanas from "../Pestanas";
 
 /** Todos los usuarios del sistema, con su MCP, cargo y último ingreso. */
 export default async function Usuarios({ searchParams }: { searchParams: ParamsAviso }) {
@@ -46,7 +45,6 @@ export default async function Usuarios({ searchParams }: { searchParams: ParamsA
       {temporal && (
         <div className="aviso ok">Clave temporal de <b>{temporal.correo}</b>: <b>{temporal.clave}</b>. Entréguela en persona; este aviso desaparece en 2 minutos.</div>
       )}
-      <Pestanas activa="/superadmin/usuarios" />
       <form className="buscador" method="get" role="search" style={{ maxWidth: 520 }}>
         <input name="q" defaultValue={sp.q ?? ""} placeholder="Buscar por nombre, correo o MCP…" aria-label="Buscar" />
         <button className="btn chico" type="submit">Buscar</button>

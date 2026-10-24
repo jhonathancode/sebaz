@@ -4,7 +4,6 @@ import { obtenerContexto } from "@/lib/contexto";
 import { soles } from "@/lib/formato";
 import { supabaseServidor } from "@/lib/supabase/server";
 import { guardarPlan } from "../acciones";
-import Pestanas from "../Pestanas";
 
 type Plan = { id: string; nombre: string; descripcion: string | null; precio_mensual: number; precio_anual: number | null; activo: boolean };
 
@@ -46,7 +45,6 @@ export default async function Planes({ searchParams }: { searchParams: ParamsAvi
         </VentanaFlotante>
       </div>
       <Avisos ok={sp.ok} error={sp.error} />
-      <Pestanas activa="/superadmin/planes" />
       <div className="filas">
         {(planes ?? []).map((p: Plan) => (
           <div key={p.id} className={`fila${p.activo ? "" : " anulada"}`} style={{ gridTemplateColumns: "minmax(0,1fr) auto auto" }}>

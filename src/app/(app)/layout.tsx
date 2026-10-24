@@ -37,7 +37,17 @@ export default async function MarcoApp({ children }: { children: React.ReactNode
   const menuOculto = cookieStore.get("menu")?.value === "oculto";
 
   // Trabajo diario arriba; administración bajo el nombre del usuario.
-  const items: ItemMenu[] = ctx.mcp
+  // El superadmin tiene su propio panel (Sebaz como empresa); las MCP son sus clientes.
+  const items: ItemMenu[] = ctx.esSuperadmin
+    ? [
+        { href: "/superadmin", texto: "Clientes" },
+        { href: "/superadmin/pagos", texto: "Pagos" },
+        { href: "/superadmin/planes", texto: "Planes" },
+        { href: "/superadmin/usuarios", texto: "Usuarios" },
+        { href: "/superadmin/equipo", texto: "Equipo de soporte" },
+        { href: "/soporte", texto: "Activaciones y relevos" },
+      ]
+    : ctx.mcp
     ? [
         { href: "/inicio", texto: "Inicio" },
         ...(tiene(ctx, "alcalde", "admin") ? [{ href: "/aprobaciones", texto: "Por aprobar", n: porAprobar }] : []),
@@ -51,7 +61,6 @@ export default async function MarcoApp({ children }: { children: React.ReactNode
     : ctx.esSoporte
       ? [{ href: "/soporte", texto: "Panel de soporte" }]
       : [];
-  if (ctx.esSuperadmin) items.unshift({ href: "/superadmin", texto: "Superadmin" });
 
   const enlaces: EnlaceMenu[] = [{ href: "/cuenta", texto: "Mi cuenta y contraseña", grupo: "cuenta" }];
   if (ctx.mcp) {
@@ -61,13 +70,12 @@ export default async function MarcoApp({ children }: { children: React.ReactNode
       { href: "/auditoria", texto: "Auditoría", grupo: "administracion" },
     );
   }
-  if (ctx.esSoporte) enlaces.push({ href: "/soporte", texto: "Panel de soporte", grupo: "soporte" });
-  if (ctx.esSuperadmin) enlaces.push({ href: "/superadmin", texto: "Superadmin: clientes y pagos", grupo: "soporte" });
+  if (ctx.esSoporte && !ctx.esSuperadmin) enlaces.push({ href: "/soporte", texto: "Panel de soporte", grupo: "soporte" });
 
   // Si la MCP no tiene la fuente "propios", la base no tiene la última actualización.
   const baseDesactualizada = ctx.esSoporte && !!ctx.mcp && !ctx.fuentes.some((f) => f.tipo === "propios");
   const suspendida = !!ctx.mcp && ctx.mcp.estado === "suspendida" && !ctx.esSoporte;
-  const cargo = [...ctx.cargos, ...(ctx.esSoporte ? ["Soporte"] : [])].join(" · ") || "Sin cargo vigente";
+  const cargo = ctx.esSuperadmin ? "Administrador del sistema" : [...ctx.cargos, ...(ctx.esSoporte ? ["Soporte"] : [])].join(" · ") || "Sin cargo vigente";
 
   return (
     <>
@@ -76,7 +84,9 @@ export default async function MarcoApp({ children }: { children: React.ReactNode
           {items.length > 0 && <BotonMenu />}
           <span className="marca-app">{APP_NOMBRE}</span>
           <span className="marca-mcp">
-            {ctx.mcp ? (
+            {ctx.esSuperadmin ? (
+              "Panel de administración"
+            ) : ctx.mcp ? (
               <>
                 {ctx.mcp.nombre} <span className="sub">· RUC {ctx.mcp.ruc ?? <span className="pendiente">pendiente</span>}</span>
               </>
@@ -117,6 +127,7 @@ export default async function MarcoApp({ children }: { children: React.ReactNode
               : []
           }
           mcp={ctx.mcp ? { nombre: ctx.mcp.nombre, ruc: ctx.mcp.ruc, logo: urlLogo(ctx.mcp.logo_path) } : null}
+          panel={ctx.esSuperadmin ? APP_NOMBRE : ctx.esSoporte && !ctx.mcp ? "Soporte" : undefined}
         />
       )}
       <main className="ventana">

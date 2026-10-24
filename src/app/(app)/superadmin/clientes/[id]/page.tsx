@@ -161,6 +161,16 @@ export default async function Cliente({ params, searchParams }: { params: Promis
             </section>
           )}
 
+          {m.ruc && (
+            <section className="panel">
+              <div className="panel-cab">Enlace de ingreso del cliente</div>
+              <div className="panel-cuerpo">
+                <span className="pequeno tenue">Entregue este enlace a la municipalidad: su pantalla de ingreso muestra su logo, nombre y RUC.</span>
+                <Link href={`/login/${m.ruc}`} target="_blank"><code>/login/{m.ruc}</code></Link>
+              </div>
+            </section>
+          )}
+
           <section className="panel">
             <div className="panel-cab">Módulos habilitados</div>
             <form action={guardarModulos} className="panel-cuerpo">

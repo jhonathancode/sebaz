@@ -2,8 +2,6 @@
 
 import { useEffect, useRef } from "react";
 import BotonConfirmar from "./BotonConfirmar";
-import BotonVistaPrevia, { type BaseVistaPrevia } from "./BotonVistaPrevia";
-import type { Mcp } from "@/lib/contexto";
 
 /**
  * Botón que abre una ventana flotante con un formulario para crear algo.
@@ -20,7 +18,6 @@ export default function VentanaFlotante({
   claseBoton = "btn primario",
   confirmar,
   error,
-  vistaPrevia,
 }: {
   boton: string;
   titulo: string;
@@ -35,8 +32,6 @@ export default function VentanaFlotante({
   confirmar?: string;
   /** Mensaje de error del último intento, se muestra dentro de la ventana. */
   error?: string;
-  /** Si se indica, antes de emitir se muestra el documento tal como se imprimirá. */
-  vistaPrevia?: { base: BaseVistaPrevia; mcp: Mcp };
 }) {
   const ref = useRef<HTMLDialogElement>(null);
 
@@ -69,16 +64,6 @@ export default function VentanaFlotante({
             <button type="button" className="btn" onClick={() => ref.current?.close()}>
               Cancelar
             </button>
-            {vistaPrevia && (
-              <BotonVistaPrevia
-                base={vistaPrevia.base}
-                mcp={vistaPrevia.mcp}
-                className="btn contorno"
-                texto="Ver vista previa"
-                textoEmitir={`Sí, ${textoGuardar.toLowerCase()}`}
-                titulo={`Vista previa · ${titulo}`}
-              />
-            )}
             <BotonConfirmar pregunta={confirmar ?? `¿Está seguro de ${textoGuardar.toLowerCase()}?`} detalle="Revise que los datos estén bien antes de continuar." textoConfirmar={`Sí, ${textoGuardar.toLowerCase()}`}>
               {textoGuardar}
             </BotonConfirmar>

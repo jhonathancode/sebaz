@@ -4,6 +4,7 @@ import BotonTema from "@/components/BotonTema";
 import Menu, { BotonMenu, type ItemMenu } from "@/components/Menu";
 import MenuUsuario, { type EnlaceMenu } from "@/components/MenuUsuario";
 import { COOKIE_MCP, obtenerContexto, tiene } from "@/lib/contexto";
+import LogoSebaz from "@/components/LogoSebaz";
 import { APP_NOMBRE, urlLogo } from "@/lib/formato";
 import { tieneModulo } from "@/lib/modulos";
 import { supabaseServidor } from "@/lib/supabase/server";
@@ -84,7 +85,7 @@ export default async function MarcoApp({ children }: { children: React.ReactNode
       <header className="cabecera no-imprimir">
         <div className="marca">
           {items.length > 0 && <BotonMenu />}
-          <span className="marca-app">{APP_NOMBRE}</span>
+          <span className="marca-app"><LogoSebaz tamano={38} /></span>
           <span className="marca-mcp">
             {ctx.esSuperadmin ? (
               "Panel de administración"

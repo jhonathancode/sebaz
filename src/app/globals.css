@@ -1247,3 +1247,108 @@ a.doc-chip:hover { background: var(--primario); border-color: var(--primario); c
   .cabecera .desplegable { position: fixed; top: calc(var(--cab-alto) + 4px); right: 8px; left: 8px; width: auto; max-width: none; max-height: calc(100vh - var(--cab-alto) - 16px); overflow-y: auto; }
   .marco-app > .ventana { padding: 14px 10px 24px; }
 }
+
+/* =====================================================================
+   CELULAR: todas las pantallas
+   Probado en un ancho de 390 px (maqueta con las pantallas principales).
+   ===================================================================== */
+@media (max-width: 760px) {
+  body { font-size: 14px; }
+  h1, .cab-vista h1 { font-size: 20px; }
+
+  /* Encabezados de pantalla: lo principal ocupa todo el ancho */
+  .cab-vista { gap: 8px 10px; }
+  .cab-vista > .btn, .cab-vista > a.btn, .cab-vista > button.btn { flex: 1 1 auto; justify-content: center; text-align: center; }
+  .cab-vista > .btn.primario.grande, .cab-vista > button.primario.grande { flex: 1 1 100%; }
+  .cab-vista .espacio { display: none; }
+  .selector-mes { max-width: 100%; }
+  .barra { gap: 10px; }
+  .barra .btn { flex: 1 1 auto; justify-content: center; }
+
+  /* Tarjetas de cifras: de dos en dos */
+  .kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+  .kpi { padding: 12px; }
+  .kpi .k-val { font-size: 19px; }
+  .kpi .k-et { font-size: 11px; }
+  .kpi .k-det { font-size: 12px; }
+  .tarjetas, .muni-tabs { grid-template-columns: 1fr; }
+
+  /* Filtros: las fichas se deslizan de lado en una sola línea */
+  .filtros .grupo { flex-wrap: nowrap; overflow-x: auto; max-width: 100%; padding-bottom: 4px; scrollbar-width: thin; }
+  .filtros .grupo > * { flex: none; }
+  .buscador { flex: 1 1 100%; }
+
+  /* Listas (expedientes, pagos, clientes): una tarjeta por fila */
+  .fila, .fila:has(.f-docs), .fila[style] { grid-template-columns: minmax(0, 1fr) auto !important; gap: 6px 10px; padding: 12px 14px; }
+  .fila .f-num { grid-column: 1 / -1; grid-row: auto; }
+  .fila .f-desc { grid-column: 1 / -1; }
+  .fila .f-desc a, .fila .f-desc .f-titulo { white-space: normal; overflow: visible; }
+  .fila .f-docs { grid-column: 1 / -1; justify-content: flex-start; max-width: none; }
+  .fila .f-monto { grid-column: 1; text-align: left; font-size: 16px; }
+  .fila .f-monto small { display: inline-block; margin: 0 0 0 8px; }
+  .fila .f-acc { grid-column: 2; justify-content: flex-end; flex-wrap: wrap; }
+  .pie-filas { flex-wrap: wrap; gap: 4px 12px; }
+
+  /* Avance del expediente: un paso debajo de otro */
+  .avance { padding: 14px; }
+  .av-pasos { grid-template-columns: 1fr !important; }
+  .av-sigue { flex-direction: column; align-items: stretch; }
+  .av-sigue .sigue-texto, .av-sigue .av-sigue-texto { flex: 0 0 auto; }
+  .av-sigue .sigue-accion, .sigue-accion { width: 100%; }
+  .sigue-accion .btn, .sigue-accion form, .av-sigue .btn { width: 100%; justify-content: center; }
+  .resumen-exp { gap: 6px 18px; }
+
+  /* Paneles y botones de acción */
+  .panel-cab { flex-wrap: wrap; gap: 6px 10px; }
+  .acciones-fila { flex-wrap: wrap; justify-content: flex-start; }
+  .panel-cuerpo { padding: 12px; }
+  .dos-columnas, .rend-grid { grid-template-columns: 1fr; }
+  .rejilla-2, .rejilla-3, .rejilla { grid-template-columns: 1fr; }
+
+  /* Tablas: se deslizan de lado, más compactas */
+  .tabla th, .tabla td { padding: 7px 8px; font-size: 13px; }
+  .tabla-marco { -webkit-overflow-scrolling: touch; }
+
+  /* Documentos (hojas impresas): se deslizan de lado */
+  .vista-previa .mesa { padding: 8px; overflow-x: auto; }
+  .mesa > .hoja, .hoja-borrador > .hoja { min-width: 640px; padding: 14px; }
+  .vista-pestanas { overflow-x: auto; flex-wrap: nowrap; padding-bottom: 6px; }
+  .vista-pestanas > * { flex: none; }
+
+  /* Ventanas flotantes (formularios): a pantalla completa */
+  .ventana-flotante, .ventana-flotante.ancha { width: 100vw; max-width: 100vw; max-height: 100dvh; height: 100dvh; margin: 0; border-radius: 0; border: none; }
+  .ventana-flotante > .vf-marco { max-height: 100dvh; height: 100dvh; }
+  .vf-cab { padding: 12px 14px; }
+  .vf-cuerpo { padding: 4px 14px 16px; }
+  .vf-pie { padding: 10px 14px; gap: 8px; flex-wrap: wrap; }
+  .vf-pie .btn { flex: 1 1 auto; justify-content: center; }
+  .opciones { grid-template-columns: 1fr; }
+  .opcion { padding: 12px; }
+  .item-fila { padding: 10px; }
+  .item-bloque > .sugerencia { margin-left: 0; }
+  .sugerencia .s-txt { min-width: 0; flex: 1 1 100%; }
+  .sugerencia .btn { margin-left: auto; }
+  .items-pie { flex-direction: column; align-items: stretch; }
+  .items-pie .btn { justify-content: center; }
+  .pf-lista { max-height: none; }
+  .pf-fila { padding: 12px; }
+  .pf-resumen b { min-width: 0; flex: 1 1 100%; }
+
+  /* Rendición y comprobantes seleccionables */
+  .cp-sel { grid-template-columns: 28px minmax(0, 1fr) auto; }
+
+  /* Pantalla de ingreso */
+  .login { padding: 10px; align-items: flex-start; padding-top: 6vh; }
+  .login .caja-login { max-width: 100%; }
+}
+@media (max-width: 380px) {
+  .kpis { grid-template-columns: 1fr; }
+}
+
+/* Pantallas muy angostas: nada empuja el ancho de la página */
+@media (max-width: 760px) {
+  .marco-app, .marco-app > .ventana { min-width: 0; max-width: 100vw; overflow-x: clip; }
+  .filtros { min-width: 0; max-width: 100%; }
+  .av-paso a { min-width: 0; }
+  .av-det { white-space: normal; }
+}

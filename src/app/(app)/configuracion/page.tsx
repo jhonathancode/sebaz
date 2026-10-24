@@ -6,7 +6,7 @@ import { CAMPOS_CAPITULO1, CAMPOS_CAPITULO1_LARGOS } from "@/lib/catalogos";
 import { contextoMcp, tiene } from "@/lib/contexto";
 import { fechaHora, nombrePeriodo, periodoActual, soles } from "@/lib/formato";
 import { supabaseServidor } from "@/lib/supabase/server";
-import { cerrarMes, guardarCapitulo1, guardarDatosMcp, reabrirMes } from "./acciones";
+import { cerrarMes, guardarCapitulo1, guardarDatosMcp, guardarDiaLimite, reabrirMes } from "./acciones";
 
 export default async function Configuracion({ searchParams }: { searchParams: ParamsAviso }) {
   const sp = await searchParams;
@@ -160,6 +160,25 @@ export default async function Configuracion({ searchParams }: { searchParams: Pa
               </table>
             </div>
             <div className="panel-cuerpo pequeno tenue" style={{ paddingTop: 8 }}>Los montos los registra soporte al activar la MCP.</div>
+          </section>
+
+          <section className="panel">
+            <div className="panel-cab">Fecha límite para rendir</div>
+            <div className="panel-cuerpo">
+              <span className="pequeno tenue">Hasta qué día del mes siguiente se entrega la rendición. Inicio avisa cuántos días faltan.</span>
+              {ctx.fuentes.filter((f) => f.tipo !== "propios").map((f) => (
+                <form key={f.id} action={guardarDiaLimite} style={{ display: "flex", gap: 8, alignItems: "flex-end", flexWrap: "wrap" }}>
+                  <input type="hidden" name="fuente_id" value={f.id} />
+                  <label className="campo" style={{ flex: 1, minWidth: 160 }}>
+                    {f.municipalidad}: día
+                    <input type="number" name="dia_limite" min={1} max={28} defaultValue={f.dia_limite ?? 10} required disabled={!admin && !ctx.esSoporte} />
+                  </label>
+                  {(admin || ctx.esSoporte) && (
+                    <BotonConfirmar className="btn" pregunta="¿Guardar la fecha límite?" textoConfirmar="Sí, guardar">Guardar</BotonConfirmar>
+                  )}
+                </form>
+              ))}
+            </div>
           </section>
 
           <section className="panel">

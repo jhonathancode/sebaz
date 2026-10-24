@@ -25,7 +25,7 @@ export function codigoCP(numero: number | null | undefined, origen?: string): st
   return `${origen === "caja_chica" ? "CP-C" : "CP"}-${String(numero ?? 0).padStart(4, "0")}`;
 }
 
-const MESES = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "setiembre", "octubre", "noviembre", "diciembre"];
+export const MESES = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "setiembre", "octubre", "noviembre", "diciembre"];
 
 export function nombrePeriodo(periodo: string): string {
   const [a, m] = periodo.split("-");
@@ -41,6 +41,33 @@ export function rangoPeriodo(periodo: string): { desde: string; hasta: string } 
   const [a, m] = periodo.split("-").map(Number);
   const ultimo = new Date(a, m, 0).getDate();
   return { desde: `${periodo}-01`, hasta: `${periodo}-${String(ultimo).padStart(2, "0")}` };
+}
+
+/** "2026-10" → "2026-09" */
+export function periodoAnterior(periodo: string): string {
+  const [a, m] = periodo.split("-").map(Number);
+  return m === 1 ? `${a - 1}-12` : `${a}-${String(m - 1).padStart(2, "0")}`;
+}
+
+/** Fecha límite (ISO) para rendir un mes: el día indicado del mes siguiente. */
+export function fechaLimite(periodo: string, dia: number | null | undefined): string {
+  const [a, m] = periodo.split("-").map(Number);
+  const anio = m === 12 ? a + 1 : a;
+  const mes = m === 12 ? 1 : m + 1;
+  return `${anio}-${String(mes).padStart(2, "0")}-${String(dia || 10).padStart(2, "0")}`;
+}
+
+/** Días desde hoy (Lima) hasta una fecha ISO; negativo si ya pasó. */
+export function diasHasta(iso: string): number {
+  const [a, m, d] = hoyISO().split("-").map(Number);
+  const [a2, m2, d2] = iso.split("-").map(Number);
+  return Math.round((Date.UTC(a2, m2 - 1, d2) - Date.UTC(a, m - 1, d)) / 86400000);
+}
+
+/** "10 de noviembre" */
+export function fechaLarga(iso: string): string {
+  const [, m, d] = iso.split("-").map(Number);
+  return `${d} de ${MESES[m - 1]}`;
 }
 
 export function hoyISO(): string {

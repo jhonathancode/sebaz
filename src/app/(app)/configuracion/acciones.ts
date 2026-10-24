@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { CAMPOS_CAPITULO1, CAMPOS_CAPITULO1_LARGOS } from "@/lib/catalogos";
 import { contextoMcp } from "@/lib/contexto";
-import { mensajeError, texto, volver } from "@/lib/acciones";
+import { mensajeError, numero, texto, volver } from "@/lib/acciones";
 import { supabaseServidor } from "@/lib/supabase/server";
 
 export async function guardarDatosMcp(fd: FormData) {
@@ -58,4 +58,17 @@ export async function reabrirMes(fd: FormData) {
   });
   if (error) volver("/configuracion", "error", mensajeError(error));
   volver("/configuracion", "ok", "Mes reabierto. El motivo quedó registrado.");
+}
+
+/** Día del mes siguiente hasta el que se entrega la rendición a cada municipalidad. */
+export async function guardarDiaLimite(fd: FormData) {
+  const ctx = await contextoMcp();
+  const supabase = await supabaseServidor();
+  const id = texto(fd, "fuente_id")!;
+  const dia = numero(fd, "dia_limite");
+  if (!dia || dia < 1 || dia > 28) volver("/configuracion", "error", "El día límite debe estar entre 1 y 28.");
+  const { error } = await supabase.from("fuentes").update({ dia_limite: dia }).eq("id", id).eq("mcp_id", ctx.mcp.id);
+  if (error) volver("/configuracion", "error", mensajeError(error));
+  revalidatePath("/", "layout");
+  volver("/configuracion", "ok", "Fecha límite guardada.");
 }

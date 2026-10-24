@@ -4,6 +4,8 @@ import { revalidatePath } from "next/cache";
 import { contextoMcp } from "@/lib/contexto";
 import { mensajeError, numero, texto, volver } from "@/lib/acciones";
 import { supabaseServidor } from "@/lib/supabase/server";
+import { periodoActual } from "@/lib/formato";
+import { estadoPagosFijos, pasarAlMes } from "@/lib/pagosFijos";
 
 /** "Función|Categoría" del selector → columnas separadas. */
 function funcionCategoria(fd: FormData) {
@@ -315,4 +317,59 @@ export async function generarComprobante(fd: FormData) {
   await supabase.from("expedientes").update({ fase: "comprobante" }).eq("id", id);
   revalidatePath("/comprobantes");
   volver(`/comprobantes/${data.id}`, "ok", "Comprobante de pago generado en borrador.");
+}
+
+/** Copia en borrador los pagos fijos del mes anterior que faltan en este mes (dietas, personal). */
+export async function copiarPagosFijos() {
+  const ctx = await contextoMcp();
+  const supabase = await supabaseServidor();
+  const periodo = periodoActual();
+  const { anterior, faltan } = await estadoPagosFijos(supabase, ctx.mcp.id, periodo);
+  if (faltan.length === 0) volver("/inicio", "ok", "Los pagos fijos de este mes ya están registrados.");
+
+  let copiados = 0;
+  for (const p of faltan) {
+    const { data: items } = await supabase
+      .from("expediente_items")
+      .select("item, cantidad, unidad, descripcion, precio_unitario")
+      .eq("expediente_id", p.id)
+      .eq("anulado", false)
+      .order("item");
+    const { data: nuevo, error } = await supabase
+      .from("expedientes")
+      .insert({
+        mcp_id: ctx.mcp.id,
+        tipo: "pago_fijo",
+        descripcion: pasarAlMes(p.descripcion, anterior, periodo),
+        area_usuaria: p.area_usuaria,
+        fuente_id: p.fuente_id,
+        meta: p.meta,
+        clasificador: p.clasificador,
+      })
+      .select("id")
+      .single();
+    if (error || !nuevo) volver("/inicio", "error", `Se copiaron ${copiados}. Falló «${p.descripcion}»: ${mensajeError(error)}`);
+    if (items?.length) {
+      const { error: e2 } = await supabase.from("expediente_items").insert(
+        items.map((it, n) => ({
+          item: n + 1,
+          cantidad: it.cantidad,
+          unidad: it.unidad,
+          descripcion: pasarAlMes(it.descripcion, anterior, periodo),
+          precio_unitario: it.precio_unitario,
+          mcp_id: ctx.mcp.id,
+          expediente_id: nuevo.id,
+        })),
+      );
+      if (e2) volver("/inicio", "error", `Se copió «${p.descripcion}» sin sus ítems: ${mensajeError(e2)}`);
+    }
+    copiados++;
+  }
+  revalidatePath("/inicio");
+  revalidatePath("/expedientes");
+  volver(
+    "/expedientes?estado=borrador",
+    "ok",
+    `Se copiaron ${copiados} pago(s) fijo(s) del mes pasado, en borrador. Revise los montos y envíelos al alcalde para su aprobación.`,
+  );
 }

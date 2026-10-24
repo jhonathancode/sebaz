@@ -20,8 +20,8 @@ export function mensajeError(e: { message?: string } | null | undefined): string
   const m = e?.message ?? "Error desconocido.";
   if (m.includes("row-level security")) return "No tiene permiso para esta acción.";
   if (m.includes("duplicate key")) return "Ya existe un registro con esos datos.";
-  if (m.includes("expedientes_tipo_check") || m.includes("fuentes_tipo_check"))
-    return "El sistema necesita una actualización para registrar este tipo de gasto. Avise a soporte.";
+  if (m.includes("expedientes_tipo_check") || m.includes("fuentes_tipo_check") || m.includes("dia_limite"))
+    return "El sistema necesita una actualización (ACTUALIZAR_BASE.sql). Avise a soporte.";
   if (m.includes("violates check constraint")) return "Algún dato no tiene el formato correcto.";
   return m;
 }

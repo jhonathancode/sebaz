@@ -27,6 +27,8 @@ export type Fuente = {
   monto_mensual: number;
   formato: "perene" | "chanchamayo" | "general";
   activo: boolean;
+  /** Día del mes siguiente hasta el que se entrega la rendición (no existe antes de la actualización). */
+  dia_limite?: number | null;
 };
 
 export type Contexto = {

@@ -216,14 +216,6 @@ export default async function Inicio() {
         </div>
       ))}
 
-      <Link href="/expedientes?nuevo=1" className="empezar">
-        <span className="empezar-icono" aria-hidden="true">+</span>
-        <span className="empezar-texto">
-          <strong>Nuevo requerimiento</strong>
-          <span>¿Hizo o va a hacer un gasto? Empiece aquí: registre qué se compró o pagó y el sistema le arma los documentos.</span>
-        </span>
-        <span className="empezar-flecha" aria-hidden="true">→</span>
-      </Link>
 
       {faltaConfigurar && tiene(ctx, "admin") && (
         <div className="aviso info">

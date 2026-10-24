@@ -1101,3 +1101,15 @@ a.kpi:hover { border-color: var(--primario-claro); transform: translateY(-1px); 
 }
 .tabla.matriz td, .tabla.matriz th { padding: 7px 8px; }
 .tabla.matriz .mes-actual { background: var(--primario-fondo); }
+
+/* Botón para ocultar el menú: dentro del menú; arriba solo cuando está oculto */
+.lm-mcp { position: relative; }
+.lm-ocultar {
+  margin-left: auto; align-self: flex-start; flex: none; width: 30px; height: 30px; display: grid; place-items: center; cursor: pointer;
+  border: 1px solid var(--borde); border-radius: 8px; background: var(--panel); color: var(--tenue);
+}
+.lm-ocultar:hover { color: var(--primario-texto); border-color: var(--primario-claro); background: var(--primario-fondo); }
+@media (min-width: 901px) {
+  body:has(.marco-app[data-menu="visible"]) .cabecera .boton-menu { display: none; }
+}
+@media (max-width: 900px) { .lm-ocultar { display: none; } }

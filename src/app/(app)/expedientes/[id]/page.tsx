@@ -27,7 +27,9 @@ import {
   emitirConformidad,
   emitirOrden,
   generarComprobante,
+  proveedorUnico,
 } from "../acciones";
+import CamposProveedor, { type ProveedorConocido } from "@/components/formularios/CamposProveedor";
 import { compraSinAlmacen } from "../../almacen/acciones";
 import { registrarCheque } from "../../comprobantes/acciones";
 
@@ -107,6 +109,8 @@ export default async function Expediente({ params, searchParams }: { params: Par
       : Promise.resolve({ data: null as { beneficiario: string | null; beneficiario_doc: string | null } | null }),
     siguienteCheque(supabase, ctx.mcp.id),
   ]);
+  const { data: provData } = await supabase.from("proveedores").select("num_doc, razon_social, direccion, telefono").eq("mcp_id", ctx.mcp.id).order("razon_social");
+  const proveedores: ProveedorConocido[] = provData ?? [];
   const nombreTesorero = (tesoreroDoc?.perfiles as unknown as { nombre: string } | null)?.nombre ?? "";
   const cargoTesorero = tesoreroDoc?.cargo ?? "Tesorero(a)";
 
@@ -163,13 +167,18 @@ export default async function Expediente({ params, searchParams }: { params: Par
     sigue = cots.length === 0
       ? {
           texto: "Pida precios a los proveedores y registre sus cotizaciones.",
-          ayuda: "Lo recomendable son 3 cotizaciones. Al final elegirá la mejor.",
-          accion: puedeRegistrar && <FormCotizacion id={id} principal />,
+          ayuda: "Lo recomendable son 3 cotizaciones. Si es un servicio menor o recurrente con un solo proveedor, use «Un solo proveedor» y se salta este paso.",
+          accion: puedeRegistrar && (
+            <div className="acciones-fila">
+              <FormCotizacion id={id} principal proveedores={proveedores} />
+              <FormProveedorUnico id={id} monto={total} proveedores={proveedores} />
+            </div>
+          ),
         }
       : {
           texto: `Tiene ${cots.length} cotización(es). Elija la ganadora en la lista de abajo.`,
           ayuda: cots.length < 3 ? "Si puede, registre hasta 3 antes de elegir." : "Normalmente se elige la de menor precio.",
-          accion: puedeRegistrar && <FormCotizacion id={id} />,
+          accion: puedeRegistrar && <FormCotizacion id={id} proveedores={proveedores} />,
         };
   } else if (!fijo && !orden) {
     sigue = {
@@ -184,6 +193,13 @@ export default async function Expediente({ params, searchParams }: { params: Par
             <label className="campo">Plazo para entregar<input name="plazo" placeholder="Ej.: 3 días, 1 mes" /></label>
           </div>
           <label className="campo">Concepto<input name="concepto" defaultValue={e.descripcion} /></label>
+          <label className="opcion-linea">
+            <input type="checkbox" name="con_conformidad" value="1" />
+            <span>
+              <b>{e.tipo === "compra" ? "Los bienes ya llegaron conformes" : "El servicio ya se prestó conforme"}:</b> emitir también el memorando de conformidad (un paso menos).
+            </span>
+          </label>
+          <input type="hidden" name="texto_conformidad" value={`Mediante la presente se le comunica la CONFORMIDAD por ${e.descripcion.toLowerCase()}, a cargo de ${prov(elegida?.proveedores)?.razon_social ?? ""}, a favor de la ${ctx.mcp.nombre}.`} />
         </VentanaFlotante>
       ),
     };
@@ -450,7 +466,7 @@ export default async function Expediente({ params, searchParams }: { params: Par
         <section className="panel">
           <div className="panel-cab">
             Cotizaciones
-            {puedeRegistrar && !orden && aprobado && <FormCotizacion id={id} />}
+            {puedeRegistrar && !orden && aprobado && <FormCotizacion id={id} proveedores={proveedores} />}
           </div>
           <div className="tabla-marco" style={{ border: "none", borderRadius: 0 }}>
             <table className="tabla">
@@ -717,7 +733,7 @@ function BotonCopiar({ id, principal = false }: { id: string; principal?: boolea
   );
 }
 
-function FormCotizacion({ id, principal = false }: { id: string; principal?: boolean }) {
+function FormCotizacion({ id, principal = false, proveedores }: { id: string; principal?: boolean; proveedores: ProveedorConocido[] }) {
   return (
     <VentanaFlotante
       boton={principal ? "Registrar cotización" : "+ Agregar cotización"}
@@ -727,15 +743,34 @@ function FormCotizacion({ id, principal = false }: { id: string; principal?: boo
       claseBoton={principal ? "btn primario grande" : "btn chico contorno"}
     >
       <input type="hidden" name="expediente_id" value={id} />
+      <CamposProveedor proveedores={proveedores} prefijo={`cot-${principal ? "p" : "s"}`} />
       <div className="rejilla-2">
-        <label className="campo">RUC o DNI del proveedor<input name="num_doc" required inputMode="numeric" maxLength={11} placeholder="11 u 8 dígitos" /></label>
         <label className="campo">Precio que cotizó S/<input name="monto" required inputMode="decimal" placeholder="0.00" /></label>
-        <label className="campo">Nombre o razón social<input name="razon_social" placeholder="Solo si es un proveedor nuevo" /></label>
         <label className="campo">Plazo<input name="plazo" placeholder="Ej.: inmediato, 2 días" /></label>
-        <label className="campo">Dirección<input name="direccion" placeholder="Solo si es nuevo" /></label>
-        <label className="campo">Teléfono<input name="telefono" inputMode="tel" placeholder="Solo si es nuevo" /></label>
       </div>
-      <p className="pequeno tenue" style={{ margin: 0 }}>Si el proveedor ya se registró antes, basta con su RUC.</p>
+    </VentanaFlotante>
+  );
+}
+
+/** Servicio menor o recurrente: un solo proveedor, sin cotizar; queda elegido. */
+function FormProveedorUnico({ id, monto, proveedores }: { id: string; monto: number; proveedores: ProveedorConocido[] }) {
+  return (
+    <VentanaFlotante
+      boton="Un solo proveedor (sin cotizar)"
+      titulo="Un solo proveedor, sin cotizar"
+      accion={proveedorUnico}
+      textoGuardar="Registrar y elegir"
+      claseBoton="btn contorno grande"
+    >
+      <input type="hidden" name="expediente_id" value={id} />
+      <div className="aviso info" style={{ margin: 0 }}>
+        Para servicios menores o recurrentes (asesor, mantenimiento) con un solo proveedor. Queda elegido y pasa directo a la orden.
+      </div>
+      <CamposProveedor proveedores={proveedores} prefijo="unico" />
+      <div className="rejilla-2">
+        <label className="campo">Monto S/<input name="monto" required inputMode="decimal" defaultValue={monto ? monto.toFixed(2) : ""} /></label>
+        <label className="campo">Plazo<input name="plazo" placeholder="Ej.: 1 mes" /></label>
+      </div>
     </VentanaFlotante>
   );
 }

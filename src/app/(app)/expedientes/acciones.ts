@@ -5,7 +5,8 @@ import { contextoMcp } from "@/lib/contexto";
 import { mensajeError, numero, texto, volver } from "@/lib/acciones";
 import { supabaseServidor } from "@/lib/supabase/server";
 import { MESES, periodoActual } from "@/lib/formato";
-import { cargarCatalogoPagosFijos, estadoPagosFijos, pasarAlMes } from "@/lib/pagosFijos";
+import { cargarCatalogoPagosFijos, estadoPagosFijos, pasarAlMes, siguienteCheque } from "@/lib/pagosFijos";
+import { comprobanteAutomatico } from "@/lib/comprobanteAuto";
 import { leerCheque } from "../comprobantes/acciones";
 
 /** "Función|Categoría" del selector → columnas separadas. */
@@ -139,6 +140,15 @@ export async function cambiarEstadoExpediente(fd: FormData) {
   const { error } = await supabase.from("expedientes").update(cambios).eq("id", id);
   if (error) volver(ruta(id), "error", mensajeError(error));
   revalidatePath("/expedientes");
+  if (accion === "aprobar") {
+    // Pago fijo de la lista: el comprobante de pago se genera solo, con el cheque siguiente.
+    const ctx = await contextoMcp();
+    const usado = await comprobanteAutomatico(supabase, ctx.mcp.id, id, await siguienteCheque(supabase, ctx.mcp.id));
+    if (usado !== null) {
+      revalidatePath("/comprobantes");
+      volver(ruta(id), "ok", `Requerimiento aprobado y comprobante de pago generado${usado ? ` con el cheque N° ${usado}` : ""}. Solo falta aprobar el comprobante.`);
+    }
+  }
   const msj = { aprobar: "Requerimiento aprobado.", devolver: "Devuelto a borrador.", anular: "Expediente anulado." };
   volver(ruta(id, accion === "aprobar" ? "cotizacion" : undefined), "ok", msj[accion as keyof typeof msj] ?? "Listo.");
 }
@@ -176,6 +186,24 @@ export async function agregarCotizacion(fd: FormData) {
   if (error) volver(destino, "error", mensajeError(error));
   await supabase.from("expedientes").update({ fase: "cotizacion" }).eq("id", id).eq("fase", "requerimiento");
   volver(destino, "ok", "Cotización agregada.");
+}
+
+/** Un solo proveedor, sin cotizar: queda registrado y elegido de una vez. */
+export async function proveedorUnico(fd: FormData) {
+  const ctx = await contextoMcp();
+  const supabase = await supabaseServidor();
+  const id = texto(fd, "expediente_id")!;
+  const destino = ruta(id, "cotizacion");
+  const proveedorId = await proveedorPorDocumento(ctx.mcp.id, fd, destino);
+  const monto = numero(fd, "monto");
+  if (monto === null || monto <= 0) volver(destino, "error", "Escriba el monto que cobra el proveedor.");
+  await supabase.from("cotizaciones").update({ elegida: false }).eq("expediente_id", id).eq("elegida", true);
+  const { error } = await supabase
+    .from("cotizaciones")
+    .insert({ mcp_id: ctx.mcp.id, expediente_id: id, proveedor_id: proveedorId, monto, plazo: texto(fd, "plazo"), elegida: true });
+  if (error) volver(destino, "error", mensajeError(error));
+  await supabase.from("expedientes").update({ fase: "cotizacion" }).eq("id", id).eq("fase", "requerimiento");
+  volver(ruta(id), "ok", "Proveedor registrado y elegido. Ya puede emitir la orden.");
 }
 
 export async function elegirCotizacion(fd: FormData) {
@@ -236,6 +264,18 @@ export async function emitirOrden(fd: FormData) {
   });
   if (error) volver(destino, "error", mensajeError(error));
   await supabase.from("expedientes").update({ fase: "orden" }).eq("id", id);
+  // Si ya se recibió conforme, también el memorando de conformidad en el mismo paso.
+  if (texto(fd, "con_conformidad") === "1") {
+    const { error: e2 } = await supabase.from("conformidades").insert({
+      mcp_id: ctx.mcp.id,
+      expediente_id: id,
+      fecha: texto(fd, "fecha"),
+      texto: texto(fd, "texto_conformidad"),
+    });
+    if (e2) volver(ruta(id), "error", `La orden se emitió, pero no la conformidad: ${mensajeError(e2)}`);
+    await supabase.from("expedientes").update({ fase: "conformidad" }).eq("id", id);
+    volver(ruta(id), "ok", `Orden de ${exp.tipo} y memorando de conformidad emitidos.`);
+  }
   volver(destino, "ok", `Orden de ${exp.tipo} emitida.`);
 }
 

@@ -24,12 +24,23 @@ async function cambiarMcp(fd: FormData) {
 export default async function MarcoApp({ children }: { children: React.ReactNode }) {
   const [ctx, cookieStore] = await Promise.all([obtenerContexto(), cookies()]);
   const tema = cookieStore.get("tema")?.value;
+  // Pendientes de firma (solo para quien aprueba)
+  let porAprobar = 0;
+  if (ctx.mcp && tiene(ctx, "alcalde", "admin")) {
+    const supabase = await supabaseServidor();
+    const [{ count: a }, { count: b }] = await Promise.all([
+      supabase.from("expedientes").select("id", { count: "exact", head: true }).eq("mcp_id", ctx.mcp.id).eq("estado", "borrador"),
+      supabase.from("comprobantes_pago").select("id", { count: "exact", head: true }).eq("mcp_id", ctx.mcp.id).eq("estado", "borrador"),
+    ]);
+    porAprobar = (a ?? 0) + (b ?? 0);
+  }
   const menuOculto = cookieStore.get("menu")?.value === "oculto";
 
   // Trabajo diario arriba; administración bajo el nombre del usuario.
   const items: ItemMenu[] = ctx.mcp
     ? [
         { href: "/inicio", texto: "Inicio" },
+        ...(tiene(ctx, "alcalde", "admin") ? [{ href: "/aprobaciones", texto: "Por aprobar", n: porAprobar }] : []),
         { href: "/expedientes", texto: "Expedientes" },
         { href: "/caja-chica", texto: "Caja chica" },
         { href: "/ingresos", texto: "Ingresos" },

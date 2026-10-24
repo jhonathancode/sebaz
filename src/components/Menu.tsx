@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect } from "react";
 
-export type ItemMenu = { href: string; texto: string };
+export type ItemMenu = { href: string; texto: string; n?: number };
 
 /** Íconos de trazo fino (estilo lineal), dibujados aquí para no cargar librerías. */
 const ICONOS: Record<string, React.ReactNode> = {
@@ -54,6 +54,12 @@ const ICONOS: Record<string, React.ReactNode> = {
       <path d="M14 3H6.5A1.5 1.5 0 0 0 5 4.5v15A1.5 1.5 0 0 0 6.5 21h11a1.5 1.5 0 0 0 1.5-1.5V8Z" />
       <path d="M14 3v5h5" />
       <path d="m9 14.5 2 2 4-4.5" />
+    </>
+  ),
+  "/aprobaciones": (
+    <>
+      <circle cx="12" cy="12" r="9" />
+      <path d="m8 12.5 2.5 2.5L16 9.5" />
     </>
   ),
   "/configuracion": (
@@ -169,6 +175,7 @@ export default function Menu({ items, abajo = [], nuevo = true, mcp }: { items: 
                 <Link href={i.href} className={activo ? "activo" : undefined} aria-current={activo ? "page" : undefined}>
                   <Icono href={i.href} />
                   <span>{i.texto}</span>
+                  {!!i.n && <span className="lm-n">{i.n}</span>}
                 </Link>
               </li>
             );

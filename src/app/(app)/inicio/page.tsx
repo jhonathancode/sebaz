@@ -191,7 +191,7 @@ export default async function Inicio() {
   const puedeRegistrar = tiene(ctx, "admin", "tesorero", "contador");
 
   const pendientes = [
-    { n: reqPorAprobar ?? 0, t: "Requerimientos por aprobar", d: alcalde ? "Esperan su aprobación" : "Esperan la aprobación del alcalde", href: "/expedientes?estado=borrador" },
+    { n: reqPorAprobar ?? 0, t: "Requerimientos por aprobar", d: alcalde ? "Esperan su aprobación" : "Esperan la aprobación del alcalde", href: "/aprobaciones" },
     { n: cpPorAprobar, t: "Comprobantes de pago por aprobar", d: "Están en borrador", href: "/comprobantes?estado=borrador" },
     { n: cpSinCheque, t: "Comprobantes sin cheque", d: "Sin cheque no entran en la rendición", href: "/comprobantes?estado=aprobado" },
   ];

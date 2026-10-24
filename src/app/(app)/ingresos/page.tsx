@@ -48,7 +48,7 @@ export default async function Ingresos({ searchParams }: { searchParams: ParamsA
         <h1>Ingresos propios · {nombrePeriodo(periodo)}</h1>
         <span className="espacio" />
         {puede && (
-          <VentanaFlotante boton="Nuevo recibo de ingreso" titulo={`Nuevo recibo de ingreso · N° ${String(siguiente).padStart(4, "0")}`} accion={emitirRecibo} textoGuardar="Emitir recibo" vistaPrevia={{ base: { tipo: "recibo" }, mcp: ctx.mcp }} abierta={sp.nuevo === "1"} error={sp.nuevo === "1" ? sp.error : undefined}>
+          <VentanaFlotante boton="Nuevo recibo de ingreso" titulo={`Nuevo recibo de ingreso · N° ${String(siguiente).padStart(4, "0")}`} accion={emitirRecibo} textoGuardar="Emitir recibo" abierta={sp.nuevo === "1"} error={sp.nuevo === "1" ? sp.error : undefined}>
             <div className="rejilla">
               <label className="campo">Fecha<input type="date" name="fecha" defaultValue={hoyISO()} required /></label>
               <label className="campo">

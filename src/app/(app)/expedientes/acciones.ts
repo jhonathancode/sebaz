@@ -52,7 +52,7 @@ export async function crearExpediente(fd: FormData) {
   // Pago fijo de la lista: qué pago y de qué mes (para no pagarlo dos veces)
   const pagoFijo = cabecera.tipo === "pago_fijo" ? texto(fd, "pago_fijo_id") : null;
   const mesPagado = pagoFijo ? texto(fd, "mes_pagado") : null;
-  const chequePrevisto = cabecera.tipo === "pago_fijo" ? (texto(fd, "cheque_previsto") ?? "").replace(/\D/g, "") || null : null;
+  const chequePrevisto = (texto(fd, "cheque_previsto") ?? "").replace(/\D/g, "") || null;
   if (chequePrevisto && !/^\d{4,12}$/.test(chequePrevisto)) volver("/expedientes?nuevo=1", "error", "El número de cheque debe tener de 4 a 12 dígitos.");
   const { data, error } = await supabase
     .from("expedientes")

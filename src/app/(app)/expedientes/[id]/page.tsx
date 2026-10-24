@@ -186,7 +186,7 @@ export default async function Expediente({ params, searchParams }: { params: Par
       texto: `Emita la ${nombreOrden} a ${prov(elegida?.proveedores)?.razon_social} por S/ ${soles(elegida?.monto)}.`,
       ayuda: "La orden se imprime, se firma y se entrega al proveedor.",
       accion: puedeRegistrar && (
-        <VentanaFlotante boton={`Emitir ${nombreOrden}`} titulo={`Emitir ${nombreOrden}`} accion={emitirOrden} textoGuardar="Emitir orden" claseBoton="btn primario grande" vistaPrevia={{ base: { tipo: "orden", d: datosDoc, ordenTipo: e.tipo, monto: Number(elegida?.monto ?? 0), proveedor: elegida?.proveedores ?? null }, mcp: ctx.mcp }}>
+        <VentanaFlotante boton={`Emitir ${nombreOrden}`} titulo={`Emitir ${nombreOrden}`} accion={emitirOrden} textoGuardar="Emitir orden" claseBoton="btn primario grande">
           <input type="hidden" name="expediente_id" value={id} />
           <p style={{ margin: 0 }}>Proveedor: <b>{prov(elegida?.proveedores)?.razon_social}</b> · Monto: <b>S/ {soles(elegida?.monto)}</b></p>
           <div className="rejilla-2">
@@ -209,7 +209,7 @@ export default async function Expediente({ params, searchParams }: { params: Par
       texto: "Cuando el proveedor entregue, registre la conformidad.",
       ayuda: "Es el memorando del alcalde que dice que lo recibido está bien.",
       accion: puedeRegistrar && (
-        <VentanaFlotante boton="Registrar conformidad" titulo="Memorando de conformidad" accion={emitirConformidad} textoGuardar="Emitir memorando" claseBoton="btn primario grande" vistaPrevia={{ base: { tipo: "conformidad", d: datosDoc, tesorero: nombreTesorero, cargo: cargoTesorero }, mcp: ctx.mcp }}>
+        <VentanaFlotante boton="Registrar conformidad" titulo="Memorando de conformidad" accion={emitirConformidad} textoGuardar="Emitir memorando" claseBoton="btn primario grande">
           <input type="hidden" name="expediente_id" value={id} />
           <label className="campo">Fecha<input type="date" name="fecha" defaultValue={hoyISO()} required /></label>
           <label className="campo">
@@ -238,7 +238,7 @@ export default async function Expediente({ params, searchParams }: { params: Par
       texto: "Genere el comprobante de pago.",
       ayuda: fijo ? "Escriba a quién se paga; el monto es el del requerimiento." : "Tenga a la mano la factura o boleta del proveedor.",
       accion: puedeRegistrar && (
-        <VentanaFlotante boton="Generar comprobante de pago" titulo={`Comprobante de pago por S/ ${soles(fijo ? total : orden?.monto)}`} accion={generarComprobante} textoGuardar="Generar comprobante" claseBoton="btn primario grande" vistaPrevia={{ base: { tipo: "comprobante", beneficiario: fijo ? "" : prov(orden?.proveedores)?.razon_social ?? "", beneficiario_doc: fijo ? null : prov(orden?.proveedores)?.num_doc ?? null, concepto: fijo ? e.descripcion : orden?.concepto ?? e.descripcion, importe: Number(fijo ? total : orden?.monto ?? 0), partida: e.clasificador, hecho_por: ctx.nombre }, mcp: ctx.mcp }}>
+        <VentanaFlotante boton="Generar comprobante de pago" titulo={`Comprobante de pago por S/ ${soles(fijo ? total : orden?.monto)}`} accion={generarComprobante} textoGuardar="Generar comprobante" claseBoton="btn primario grande">
           <input type="hidden" name="expediente_id" value={id} />
           <div className="rejilla-2">
             {fijo && (
@@ -257,7 +257,7 @@ export default async function Expediente({ params, searchParams }: { params: Par
               </select>
             </label>
             <label className="campo">Número del documento<input name="sustento_numero" placeholder="Ej.: F001-45" /></label>
-            <label className="campo">N° de cheque (siguiente de la chequera)<input name="cheque" inputMode="numeric" pattern="\d{4,12}" defaultValue={chequeSugerido} placeholder="Si ya lo giró; si no, después" /></label>
+            <label className="campo">N° de cheque (siguiente de la chequera)<input name="cheque" inputMode="numeric" pattern="\d{4,12}" defaultValue={e.cheque_previsto ?? chequeSugerido} placeholder="Si ya lo giró; si no, después" /></label>
             <SelectFuncion />
           </div>
         </VentanaFlotante>
@@ -671,7 +671,7 @@ export default async function Expediente({ params, searchParams }: { params: Par
           <div className="panel-cuerpo otras">
             {e.estado === "borrador" && puedeRegistrar && (
               <div>
-                <VentanaFlotante boton="Corregir requerimiento" titulo={`Corregir requerimiento ${num3(e.numero)}-${e.anio}`} accion={editarRequerimiento} textoGuardar="Guardar cambios" vistaPrevia={{ base: { tipo: "requerimiento" }, mcp: ctx.mcp }} abierta={sp.editar === "1"} error={sp.editar === "1" ? sp.error : undefined} ancha claseBoton="btn contorno">
+                <VentanaFlotante boton="Corregir requerimiento" titulo={`Corregir requerimiento ${num3(e.numero)}-${e.anio}`} accion={editarRequerimiento} textoGuardar="Guardar cambios" abierta={sp.editar === "1"} error={sp.editar === "1" ? sp.error : undefined} ancha claseBoton="btn contorno">
                   <input type="hidden" name="id" value={id} />
                   <CamposRequerimiento
                     fuentes={ctx.fuentes}

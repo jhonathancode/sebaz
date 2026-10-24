@@ -1,6 +1,7 @@
 import { CLASIFICADORES } from "@/lib/catalogos";
 import type { Fuente } from "@/lib/contexto";
 import { hoyISO } from "@/lib/formato";
+import CampoCheque from "./CampoCheque";
 import ItemsRequerimiento from "./ItemsRequerimiento";
 import SelectorPagoFijo from "./SelectorPagoFijo";
 import SugerenciaConcepto from "./SugerenciaConcepto";
@@ -55,7 +56,7 @@ export default function CamposRequerimiento({ fuentes, valores, pagosFijos, cheq
             </label>
           ))}
         </div>
-        {pagosFijos && <SelectorPagoFijo pagos={pagosFijos} periodo={periodoActual()} chequeSugerido={chequeSugerido} />}
+        {pagosFijos && <SelectorPagoFijo pagos={pagosFijos} periodo={periodoActual()} />}
       </fieldset>
 
       <fieldset className="pregunta">
@@ -73,18 +74,28 @@ export default function CamposRequerimiento({ fuentes, valores, pagosFijos, cheq
       </fieldset>
 
       <fieldset className="pregunta">
-        <legend>3. ¿Para qué es?</legend>
+        <legend>3. ¿Para qué es? <span className="legend-nota">(en general)</span></legend>
         <label className="campo">
-          Escriba en una línea para qué es este gasto
+          Resumen del gasto, en una línea
           <input name="descripcion" required defaultValue={valores?.descripcion ?? ""} placeholder="Ej.: Compra de útiles de oficina para la tesorería" />
         </label>
-        <SugerenciaConcepto />
+        <p className="pequeno tenue" style={{ margin: "6px 0 0" }}>
+          Aquí va el motivo en general. El detalle de cada cosa (papel bond, lapiceros...) se escribe en el paso 4.
+        </p>
+        <SugerenciaConcepto tambienItem={false} />
       </fieldset>
 
       <fieldset className="pregunta">
-        <legend>4. ¿Qué se necesita y cuánto cuesta?</legend>
+        <legend>4. Detalle: ¿qué se necesita y cuánto cuesta? <span className="legend-nota">(cosa por cosa)</span></legend>
         <ItemsRequerimiento inicial={valores?.items} />
       </fieldset>
+
+      {!valores && (
+        <fieldset className="pregunta">
+          <legend>5. Cheque <span className="legend-nota">(opcional)</span></legend>
+          <CampoCheque sugerido={chequeSugerido} />
+        </fieldset>
+      )}
 
       <details className="pregunta mas-datos">
         <summary>Datos para el formato (fecha, área, meta, específica del gasto)</summary>

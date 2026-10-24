@@ -69,7 +69,7 @@ export default async function Comprobantes({ searchParams }: { searchParams: Par
         <a className="btn contorno" href={`/exportar/comprobantes?mes=${periodo}&estado=${sp.estado ?? ""}&fuente=${sp.fuente ?? ""}&q=${encodeURIComponent(sp.q ?? "")}`}>Descargar Excel</a>
         </form>
         <span className="espacio" />
-        <VentanaFlotante boton="Nuevo comprobante directo" titulo="Nuevo comprobante de pago directo" accion={crearComprobanteDirecto} textoGuardar="Guardar en borrador" vistaPrevia={{ base: { tipo: "comprobante_directo", hecho_por: ctx.nombre }, mcp: ctx.mcp }} abierta={sp.nuevo === "1"} error={sp.nuevo === "1" ? sp.error : undefined}>
+        <VentanaFlotante boton="Nuevo comprobante directo" titulo="Nuevo comprobante de pago directo" accion={crearComprobanteDirecto} textoGuardar="Guardar en borrador" abierta={sp.nuevo === "1"} error={sp.nuevo === "1" ? sp.error : undefined}>
           <CamposComprobanteDirecto fuentes={ctx.fuentes} chequeSugerido={chequeSugerido} />
         </VentanaFlotante>
       </div>

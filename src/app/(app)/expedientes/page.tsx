@@ -89,7 +89,7 @@ export default async function Expedientes({ searchParams }: { searchParams: Para
           titulo="Nuevo requerimiento"
           accion={crearExpediente}
           textoGuardar="Guardar requerimiento"
-          vistaPrevia={{ base: { tipo: "requerimiento" }, mcp: ctx.mcp }}
+         
           abierta={sp.nuevo === "1"}
           error={sp.nuevo === "1" ? sp.error : undefined}
           ancha

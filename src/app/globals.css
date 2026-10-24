@@ -1113,3 +1113,102 @@ a.kpi:hover { border-color: var(--primario-claro); transform: translateY(-1px); 
   body:has(.marco-app[data-menu="visible"]) .cabecera .boton-menu { display: none; }
 }
 @media (max-width: 900px) { .lm-ocultar { display: none; } }
+
+/* =====================================================================
+   MARCA SEBAZ, LOGIN POR MUNICIPALIDAD, FORMULARIO DEL REQUERIMIENTO,
+   PAGOS FIJOS Y MODO OSCURO MATE
+   ===================================================================== */
+:root { --cab-alto: 72px; }
+
+/* Marca: logo grande con la frase «Sistema de control» */
+.logo-sebaz { display: inline-flex; align-items: center; gap: calc(var(--ls, 40px) * 0.28); line-height: 1; }
+.logo-sebaz svg { flex: none; }
+.ls-texto { display: flex; flex-direction: column; gap: 3px; }
+.ls-nombre { font-weight: 800; letter-spacing: .16em; font-size: calc(var(--ls, 40px) * 0.56); }
+.ls-frase { font-weight: 600; letter-spacing: .22em; text-transform: uppercase; font-size: max(9px, calc(var(--ls, 40px) * 0.22)); opacity: .8; white-space: nowrap; }
+.cabecera .marca-app { text-transform: none; letter-spacing: normal; font-size: inherit; }
+.cabecera .logo-sebaz { color: #fff; }
+
+/* Menú lateral: el logo de la municipalidad arriba y grande, con su nombre debajo */
+.lm-mcp { flex-direction: column; align-items: flex-start; gap: 12px; padding: 18px 16px 16px; }
+.lm-escudo { width: 84px; height: 84px; border-radius: 14px; }
+.lm-mcp-texto strong { font-size: 14px; }
+.lm-mcp .lm-ocultar { position: absolute; top: 12px; right: 12px; }
+
+/* Ingreso */
+.login { background: var(--fondo); }
+.login .caja-login { max-width: 420px; border-radius: 16px; }
+.login-marca { display: flex; flex-direction: column; align-items: center; gap: 8px; text-align: center; padding: 28px 24px 8px; color: var(--primario); }
+.login-logo-mcp { max-height: 120px; max-width: 200px; width: auto; object-fit: contain; }
+.login-escudo { width: 96px; height: 96px; border-radius: 18px; display: grid; place-items: center; font-weight: 800; letter-spacing: .06em; color: var(--tenue); background: var(--panel-2); border: 1px solid var(--borde); }
+.login-mcp { margin: 6px 0 0; font-size: 18px; line-height: 1.25; text-transform: uppercase; color: var(--texto); }
+.login-ruc { font-size: 13px; color: var(--tenue); font-weight: 600; letter-spacing: .04em; }
+.login-con { margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--borde); width: 100%; display: flex; justify-content: center; opacity: .9; }
+.login form { padding: 18px 24px 26px; }
+
+/* Formulario del requerimiento */
+.legend-nota { font-weight: 500; text-transform: none; letter-spacing: 0; color: var(--tenue); }
+.item-bloque { display: flex; flex-direction: column; }
+.item-bloque > .sugerencia { margin: -2px 0 0 28px; border-top-left-radius: 0; border-top-right-radius: 0; }
+.item-fila select { min-height: 38px; }
+.item-fila .campo input[aria-label="Otra unidad"] { margin-top: 6px; }
+.campo-cheque { display: flex; flex-direction: column; gap: 10px; }
+.cheque-marca { display: flex; gap: 10px; align-items: flex-start; padding: 10px 12px; border: 1px dashed var(--primario-claro); border-radius: 8px; background: var(--primario-fondo); cursor: pointer; }
+.cheque-marca input { width: 18px; height: 18px; min-height: 0; margin-top: 2px; accent-color: var(--primario); flex: none; }
+.cheque-marca span { display: flex; flex-direction: column; gap: 2px; }
+.cheque-marca small { color: var(--tenue); font-size: 12.5px; }
+.campo-cheque input[name="cheque_previsto"] { font-size: 16px; font-weight: 700; letter-spacing: .04em; }
+
+/* Pagos fijos: una tarjeta por pago, con avance y los 12 meses en dos filas */
+.selector-pf { padding: 16px; border-radius: 14px; }
+.pf-cab { align-items: flex-start; margin-bottom: 14px; }
+.pf-cab > div { display: flex; flex-direction: column; gap: 2px; }
+.pf-titulo { font-size: 15px; font-weight: 700; }
+.pf-guia { font-size: 12.5px; font-weight: 500; color: var(--tenue); }
+.pf-lista { gap: 12px; max-height: 420px; padding: 2px; }
+.pf-fila { display: flex; flex-direction: column; align-items: stretch; gap: 10px; padding: 14px 16px; border-radius: 12px; }
+.pf-encab { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
+.pf-datos { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.pf-concepto { font-size: 15px; font-weight: 700; text-transform: uppercase; }
+.pf-quien { font-size: 12.5px; color: var(--tenue); text-transform: uppercase; }
+.pf-monto { text-align: right; font-size: 17px; font-weight: 800; white-space: nowrap; color: var(--primario-texto); }
+.pf-monto small { display: block; font-size: 11px; font-weight: 600; color: var(--tenue); }
+.pf-avance { display: flex; align-items: center; gap: 10px; font-size: 12px; color: var(--tenue); }
+.pf-barra { flex: 1; max-width: 220px; height: 6px; border-radius: 6px; background: var(--linea); overflow: hidden; }
+.pf-barra > div { height: 100%; background: var(--primario); border-radius: 6px; }
+.pf-meses { grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 6px; }
+.pf-mes { padding: 8px 4px; font-size: 13px; font-weight: 600; border-radius: 8px; text-align: center; }
+.pf-mes.pagado { opacity: .85; }
+.pf-mes.activo { box-shadow: 0 0 0 3px var(--primario-claro); }
+.pf-resumen { display: flex; align-items: center; flex-wrap: wrap; gap: 8px 12px; margin-top: 12px; padding: 10px 14px; border-radius: 10px; background: var(--primario-fondo); border: 1px solid var(--primario-claro); }
+.pf-resumen .s-et { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--primario-texto); }
+.pf-resumen b { flex: 1; min-width: 200px; text-transform: uppercase; }
+@media (max-width: 560px) { .pf-meses { grid-template-columns: repeat(4, 1fr); } }
+
+/* ------------------------------------------------ modo oscuro mate
+   Capas de grafito (no negro puro): la cabecera y el menú son lo más
+   oscuro, el fondo es intermedio y las tarjetas se levantan un tono. */
+:root[data-theme="dark"] {
+  --fondo: #16191e; --mesa: #121418; --panel: #1e2228; --panel-2: #252a31; --linea: #262b32;
+  --texto: #e3e6eb; --suave: #b9bec7; --tenue: #8d94a0;
+  --borde: #2e343c; --borde-fuerte: #454c56;
+  --cabecera: #0f1215; --cabecera-texto: #eceff3; --cabecera-sub: #98a0ab; --menu: #13161a;
+  --tabla-cab: #262b32; --seleccion: #232d3b; --marcado: #1f2631;
+  --primario: #5b93e6; --primario-hover: #78a8ee; --primario-claro: #35557f; --primario-fondo: #1b2638; --primario-texto: #a9c6f3; --foco: #78a8ee;
+  --verde-fondo: #1a2d26; --verde-borde: #2f5b49; --ambar-fondo: #33291a; --rojo-fondo: #35201f;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --fondo: #16191e; --mesa: #121418; --panel: #1e2228; --panel-2: #252a31; --linea: #262b32;
+    --texto: #e3e6eb; --suave: #b9bec7; --tenue: #8d94a0;
+    --borde: #2e343c; --borde-fuerte: #454c56;
+    --cabecera: #0f1215; --cabecera-texto: #eceff3; --cabecera-sub: #98a0ab; --menu: #13161a;
+    --tabla-cab: #262b32; --seleccion: #232d3b; --marcado: #1f2631;
+    --primario: #5b93e6; --primario-hover: #78a8ee; --primario-claro: #35557f; --primario-fondo: #1b2638; --primario-texto: #a9c6f3; --foco: #78a8ee;
+    --verde-fondo: #1a2d26; --verde-borde: #2f5b49; --ambar-fondo: #33291a; --rojo-fondo: #35201f;
+  }
+}
+:root[data-theme="dark"] .lateral-menu { background: var(--menu); }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .lateral-menu { background: var(--menu); } }
+:root[data-theme="dark"] .boton-menu { background: #1e2228; border-color: #2e343c; }
+:root[data-theme="dark"] .login-marca { color: var(--primario-texto); }

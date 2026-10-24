@@ -19,7 +19,7 @@ function escribir(el: HTMLInputElement | HTMLSelectElement | null, valor: string
  * Lista de pagos fijos de la MCP con los meses del año: los pagados salen con ✓
  * y no se pueden elegir; se propone el primer mes pendiente.
  */
-export default function SelectorPagoFijo({ pagos, periodo, chequeSugerido = "" }: { pagos: PagoFijoCatalogo[]; periodo: string; chequeSugerido?: string }) {
+export default function SelectorPagoFijo({ pagos, periodo }: { pagos: PagoFijoCatalogo[]; periodo: string }) {
   const caja = useRef<HTMLDivElement>(null);
   const [anio, setAnio] = useState(Number(periodo.slice(0, 4)));
   const [elegido, setElegido] = useState<{ id: string; mes: string } | null>(null);
@@ -39,12 +39,18 @@ export default function SelectorPagoFijo({ pagos, periodo, chequeSugerido = "" }
     );
   }
 
+  const sel = pagos.find((p) => p.id === elegido?.id);
+  const resumen = sel && elegido ? `${sel.concepto} · ${MESES[Number(elegido.mes.slice(5)) - 1].toUpperCase()} ${elegido.mes.slice(0, 4)}` : null;
+
   return (
     <div className="selector-pf" ref={caja}>
       <input type="hidden" name="pago_fijo_id" value={elegido?.id ?? ""} />
       <input type="hidden" name="mes_pagado" value={elegido?.mes ?? ""} />
       <div className="pf-cab">
-        <span>¿Qué pago fijo es?</span>
+        <div>
+          <span className="pf-titulo">¿Qué pago fijo es?</span>
+          <span className="pf-guia">Toque el mes que va a pagar. Los meses con ✓ ya están pagados.</span>
+        </div>
         <label className="pf-anio">
           Año
           <select value={anio} onChange={(e) => setAnio(Number(e.target.value))}>
@@ -64,22 +70,30 @@ export default function SelectorPagoFijo({ pagos, periodo, chequeSugerido = "" }
         <div className="pf-lista">
           {pagos.map((p) => {
             const pendiente = mesPendiente(p.pagados, mesActual);
-            const sel = elegido?.id === p.id;
+            const esElegido = elegido?.id === p.id;
             const pagadosAnio = p.pagados.filter((x) => x.startsWith(`${anio}-`)).length;
             return (
-              <div key={p.id} className={`pf-fila${sel ? " elegido" : ""}`}>
-                <button type="button" className="pf-datos" onClick={() => elegir(p, pendiente.startsWith(`${anio}-`) ? pendiente : `${anio}-01`)}>
-                  <span className="pf-concepto">{p.concepto}</span>
-                  <span className="pf-detalle">
-                    {p.beneficiario ? `${p.beneficiario} · ` : ""}S/ {soles(p.monto)} · {pagadosAnio} de 12 pagados en {anio}
-                  </span>
-                </button>
+              <div key={p.id} className={`pf-fila${esElegido ? " elegido" : ""}`}>
+                <div className="pf-encab">
+                  <div className="pf-datos">
+                    <span className="pf-concepto">{p.concepto}</span>
+                    {p.beneficiario && <span className="pf-quien">{p.beneficiario}</span>}
+                  </div>
+                  <div className="pf-monto">
+                    S/ {soles(p.monto)}
+                    <small>por mes</small>
+                  </div>
+                </div>
+                <div className="pf-avance" aria-label={`${pagadosAnio} de 12 meses pagados en ${anio}`}>
+                  <div className="pf-barra"><div style={{ width: `${(pagadosAnio / 12) * 100}%` }} /></div>
+                  <span>{pagadosAnio} de 12 pagados en {anio}</span>
+                </div>
                 <div className="pf-meses" role="group" aria-label={`Meses de ${p.concepto}`}>
                   {CORTO.map((c, i) => {
                     const mes = `${anio}-${String(i + 1).padStart(2, "0")}`;
                     const pagado = p.pagados.includes(mes);
                     const esPendiente = mes === pendiente;
-                    const activo = sel && elegido?.mes === mes;
+                    const activo = esElegido && elegido?.mes === mes;
                     return (
                       <button
                         key={mes}
@@ -100,20 +114,15 @@ export default function SelectorPagoFijo({ pagos, periodo, chequeSugerido = "" }
           })}
         </div>
       )}
-      {pagos.length > 0 && (
-        <div className="pf-cheque">
-          <label className="campo">
-            N° de cheque
-            <input name="cheque_previsto" inputMode="numeric" pattern="\d{4,12}" defaultValue={chequeSugerido} placeholder="Siguiente de la chequera" />
-          </label>
-          <span className="pequeno tenue">
-            Viene el siguiente de la chequera. Al aprobar el pago fijo, su comprobante de pago se genera y aprueba solo con este cheque.
-          </span>
+      {resumen ? (
+        <div className="pf-resumen">
+          <span className="s-et">Se va a pagar</span>
+          <b>{resumen}</b>
+          <span>S/ {soles(sel!.monto)}</span>
         </div>
+      ) : (
+        pagos.length > 0 && <p className="pequeno tenue" style={{ margin: "10px 0 0" }}>Con borde azul está el mes que toca. Al elegir, se llenan solos el «para qué es» y el monto.</p>
       )}
-      <p className="pequeno tenue" style={{ margin: "8px 0 0" }}>
-        ✓ = mes ya pagado. El mes con borde azul es el que toca pagar. Al elegir, se llenan solos el «para qué es» y el monto; revíselos abajo.
-      </p>
     </div>
   );
 }

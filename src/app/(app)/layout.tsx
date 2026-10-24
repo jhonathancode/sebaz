@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import BotonTema from "@/components/BotonTema";
 import Menu, { type ItemMenu } from "@/components/Menu";
 import MenuUsuario, { type EnlaceMenu } from "@/components/MenuUsuario";
-import { COOKIE_MCP, obtenerContexto } from "@/lib/contexto";
+import { COOKIE_MCP, obtenerContexto, tiene } from "@/lib/contexto";
 import { APP_NOMBRE } from "@/lib/formato";
 import { supabaseServidor } from "@/lib/supabase/server";
 
@@ -81,7 +81,8 @@ export default async function MarcoApp({ children }: { children: React.ReactNode
           />
         </div>
       </header>
-      <Menu items={items} />
+      <div className="marco-app">
+      {items.length > 0 && <Menu items={items} nuevo={!!ctx.mcp && tiene(ctx, "admin", "tesorero", "contador")} />}
       <main className="ventana">
         {baseDesactualizada && (
           <div className="aviso error no-imprimir">
@@ -91,6 +92,7 @@ export default async function MarcoApp({ children }: { children: React.ReactNode
         )}
         {children}
       </main>
+      </div>
     </>
   );
 }

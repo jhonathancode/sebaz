@@ -1,4 +1,10 @@
 /** Nombre del sistema: se cambia con una variable de entorno, sin tocar código. */
+/** Dirección pública del logo de la MCP (bucket "logos"). */
+export function urlLogo(path: string | null | undefined): string | null {
+  if (!path) return null;
+  return `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/logos/${path}`;
+}
+
 export const APP_NOMBRE = process.env.NEXT_PUBLIC_APP_NOMBRE || "Sistema MCP";
 
 export function soles(n: number | string | null | undefined): string {

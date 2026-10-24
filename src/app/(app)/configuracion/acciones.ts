@@ -72,3 +72,24 @@ export async function guardarDiaLimite(fd: FormData) {
   revalidatePath("/", "layout");
   volver("/configuracion", "ok", "Fecha límite guardada.");
 }
+
+const TIPOS_LOGO: Record<string, string> = { "image/png": "png", "image/jpeg": "jpg", "image/webp": "webp" };
+
+/** Sube o cambia el logo de la MCP. Queda en el menú y en todos los formatos. */
+export async function subirLogo(fd: FormData) {
+  const ctx = await contextoMcp();
+  const supabase = await supabaseServidor();
+  const archivo = fd.get("logo");
+  if (!(archivo instanceof File) || archivo.size === 0) volver("/configuracion", "error", "Elija la imagen del logo.");
+  const ext = TIPOS_LOGO[archivo.type];
+  if (!ext) volver("/configuracion", "error", "El logo debe ser una imagen PNG, JPG o WEBP.");
+  if (archivo.size > 900 * 1024) volver("/configuracion", "error", "El logo pesa mucho: máximo 900 KB.");
+  // Nombre nuevo en cada cambio para que el navegador no muestre el logo anterior.
+  const ruta = `${ctx.mcp.id}/logo-${Date.now()}.${ext}`;
+  const { error } = await supabase.storage.from("logos").upload(ruta, archivo, { contentType: archivo.type, upsert: true });
+  if (error) volver("/configuracion", "error", /bucket/i.test(error.message) ? "Falta la actualización de la base (ACTUALIZAR_BASE.sql). Avise a soporte." : mensajeError(error));
+  const { error: e2 } = await supabase.from("mcps").update({ logo_path: ruta }).eq("id", ctx.mcp.id);
+  if (e2) volver("/configuracion", "error", mensajeError(e2));
+  revalidatePath("/", "layout");
+  volver("/configuracion", "ok", "Logo guardado. Ya aparece en el menú y en los formatos.");
+}

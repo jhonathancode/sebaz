@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 
 export type ItemMenu = { href: string; texto: string };
 
@@ -59,69 +59,95 @@ const ICONOS: Record<string, React.ReactNode> = {
 
 function Icono({ href }: { href: string }) {
   return (
-    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="square" strokeLinejoin="miter" aria-hidden="true">
       {ICONOS[href] ?? <circle cx="12" cy="12" r="8" />}
     </svg>
   );
 }
 
-const CLAVE = "menu-compacto";
-
-export default function Menu({ items, nuevo = true }: { items: ItemMenu[]; nuevo?: boolean }) {
-  const ruta = usePathname();
-  const [compacto, setCompacto] = useState(false);
-
-  useEffect(() => {
-    try {
-      setCompacto(localStorage.getItem(CLAVE) === "1");
-    } catch {
-      /* sin almacenamiento: menú normal */
-    }
-  }, []);
-
+/** Abre o cierra el menú: en computadora lo oculta (se recuerda); en celular lo despliega encima. */
+export function BotonMenu() {
   function alternar() {
-    setCompacto((v) => {
-      try {
-        localStorage.setItem(CLAVE, v ? "0" : "1");
-      } catch {
-        /* sin almacenamiento */
-      }
-      return !v;
-    });
+    const marco = document.querySelector<HTMLElement>(".marco-app");
+    if (!marco) return;
+    if (window.matchMedia("(max-width: 900px)").matches) {
+      marco.dataset.movil = marco.dataset.movil === "abierto" ? "" : "abierto";
+      return;
+    }
+    const oculto = marco.dataset.menu !== "oculto";
+    marco.dataset.menu = oculto ? "oculto" : "visible";
+    document.cookie = `menu=${oculto ? "oculto" : "visible"}; path=/; max-age=31536000; samesite=lax`;
+  }
+  return (
+    <button type="button" className="boton-menu" onClick={alternar} aria-label="Mostrar u ocultar el menú" title="Mostrar u ocultar el menú">
+      <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="square" aria-hidden="true">
+        <path d="M4 6h16M4 12h16M4 18h16" />
+      </svg>
+    </button>
+  );
+}
+
+export type DatosMcpMenu = { nombre: string; ruc: string | null; logo: string | null } | null;
+
+export default function Menu({ items, nuevo = true, mcp }: { items: ItemMenu[]; nuevo?: boolean; mcp: DatosMcpMenu }) {
+  const ruta = usePathname();
+
+  // En celular, al cambiar de página se cierra el menú.
+  useEffect(() => {
+    const marco = document.querySelector<HTMLElement>(".marco-app");
+    if (marco) marco.dataset.movil = "";
+  }, [ruta]);
+
+  function cerrar() {
+    const marco = document.querySelector<HTMLElement>(".marco-app");
+    if (marco) marco.dataset.movil = "";
   }
 
   return (
-    <nav className={`lateral-menu no-imprimir${compacto ? " compacto" : ""}`} aria-label="Menú del sistema">
-      {nuevo && (
-        <Link href="/expedientes?nuevo=1" className="lm-nuevo" title="Nuevo requerimiento">
-          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" aria-hidden="true">
-            <path d="M12 5v14M5 12h14" />
-          </svg>
-          <span className="lm-texto">Nuevo requerimiento</span>
-        </Link>
-      )}
+    <>
+      <div className="lm-fondo" onClick={cerrar} aria-hidden="true" />
+      <nav className="lateral-menu no-imprimir" aria-label="Menú del sistema">
+        {mcp && (
+          <div className="lm-mcp">
+            <div className="lm-escudo">
+              {mcp.logo ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={mcp.logo} alt="" />
+              ) : (
+                <span aria-hidden="true">MCP</span>
+              )}
+            </div>
+            <div className="lm-mcp-texto">
+              <strong>{mcp.nombre}</strong>
+              <span>RUC {mcp.ruc ?? "pendiente"}</span>
+            </div>
+          </div>
+        )}
 
-      <div className="lm-titulo">Trabajo diario</div>
-      <ul>
-        {items.map((i) => {
-          const activo = ruta === i.href || ruta.startsWith(i.href + "/");
-          return (
-            <li key={i.href}>
-              <Link href={i.href} className={activo ? "activo" : undefined} aria-current={activo ? "page" : undefined} title={i.texto}>
-                <span className="lm-icono"><Icono href={i.href} /></span>
-                <span className="lm-texto">{i.texto}</span>
-              </Link>
-            </li>
-          );
-        })}
-      </ul>
+        {nuevo && (
+          <Link href="/expedientes?nuevo=1" className="lm-nuevo">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="square" aria-hidden="true">
+              <path d="M12 5v14M5 12h14" />
+            </svg>
+            Nuevo requerimiento
+          </Link>
+        )}
 
-      <button type="button" className="lm-plegar" onClick={alternar} aria-label={compacto ? "Mostrar el menú completo" : "Achicar el menú"} title={compacto ? "Mostrar el menú completo" : "Achicar el menú"}>
-        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-          <path d={compacto ? "m10 7 5 5-5 5" : "m14 7-5 5 5 5"} />
-        </svg>
-        <span className="lm-texto">Achicar menú</span>
-      </button>
-    </nav>
+        <div className="lm-titulo">Trabajo diario</div>
+        <ul>
+          {items.map((i) => {
+            const activo = ruta === i.href || ruta.startsWith(i.href + "/");
+            return (
+              <li key={i.href}>
+                <Link href={i.href} className={activo ? "activo" : undefined} aria-current={activo ? "page" : undefined}>
+                  <Icono href={i.href} />
+                  <span>{i.texto}</span>
+                </Link>
+              </li>
+            );
+          })}
+        </ul>
+      </nav>
+    </>
   );
 }

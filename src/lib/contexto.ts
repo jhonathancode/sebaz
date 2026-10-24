@@ -17,6 +17,7 @@ export type Mcp = {
   banco_cuenta: string | null;
   capitulo1: Record<string, string>;
   estado: string;
+  logo_path?: string | null;
 };
 
 export type Fuente = {

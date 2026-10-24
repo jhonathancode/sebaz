@@ -1,10 +1,10 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import BotonTema from "@/components/BotonTema";
-import Menu, { type ItemMenu } from "@/components/Menu";
+import Menu, { BotonMenu, type ItemMenu } from "@/components/Menu";
 import MenuUsuario, { type EnlaceMenu } from "@/components/MenuUsuario";
 import { COOKIE_MCP, obtenerContexto, tiene } from "@/lib/contexto";
-import { APP_NOMBRE } from "@/lib/formato";
+import { APP_NOMBRE, urlLogo } from "@/lib/formato";
 import { supabaseServidor } from "@/lib/supabase/server";
 
 async function salir() {
@@ -24,6 +24,7 @@ async function cambiarMcp(fd: FormData) {
 export default async function MarcoApp({ children }: { children: React.ReactNode }) {
   const [ctx, cookieStore] = await Promise.all([obtenerContexto(), cookies()]);
   const tema = cookieStore.get("tema")?.value;
+  const menuOculto = cookieStore.get("menu")?.value === "oculto";
 
   // Trabajo diario arriba; administración bajo el nombre del usuario.
   const items: ItemMenu[] = ctx.mcp
@@ -57,14 +58,19 @@ export default async function MarcoApp({ children }: { children: React.ReactNode
     <>
       <header className="cabecera no-imprimir">
         <div className="marca">
-          <div className="logo" aria-hidden="true">MCP</div>
-          <div className="marca-texto">
-            <div className="marca-nombre">{ctx.mcp?.nombre ?? (ctx.esSoporte ? "Panel de soporte" : "Sin MCP asignada")}</div>
-            <div className="sub">
-              {APP_NOMBRE}
-              {ctx.mcp && <> · RUC {ctx.mcp.ruc ?? <span className="pendiente">pendiente</span>}</>}
-            </div>
-          </div>
+          {items.length > 0 && <BotonMenu />}
+          <span className="marca-app">{APP_NOMBRE}</span>
+          <span className="marca-mcp">
+            {ctx.mcp ? (
+              <>
+                {ctx.mcp.nombre} <span className="sub">· RUC {ctx.mcp.ruc ?? <span className="pendiente">pendiente</span>}</span>
+              </>
+            ) : ctx.esSoporte ? (
+              "Panel de soporte"
+            ) : (
+              "Sin MCP asignada"
+            )}
+          </span>
         </div>
         <div className="acciones">
           <BotonTema inicial={tema === "dark" || tema === "light" ? tema : null} />
@@ -81,8 +87,14 @@ export default async function MarcoApp({ children }: { children: React.ReactNode
           />
         </div>
       </header>
-      <div className="marco-app">
-      {items.length > 0 && <Menu items={items} nuevo={!!ctx.mcp && tiene(ctx, "admin", "tesorero", "contador")} />}
+      <div className="marco-app" data-menu={menuOculto ? "oculto" : "visible"}>
+      {items.length > 0 && (
+        <Menu
+          items={items}
+          nuevo={!!ctx.mcp && tiene(ctx, "admin", "tesorero", "contador")}
+          mcp={ctx.mcp ? { nombre: ctx.mcp.nombre, ruc: ctx.mcp.ruc, logo: urlLogo(ctx.mcp.logo_path) } : null}
+        />
+      )}
       <main className="ventana">
         {baseDesactualizada && (
           <div className="aviso error no-imprimir">

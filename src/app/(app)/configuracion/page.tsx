@@ -4,9 +4,9 @@ import Encabezado from "@/components/Encabezado";
 import Motivo from "@/components/Motivo";
 import { CAMPOS_CAPITULO1, CAMPOS_CAPITULO1_LARGOS } from "@/lib/catalogos";
 import { contextoMcp, tiene } from "@/lib/contexto";
-import { fechaHora, nombrePeriodo, periodoActual, soles } from "@/lib/formato";
+import { fechaHora, nombrePeriodo, periodoActual, soles, urlLogo } from "@/lib/formato";
 import { supabaseServidor } from "@/lib/supabase/server";
-import { cerrarMes, guardarCapitulo1, guardarDatosMcp, guardarDiaLimite, reabrirMes } from "./acciones";
+import { cerrarMes, guardarCapitulo1, guardarDatosMcp, guardarDiaLimite, reabrirMes, subirLogo } from "./acciones";
 
 export default async function Configuracion({ searchParams }: { searchParams: ParamsAviso }) {
   const sp = await searchParams;
@@ -133,6 +133,33 @@ export default async function Configuracion({ searchParams }: { searchParams: Pa
                   </li>
                 ))}
               </ul>
+            </div>
+          </section>
+
+          <section className="panel">
+            <div className="panel-cab">Logo de la MCP</div>
+            <div className="panel-cuerpo">
+              <div className="logo-muestra">
+                {urlLogo(m.logo_path) ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={urlLogo(m.logo_path)!} alt="Logo actual" />
+                ) : (
+                  <span className="tenue pequeno">Sin logo</span>
+                )}
+              </div>
+              {admin || ctx.esSoporte ? (
+                <form action={subirLogo} style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                  <label className="campo">
+                    Imagen (PNG, JPG o WEBP, máximo 900 KB)
+                    <input type="file" name="logo" accept="image/png,image/jpeg,image/webp" required />
+                  </label>
+                  <BotonConfirmar className="btn" pregunta="¿Guardar este logo?" detalle="Aparecerá en el menú y en todos los formatos impresos." textoConfirmar="Sí, guardar">
+                    {m.logo_path ? "Cambiar logo" : "Subir logo"}
+                  </BotonConfirmar>
+                </form>
+              ) : (
+                <span className="pequeno tenue">Solo el administrador puede cambiar el logo.</span>
+              )}
             </div>
           </section>
 

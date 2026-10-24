@@ -151,7 +151,7 @@ export default async function Soporte({ searchParams }: { searchParams: ParamsAv
                 <div className="panel-cab">Relevo (cambio de tesorera u otro cargo)</div>
                 <div className="panel-cuerpo">
                   <div className="aviso info" style={{ margin: 0 }}>
-                    Para registrar el relevo hace falta el <b>documento que designa</b> a quien entra y haber <b>confirmado el cambio</b> con el alcalde. Queda guardado como respaldo.
+                    Para registrar el relevo hace falta el <b>documento que designa</b> a quien entra y haber <b>confirmado el cambio</b> con el alcalde. Queda guardado como respaldo. Si es <b>cambio de tesorería</b>: lo fechado antes de la fecha del acta se puede corregir 30 días y luego queda <b>bloqueado para siempre</b>.
                   </div>
                   <div className="rejilla">
                     <input type="hidden" name="mcp_id" value={elegida.id} />
@@ -189,7 +189,7 @@ export default async function Soporte({ searchParams }: { searchParams: ParamsAv
                     <label className="campo ancho">Suba el documento (PDF, JPG o PNG, hasta 4 MB)<input type="file" name="documento" accept="application/pdf,image/jpeg,image/png" required /></label>
                     <label className="campo ancho">¿Con quién confirmó el cambio y cómo?<input name="confirmado_con" required minLength={5} placeholder="Ej.: Alcalde Juan Pérez, por llamada el 24/10 a las 10:30" /></label>
                   </div>
-                  <div><BotonConfirmar pregunta="¿Registrar el relevo?" detalle="Quien sale pierde el acceso desde la fecha del acta. Quedará guardado el documento de respaldo." textoConfirmar="Sí, registrar" peligro>Registrar relevo</BotonConfirmar></div>
+                  <div><BotonConfirmar pregunta="¿Registrar el relevo?" detalle="Quien sale pierde el acceso desde la fecha del acta. Quedará guardado el documento de respaldo. En un cambio de tesorería, la gestión anterior se bloquea para siempre después de 30 días." textoConfirmar="Sí, registrar" peligro>Registrar relevo</BotonConfirmar></div>
                 </div>
               </form>
 

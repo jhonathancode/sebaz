@@ -1,3 +1,4 @@
+import MarcaAnulado from "@/components/MarcaAnulado";
 import Encabezado from "@/components/Encabezado";
 import type { Mcp } from "@/lib/contexto";
 import { enLetras, fecha, soles } from "@/lib/formato";
@@ -17,7 +18,7 @@ export type DatosCP = {
 };
 
 /** Formato del comprobante de pago, tal como se imprime. */
-export default function FormatoComprobante({ c, mcp }: { c: DatosCP; mcp: Mcp }) {
+export default function FormatoComprobante({ c, mcp, anulado }: { c: DatosCP; mcp: Mcp; anulado?: { motivo?: string | null; en?: string | null } | null }) {
   const liquido = Number(c.importe) - Number(c.deducciones);
   const iniciales = (c.hecho_por ?? "")
     .split(/\s+/)
@@ -28,6 +29,7 @@ export default function FormatoComprobante({ c, mcp }: { c: DatosCP; mcp: Mcp })
   const ctx = { mcp };
   return (
     <div className="hoja">
+      {anulado && <MarcaAnulado {...anulado} />}
       <Encabezado mcp={ctx.mcp} titulo="COMPROBANTE DE PAGO" numero={`N° ${c.numero ? String(c.numero).padStart(3, "0") : "(se asigna al emitir)"} · Fecha ${fecha(c.fecha)}`} />
       <table className="formato">
         <tbody>

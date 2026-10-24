@@ -5,7 +5,7 @@ export type Proveedor = { razon_social: string; num_doc: string; direccion: stri
 
 /** Carga en paralelo todo lo que forma el expediente de gasto. */
 export async function cargarExpediente(supabase: SupabaseClient, id: string) {
-  const [{ data: e }, { data: items }, { data: cotizaciones }, { data: orden }, { data: conformidad }, { data: cp }] = await Promise.all([
+  const [{ data: e }, { data: items }, { data: cotizaciones }, { data: orden }, { data: conformidad }, { data: cpsTodos }] = await Promise.all([
     supabase.from("expedientes").select("*").eq("id", id).single(),
     supabase.from("expediente_items").select("*").eq("expediente_id", id).eq("anulado", false).order("item"),
     supabase.from("cotizaciones").select("*, proveedores(razon_social, num_doc)").eq("expediente_id", id).eq("anulado", false).order("monto"),
@@ -20,10 +20,13 @@ export async function cargarExpediente(supabase: SupabaseClient, id: string) {
       .from("comprobantes_pago")
       .select("*, perfiles!comprobantes_pago_creado_por_fkey(nombre)")
       .eq("expediente_id", id)
-      .neq("estado", "anulado")
-      .maybeSingle(),
+      .order("creado_en", { ascending: false }),
   ]);
-  return { e, items: items ?? [], cotizaciones: cotizaciones ?? [], orden, conformidad, cp };
+  // Si el expediente se anuló, sus documentos siguen disponibles (con la marca de anulado) para imprimirlos.
+  const cps = cpsTodos ?? [];
+  const cp = cps.find((c) => c.estado !== "anulado") ?? (e?.estado === "anulado" ? cps[0] ?? null : null);
+  const anulado = e?.estado === "anulado" ? { motivo: (e.anulado_motivo as string | null) ?? null, en: (e.anulado_en as string | null) ?? null } : null;
+  return { e, items: items ?? [], cotizaciones: cotizaciones ?? [], orden, conformidad, cp, anulado };
 }
 
 export type ClaveDoc = "requerimiento" | "cotizaciones" | "orden" | "conformidad" | "comprobante";

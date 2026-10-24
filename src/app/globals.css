@@ -1228,3 +1228,22 @@ a.kpi:hover { border-color: var(--primario-claro); transform: translateY(-1px); 
 a.doc-chip:hover { background: var(--primario); border-color: var(--primario); color: #fff; }
 .doc-chip.pendiente { border-style: dashed; border-color: var(--borde-fuerte); background: transparent; color: var(--tenue); font-weight: 500; }
 @media (max-width: 1100px) { .fila:has(.f-docs) { grid-template-columns: 110px minmax(0, 1fr) auto; } .f-docs { grid-column: 2 / -1; justify-content: flex-start; max-width: none; } }
+
+/* Celular: la cabecera cabe en una sola fila (menú, marca, nombre, tema y usuario) */
+@media (max-width: 900px) {
+  :root { --cab-alto: 60px; }
+  .cabecera { gap: 8px; padding: 0 10px; }
+  .cabecera .marca { flex: 1 1 auto; min-width: 0; gap: 10px; }
+  .cabecera .acciones { flex: none; flex-wrap: nowrap; gap: 6px; }
+  .cabecera .marca-app { display: inline-flex; flex: none; }
+  .cabecera .marca-app .ls-texto { display: none; }
+  .cabecera .marca-app svg { width: 34px; height: 34px; }
+  .cabecera .marca-mcp { display: block; flex: 1 1 auto; min-width: 0; padding-left: 10px; font-size: 13px; }
+  .cabecera .marca-mcp .sub { display: none; }
+  .cabecera .boton-menu { padding: 0 10px; flex: none; }
+  .cabecera .boton-menu span { display: none; }
+  .cabecera .usuario { padding: 2px; gap: 4px; }
+  .cabecera .usuario-texto { display: none; }
+  .cabecera .desplegable { position: fixed; top: calc(var(--cab-alto) + 4px); right: 8px; left: 8px; width: auto; max-width: none; max-height: calc(100vh - var(--cab-alto) - 16px); overflow-y: auto; }
+  .marco-app > .ventana { padding: 14px 10px 24px; }
+}

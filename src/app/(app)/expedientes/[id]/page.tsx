@@ -133,6 +133,7 @@ export default async function Expediente({ params, searchParams }: { params: Par
     { id: "comprobante", titulo: "Comprobante de pago", detalle: cp ? codigoCP(cp.numero, cp.origen) : "Pendiente", hecho: !!cp },
   ];
   const actual = pasos.find((p) => !p.hecho)?.id ?? "comprobante";
+  const listos = pasos.filter((p) => p.hecho).length;
   const pedido = sp.paso ?? sp.fase;
   const visto = pasos.some((p) => p.id === pedido) ? pedido! : actual;
 
@@ -407,27 +408,51 @@ export default async function Expediente({ params, searchParams }: { params: Par
       </div>
       <Avisos ok={sp.ok} error={sp.error} />
 
-      <ol className="pasos" aria-label="Avance del expediente">
-        {pasos.map((p, n) => (
-          <li key={p.id} className={`${p.hecho ? "hecho" : p.id === actual && !anulado ? "actual" : ""}${p.id === visto ? " visto" : ""}`}>
-            <Link href={`/expedientes/${id}?paso=${p.id}`}>
-              <span className="paso-circulo" aria-hidden="true">{p.hecho ? "✓" : n + 1}</span>
-              <span className="paso-texto">
-                {p.titulo}
-                <small>{p.detalle}</small>
-              </span>
-            </Link>
-          </li>
-        ))}
-      </ol>
-
-      <section className={`sigue${anulado ? " anulado" : ""}`} aria-label="Lo que sigue">
-        <div className="sigue-texto">
-          <span className="etiqueta">{anulado ? "Anulado" : "Lo que sigue"}</span>
-          <div className="sigue-titulo">{sigue.texto}</div>
-          {sigue.ayuda && <div className="tenue">{sigue.ayuda}</div>}
+      <section className={`avance${anulado ? " anulado" : ""}`} aria-label="Avance del expediente">
+        <div className="av-cab">
+          <span className="av-titulo">{anulado ? "Expediente anulado" : listos === pasos.length ? "Expediente completo" : `Paso ${Math.min(listos + 1, pasos.length)} de ${pasos.length}`}</span>
+          <span className="av-pct">{Math.round((listos / pasos.length) * 100)} %</span>
         </div>
-        {sigue.accion && <div className="sigue-accion">{sigue.accion}</div>}
+        <div className="av-barra" aria-hidden="true"><div style={{ width: `${(listos / pasos.length) * 100}%` }} /></div>
+
+        <ol className="av-pasos" style={{ gridTemplateColumns: `repeat(${pasos.length}, minmax(0, 1fr))` }}>
+          {pasos.map((p, n) => {
+            const estado = p.hecho ? "hecho" : p.id === actual && !anulado ? "actual" : "pendiente";
+            return (
+              <li key={p.id} className={`av-paso ${estado}${p.id === visto ? " visto" : ""}`}>
+                <Link href={`/expedientes/${id}?paso=${p.id}`} scroll={false} aria-current={p.id === visto ? "step" : undefined}>
+                  <span className="av-icono" aria-hidden="true">
+                    {p.hecho ? (
+                      <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round"><path d="m5 12.5 4.5 4.5L19 7.5" /></svg>
+                    ) : (
+                      <IconoPaso id={p.id} />
+                    )}
+                  </span>
+                  <span className="av-texto">
+                    <span className="av-num">
+                      Paso {n + 1}
+                      {estado === "actual" && <span className="av-ahora">Ahora</span>}
+                    </span>
+                    <span className="av-nombre">{p.titulo}</span>
+                    <span className="av-det">{p.hecho ? p.detalle : estado === "actual" ? "En curso" : "Pendiente"}</span>
+                  </span>
+                </Link>
+              </li>
+            );
+          })}
+        </ol>
+
+        <div className={`av-sigue${listos === pasos.length && !anulado ? " listo" : ""}`}>
+          <span className="av-sigue-icono" aria-hidden="true">
+            {anulado ? "!" : listos === pasos.length ? "✓" : "→"}
+          </span>
+          <div className="sigue-texto">
+            <span className="etiqueta">{anulado ? "Anulado" : listos === pasos.length ? "Todo listo" : "Lo que sigue"}</span>
+            <div className="sigue-titulo">{sigue.texto}</div>
+            {sigue.ayuda && <div className="tenue">{sigue.ayuda}</div>}
+          </div>
+          {sigue.accion && <div className="sigue-accion">{sigue.accion}</div>}
+        </div>
       </section>
 
       {/* Contenido del paso que se está viendo */}
@@ -704,6 +729,23 @@ export default async function Expediente({ params, searchParams }: { params: Par
         </div>
       </details>
     </>
+  );
+}
+
+/** Ícono de cada paso del expediente. */
+function IconoPaso({ id }: { id: string }) {
+  const trazos: Record<string, React.ReactNode> = {
+    requerimiento: (<><rect x="6" y="4" width="12" height="17" rx="2" /><path d="M9 4.5V3h6v1.5M9 10h6M9 14h6M9 18h3" /></>),
+    cotizacion: (<><path d="M12 4v16M5 8h14" /><path d="m5 8-3 6a3 3 0 0 0 6 0Zm14 0-3 6a3 3 0 0 0 6 0Z" /></>),
+    orden: (<><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8Z" /><path d="M14 3v5h5M9 13h6M9 17h4" /></>),
+    conformidad: (<><circle cx="12" cy="9" r="5.5" /><path d="m9.5 9 2 2 3-3.5M8.5 13.5 7 21l5-2.5 5 2.5-1.5-7.5" /></>),
+    almacen: (<><path d="M3 8.5 12 4l9 4.5v10a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 18.5Z" /><path d="M7 20v-7h10v7M7 16.5h10" /></>),
+    comprobante: (<><path d="M5 3h14v18l-2.5-1.5L14 21l-2-1.5L10 21l-2.5-1.5L5 21Z" /><path d="M9 8h6M9 11.5h6M9 15h3.5" /></>),
+  };
+  return (
+    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      {trazos[id] ?? <circle cx="12" cy="12" r="6" />}
+    </svg>
   );
 }
 

@@ -1055,3 +1055,47 @@ a.kpi:hover { border-color: var(--primario-claro); transform: translateY(-1px); 
 .pf-cheque .campo { width: 220px; }
 .pf-cheque .campo input { font-size: 16px; font-weight: 700; letter-spacing: .04em; }
 .pf-cheque .pequeno { flex: 1; min-width: 220px; }
+
+/* ------------------------------------------- avance del expediente */
+.avance { background: var(--panel); border: 1px solid var(--borde); border-radius: 14px; padding: 18px 20px; display: flex; flex-direction: column; gap: 14px; }
+.avance.anulado { border-color: var(--rojo-borde); }
+.av-cab { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; }
+.av-titulo { font-weight: 700; font-size: 15px; }
+.av-pct { font-weight: 700; color: var(--primario-texto); font-variant-numeric: tabular-nums; }
+.av-barra { height: 6px; border-radius: 6px; background: var(--linea); overflow: hidden; margin-top: -6px; }
+.av-barra > div { height: 100%; border-radius: 6px; background: linear-gradient(90deg, var(--primario), var(--primario-hover)); transition: width .4s ease; }
+.avance.anulado .av-barra > div { background: var(--rojo); }
+
+.av-pasos { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.av-paso a {
+  display: flex; align-items: center; gap: 12px; height: 100%; padding: 12px 14px; border-radius: 12px; text-decoration: none; color: inherit;
+  border: 1px solid var(--borde); background: var(--panel); transition: border-color .15s, box-shadow .15s, transform .15s;
+}
+.av-paso a:hover { border-color: var(--primario-claro); transform: translateY(-1px); }
+.av-icono { flex: none; width: 40px; height: 40px; border-radius: 12px; display: grid; place-items: center; background: var(--panel-2); color: var(--tenue); border: 1px solid var(--linea); }
+.av-texto { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+.av-num { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--tenue); display: flex; align-items: center; gap: 6px; }
+.av-nombre { font-weight: 700; font-size: 14px; line-height: 1.25; }
+.av-det { font-size: 12.5px; color: var(--tenue); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.av-ahora { font-size: 10px; padding: 1px 6px; border-radius: 6px; background: var(--primario); color: #fff; letter-spacing: .04em; }
+
+.av-paso.hecho a { background: var(--primario-fondo); border-color: var(--primario-claro); }
+.av-paso.hecho .av-icono { background: var(--primario); border-color: var(--primario); color: #fff; }
+.av-paso.hecho .av-det { color: var(--primario-texto); font-weight: 600; }
+.av-paso.actual a { border: 2px solid var(--primario); padding: 11px 13px; box-shadow: 0 4px 14px -6px var(--primario); }
+.av-paso.actual .av-icono { background: var(--panel); border: 2px solid var(--primario); color: var(--primario); }
+.av-paso.actual .av-det { color: var(--primario-texto); }
+.av-paso.pendiente a { opacity: .75; }
+.av-paso.visto a { outline: 2px solid var(--primario-claro); outline-offset: 2px; }
+
+.av-sigue { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 18px; padding: 14px 16px; border-radius: 12px; background: var(--primario-fondo); border: 1px solid var(--primario-claro); }
+.av-sigue.listo { background: var(--verde-fondo); border-color: var(--verde-borde); }
+.avance.anulado .av-sigue { background: var(--rojo-fondo); border-color: var(--rojo-borde); }
+.av-sigue-icono { flex: none; width: 36px; height: 36px; border-radius: 50%; display: grid; place-items: center; background: var(--primario); color: #fff; font-weight: 800; font-size: 18px; }
+.avance.anulado .av-sigue-icono { background: var(--rojo); }
+.av-sigue .sigue-texto { flex: 1 1 300px; }
+
+@media (max-width: 900px) {
+  .av-pasos { grid-template-columns: 1fr !important; }
+  .av-paso a { padding: 10px 12px; }
+}

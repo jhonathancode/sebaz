@@ -15,7 +15,7 @@ import {
   rangoPeriodo,
   soles,
 } from "@/lib/formato";
-import { estadoPagosFijos } from "@/lib/pagosFijos";
+import { cargarCatalogoPagosFijos, estadoPagosFijos } from "@/lib/pagosFijos";
 import { supabaseServidor } from "@/lib/supabase/server";
 import { copiarPagosFijos } from "../expedientes/acciones";
 
@@ -70,6 +70,8 @@ export default async function Inicio() {
     supabase.from("comprobantes_pago").select("id, numero, origen, fecha, concepto, importe, estado, creado_en").eq("mcp_id", mcpId).neq("origen", "expediente").neq("estado", "anulado").order("creado_en", { ascending: false }).limit(3),
     estadoPagosFijos(supabase, mcpId, periodo),
   ]);
+  const catalogo = await cargarCatalogoPagosFijos(supabase, mcpId);
+  const faltanCatalogo = catalogo.filter((p) => !p.pagados.includes(periodo));
   // Bienes por reponer (si el almacén ya está activo)
   const { data: stockBajo } = await supabase.from("almacen_stock").select("bien_id, stock, stock_minimo").eq("mcp_id", mcpId).gt("stock_minimo", 0);
   const porReponer = (stockBajo ?? []).filter((b) => Number(b.stock) <= Number(b.stock_minimo)).length;
@@ -328,9 +330,39 @@ export default async function Inicio() {
             <span className="tenue pequeno">Dietas y personal</span>
           </div>
           <div className="panel-cuerpo">
-            {fijos.anteriores.length === 0 && fijos.actuales.length === 0 ? (
+            {catalogo.length > 0 ? (
+              faltanCatalogo.length === 0 ? (
+                <div className="aviso ok" style={{ margin: 0 }}>✓ Los {catalogo.length} pagos fijos de {mesActual} ya están registrados.</div>
+              ) : (
+                <>
+                  <div>
+                    Faltan <b>{faltanCatalogo.length}</b> de {catalogo.length} pagos fijos de {mesActual}:
+                  </div>
+                  <ul className="lista-simple">
+                    {faltanCatalogo.map((p) => (
+                      <li key={p.id}>
+                        <span className="envolver">{p.concepto}{p.beneficiario ? ` · ${p.beneficiario}` : ""}</span>
+                        <span className="num">S/ {soles(p.monto)}</span>
+                      </li>
+                    ))}
+                  </ul>
+                  {puedeRegistrar && (
+                    <form action={copiarPagosFijos} style={{ alignSelf: "flex-start" }}>
+                      <BotonConfirmar
+                        className="btn primario"
+                        pregunta={`¿Registrar ${faltanCatalogo.length} pago(s) fijo(s) de ${mesActual}?`}
+                        detalle="Se crean los requerimientos en borrador con el monto de la lista. Después revíselos y envíelos al alcalde."
+                        textoConfirmar="Sí, registrar"
+                      >
+                        Registrar los {faltanCatalogo.length} de {mesActual}
+                      </BotonConfirmar>
+                    </form>
+                  )}
+                </>
+              )
+            ) : fijos.anteriores.length === 0 && fijos.actuales.length === 0 ? (
               <span className="tenue">
-                Registre sus dietas y pagos al personal como «Pago fijo». Desde el próximo mes podrá copiarlos aquí con un solo clic.
+                Arme la lista de pagos fijos (dietas, asesor, personal) en <Link href="/configuracion#pagos-fijos">Configuración</Link>: cada mes saldrán aquí los que faltan.
               </span>
             ) : fijos.faltan.length === 0 ? (
               <div className="aviso ok" style={{ margin: 0 }}>✓ Los {fijos.actuales.length} pagos fijos de {mesActual} ya están registrados.</div>

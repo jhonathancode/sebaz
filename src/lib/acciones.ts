@@ -19,8 +19,9 @@ export function numero(fd: FormData, campo: string): number | null {
 export function mensajeError(e: { message?: string } | null | undefined): string {
   const m = e?.message ?? "Error desconocido.";
   if (m.includes("row-level security")) return "No tiene permiso para esta acción.";
+  if (m.includes("pago_fijo_mes_unico")) return "Ese pago fijo ya está registrado para ese mes. Elija otro mes o revise los expedientes.";
   if (m.includes("duplicate key")) return "Ya existe un registro con esos datos.";
-  if (m.includes("expedientes_tipo_check") || m.includes("fuentes_tipo_check") || m.includes("dia_limite") || m.includes("emitir_nea") || m.includes("emitir_pecosa") || m.includes("almacen_stock") || m.includes("sin_almacen_motivo"))
+  if (m.includes("expedientes_tipo_check") || m.includes("fuentes_tipo_check") || m.includes("dia_limite") || m.includes("emitir_nea") || m.includes("emitir_pecosa") || m.includes("almacen_stock") || m.includes("sin_almacen_motivo") || m.includes("pago_fijo_id") || m.includes("mes_pagado"))
     return "El sistema necesita una actualización (ACTUALIZAR_BASE.sql). Avise a soporte.";
   if (m.includes("violates check constraint")) return "Algún dato no tiene el formato correcto.";
   return m;

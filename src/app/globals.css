@@ -859,3 +859,46 @@ details.mas-datos > summary:hover { color: var(--primario-texto); }
 .campo input, .campo select, .campo textarea { font-weight: 400; color: var(--texto); }
 .items-total { display: flex; align-items: baseline; gap: 12px; padding: 10px 16px; border-radius: 8px; background: var(--primario-fondo); color: var(--primario-texto); font-weight: 600; }
 .items-total b { font-size: 20px; color: var(--texto); }
+
+/* Selector de pagos fijos (solo cuando el tipo es pago fijo) */
+.selector-pf { display: none; margin-top: 14px; padding: 14px; border: 1px solid var(--borde); border-radius: 10px; background: var(--panel-2); }
+form:has(input[name="tipo"][value="pago_fijo"]:checked) .selector-pf { display: block; }
+.pf-cab { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 10px; font-weight: 700; }
+.pf-anio { display: flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 500; color: var(--suave); }
+.pf-anio select { min-height: 30px; }
+.pf-lista { display: flex; flex-direction: column; gap: 8px; max-height: 340px; overflow-y: auto; }
+.pf-fila { display: grid; grid-template-columns: minmax(200px, 1fr) auto; gap: 8px 14px; align-items: center; padding: 10px 12px; border: 1px solid var(--borde); border-radius: 8px; background: var(--panel); }
+.pf-fila.elegido { border-color: var(--primario); box-shadow: inset 0 0 0 1px var(--primario); background: var(--primario-fondo); }
+.pf-datos { all: unset; cursor: pointer; display: flex; flex-direction: column; gap: 2px; }
+.pf-concepto { font-weight: 600; }
+.pf-detalle { font-size: 12px; color: var(--tenue); }
+.pf-meses { display: grid; grid-template-columns: repeat(12, minmax(38px, auto)); gap: 4px; }
+.pf-mes { font: inherit; font-size: 12px; padding: 4px 6px; border-radius: 6px; border: 1px solid var(--borde); background: var(--panel); color: var(--suave); cursor: pointer; white-space: nowrap; }
+.pf-mes:hover:not(:disabled) { border-color: var(--primario); color: var(--primario-texto); }
+.pf-mes.pendiente { border: 2px solid var(--primario); color: var(--primario-texto); font-weight: 700; }
+.pf-mes.pagado { background: var(--verde-fondo); border-color: var(--verde-borde); color: var(--verde-texto); cursor: not-allowed; }
+.pf-mes.activo { background: var(--primario); border-color: var(--primario); color: #fff; }
+@media (max-width: 900px) { .pf-fila { grid-template-columns: 1fr; } .pf-meses { grid-template-columns: repeat(6, 1fr); } }
+
+/* Botón del menú: visible y fácil de tocar */
+.boton-menu {
+  width: auto; height: 38px; padding: 0 14px 0 10px; gap: 8px; display: inline-flex; align-items: center;
+  background: #fff; color: var(--primario-texto); border: none; border-radius: 8px; font: inherit; font-weight: 700; font-size: 14px;
+  box-shadow: 0 1px 2px rgba(0,0,0,.15);
+}
+.boton-menu:hover { background: #eef4ff; }
+:root[data-theme="dark"] .boton-menu { background: #1d1d1d; color: #e6e6e6; border: 1px solid #333; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .boton-menu { background: #1d1d1d; color: #e6e6e6; border: 1px solid #333; } }
+
+/* Configuración: un solo botón abajo que despliega las opciones */
+.lm-admin { margin-top: auto; border-top: 1px solid var(--borde); padding: 8px 0 10px; }
+.lm-admin > summary {
+  list-style: none; cursor: pointer; display: flex; align-items: center; gap: 12px; margin: 1px 10px; padding: 11px 12px;
+  border-radius: 8px; color: var(--suave); font-weight: 600;
+}
+.lm-admin > summary::-webkit-details-marker { display: none; }
+.lm-admin > summary:hover { background: var(--panel-2); color: var(--texto); }
+.lm-admin > summary svg { flex: none; color: var(--tenue); }
+.lm-admin > summary .lm-flecha { margin-left: auto; transition: transform .15s; transform: rotate(180deg); }
+.lm-admin[open] > summary .lm-flecha { transform: none; }
+.lm-admin ul a { padding-left: 24px; font-size: 13.5px; }

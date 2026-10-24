@@ -97,9 +97,13 @@ export default async function Expediente({ params, searchParams }: { params: Par
   const fuente = e.fuentes as Parameters<typeof nombreFuente>[0] | null;
 
   // Datos de los formatos (vista previa antes de emitir y vista del documento)
-  const [datosDoc, { data: tesoreroDoc }] = await Promise.all([
+  const pagoFijoId = (e as { pago_fijo_id?: string | null }).pago_fijo_id ?? null;
+  const [datosDoc, { data: tesoreroDoc }, { data: pagoFijo }] = await Promise.all([
     cargarExpediente(supabase, id),
     supabase.from("miembros").select("cargo, perfiles(nombre)").eq("mcp_id", ctx.mcp.id).eq("rol", "tesorero").eq("activo", true).maybeSingle(),
+    pagoFijoId
+      ? supabase.from("pagos_fijos").select("beneficiario, beneficiario_doc").eq("id", pagoFijoId).maybeSingle()
+      : Promise.resolve({ data: null as { beneficiario: string | null; beneficiario_doc: string | null } | null }),
   ]);
   const nombreTesorero = (tesoreroDoc?.perfiles as unknown as { nombre: string } | null)?.nombre ?? "";
   const cargoTesorero = tesoreroDoc?.cargo ?? "Tesorero(a)";
@@ -220,8 +224,8 @@ export default async function Expediente({ params, searchParams }: { params: Par
           <div className="rejilla-2">
             {fijo && (
               <>
-                <label className="campo">A quién se paga<input name="beneficiario" required placeholder="Nombre completo" /></label>
-                <label className="campo">DNI o RUC<input name="beneficiario_doc" inputMode="numeric" maxLength={11} /></label>
+                <label className="campo">A quién se paga<input name="beneficiario" required placeholder="Nombre completo" defaultValue={pagoFijo?.beneficiario ?? ""} /></label>
+                <label className="campo">DNI o RUC<input name="beneficiario_doc" inputMode="numeric" maxLength={11} defaultValue={pagoFijo?.beneficiario_doc ?? ""} /></label>
               </>
             )}
             <label className="campo">Fecha<input type="date" name="fecha" defaultValue={hoyISO()} required /></label>
@@ -337,8 +341,8 @@ export default async function Expediente({ params, searchParams }: { params: Par
             c={{
               numero: null,
               fecha: hoy,
-              beneficiario: fijo ? "(se escribe al generar)" : prov(orden?.proveedores)?.razon_social ?? "",
-              beneficiario_doc: fijo ? null : prov(orden?.proveedores)?.num_doc ?? null,
+              beneficiario: fijo ? pagoFijo?.beneficiario ?? "(se escribe al generar)" : prov(orden?.proveedores)?.razon_social ?? "",
+              beneficiario_doc: fijo ? pagoFijo?.beneficiario_doc ?? null : prov(orden?.proveedores)?.num_doc ?? null,
               concepto: fijo ? e.descripcion : orden?.concepto ?? e.descripcion,
               importe: Number(fijo ? total : orden?.monto ?? 0),
               deducciones: 0,

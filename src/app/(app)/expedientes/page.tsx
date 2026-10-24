@@ -6,6 +6,7 @@ import VentanaFlotante from "@/components/VentanaFlotante";
 import { contextoMcp } from "@/lib/contexto";
 import { fecha, nombrePeriodo, num3, periodoActual, rangoPeriodo, soles } from "@/lib/formato";
 import { supabaseServidor } from "@/lib/supabase/server";
+import { cargarCatalogoPagosFijos } from "@/lib/pagosFijos";
 import { crearExpediente } from "./acciones";
 
 const FASES: Record<string, string> = {
@@ -33,7 +34,7 @@ export default async function Expedientes({ searchParams }: { searchParams: Para
   if (sp.estado) consulta = consulta.eq("estado", sp.estado);
   if (sp.q) consulta = consulta.ilike("descripcion", `%${sp.q}%`);
   if (sp.tipo) consulta = consulta.eq("tipo", sp.tipo);
-  const { data: lista } = await consulta;
+  const [{ data: lista }, pagosFijos] = await Promise.all([consulta, cargarCatalogoPagosFijos(supabase, ctx.mcp.id)]);
 
   const filas = (lista ?? []).map((e) => ({
     ...e,
@@ -45,6 +46,8 @@ export default async function Expedientes({ searchParams }: { searchParams: Para
     <>
       <div className="titulo-ventana">
         <h1>Expedientes · {nombrePeriodo(periodo)}</h1>
+        <span className="espacio" />
+        <Link className="btn contorno" href={`/comprobantes?mes=${periodo}`}>Ver comprobantes de pago</Link>
       </div>
       <Avisos ok={sp.ok} error={sp.error} />
       <div className="barra">
@@ -81,7 +84,7 @@ export default async function Expedientes({ searchParams }: { searchParams: Para
         </form>
         <span className="espacio" />
         <VentanaFlotante boton="+ Nuevo requerimiento" claseBoton="btn primario grande" titulo="Nuevo requerimiento" accion={crearExpediente} textoGuardar="Guardar requerimiento" vistaPrevia={{ base: { tipo: "requerimiento" }, mcp: ctx.mcp }} abierta={sp.nuevo === "1"} error={sp.nuevo === "1" ? sp.error : undefined} ancha>
-          <CamposRequerimiento fuentes={ctx.fuentes} />
+          <CamposRequerimiento fuentes={ctx.fuentes} pagosFijos={pagosFijos} />
         </VentanaFlotante>
       </div>
 

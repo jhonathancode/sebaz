@@ -4,8 +4,8 @@ import { revalidatePath } from "next/cache";
 import { contextoMcp } from "@/lib/contexto";
 import { mensajeError, numero, texto, volver } from "@/lib/acciones";
 import { supabaseServidor } from "@/lib/supabase/server";
-import { periodoActual } from "@/lib/formato";
-import { estadoPagosFijos, pasarAlMes } from "@/lib/pagosFijos";
+import { MESES, periodoActual } from "@/lib/formato";
+import { cargarCatalogoPagosFijos, estadoPagosFijos, pasarAlMes } from "@/lib/pagosFijos";
 import { leerCheque } from "../comprobantes/acciones";
 
 /** "Función|Categoría" del selector → columnas separadas. */
@@ -47,9 +47,13 @@ export async function crearExpediente(fd: FormData) {
   const ctx = await contextoMcp();
   const supabase = await supabaseServidor();
   const items = leerItems(fd, "/expedientes?nuevo=1");
+  const cabecera = leerCabecera(fd);
+  // Pago fijo de la lista: qué pago y de qué mes (para no pagarlo dos veces)
+  const pagoFijo = cabecera.tipo === "pago_fijo" ? texto(fd, "pago_fijo_id") : null;
+  const mesPagado = pagoFijo ? texto(fd, "mes_pagado") : null;
   const { data, error } = await supabase
     .from("expedientes")
-    .insert({ mcp_id: ctx.mcp.id, ...leerCabecera(fd) })
+    .insert({ mcp_id: ctx.mcp.id, ...cabecera, ...(pagoFijo ? { pago_fijo_id: pagoFijo, mes_pagado: mesPagado } : {}) })
     .select("id")
     .single();
   if (error || !data) volver("/expedientes?nuevo=1", "error", mensajeError(error));
@@ -327,6 +331,34 @@ export async function copiarPagosFijos() {
   const ctx = await contextoMcp();
   const supabase = await supabaseServidor();
   const periodo = periodoActual();
+
+  // Con la lista de pagos fijos de la MCP: se registran los que faltan este mes.
+  const catalogo = await cargarCatalogoPagosFijos(supabase, ctx.mcp.id);
+  if (catalogo.length > 0) {
+    const pendientes = catalogo.filter((p) => !p.pagados.includes(periodo));
+    if (pendientes.length === 0) volver("/inicio", "ok", "Los pagos fijos de este mes ya están registrados.");
+    const [a, m] = periodo.split("-").map(Number);
+    const mesTexto = `${MESES[m - 1].toUpperCase()} ${a}`;
+    let hechos = 0;
+    for (const p of pendientes) {
+      const texto = `${p.concepto} - ${mesTexto}`;
+      const { data: nuevo, error } = await supabase
+        .from("expedientes")
+        .insert({ mcp_id: ctx.mcp.id, tipo: "pago_fijo", descripcion: texto, fuente_id: p.fuente_id, clasificador: p.clasificador, pago_fijo_id: p.id, mes_pagado: periodo })
+        .select("id")
+        .single();
+      if (error || !nuevo) volver("/inicio", "error", `Se registraron ${hechos}. Falló «${p.concepto}»: ${mensajeError(error)}`);
+      const { error: e2 } = await supabase.from("expediente_items").insert({
+        mcp_id: ctx.mcp.id, expediente_id: nuevo.id, item: 1, cantidad: 1, unidad: p.unidad || "MES", descripcion: texto, precio_unitario: p.monto,
+      });
+      if (e2) volver("/inicio", "error", `Se registró «${p.concepto}» sin su monto: ${mensajeError(e2)}`);
+      hechos++;
+    }
+    revalidatePath("/inicio");
+    revalidatePath("/expedientes");
+    volver("/expedientes?estado=borrador", "ok", `Se registraron ${hechos} pago(s) fijo(s) de ${mesTexto.toLowerCase()}, en borrador. Revíselos y envíelos al alcalde para su aprobación.`);
+  }
+
   const { anterior, faltan } = await estadoPagosFijos(supabase, ctx.mcp.id, periodo);
   if (faltan.length === 0) volver("/inicio", "ok", "Los pagos fijos de este mes ya están registrados.");
 

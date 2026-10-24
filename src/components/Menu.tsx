@@ -106,9 +106,10 @@ export function BotonMenu() {
   }
   return (
     <button type="button" className="boton-menu" onClick={alternar} aria-label="Mostrar u ocultar el menú" title="Mostrar u ocultar el menú">
-      <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="square" aria-hidden="true">
+      <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" aria-hidden="true">
         <path d="M4 6h16M4 12h16M4 18h16" />
       </svg>
+      <span>Menú</span>
     </button>
   );
 }
@@ -175,19 +176,28 @@ export default function Menu({ items, abajo = [], nuevo = true, mcp }: { items: 
         </ul>
 
         {abajo.length > 0 && (
-          <ul className="lm-abajo">
-            {abajo.map((i) => {
-              const activo = ruta === i.href || ruta.startsWith(i.href + "/");
-              return (
-                <li key={i.href}>
-                  <Link href={i.href} className={activo ? "activo" : undefined} aria-current={activo ? "page" : undefined}>
-                    <Icono href={i.href} />
-                    <span>{i.texto}</span>
-                  </Link>
-                </li>
-              );
-            })}
-          </ul>
+          <details className="lm-admin" open={abajo.some((i) => ruta.startsWith(i.href)) || undefined}>
+            <summary>
+              <Icono href="/configuracion" />
+              <span>Configuración</span>
+              <svg className="lm-flecha" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+                <path d="m6 15 6-6 6 6" />
+              </svg>
+            </summary>
+            <ul>
+              {abajo.map((i) => {
+                const activo = ruta === i.href || ruta.startsWith(i.href + "/");
+                return (
+                  <li key={i.href}>
+                    <Link href={i.href} className={activo ? "activo" : undefined} aria-current={activo ? "page" : undefined}>
+                      <Icono href={i.href} />
+                      <span>{i.texto}</span>
+                    </Link>
+                  </li>
+                );
+              })}
+            </ul>
+          </details>
         )}
       </nav>
     </>

@@ -2,11 +2,14 @@ import Avisos, { type ParamsAviso } from "@/components/Avisos";
 import BotonConfirmar from "@/components/BotonConfirmar";
 import Encabezado from "@/components/Encabezado";
 import Motivo from "@/components/Motivo";
-import { CAMPOS_CAPITULO1, CAMPOS_CAPITULO1_LARGOS } from "@/lib/catalogos";
+import { CAMPOS_CAPITULO1, CAMPOS_CAPITULO1_LARGOS, CLASIFICADORES } from "@/lib/catalogos";
+import VentanaFlotante from "@/components/VentanaFlotante";
+import { nombreFuente } from "@/components/formularios/CamposRequerimiento";
+import { cargarCatalogoPagosFijos, type PagoFijoCatalogo } from "@/lib/pagosFijos";
 import { contextoMcp, tiene } from "@/lib/contexto";
 import { fechaHora, nombrePeriodo, periodoActual, soles, urlLogo } from "@/lib/formato";
 import { supabaseServidor } from "@/lib/supabase/server";
-import { cerrarMes, guardarCapitulo1, guardarDatosMcp, guardarDiaLimite, reabrirMes, subirLogo } from "./acciones";
+import { cerrarMes, guardarCapitulo1, guardarDatosMcp, guardarDiaLimite, reabrirMes, subirLogo, guardarPagoFijo, alternarPagoFijo } from "./acciones";
 
 export default async function Configuracion({ searchParams }: { searchParams: ParamsAviso }) {
   const sp = await searchParams;
@@ -15,10 +18,39 @@ export default async function Configuracion({ searchParams }: { searchParams: Pa
   const admin = tiene(ctx, "admin");
   const m = ctx.mcp;
   const cap1 = m.capitulo1 ?? {};
-  const [{ data: periodos }, { data: reaperturas }] = await Promise.all([
+  const [{ data: periodos }, { data: reaperturas }, pagosFijos] = await Promise.all([
     supabase.from("periodos").select("*").eq("mcp_id", m.id).order("periodo", { ascending: false }).limit(12),
     supabase.from("periodo_reaperturas").select("*").eq("mcp_id", m.id).order("hecho_en", { ascending: false }).limit(10),
+    cargarCatalogoPagosFijos(supabase, m.id, false),
   ]);
+  const puedePagos = tiene(ctx, "admin", "tesorero", "contador", "alcalde");
+  const anio = periodoActual().slice(0, 4);
+  const camposPago = (p?: PagoFijoCatalogo) => (
+    <div className="rejilla-2">
+      {p && <input type="hidden" name="id" value={p.id} />}
+      <label className="campo">Concepto<input name="concepto" required defaultValue={p?.concepto ?? ""} placeholder="Ej.: DIETA DEL ALCALDE, HONORARIOS DEL ASESOR CONTABLE" /></label>
+      <label className="campo">A quién se paga<input name="beneficiario" defaultValue={p?.beneficiario ?? ""} placeholder="Nombre completo" /></label>
+      <label className="campo">DNI o RUC<input name="beneficiario_doc" inputMode="numeric" maxLength={11} defaultValue={p?.beneficiario_doc ?? ""} /></label>
+      <label className="campo">Monto mensual S/<input name="monto" required inputMode="decimal" defaultValue={p ? String(p.monto) : ""} placeholder="0.00" /></label>
+      <label className="campo">
+        Se paga con
+        <select name="fuente_id" defaultValue={p?.fuente_id ?? ctx.fuentes[0]?.id}>
+          {ctx.fuentes.map((f) => (
+            <option key={f.id} value={f.id}>{nombreFuente(f)}</option>
+          ))}
+        </select>
+      </label>
+      <label className="campo">
+        Específica del gasto
+        <select name="clasificador" defaultValue={p?.clasificador ?? "2.3 Bienes y servicios"}>
+          {CLASIFICADORES.map((c) => (
+            <option key={c}>{c}</option>
+          ))}
+        </select>
+      </label>
+      <label className="campo">Unidad<input name="unidad" defaultValue={p?.unidad ?? "MES"} /></label>
+    </div>
+  );
 
   const checks = [
     { ok: !!m.nombre, t: "Nombre de la MCP" },
@@ -116,6 +148,56 @@ export default async function Configuracion({ searchParams }: { searchParams: Pa
               </div>
             </fieldset>
           </form>
+
+          <section className="panel" id="pagos-fijos">
+            <div className="panel-cab">
+              Pagos fijos de la MCP
+              {puedePagos && (
+                <VentanaFlotante boton="+ Agregar pago fijo" titulo="Nuevo pago fijo" accion={guardarPagoFijo} textoGuardar="Agregar a la lista" claseBoton="btn chico primario">
+                  {camposPago()}
+                </VentanaFlotante>
+              )}
+            </div>
+            <div className="panel-cuerpo pequeno tenue" style={{ paddingBottom: 0 }}>
+              Lo que se paga todos los meses: dietas, asesor contable, personal. Al hacer un requerimiento de «Pago fijo» salen aquí con los meses ya pagados.
+            </div>
+            <div className="tabla-marco" style={{ border: "none", borderRadius: 0 }}>
+              <table className="tabla" style={{ minWidth: 720 }}>
+                <thead>
+                  <tr><th>Concepto</th><th>A quién</th><th className="num">Monto S/</th><th>Pagados {anio}</th><th>Estado</th><th /></tr>
+                </thead>
+                <tbody>
+                  {pagosFijos.length === 0 && <tr><td colSpan={6} className="tenue">Aún no hay pagos fijos. Agregue el primero con «+ Agregar pago fijo».</td></tr>}
+                  {pagosFijos.map((p) => (
+                    <tr key={p.id} className={p.activo ? undefined : "anulado"}>
+                      <td className="envolver" style={{ fontWeight: 600 }}>{p.concepto}</td>
+                      <td className="envolver">{p.beneficiario ?? "—"}</td>
+                      <td className="num">{soles(p.monto)}</td>
+                      <td>{p.pagados.filter((x) => x.startsWith(`${anio}-`)).length} de 12</td>
+                      <td><span className={`estado ${p.activo ? "aprobado" : "anulado"}`}>{p.activo ? "Activo" : "Inactivo"}</span></td>
+                      <td>
+                        {puedePagos && (
+                          <div className="acciones-fila">
+                            <VentanaFlotante boton="Editar" titulo={`Editar · ${p.concepto}`} accion={guardarPagoFijo} textoGuardar="Guardar cambios" claseBoton="btn chico contorno">
+                              {camposPago(p)}
+                              <p className="pequeno tenue" style={{ margin: 0 }}>El cambio de monto vale para los próximos requerimientos; los ya hechos no cambian.</p>
+                            </VentanaFlotante>
+                            <form action={alternarPagoFijo}>
+                              <input type="hidden" name="id" value={p.id} />
+                              <input type="hidden" name="activo" value={p.activo ? "0" : "1"} />
+                              <BotonConfirmar className="btn chico" pregunta={p.activo ? "¿Desactivar este pago fijo?" : "¿Activar este pago fijo?"} detalle={p.activo ? "Ya no saldrá en los requerimientos. No se borra: puede activarlo después." : "Volverá a salir en los requerimientos."} textoConfirmar="Sí">
+                                {p.activo ? "Desactivar" : "Activar"}
+                              </BotonConfirmar>
+                            </form>
+                          </div>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </section>
         </div>
 
         <aside className="lateral">

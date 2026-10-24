@@ -2,6 +2,9 @@ import { CLASIFICADORES } from "@/lib/catalogos";
 import type { Fuente } from "@/lib/contexto";
 import { hoyISO } from "@/lib/formato";
 import ItemsRequerimiento from "./ItemsRequerimiento";
+import SelectorPagoFijo from "./SelectorPagoFijo";
+import type { PagoFijoCatalogo } from "@/lib/pagosFijos";
+import { periodoActual } from "@/lib/formato";
 
 export type ValoresRequerimiento = {
   fecha: string;
@@ -33,7 +36,7 @@ function detalleFuente(f: Fuente) {
 }
 
 /** Formulario del requerimiento, en preguntas simples. */
-export default function CamposRequerimiento({ fuentes, valores }: { fuentes: Fuente[]; valores?: ValoresRequerimiento }) {
+export default function CamposRequerimiento({ fuentes, valores, pagosFijos }: { fuentes: Fuente[]; valores?: ValoresRequerimiento; pagosFijos?: PagoFijoCatalogo[] }) {
   const tipo = valores?.tipo ?? "compra";
   const fuente = valores?.fuente_id ?? fuentes.find((f) => f.tipo === "distrito")?.id ?? fuentes[0]?.id;
   const hayPropios = fuentes.some((f) => f.tipo === "propios");
@@ -51,6 +54,7 @@ export default function CamposRequerimiento({ fuentes, valores }: { fuentes: Fue
             </label>
           ))}
         </div>
+        {pagosFijos && <SelectorPagoFijo pagos={pagosFijos} periodo={periodoActual()} />}
       </fieldset>
 
       <fieldset className="pregunta">

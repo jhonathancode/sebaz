@@ -93,3 +93,43 @@ export async function subirLogo(fd: FormData) {
   revalidatePath("/", "layout");
   volver("/configuracion", "ok", "Logo guardado. Ya aparece en el menú y en los formatos.");
 }
+
+/** Agrega o corrige un pago fijo de la lista (dietas, asesor, personal). */
+export async function guardarPagoFijo(fd: FormData) {
+  const ctx = await contextoMcp();
+  const supabase = await supabaseServidor();
+  const id = texto(fd, "id");
+  const destino = "/configuracion#pagos-fijos";
+  const monto = numero(fd, "monto");
+  const concepto = (texto(fd, "concepto") ?? "").toUpperCase();
+  if (!concepto) volver(destino, "error", "Escriba el concepto del pago fijo.");
+  if (!monto || monto <= 0) volver(destino, "error", "Escriba el monto mensual.");
+  const datos = {
+    concepto,
+    beneficiario: texto(fd, "beneficiario")?.toUpperCase() ?? null,
+    beneficiario_doc: (texto(fd, "beneficiario_doc") ?? "").replace(/\D/g, "") || null,
+    monto,
+    unidad: (texto(fd, "unidad") ?? "MES").toUpperCase(),
+    fuente_id: texto(fd, "fuente_id"),
+    clasificador: texto(fd, "clasificador"),
+  };
+  const { error } = id
+    ? await supabase.from("pagos_fijos").update(datos).eq("id", id)
+    : await supabase.from("pagos_fijos").insert({ mcp_id: ctx.mcp.id, ...datos });
+  if (error) volver(destino, "error", error.message.includes("duplicate") ? "Ya hay un pago fijo con ese concepto." : mensajeError(error));
+  revalidatePath("/configuracion");
+  revalidatePath("/expedientes");
+  volver(destino, "ok", id ? "Pago fijo actualizado." : "Pago fijo agregado a la lista.");
+}
+
+/** Deja de mostrar (o vuelve a mostrar) un pago fijo; no se borra. */
+export async function alternarPagoFijo(fd: FormData) {
+  await contextoMcp();
+  const supabase = await supabaseServidor();
+  const id = texto(fd, "id")!;
+  const activo = texto(fd, "activo") === "1";
+  const { error } = await supabase.from("pagos_fijos").update({ activo }).eq("id", id);
+  if (error) volver("/configuracion#pagos-fijos", "error", mensajeError(error));
+  revalidatePath("/configuracion");
+  volver("/configuracion#pagos-fijos", "ok", activo ? "Pago fijo activado." : "Pago fijo desactivado: ya no saldrá en los requerimientos.");
+}

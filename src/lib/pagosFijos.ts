@@ -66,3 +66,59 @@ export async function estadoPagosFijos(supabase: Cliente, mcpId: string, periodo
   const faltan = anteriores.filter((p) => !ya.has(clavePagoFijo(p.descripcion)));
   return { anterior, anteriores, actuales, faltan };
 }
+
+/** Un pago fijo de la lista de la MCP, con los meses que ya se pagaron ("2026-01", ...). */
+export type PagoFijoCatalogo = {
+  id: string;
+  concepto: string;
+  beneficiario: string | null;
+  beneficiario_doc: string | null;
+  monto: number;
+  unidad: string;
+  fuente_id: string | null;
+  clasificador: string | null;
+  activo: boolean;
+  pagados: string[];
+};
+
+/** Lista de pagos fijos y meses pagados (vacía si la base aún no tiene la actualización). */
+export async function cargarCatalogoPagosFijos(supabase: Cliente, mcpId: string, soloActivos = true): Promise<PagoFijoCatalogo[]> {
+  let c = supabase.from("pagos_fijos").select("*").eq("mcp_id", mcpId).order("concepto");
+  if (soloActivos) c = c.eq("activo", true);
+  const [{ data: lista, error }, { data: hechos }] = await Promise.all([
+    c,
+    supabase.from("expedientes").select("pago_fijo_id, mes_pagado").eq("mcp_id", mcpId).not("pago_fijo_id", "is", null).neq("estado", "anulado"),
+  ]);
+  if (error || !lista) return [];
+  const porPago = new Map<string, string[]>();
+  (hechos ?? []).forEach((h) => {
+    if (!h.pago_fijo_id || !h.mes_pagado) return;
+    porPago.set(h.pago_fijo_id, [...(porPago.get(h.pago_fijo_id) ?? []), h.mes_pagado]);
+  });
+  return lista.map((p) => ({
+    id: p.id,
+    concepto: p.concepto,
+    beneficiario: p.beneficiario,
+    beneficiario_doc: p.beneficiario_doc,
+    monto: Number(p.monto),
+    unidad: p.unidad ?? "MES",
+    fuente_id: p.fuente_id,
+    clasificador: p.clasificador,
+    activo: p.activo,
+    pagados: (porPago.get(p.id) ?? []).sort(),
+  }));
+}
+
+/** Primer mes del año sin pagar hasta el mes actual; si todos están pagados, el siguiente. */
+export function mesPendiente(pagados: string[], periodo: string): string {
+  const [anio, mes] = periodo.split("-").map(Number);
+  for (let m = 1; m <= mes; m++) {
+    const p = `${anio}-${String(m).padStart(2, "0")}`;
+    if (!pagados.includes(p)) return p;
+  }
+  for (let m = mes + 1; m <= 12; m++) {
+    const p = `${anio}-${String(m).padStart(2, "0")}`;
+    if (!pagados.includes(p)) return p;
+  }
+  return `${anio + 1}-01`;
+}

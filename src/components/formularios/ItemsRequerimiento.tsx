@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 type Fila = { cantidad: string; unidad: string; descripcion: string; precio: string };
 
@@ -21,6 +21,16 @@ export default function ItemsRequerimiento({ inicial }: { inicial?: { cantidad: 
       ? inicial.map((i) => ({ cantidad: String(i.cantidad), unidad: i.unidad, descripcion: i.descripcion, precio: String(i.precio_unitario) }))
       : [{ cantidad: "1", unidad: "Unidad", descripcion: "", precio: "" }],
   );
+
+  // El selector de pagos fijos llena las filas solo.
+  useEffect(() => {
+    const llenar = (e: Event) => {
+      const filasNuevas = (e as CustomEvent<Fila[]>).detail;
+      if (Array.isArray(filasNuevas) && filasNuevas.length) setFilas(filasNuevas);
+    };
+    window.addEventListener("sebaz:llenar-items", llenar);
+    return () => window.removeEventListener("sebaz:llenar-items", llenar);
+  }, []);
 
   const cambiar = (i: number, campo: keyof Fila, valor: string) =>
     setFilas((f) => f.map((x, j) => (j === i ? { ...x, [campo]: valor } : x)));

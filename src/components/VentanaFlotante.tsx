@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import BotonConfirmar from "./BotonConfirmar";
 
 /**
  * Botón que abre una ventana flotante con un formulario para crear algo.
@@ -15,6 +16,7 @@ export default function VentanaFlotante({
   abierta = false,
   ancha = false,
   claseBoton = "btn primario",
+  confirmar,
 }: {
   boton: string;
   titulo: string;
@@ -25,6 +27,8 @@ export default function VentanaFlotante({
   abierta?: boolean;
   ancha?: boolean;
   claseBoton?: string;
+  /** Pregunta de confirmación antes de guardar. */
+  confirmar?: string;
 }) {
   const ref = useRef<HTMLDialogElement>(null);
 
@@ -50,9 +54,9 @@ export default function VentanaFlotante({
             <button type="button" className="btn" onClick={() => ref.current?.close()}>
               Cancelar
             </button>
-            <button type="submit" className="btn primario">
+            <BotonConfirmar pregunta={confirmar ?? `¿Está seguro de ${textoGuardar.toLowerCase()}?`} detalle="Revise que los datos estén bien antes de continuar." textoConfirmar={`Sí, ${textoGuardar.toLowerCase()}`}>
               {textoGuardar}
-            </button>
+            </BotonConfirmar>
           </div>
         </form>
       </dialog>

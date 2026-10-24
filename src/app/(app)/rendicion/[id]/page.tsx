@@ -1,4 +1,5 @@
 import Link from "next/link";
+import BotonConfirmar from "@/components/BotonConfirmar";
 import { notFound } from "next/navigation";
 import Avisos from "@/components/Avisos";
 import BotonImprimir from "@/components/BotonImprimir";
@@ -91,7 +92,7 @@ export default async function Informe({
         {r.estado === "generada" && tiene(ctx, "admin", "tesorero") && (
           <form action={marcarEntregada}>
             <input type="hidden" name="id" value={id} />
-            <button className="btn" type="submit">Marcar como entregada</button>
+            <BotonConfirmar className="btn" pregunta="¿Marcar la rendición como entregada?" detalle="Hágalo cuando ya entregó el informe impreso a la municipalidad." textoConfirmar="Sí, ya la entregué">Marcar como entregada</BotonConfirmar>
           </form>
         )}
         {!anulada && tiene(ctx, "admin", "tesorero") && (

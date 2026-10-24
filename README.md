@@ -43,6 +43,7 @@ Las pruebas de estas reglas están en `supabase/tests/pruebas_reglas.sql`.
 2. En **SQL Editor**, ejecute en orden cada archivo de `supabase/migrations` (uno por vez, del más antiguo al más nuevo):
    - `20261019000000_esquema_inicial.sql`
    - `20261019010000_tipos_y_propios.sql` (pago fijo, ingresos propios como fuente, corrección de requerimientos)
+   - `20261023000000_cuadres.sql` (la caja chica y la rendición solo se cierran si cuadran exacto)
 3. En **Authentication → Sign In / Providers → Email**, desactive **Allow new users to sign up**. Los usuarios solo los crea soporte.
 4. En **Authentication → Users → Add user**, cree su usuario de soporte (correo y clave).
 5. En **SQL Editor**, conviértalo en soporte:
@@ -79,6 +80,7 @@ psql -d prueba -f supabase/tests/stub_supabase.sql
 psql -d prueba -f supabase/migrations/20261019000000_esquema_inicial.sql
 psql -d prueba -f supabase/tests/pruebas_reglas.sql   # termina con "TODAS LAS PRUEBAS PASARON"
 psql -d prueba -f supabase/migrations/20261019010000_tipos_y_propios.sql
+psql -d prueba -f supabase/migrations/20261023000000_cuadres.sql
 psql -d prueba -f supabase/tests/pruebas_tipos_propios.sql
 ```
 

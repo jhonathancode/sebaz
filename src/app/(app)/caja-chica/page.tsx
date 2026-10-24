@@ -1,5 +1,6 @@
 import Link from "next/link";
 import Avisos, { type ParamsAviso } from "@/components/Avisos";
+import BotonConfirmar from "@/components/BotonConfirmar";
 import Estado from "@/components/Estado";
 import Motivo from "@/components/Motivo";
 import VentanaFlotante from "@/components/VentanaFlotante";
@@ -100,15 +101,33 @@ export default async function CajaChica({ searchParams }: { searchParams: Params
         {caja && (
           <Link className="btn" href={`/caja-chica/${caja.id}/relacion`}>Imprimir relación</Link>
         )}
-        {caja && abierta && puede && vigentes.length > 0 && (
+        {caja && abierta && puede && (
           <form action={liquidarCaja}>
             <input type="hidden" name="caja_id" value={caja.id} />
             <input type="hidden" name="periodo" value={periodo} />
             <input type="hidden" name="fuente_id" value={fuenteId} />
-            <button className="btn primario" type="submit">Liquidar caja chica</button>
+            <BotonConfirmar
+              disabled={Math.round(saldo * 100) !== 0}
+              pregunta="¿Está seguro de cerrar la caja chica?"
+              detalle={`Se generará el comprobante de pago por S/ ${soles(gastado)}. Cerrada, ya no admite gastos ni cambios.`}
+              textoConfirmar="Sí, cerrar caja chica"
+              peligro
+            >
+              Cerrar caja chica
+            </BotonConfirmar>
           </form>
         )}
       </div>
+      {caja && abierta && Math.round(saldo * 100) !== 0 && (
+        <div className={`aviso ${saldo > 0 ? "info" : "error"}`}>
+          {saldo > 0
+            ? `Para cerrar la caja chica debe gastar todo el fondo. Falta registrar S/ ${soles(saldo)} en gastos.`
+            : `Lo gastado pasa el fondo por S/ ${soles(-saldo)}. Anule o corrija algún gasto para poder cerrar.`}
+        </div>
+      )}
+      {caja && abierta && Math.round(saldo * 100) === 0 && (
+        <div className="aviso ok">La caja chica cuadra: lo gastado es igual al fondo. Ya puede cerrarla.</div>
+      )}
 
       {!caja && (
         puede ? (

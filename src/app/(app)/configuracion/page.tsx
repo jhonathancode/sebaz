@@ -1,4 +1,5 @@
 import Avisos, { type ParamsAviso } from "@/components/Avisos";
+import BotonConfirmar from "@/components/BotonConfirmar";
 import Encabezado from "@/components/Encabezado";
 import Motivo from "@/components/Motivo";
 import { CAMPOS_CAPITULO1, CAMPOS_CAPITULO1_LARGOS } from "@/lib/catalogos";
@@ -78,7 +79,7 @@ export default async function Configuracion({ searchParams }: { searchParams: Pa
                 </div>
                 {admin && (
                   <div>
-                    <button className="btn primario" type="submit">Guardar datos</button>
+                    <BotonConfirmar pregunta="¿Guardar los datos de la MCP?" detalle="Estos datos saldrán en todos los formatos impresos." textoConfirmar="Sí, guardar">Guardar datos</BotonConfirmar>
                   </div>
                 )}
               </div>
@@ -109,7 +110,7 @@ export default async function Configuracion({ searchParams }: { searchParams: Pa
                 ))}
                 {admin && (
                   <div>
-                    <button className="btn primario" type="submit">Guardar capítulo I</button>
+                    <BotonConfirmar pregunta="¿Guardar el capítulo I?" textoConfirmar="Sí, guardar">Guardar capítulo I</BotonConfirmar>
                   </div>
                 )}
               </div>
@@ -167,7 +168,7 @@ export default async function Configuracion({ searchParams }: { searchParams: Pa
               {tiene(ctx, "admin", "tesorero") && (
                 <form action={cerrarMes} style={{ display: "flex", gap: 8, alignItems: "flex-end", flexWrap: "wrap" }}>
                   <label className="campo" style={{ flex: 1 }}>Mes<input type="month" name="periodo" defaultValue={periodoActual()} required /></label>
-                  <button className="btn" type="submit">Cerrar mes</button>
+                  <BotonConfirmar className="btn" pregunta="¿Cerrar el mes?" detalle="Un mes cerrado ya no acepta cambios. Solo el administrador puede reabrirlo, con un motivo." textoConfirmar="Sí, cerrar el mes" peligro>Cerrar mes</BotonConfirmar>
                 </form>
               )}
               {(periodos ?? []).length === 0 && <span className="tenue pequeno">Aún no hay meses cerrados.</span>}

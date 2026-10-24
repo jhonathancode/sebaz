@@ -1,4 +1,5 @@
 import Link from "next/link";
+import BotonConfirmar from "@/components/BotonConfirmar";
 import { notFound } from "next/navigation";
 import Avisos from "@/components/Avisos";
 import Estado from "@/components/Estado";
@@ -118,7 +119,7 @@ export default async function Expediente({ params, searchParams }: { params: Par
             <form action={cambiarEstadoExpediente}>
               <input type="hidden" name="id" value={id} />
               <input type="hidden" name="accion" value="aprobar" />
-              <button className="btn primario grande" type="submit">Aprobar requerimiento</button>
+              <BotonConfirmar className="btn primario grande" pregunta="¿Aprobar este requerimiento?" detalle="Después de aprobarlo ya no se puede cambiar el monto, salvo que se devuelva a borrador." textoConfirmar="Sí, aprobar">Aprobar requerimiento</BotonConfirmar>
             </form>
           ),
         }
@@ -342,7 +343,7 @@ export default async function Expediente({ params, searchParams }: { params: Par
                           <form action={elegirCotizacion}>
                             <input type="hidden" name="expediente_id" value={id} />
                             <input type="hidden" name="cotizacion_id" value={c.id} />
-                            <button className="btn chico primario" type="submit">Elegir esta</button>
+                            <BotonConfirmar className="btn chico primario" pregunta={`¿Elegir la cotización de ${prov(c.proveedores)?.razon_social ?? ""}?`} detalle={`Por S/ ${soles(c.monto)}. Con ella se emitirá la orden.`} textoConfirmar="Sí, elegir">Elegir esta</BotonConfirmar>
                           </form>
                         )}
                         {!c.anulado && !orden && puedeRegistrar && (
@@ -513,7 +514,7 @@ function BotonCopiar({ id, principal = false }: { id: string; principal?: boolea
   return (
     <form action={copiarExpediente} style={{ display: "inline" }}>
       <input type="hidden" name="id" value={id} />
-      <button className={principal ? "btn primario grande" : "btn contorno"} type="submit">Copiar como nuevo</button>
+      <BotonConfirmar className={principal ? "btn primario grande" : "btn contorno"} pregunta="¿Crear un expediente nuevo con estos mismos datos?" detalle="Se abrirá para que corrija lo necesario antes de guardarlo." textoConfirmar="Sí, copiar">Copiar como nuevo</BotonConfirmar>
     </form>
   );
 }

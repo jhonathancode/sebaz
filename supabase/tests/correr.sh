@@ -9,3 +9,5 @@ psql -v ON_ERROR_STOP=1 -q -d prueba_mcp -f migrations/20261019000000_esquema_in
 psql -v ON_ERROR_STOP=1 -q -At -d prueba_mcp -f tests/pruebas_reglas.sql 2>&1 | grep -E 'OK|PASARON|ERROR'
 psql -v ON_ERROR_STOP=1 -q -d prueba_mcp -f migrations/20261019010000_tipos_y_propios.sql
 psql -v ON_ERROR_STOP=1 -q -At -d prueba_mcp -f tests/pruebas_tipos_propios.sql 2>&1 | grep -E 'OK|PASARON|ERROR'
+psql -v ON_ERROR_STOP=1 -q -d prueba_mcp -f migrations/20261023000000_cuadres.sql
+psql -v ON_ERROR_STOP=1 -q -At -d prueba_mcp -f tests/pruebas_cuadres.sql 2>&1 | grep -E 'OK|PASARON|ERROR'

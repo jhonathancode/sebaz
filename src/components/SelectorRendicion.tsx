@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import BotonConfirmar from "./BotonConfirmar";
 
 export type FilaCP = {
   id: string;
@@ -43,7 +44,8 @@ export default function SelectorRendicion({
   const total = useMemo(() => filas.filter((f) => marcados.has(f.id) && !f.propio).reduce((s, f) => s + f.importe, 0), [filas, marcados]);
   const totalPropios = useMemo(() => filas.filter((f) => marcados.has(f.id) && f.propio).reduce((s, f) => s + f.importe, 0), [filas, marcados]);
   const hayPropios = filas.some((f) => f.propio);
-  const saldo = transferencia - total;
+  const saldo = Math.round((transferencia - total) * 100) / 100;
+  const cuadra = marcados.size > 0 && saldo === 0;
   const pct = transferencia ? Math.min(100, Math.round((total / transferencia) * 100)) : 0;
   const todos = disponibles.length > 0 && disponibles.every((f) => marcados.has(f.id));
 
@@ -136,11 +138,23 @@ export default function SelectorRendicion({
             <div style={{ height: 12, background: "var(--linea)", borderRadius: 6, overflow: "hidden" }}>
               <div style={{ width: `${pct}%`, height: "100%", background: "var(--primario)" }} />
             </div>
-            {saldo < 0 && <div className="aviso error">Lo marcado pasa lo transferido en S/ {fmt(-saldo)}.</div>}
+            {cuadra ? (
+              <div className="aviso ok">Cuadra: lo marcado es igual a lo transferido.</div>
+            ) : saldo < 0 ? (
+              <div className="aviso error">Lo marcado pasa lo transferido en S/ {fmt(-saldo)}. Desmarque algún comprobante.</div>
+            ) : (
+              <div className="aviso info">Faltan S/ {fmt(saldo)} para llegar a lo transferido. La rendición se arma cuando cuadra exacto.</div>
+            )}
             {puedeGenerar && (
-              <button className="btn primario" type="submit" disabled={marcados.size === 0 || saldo < 0} style={{ justifyContent: "center" }}>
+              <BotonConfirmar
+                className="btn primario"
+                disabled={!cuadra}
+                pregunta="¿Generar la rendición?"
+                detalle={`Se rendirán ${marcados.size} comprobante(s) por S/ ${fmt(total + totalPropios)}. Después quedan bloqueados; para corregir habría que anular la rendición.`}
+                textoConfirmar="Sí, generar rendición"
+              >
                 Generar rendición
-              </button>
+              </BotonConfirmar>
             )}
             <span className="pequeno tenue">
               Al generar, los comprobantes quedan como rendidos y no pueden usarse en otra rendición. Para corregir se anula la rendición con motivo.

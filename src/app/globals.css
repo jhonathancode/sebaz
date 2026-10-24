@@ -580,3 +580,23 @@ details.historial-plegable > summary::before { content: "▸ "; }
 details.historial-plegable[open] > summary::before { content: "▾ "; }
 details.historial-plegable:not([open]) > summary { border-bottom: none; }
 details.historial-plegable > summary.panel-cab { justify-content: flex-start; }
+
+/* Botón principal de Inicio: empezar un requerimiento */
+.empezar {
+  display: flex; align-items: center; gap: 18px;
+  padding: 20px 24px; margin: 4px 0 16px;
+  background: var(--primario); color: #fff; border-radius: 12px;
+  text-decoration: none; box-shadow: 0 6px 18px rgba(30, 80, 180, 0.25);
+  transition: background .15s, transform .15s;
+}
+.empezar:hover { background: var(--primario-hover); color: #fff; transform: translateY(-1px); text-decoration: none; }
+.empezar-icono {
+  flex: none; width: 52px; height: 52px; border-radius: 50%;
+  background: rgba(255,255,255,.18); display: grid; place-items: center;
+  font-size: 32px; font-weight: 300; line-height: 1;
+}
+.empezar-texto { display: flex; flex-direction: column; gap: 4px; flex: 1; }
+.empezar-texto strong { font-size: 20px; }
+.empezar-texto span { opacity: .9; font-size: 14px; }
+.empezar-flecha { font-size: 28px; flex: none; }
+@media (max-width: 600px) { .empezar { padding: 16px; gap: 12px; } .empezar-flecha { display: none; } }

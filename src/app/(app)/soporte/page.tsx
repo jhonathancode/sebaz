@@ -1,4 +1,5 @@
 import { cookies } from "next/headers";
+import BotonConfirmar from "@/components/BotonConfirmar";
 import Link from "next/link";
 import Avisos, { type ParamsAviso } from "@/components/Avisos";
 import Estado from "@/components/Estado";
@@ -116,7 +117,7 @@ export default async function Soporte({ searchParams }: { searchParams: ParamsAv
                   </label>
                   <label className="campo">Cargo (como sale en documentos)<input name="cargo" placeholder="Tesorera" /></label>
                   <label className="campo">Desde<input type="date" name="desde" defaultValue={hoyISO()} required /></label>
-                  <div style={{ display: "flex", alignItems: "flex-end" }}><button className="btn primario" type="submit">Crear acceso</button></div>
+                  <div style={{ display: "flex", alignItems: "flex-end" }}><BotonConfirmar pregunta="¿Crear este acceso?" textoConfirmar="Sí, crear">Crear acceso</BotonConfirmar></div>
                 </div>
               </form>
 
@@ -145,7 +146,7 @@ export default async function Soporte({ searchParams }: { searchParams: ParamsAv
                   <label className="campo">Correo de quien entra<input name="correo" type="email" required /></label>
                   <label className="campo">Nombre de quien entra<input name="nombre" /></label>
                   <label className="campo">Fecha del acta<input type="date" name="fecha" defaultValue={hoyISO()} required /></label>
-                  <div style={{ display: "flex", alignItems: "flex-end" }}><button className="btn primario" type="submit">Registrar relevo</button></div>
+                  <div style={{ display: "flex", alignItems: "flex-end" }}><BotonConfirmar pregunta="¿Registrar el relevo?" detalle="Quien sale pierde el acceso desde la fecha del acta." textoConfirmar="Sí, registrar" peligro>Registrar relevo</BotonConfirmar></div>
                 </div>
               </form>
             </>
@@ -187,7 +188,7 @@ export default async function Soporte({ searchParams }: { searchParams: ParamsAv
                     </select>
                   </label>
                   <label className="campo">Prueba hasta<input type="date" name="prueba_hasta" defaultValue={elegida.prueba_hasta ?? ""} /></label>
-                  <button className="btn" type="submit">Guardar estado</button>
+                  <BotonConfirmar className="btn" pregunta="¿Cambiar el estado de la MCP?" textoConfirmar="Sí, cambiar">Guardar estado</BotonConfirmar>
                 </div>
               </form>
             </>
@@ -220,7 +221,7 @@ export default async function Soporte({ searchParams }: { searchParams: ParamsAv
                     <option value="general">General</option>
                   </select>
                 </label>
-                <button className="btn primario" type="submit">Registrar MCP</button>
+                <BotonConfirmar pregunta="¿Registrar esta MCP?" textoConfirmar="Sí, registrar">Registrar MCP</BotonConfirmar>
               </div>
             </form>
           )}

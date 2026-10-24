@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
+import BotonConfirmar from "./BotonConfirmar";
 
 export type EnlaceMenu = { href: string; texto: string; grupo: "cuenta" | "administracion" | "soporte" };
 
@@ -99,7 +100,7 @@ export default function MenuUsuario({
           )}
 
           <form action={salir} className="desplegable-seccion">
-            <button type="submit" role="menuitem" className="salir">Cerrar sesión</button>
+            <BotonConfirmar className="salir" pregunta="¿Cerrar sesión?" textoConfirmar="Sí, salir">Cerrar sesión</BotonConfirmar>
           </form>
         </div>
       )}

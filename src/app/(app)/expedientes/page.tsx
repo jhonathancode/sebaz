@@ -69,7 +69,7 @@ export default async function Expedientes({ searchParams }: { searchParams: Para
         <button className="btn" type="submit">Filtrar</button>
         </form>
         <span className="espacio" />
-        <VentanaFlotante boton="Nuevo requerimiento" titulo="Nuevo requerimiento" accion={crearExpediente} textoGuardar="Guardar requerimiento" abierta={sp.nuevo === "1"} ancha>
+        <VentanaFlotante boton="+ Nuevo requerimiento" claseBoton="btn primario grande" titulo="Nuevo requerimiento" accion={crearExpediente} textoGuardar="Guardar requerimiento" abierta={sp.nuevo === "1"} ancha>
           <CamposRequerimiento fuentes={ctx.fuentes} />
         </VentanaFlotante>
       </div>

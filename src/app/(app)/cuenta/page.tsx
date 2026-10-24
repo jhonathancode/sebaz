@@ -1,4 +1,5 @@
 import Avisos, { type ParamsAviso } from "@/components/Avisos";
+import BotonConfirmar from "@/components/BotonConfirmar";
 import { obtenerContexto } from "@/lib/contexto";
 import { texto, volver } from "@/lib/acciones";
 import { supabaseServidor } from "@/lib/supabase/server";
@@ -27,7 +28,7 @@ export default async function Cuenta({ searchParams }: { searchParams: ParamsAvi
         <div className="panel-cuerpo">
           <label className="campo">Clave nueva (mínimo 10 caracteres)<input type="password" name="nueva" required minLength={10} autoComplete="new-password" /></label>
           <label className="campo">Repetir clave nueva<input type="password" name="repetir" required minLength={10} autoComplete="new-password" /></label>
-          <button className="btn primario" type="submit">Cambiar clave</button>
+          <BotonConfirmar pregunta="¿Cambiar su contraseña?" textoConfirmar="Sí, cambiar">Cambiar clave</BotonConfirmar>
         </div>
       </form>
     </>

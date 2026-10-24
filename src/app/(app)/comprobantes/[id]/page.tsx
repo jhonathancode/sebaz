@@ -1,4 +1,5 @@
 import Link from "next/link";
+import BotonConfirmar from "@/components/BotonConfirmar";
 import { notFound } from "next/navigation";
 import Avisos from "@/components/Avisos";
 import BotonImprimir from "@/components/BotonImprimir";
@@ -44,7 +45,7 @@ export default async function Comprobante({ params, searchParams }: { params: P;
           <form action={cambiarEstadoComprobante}>
             <input type="hidden" name="id" value={id} />
             <input type="hidden" name="accion" value="aprobar" />
-            <button className="btn primario" type="submit">Aprobar</button>
+            <BotonConfirmar pregunta="¿Aprobar este comprobante de pago?" detalle="Aprobado ya no se edita: solo falta escribir el número de cheque." textoConfirmar="Sí, aprobar">Aprobar</BotonConfirmar>
           </form>
         )}
         {c.estado === "aprobado" && puedeAprobar && !c.cheque && (
@@ -74,7 +75,7 @@ export default async function Comprobante({ params, searchParams }: { params: P;
               <div className="panel-cuerpo">
                 <input type="hidden" name="id" value={id} />
                 <label className="campo">N° de cheque<input name="cheque" required inputMode="numeric" /></label>
-                <button className="btn primario" type="submit">Guardar cheque</button>
+                <BotonConfirmar pregunta="¿Guardar este número de cheque?" detalle="El cheque se escribe una sola vez y ya no se puede cambiar." textoConfirmar="Sí, guardar cheque">Guardar cheque</BotonConfirmar>
                 <span className="pequeno tenue">El cheque se escribe una sola vez. Sin cheque, el comprobante no entra en la rendición.</span>
               </div>
             </form>
@@ -108,7 +109,7 @@ export default async function Comprobante({ params, searchParams }: { params: P;
                   </select>
                 </label>
                 <label className="campo">N° del sustento<input name="sustento_numero" defaultValue={c.sustento_numero ?? ""} /></label>
-                <button className="btn" type="submit">Guardar cambios</button>
+                <BotonConfirmar className="btn" pregunta="¿Guardar los cambios del comprobante?" textoConfirmar="Sí, guardar">Guardar cambios</BotonConfirmar>
               </div>
             </form>
           )}

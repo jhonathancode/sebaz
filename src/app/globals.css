@@ -41,7 +41,7 @@
   --rojo-fondo: #fbe8e5;
   --foco: #2f7cd8;
   --sombra: none;
-  --radio: 0px;
+  --radio: 8px;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -663,7 +663,7 @@ details.historial-plegable > summary.panel-cab { justify-content: flex-start; }
 
 /* =====================================================================
    ACABADO SOBRIO E INSTITUCIONAL
-   Esquinas rectas, sin brillos ni sombras decorativas, letra Public Sans,
+   Esquinas suaves, sin brillos ni sombras decorativas, letra Public Sans,
    contenido a todo el ancho y menú lateral que se oculta.
    ===================================================================== */
 :root { --lm-ancho: 264px; --cab-alto: 56px; }
@@ -686,8 +686,6 @@ details.historial-plegable > summary.panel-cab { justify-content: flex-start; }
   }
 }
 
-/* Esquinas rectas en todo */
-*, *::before, *::after { border-radius: 0 !important; }
 
 /* Tipografía firme */
 body { font-family: "Public Sans", "Segoe UI", system-ui, sans-serif; font-size: 14px; font-variant-numeric: tabular-nums; overflow-x: clip; }
@@ -781,3 +779,13 @@ body:has(.marco-app[data-menu="oculto"]) .marca-mcp { display: inline; }
   .marco-app { display: block; }
   .marco-app > .ventana { padding: 0; }
 }
+
+/* Esquinas curvas suaves en los elementos del menú y la cabecera */
+.boton-menu { border-radius: 8px; }
+.lm-escudo { border-radius: 10px; }
+.lateral-menu a.lm-nuevo { border-radius: 8px; }
+.lateral-menu ul a { margin: 1px 10px; padding-left: 12px; border-left: none; border-radius: 8px; }
+.lateral-menu ul a.activo { box-shadow: inset 3px 0 0 var(--primario); }
+.saludo { border-radius: 12px; }
+.empezar { border-radius: 12px; }
+.empezar-icono { border-radius: 50%; }

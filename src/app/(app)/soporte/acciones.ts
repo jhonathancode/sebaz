@@ -187,7 +187,7 @@ export async function registrarRelevo(fd: FormData) {
   if (usuario.clave) await guardarClaveTemporal(correo, usuario.clave);
   revalidatePath("/soporte");
   if (eRegistro) volver(destino, "ok", "Relevo registrado, pero no se pudo guardar su constancia: " + mensajeError(eRegistro));
-  volver(destino, "ok", "Relevo registrado con su documento de respaldo: quien sale pierde el acceso desde esa fecha.");
+  volver(destino, "ok", "Relevo registrado con su documento de respaldo: quien sale pierde el acceso desde esa fecha. Si es tesorería, la gestión anterior tiene 30 días de gracia y luego queda bloqueada.");
 }
 
 /** Borra el PIN de una persona: al ingresar tendrá que elegir uno nuevo. Queda en la auditoría. */

@@ -6,11 +6,13 @@ import BotonPdf from "@/components/BotonPdf";
 import BotonImprimir from "@/components/BotonImprimir";
 import FormatoComprobante from "@/components/formatos/FormatoComprobante";
 import Estado from "@/components/Estado";
+import { MarcaAnuladaPagina } from "@/components/MarcaAnulado";
 import Motivo from "@/components/Motivo";
 import SelectFuncion from "@/components/SelectFuncion";
 import { CLASIFICADORES, SUSTENTOS } from "@/lib/catalogos";
 import { contextoMcp, tiene } from "@/lib/contexto";
-import { codigoCP, fechaHora } from "@/lib/formato";
+import { cargarCierres, estadoGestion } from "@/lib/gestion";
+import { codigoCP, fecha, fechaHora, hoyISO } from "@/lib/formato";
 import { supabaseServidor } from "@/lib/supabase/server";
 import { siguienteCheque } from "@/lib/pagosFijos";
 import { cambiarEstadoComprobante, editarComprobante, registrarCheque } from "../acciones";
@@ -35,8 +37,10 @@ export default async function Comprobante({ params, searchParams }: { params: P;
 
   const exp = c.expedientes as { numero: number; anio: number } | null;
   const borrador = c.estado === "borrador";
-  const puedeRegistrar = tiene(ctx, "admin", "tesorero", "contador", "alcalde");
-  const puedeAprobar = tiene(ctx, "alcalde", "admin");
+  const gestion = estadoGestion(c.fecha, await cargarCierres(supabase, ctx.mcp.id), hoyISO());
+  const bloqueadoGestion = gestion?.estado === "bloqueado";
+  const puedeRegistrar = tiene(ctx, "admin", "tesorero", "contador", "alcalde") && !bloqueadoGestion;
+  const puedeAprobar = tiene(ctx, "alcalde", "admin") && !bloqueadoGestion;
   const editable = borrador && puedeRegistrar;
 
   return (
@@ -66,12 +70,15 @@ export default async function Comprobante({ params, searchParams }: { params: P;
       <div className="no-imprimir">
         <Avisos ok={sp.ok} error={sp.error} />
         {c.motivo_devolucion && borrador && <div className="aviso error">Devuelto: {c.motivo_devolucion}</div>}
+        {gestion?.estado === "bloqueado" && <div className="aviso error"><strong>Gestión anterior: bloqueado.</strong> Es de antes del cambio de tesorería y desde el {fecha(gestion.desde)} ya no se puede editar ni anular. Sí se puede imprimir.</div>}
+        {gestion?.estado === "gracia" && <div className="aviso alerta"><strong>Gestión anterior: plazo de gracia.</strong> Puede corregirlo hasta el {fecha(new Date(Date.parse(gestion.desde) - 86400000).toISOString().slice(0, 10))}; desde el {fecha(gestion.desde)} queda bloqueado para siempre.</div>}
         {c.estado === "anulado" && <div className="aviso error">Anulado: {c.anulado_motivo} · {fechaHora(c.anulado_en)}</div>}
       </div>
 
       <div className="columnas">
         <div className="principal">
-          <FormatoComprobante c={{ ...c, hecho_por: (c.perfiles as { nombre: string } | null)?.nombre }} mcp={ctx.mcp} />
+          {c.estado === "anulado" && <MarcaAnuladaPagina />}
+          <FormatoComprobante c={{ ...c, hecho_por: (c.perfiles as { nombre: string } | null)?.nombre }} mcp={ctx.mcp} anulado={c.estado === "anulado" ? { motivo: c.anulado_motivo, en: c.anulado_en } : null} />
         </div>
 
         <aside className="lateral no-imprimir">

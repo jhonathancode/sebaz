@@ -1,3 +1,4 @@
+import MarcaAnulado, { MarcaAnuladaPagina } from "@/components/MarcaAnulado";
 import Encabezado from "@/components/Encabezado";
 import Firmas from "@/components/Firmas";
 import type { Mcp } from "@/lib/contexto";
@@ -82,7 +83,7 @@ function Detalle({ items, costo }: { items: ItemAlmacen[]; costo: string }) {
 export function FormatoNea({ n, mcp }: { n: DatosNea; mcp: Mcp }) {
   return (
     <div className="hoja">
-      {n.anulado && <div className="sello-anulado">ANULADO</div>}
+      {n.anulado && <><MarcaAnulado /><MarcaAnuladaPagina /></>}
       <Encabezado mcp={mcp} titulo={`NOTA DE ENTRADA AL ALMACÉN N° ${numeroDoc(n.numero, n.anio)}`} numero={`Fecha: ${fecha(n.fecha)}`} />
       <table className="formato">
         <tbody>
@@ -115,7 +116,7 @@ export function FormatoNea({ n, mcp }: { n: DatosNea; mcp: Mcp }) {
 export function FormatoPecosa({ p, mcp }: { p: DatosPecosa; mcp: Mcp }) {
   return (
     <div className="hoja">
-      {p.anulado && <div className="sello-anulado">ANULADO</div>}
+      {p.anulado && <><MarcaAnulado /><MarcaAnuladaPagina /></>}
       <Encabezado mcp={mcp} titulo={`PEDIDO COMPROBANTE DE SALIDA (PECOSA) N° ${numeroDoc(p.numero, p.anio)}`} numero={`Fecha: ${fecha(p.fecha)}`} />
       <table className="formato">
         <tbody>

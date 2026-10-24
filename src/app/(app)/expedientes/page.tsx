@@ -4,7 +4,8 @@ import Estado from "@/components/Estado";
 import CamposRequerimiento from "@/components/formularios/CamposRequerimiento";
 import VentanaFlotante from "@/components/VentanaFlotante";
 import { contextoMcp, tiene } from "@/lib/contexto";
-import { fecha, nombrePeriodo, num3, periodoActual, rangoPeriodo, soles } from "@/lib/formato";
+import { cargarCierres, estadoGestion } from "@/lib/gestion";
+import { fecha, hoyISO, nombrePeriodo, num3, periodoActual, rangoPeriodo, soles } from "@/lib/formato";
 import { supabaseServidor } from "@/lib/supabase/server";
 import { cargarCatalogoPagosFijos, siguienteCheque } from "@/lib/pagosFijos";
 import { crearExpediente } from "./acciones";
@@ -47,7 +48,7 @@ export default async function Expedientes({ searchParams }: { searchParams: Para
     .order("numero", { ascending: false });
   if (q) consulta = consulta.ilike("descripcion", `%${q}%`);
   if (tipo) consulta = consulta.eq("tipo", tipo);
-  const [{ data: lista }, pagosFijos, chequeSugerido] = await Promise.all([consulta, cargarCatalogoPagosFijos(supabase, ctx.mcp.id), siguienteCheque(supabase, ctx.mcp.id)]);
+  const [{ data: lista }, pagosFijos, chequeSugerido, cierres] = await Promise.all([consulta, cargarCatalogoPagosFijos(supabase, ctx.mcp.id), siguienteCheque(supabase, ctx.mcp.id), cargarCierres(supabase, ctx.mcp.id)]);
 
   const todos = (lista ?? []).map((e) => ({
     ...e,
@@ -167,6 +168,10 @@ export default async function Expedientes({ searchParams }: { searchParams: Para
                 <div className="f-meta">
                   <span className="etq">{TIPOS[e.tipo] ?? e.tipo}</span>
                   {e.area_usuaria && <span>{e.area_usuaria}</span>}
+                  {(() => {
+                    const g = estadoGestion(e.fecha, cierres, hoyISO());
+                    return g ? <span className={`etq ${g.estado === "bloqueado" ? "rojo" : "ambar"}`} title={g.estado === "bloqueado" ? "De una gestión anterior: bloqueado" : `Gestión anterior: se bloquea el ${fecha(g.desde)}`}>{g.estado === "bloqueado" ? "🔒 Gestión anterior" : "Gestión anterior · en gracia"}</span> : null;
+                  })()}
                 </div>
                 <div className="doc-pasos" aria-label="Documentos del expediente">
                   {pasos.map((p, i) => {

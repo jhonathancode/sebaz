@@ -11,6 +11,7 @@ import DocumentosExpediente, { Memorando, Orden, type DatosExpediente } from "@/
 import FormatoComprobante from "@/components/formatos/FormatoComprobante";
 import { FormatoNea } from "@/components/formatos/FormatosAlmacen";
 import { cargarExpediente } from "@/lib/documentos";
+import { cargarCierres, estadoGestion } from "@/lib/gestion";
 import { siguienteCheque } from "@/lib/pagosFijos";
 import SelectFuncion from "@/components/SelectFuncion";
 import { SUSTENTOS } from "@/lib/catalogos";
@@ -99,8 +100,11 @@ export default async function Expediente({ params, searchParams }: { params: Par
   const fijo = e.tipo === "pago_fijo";
   const anulado = e.estado === "anulado";
   const aprobado = e.estado === "aprobado" || e.estado === "rendido";
-  const puedeRegistrar = tiene(ctx, "admin", "tesorero", "contador", "alcalde") && !anulado;
-  const puedeAprobar = tiene(ctx, "alcalde", "admin");
+  // Gestión anterior (antes de un cambio de tesorería): 30 días de gracia y luego bloqueado
+  const gestion = estadoGestion(e.fecha, await cargarCierres(supabase, ctx.mcp.id), hoyISO());
+  const bloqueadoGestion = gestion?.estado === "bloqueado";
+  const puedeRegistrar = tiene(ctx, "admin", "tesorero", "contador", "alcalde") && !anulado && !bloqueadoGestion;
+  const puedeAprobar = tiene(ctx, "alcalde", "admin") && !bloqueadoGestion;
   const nombreOrden = e.tipo === "compra" ? "orden de compra" : "orden de servicio";
   const fuente = e.fuentes as Parameters<typeof nombreFuente>[0] | null;
 
@@ -147,7 +151,7 @@ export default async function Expediente({ params, searchParams }: { params: Par
   if (anulado) {
     sigue = {
       texto: "Este expediente está anulado.",
-      ayuda: `Motivo: ${e.anulado_motivo ?? ""} · ${fechaHora(e.anulado_en)}. Si había un error, use «Copiar como nuevo» para registrarlo otra vez con los datos correctos.`,
+      ayuda: `Motivo: ${e.anulado_motivo ?? ""} · ${fechaHora(e.anulado_en)}. Sus documentos se pueden imprimir y salen con el sello ANULADO. Si había un error, use «Copiar como nuevo» para registrarlo otra vez con los datos correctos.`,
       accion: <BotonCopiar id={id} principal />,
     };
   } else if (e.estado === "borrador") {
@@ -414,6 +418,17 @@ export default async function Expediente({ params, searchParams }: { params: Par
         </div>
       </div>
       <Avisos ok={sp.ok} error={sp.error} />
+
+      {gestion?.estado === "bloqueado" && (
+        <div className="aviso error">
+          <strong>Gestión anterior: bloqueado.</strong> Este expediente es de antes del cambio de tesorería y quedó bloqueado el {fecha(gestion.desde)}: ya no se puede editar ni anular. Sí se puede ver e imprimir.
+        </div>
+      )}
+      {gestion?.estado === "gracia" && (
+        <div className="aviso alerta">
+          <strong>Gestión anterior: plazo de gracia.</strong> Hubo un cambio de tesorería el {fecha(gestion.relevo)}. Puede corregir este expediente hasta el {fecha(new Date(Date.parse(gestion.desde) - 86400000).toISOString().slice(0, 10))}; desde el {fecha(gestion.desde)} queda bloqueado para siempre.
+        </div>
+      )}
 
       {!e.fuente_id && !anulado && (
         <section className="aviso alerta aviso-accion" style={{ alignItems: "flex-end", flexWrap: "wrap" }}>

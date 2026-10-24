@@ -1,4 +1,5 @@
 import Encabezado from "@/components/Encabezado";
+import MarcaAnulado, { MarcaAnuladaPagina } from "@/components/MarcaAnulado";
 import Firmas from "@/components/Firmas";
 import FormatoComprobante from "@/components/formatos/FormatoComprobante";
 import type { Mcp } from "@/lib/contexto";
@@ -25,12 +26,13 @@ export default function DocumentosExpediente({
   const mostrar = (c: string) => clave === "todo" || clave === c;
   return (
     <>
+      {d.anulado && <MarcaAnuladaPagina />}
       {mostrar("requerimiento") && <Requerimiento d={d} mcp={mcp} />}
       {mostrar("cotizaciones") && d.cotizaciones.length > 0 && <Cotizaciones d={d} mcp={mcp} />}
       {mostrar("orden") && d.orden && <Orden d={d} mcp={mcp} />}
       {mostrar("conformidad") && d.conformidad && <Memorando d={d} mcp={mcp} tesorero={tesorero} cargo={cargo} />}
       {mostrar("comprobante") && d.cp && (
-        <FormatoComprobante c={{ ...d.cp, hecho_por: (d.cp.perfiles as { nombre: string } | null)?.nombre }} mcp={mcp} />
+        <FormatoComprobante c={{ ...d.cp, hecho_por: (d.cp.perfiles as { nombre: string } | null)?.nombre }} mcp={mcp} anulado={d.anulado ?? (d.cp.estado === "anulado" ? { motivo: d.cp.anulado_motivo, en: d.cp.anulado_en } : null)} />
       )}
     </>
   );
@@ -45,6 +47,7 @@ export function Requerimiento({ d, mcp }: { d: Datos; mcp: Mcp }) {
   const total = d.items.reduce((s, i) => s + Number(i.total), 0);
   return (
     <div className="hoja">
+      {d.anulado && <MarcaAnulado {...d.anulado} />}
       <Encabezado mcp={mcp} titulo={`CUADRO DE REQUERIMIENTO N° ${num3(e.numero)}-${e.anio}-MCP-${sufijo(mcp)}`} numero={`Fecha: ${fecha(e.fecha)}`} />
       <table className="formato">
         <tbody>
@@ -73,6 +76,7 @@ function Cotizaciones({ d, mcp }: { d: Datos; mcp: Mcp }) {
   const e = d.e!;
   return (
     <div className="hoja">
+      {d.anulado && <MarcaAnulado {...d.anulado} />}
       <Encabezado mcp={mcp} titulo="CUADRO COMPARATIVO DE COTIZACIONES" numero={`Requerimiento N° ${num3(e.numero)}-${e.anio}`} />
       <p style={{ margin: "12px 0 0" }}>Objeto: {e.descripcion}</p>
       <table className="formato">
@@ -102,6 +106,7 @@ export function Orden({ d, mcp }: { d: Datos; mcp: Mcp }) {
   const p = orden.proveedores as unknown as Proveedor | null;
   return (
     <div className="hoja">
+      {d.anulado && <MarcaAnulado {...d.anulado} />}
       <Encabezado
         mcp={mcp}
         titulo={`ORDEN DE ${orden.tipo === "compra" ? "COMPRA" : "SERVICIO"} N° ${num3(orden.numero)}-${orden.anio}`}
@@ -156,6 +161,7 @@ export function Memorando({ d, mcp, tesorero, cargo }: { d: Datos; mcp: Mcp; tes
   const conf = d.conformidad!;
   return (
     <div className="hoja">
+      {d.anulado && <MarcaAnulado {...d.anulado} />}
       <div style={{ fontWeight: 600, textAlign: "center", fontSize: 15 }}>
         MEMORANDO N° {num3(conf.memorando_numero)}-{conf.anio}-MCP-{sufijo(mcp)}/ALC
       </div>

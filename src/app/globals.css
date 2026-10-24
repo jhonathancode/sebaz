@@ -1440,3 +1440,27 @@ form:has(input[name="tipo"][value="pago_fijo"]:checked) .pin-auto { display: blo
 @media (max-width: 900px) {
   .cabecera .bandeja-panel { position: fixed; top: calc(var(--cab-alto) + 4px); right: 8px; left: 8px; width: auto; }
 }
+
+/* =====================================================================
+   DOCUMENTOS ANULADOS: sello de esquina a esquina, también al imprimir
+   ===================================================================== */
+.hoja:has(> .marca-anulado) { position: relative; overflow: clip; }
+.marca-anulado { pointer-events: none; display: grid; place-items: center; z-index: 5; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+.marca-anulado.en-hoja { position: absolute; inset: 0; }
+.marca-anulado.en-pagina { display: none; }
+.marca-anulado > span {
+  display: block; transform: rotate(-33deg); white-space: nowrap; font-weight: 900; letter-spacing: .12em; line-height: 1;
+  font-size: 100px; color: rgba(190, 30, 30, .22); border: 9px solid rgba(190, 30, 30, .22); border-radius: 18px; padding: 10px 34px 10px 44px;
+}
+.nota-anulado { border: 2px solid #b3261e; color: #b3261e; background: #fdecea; text-align: center; font-size: 12.5px; padding: 6px 10px; margin-bottom: 12px; border-radius: 4px; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+@media (max-width: 760px) { .marca-anulado > span { font-size: 72px; border-width: 7px; } }
+@media print {
+  /* En papel, el sello cubre la página entera, de esquina a esquina, en cada hoja impresa */
+  .marca-anulado.en-hoja { display: none; }
+  .marca-anulado.en-pagina { display: grid; position: fixed; inset: 0; }
+  .marca-anulado.en-pagina > span { font-size: 16.5vmin; border-width: 1.6vmin; border-radius: 2.4vmin; transform: rotate(-52deg); color: rgba(190, 30, 30, .24); border-color: rgba(190, 30, 30, .24); }
+}
+
+/* Gestión anterior (antes de un cambio de tesorería) */
+.etq.rojo { background: var(--rojo-fondo); border-color: var(--rojo-borde); color: var(--rojo); }
+.etq.ambar { background: var(--ambar-fondo); border-color: var(--ambar-borde); color: var(--ambar); }

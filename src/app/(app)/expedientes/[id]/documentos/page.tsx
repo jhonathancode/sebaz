@@ -33,6 +33,10 @@ export default async function Documentos({
   const lista = listaDocumentos(d);
   const nombreTesorero = (tesorero?.perfiles as unknown as { nombre: string } | null)?.nombre ?? "";
   const elegido = lista.find((x) => x.clave === doc);
+  // Documento anterior y siguiente (solo entre los que ya existen)
+  const listos = lista.filter((x) => x.listo);
+  const pos = listos.findIndex((x) => x.clave === doc);
+  const vecinos = pos >= 0 ? { anterior: listos[pos - 1], siguiente: listos[pos + 1], posicion: pos + 1, total: listos.length } : null;
 
   return (
     <>
@@ -48,22 +52,34 @@ export default async function Documentos({
         {imprimir === "1" && <ImprimirAlAbrir />}
       </div>
 
-      <div className="pestanas no-imprimir" role="tablist" aria-label="Documentos">
-        <Link role="tab" aria-selected={doc === "todo"} className={doc === "todo" ? "activo" : undefined} href={`/expedientes/${id}/documentos?doc=todo`}>
-          Expediente completo
+      <nav className="doc-nav no-imprimir" aria-label="Documentos del expediente">
+        <Link className={`doc-tab todo${doc === "todo" ? " activo" : ""}`} aria-current={doc === "todo" ? "page" : undefined} href={`/expedientes/${id}/documentos?doc=todo`}>
+          <span className="ic" aria-hidden="true">▤</span>Expediente completo
         </Link>
-        {lista.map((x) =>
-          x.listo ? (
-            <Link key={x.clave} role="tab" aria-selected={doc === x.clave} className={doc === x.clave ? "activo" : undefined} href={`/expedientes/${id}/documentos?doc=${x.clave}`}>
-              {x.nombre}
-            </Link>
-          ) : (
-            <span key={x.clave} className="tenue" title="Aún no existe" style={{ opacity: 0.55 }}>
-              {x.nombre}
-            </span>
-          ),
-        )}
-      </div>
+        <i className="doc-nav-sep" aria-hidden="true" />
+        {lista.map((x, i) => (
+          <span key={x.clave} className="doc-par">
+            {i > 0 && <i className={`doc-sep${x.listo ? " ok" : ""}`} aria-hidden="true" />}
+            {x.listo ? (
+              <Link className={`doc-tab${doc === x.clave ? " activo" : ""}`} aria-current={doc === x.clave ? "page" : undefined} href={`/expedientes/${id}/documentos?doc=${x.clave}`}>
+                <span className="ic" aria-hidden="true">✓</span>{x.nombre}
+              </Link>
+            ) : (
+              <span className="doc-tab pendiente" title="Aún no existe">
+                <span className="ic" aria-hidden="true" />{x.nombre}
+              </span>
+            )}
+          </span>
+        ))}
+      </nav>
+
+      {vecinos && (
+        <div className="doc-pos no-imprimir">
+          {vecinos.anterior ? <Link className="btn chico contorno" href={`/expedientes/${id}/documentos?doc=${vecinos.anterior.clave}`}>← {vecinos.anterior.nombre}</Link> : <span />}
+          <span className="tenue pequeno">Documento {vecinos.posicion} de {vecinos.total}</span>
+          {vecinos.siguiente ? <Link className="btn chico contorno" href={`/expedientes/${id}/documentos?doc=${vecinos.siguiente.clave}`}>{vecinos.siguiente.nombre} →</Link> : <span />}
+        </div>
+      )}
 
       {elegido && !elegido.listo && <div className="aviso info">Este documento todavía no existe en el expediente.</div>}
       {doc === "todo" && (

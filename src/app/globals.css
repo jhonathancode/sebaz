@@ -1364,3 +1364,28 @@ a.doc-paso:hover .ic { background: #fff; color: var(--primario); }
   .doc-sep { display: none; }
   .doc-paso, .fila .f-desc a.doc-paso { font-size: 11.5px; padding: 3px 9px 3px 4px; }
 }
+
+/* Documentos del expediente: pestañas como pasos ordenados */
+.doc-nav { display: flex; flex-wrap: wrap; align-items: center; row-gap: 8px; padding: 12px 14px; background: var(--panel); border: 1px solid var(--borde); border-radius: 12px; }
+.vista-pestanas.doc-nav { border: none; border-radius: 0; padding: 12px 14px 4px; background: transparent; }
+.doc-nav-sep { width: 1px; height: 24px; background: var(--borde-fuerte); margin: 0 12px; opacity: .6; }
+.doc-tab { display: inline-flex; align-items: center; gap: 7px; padding: 5px 14px 5px 5px; border-radius: 999px; border: 1px solid var(--primario-claro); background: var(--primario-fondo); color: var(--primario-texto); font-size: 13px; font-weight: 600; text-decoration: none; white-space: nowrap; cursor: pointer; }
+.doc-tab .ic { width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center; background: var(--primario); color: #fff; font-size: 12px; font-weight: 800; flex: none; }
+.doc-tab:hover { border-color: var(--primario); }
+.doc-tab.activo { background: var(--primario); border-color: var(--primario); color: #fff; box-shadow: 0 2px 8px -2px var(--primario); }
+.doc-tab.activo .ic { background: #fff; color: var(--primario); }
+.doc-tab.todo:not(.activo) .ic { background: var(--panel); color: var(--primario-texto); border: 1px solid var(--primario-claro); }
+.doc-tab.pendiente { border-style: dashed; border-color: var(--borde-fuerte); background: transparent; color: var(--tenue); font-weight: 500; cursor: default; }
+.doc-tab.pendiente .ic { background: transparent; border: 2px solid var(--borde-fuerte); }
+.doc-tab.pendiente.siguiente { border-color: var(--primario); color: var(--primario-texto); cursor: pointer; }
+.doc-tab.pendiente.activo { background: var(--primario-fondo); color: var(--primario-texto); box-shadow: none; }
+.doc-tab.pendiente.activo .ic { background: transparent; border-color: var(--primario); }
+.doc-pos { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-top: 10px; flex-wrap: wrap; }
+.documentos.mesa { margin-top: 12px; border-radius: 12px; padding: 22px 12px; }
+@media (max-width: 760px) {
+  .doc-nav { flex-wrap: nowrap; overflow-x: auto; padding: 10px; }
+  .doc-nav > *, .doc-nav .doc-par { flex: none; }
+  .doc-nav-sep { margin: 0 8px; }
+  .doc-pos { justify-content: center; }
+  .doc-pos .tenue { order: -1; width: 100%; text-align: center; }
+}

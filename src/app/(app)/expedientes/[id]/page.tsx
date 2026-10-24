@@ -653,33 +653,36 @@ export default async function Expediente({ params, searchParams }: { params: Par
             )}
           </div>
         </div>
-        <div className="chips vista-pestanas" role="tablist" aria-label="Documentos del expediente">
-          {docs.map((x) => (
-            <Link
-              key={x.clave}
-              role="tab"
-              aria-selected={x.clave === verClave}
-              scroll={false}
-              className={`chip${x.clave === verClave ? " activo" : ""}`}
-              href={`/expedientes/${id}?ver=${x.clave}${sp.paso ? `&paso=${sp.paso}` : ""}`}
-            >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><path d="M14 2v6h6" /></svg>
-              {x.nombre}
-            </Link>
+        <nav className="doc-nav vista-pestanas" role="tablist" aria-label="Documentos del expediente">
+          {docs.map((x, i) => (
+            <span key={x.clave} className="doc-par">
+              {i > 0 && <i className="doc-sep ok" aria-hidden="true" />}
+              <Link
+                role="tab"
+                aria-selected={x.clave === verClave}
+                scroll={false}
+                className={`doc-tab${x.clave === verClave ? " activo" : ""}`}
+                href={`/expedientes/${id}?ver=${x.clave}${sp.paso ? `&paso=${sp.paso}` : ""}`}
+              >
+                <span className="ic" aria-hidden="true">✓</span>{x.nombre}
+              </Link>
+            </span>
           ))}
           {borrador && (
-            <Link
-              role="tab"
-              aria-selected={viendoBorrador}
-              scroll={false}
-              className={`chip borrador${viendoBorrador ? " activo" : ""}`}
-              href={`/expedientes/${id}?ver=borrador${sp.paso ? `&paso=${sp.paso}` : ""}`}
-            >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><path d="M12 20h9" /><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" /></svg>
-              {borrador.nombre} · por emitir
-            </Link>
+            <span className="doc-par">
+              <i className="doc-sep" aria-hidden="true" />
+              <Link
+                role="tab"
+                aria-selected={viendoBorrador}
+                scroll={false}
+                className={`doc-tab pendiente siguiente${viendoBorrador ? " activo" : ""}`}
+                href={`/expedientes/${id}?ver=borrador${sp.paso ? `&paso=${sp.paso}` : ""}`}
+              >
+                <span className="ic" aria-hidden="true" />{borrador.nombre} · por emitir
+              </Link>
+            </span>
           )}
-        </div>
+        </nav>
         {viendoBorrador && (
           <div className="aviso info" style={{ margin: "12px 14px 0" }}>
             Borrador: así quedará el documento de este paso. El número se pone al emitirlo con el botón de «Lo que sigue».

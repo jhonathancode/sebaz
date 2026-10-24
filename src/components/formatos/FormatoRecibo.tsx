@@ -16,7 +16,7 @@ export type DatosRecibo = {
 /** Recibo de ingreso propio, tal como se imprime. */
 export default function FormatoRecibo({ r, mcp }: { r: DatosRecibo; mcp: Mcp }) {
   return (
-    <div className="hoja" style={{ maxWidth: 720 }}>
+    <div className="hoja">
       <Encabezado mcp={mcp} titulo="RECIBO DE INGRESO" numero={r.numero ? `N° ${String(r.numero).padStart(4, "0")}-${r.anio}` : "N° (se asigna al emitir)"} />
       <table className="formato" style={{ marginTop: 14 }}>
         <tbody>

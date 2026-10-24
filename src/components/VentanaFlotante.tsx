@@ -69,13 +69,19 @@ export default function VentanaFlotante({
             <button type="button" className="btn" onClick={() => ref.current?.close()}>
               Cancelar
             </button>
-            {vistaPrevia ? (
-              <BotonVistaPrevia base={vistaPrevia.base} mcp={vistaPrevia.mcp} texto="Ver vista previa" textoEmitir={`Sí, ${textoGuardar.toLowerCase()}`} titulo={`Vista previa · ${titulo}`} />
-            ) : (
-              <BotonConfirmar pregunta={confirmar ?? `¿Está seguro de ${textoGuardar.toLowerCase()}?`} detalle="Revise que los datos estén bien antes de continuar." textoConfirmar={`Sí, ${textoGuardar.toLowerCase()}`}>
-                {textoGuardar}
-              </BotonConfirmar>
+            {vistaPrevia && (
+              <BotonVistaPrevia
+                base={vistaPrevia.base}
+                mcp={vistaPrevia.mcp}
+                className="btn contorno"
+                texto="Ver vista previa"
+                textoEmitir={`Sí, ${textoGuardar.toLowerCase()}`}
+                titulo={`Vista previa · ${titulo}`}
+              />
             )}
+            <BotonConfirmar pregunta={confirmar ?? `¿Está seguro de ${textoGuardar.toLowerCase()}?`} detalle="Revise que los datos estén bien antes de continuar." textoConfirmar={`Sí, ${textoGuardar.toLowerCase()}`}>
+              {textoGuardar}
+            </BotonConfirmar>
           </div>
         </form>
       </dialog>

@@ -2,6 +2,7 @@
 
 import { useRef, useState } from "react";
 import VistaPrevia from "@/components/VistaPrevia";
+import BotonConfirmar from "@/components/BotonConfirmar";
 import { FormatoPecosa, type DatosPecosa } from "@/components/formatos/FormatosAlmacen";
 import type { Mcp } from "@/lib/contexto";
 import { hoyISO, soles } from "@/lib/formato";
@@ -136,9 +137,18 @@ export default function FormularioPecosa({
         )}
 
         <div className="acciones-fila" style={{ justifyContent: "flex-end" }}>
-          <button type="button" className="btn primario grande" onClick={verVistaPrevia} disabled={validas.length === 0 || excede.length > 0}>
-            Ver vista previa de la PECOSA
+          <button type="button" className="btn contorno grande" onClick={verVistaPrevia} disabled={validas.length === 0 || excede.length > 0}>
+            Ver vista previa
           </button>
+          <BotonConfirmar
+            className="btn primario grande"
+            disabled={validas.length === 0 || excede.length > 0}
+            pregunta="¿Emitir la PECOSA?"
+            detalle="Los bienes salen del almacén y se descuentan del stock."
+            textoConfirmar="Sí, emitir la PECOSA"
+          >
+            Emitir la PECOSA
+          </BotonConfirmar>
         </div>
       </div>
 

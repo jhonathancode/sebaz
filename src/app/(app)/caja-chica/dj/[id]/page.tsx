@@ -28,7 +28,7 @@ export default async function DeclaracionJurada({ params }: { params: Promise<{ 
         <BotonPdf nombre="Declaracion jurada" />
         <BotonImprimir />
       </div>
-      <div className="hoja" style={{ maxWidth: 760 }}>
+      <div className="hoja">
         <div style={{ textAlign: "center", fontWeight: 600 }}>{ctx.mcp.nombre.toUpperCase()}</div>
         <div style={{ textAlign: "center", fontWeight: 600, fontSize: 16, marginTop: 6 }}>DECLARACIÓN JURADA DE GASTOS</div>
         <table className="formato" style={{ marginTop: 16 }}>

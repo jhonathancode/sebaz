@@ -917,3 +917,8 @@ form:has(input[name="tipo"][value="pago_fijo"]:checked) .selector-pf { display: 
 }
 .estado.aprobado, .estado.emitido, .estado.rendido { font-weight: 600; }
 .estado.anulado, .estado.anulada { background: var(--rojo-fondo); color: var(--rojo); border-color: var(--rojo-borde); font-weight: 600; }
+
+/* Documentos completos: ocupan todo el ancho disponible */
+.columnas > .principal .hoja { max-width: none; }
+.mesa > .hoja, .hoja-borrador > .hoja { max-width: 1100px !important; width: 100%; }
+.marco-app > .ventana > .hoja { max-width: none !important; }

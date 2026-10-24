@@ -155,7 +155,7 @@ export function Orden({ d, mcp }: { d: Datos; mcp: Mcp }) {
 export function Memorando({ d, mcp, tesorero, cargo }: { d: Datos; mcp: Mcp; tesorero: string; cargo: string }) {
   const conf = d.conformidad!;
   return (
-    <div className="hoja" style={{ maxWidth: 760 }}>
+    <div className="hoja">
       <div style={{ fontWeight: 600, textAlign: "center", fontSize: 15 }}>
         MEMORANDO N° {num3(conf.memorando_numero)}-{conf.anio}-MCP-{sufijo(mcp)}/ALC
       </div>

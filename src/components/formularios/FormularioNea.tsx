@@ -2,6 +2,7 @@
 
 import { useRef, useState } from "react";
 import VistaPrevia from "@/components/VistaPrevia";
+import BotonConfirmar from "@/components/BotonConfirmar";
 import { FormatoNea, type DatosNea } from "@/components/formatos/FormatosAlmacen";
 import type { Mcp } from "@/lib/contexto";
 import { hoyISO, soles } from "@/lib/formato";
@@ -149,9 +150,18 @@ export default function FormularioNea({
         </fieldset>
 
         <div className="acciones-fila" style={{ justifyContent: "flex-end" }}>
-          <button type="button" className="btn primario grande" onClick={verVistaPrevia} disabled={validas.length === 0}>
-            Ver vista previa de la NEA
+          <button type="button" className="btn contorno grande" onClick={verVistaPrevia} disabled={validas.length === 0}>
+            Ver vista previa
           </button>
+          <BotonConfirmar
+            className="btn primario grande"
+            disabled={validas.length === 0}
+            pregunta="¿Emitir la NEA?"
+            detalle="Los bienes entran al almacén y se suman al stock."
+            textoConfirmar="Sí, emitir la NEA"
+          >
+            Emitir la NEA
+          </BotonConfirmar>
         </div>
       </div>
 

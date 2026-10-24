@@ -107,12 +107,14 @@ export default function BotonVistaPrevia({
   texto = "Ver vista previa",
   textoEmitir = "Sí, emitir",
   titulo = "Vista previa del documento",
+  className = "btn primario",
 }: {
   base: BaseVistaPrevia;
   mcp: Mcp;
   texto?: string;
   textoEmitir?: string;
   titulo?: string;
+  className?: string;
 }) {
   const boton = useRef<HTMLButtonElement>(null);
   const [contenido, setContenido] = useState<React.ReactNode>(null);
@@ -126,7 +128,7 @@ export default function BotonVistaPrevia({
 
   return (
     <>
-      <button ref={boton} type="button" className="btn primario" onClick={abrir}>
+      <button ref={boton} type="button" className={className} onClick={abrir}>
         {texto}
       </button>
       <VistaPrevia

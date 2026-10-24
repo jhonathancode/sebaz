@@ -45,13 +45,52 @@ function mesYAnio(texto: string, anioActual: number): { mes: number; anio: numbe
   return { mes, anio: a ? Number(a[1]) : anioActual };
 }
 
-export function sugerirConcepto(texto: string, anioActual = new Date().getFullYear()): string | null {
+export function sugerirConcepto(texto: string, anioActual = new Date().getFullYear(), tipo?: string): string | null {
   const t = sinTildes(texto.trim());
   if (t.length < 6) return null;
   const regla = REGLAS.find((r) => r.claves.test(t));
   const periodo = mesYAnio(texto, anioActual);
-  if (!regla) return null;
+  if (!regla) return sugerirGeneral(texto, t, tipo);
   const base = regla.dieta ? `PAGO DE ${regla.nombre}` : `PAGO DEL ${regla.nombre}`;
   const sugerencia = periodo ? `${base} CORRESPONDIENTE AL MES DE ${MESES[periodo.mes]} ${periodo.anio}` : base;
   return sinTildes(sugerencia) === t ? null : sugerencia;
+}
+
+/** Pasa a mayúsculas, junta espacios y quita signos sueltos. */
+const limpiar = (t: string) => t.replace(/\s+/g, " ").replace(/[.,;:\s]+$/g, "").trim().toLocaleUpperCase("es-PE");
+
+/** Verbos de compra y de servicio que se redactan de forma formal. */
+const VERBOS_COMPRA = /^(compra|comprar|compré|adquisicion|adquirir|adquirimos|adquiero)\s+(de |del |de la |de los |de las )?/;
+const VERBOS_SERVICIO: { clave: RegExp; formal: string }[] = [
+  { clave: /^(alquiler|alquilar)\s+(de |del |de la |de los |de las )?/, formal: "SERVICIO DE ALQUILER DE " },
+  { clave: /^(mantenimiento)\s+(de |del |de la |de los |de las )?/, formal: "SERVICIO DE MANTENIMIENTO DE " },
+  { clave: /^(reparacion|reparar|arreglo)\s+(de |del |de la |de los |de las )?/, formal: "SERVICIO DE REPARACIÓN DE " },
+  { clave: /^(instalacion|instalar)\s+(de |del |de la |de los |de las )?/, formal: "SERVICIO DE INSTALACIÓN DE " },
+  { clave: /^(transporte|flete|traslado)\s+(de |del |de la |de los |de las )?/, formal: "SERVICIO DE TRANSPORTE DE " },
+  { clave: /^(impresion|imprimir|fotocopia|fotocopiado)\s+(de |del |de la |de los |de las )?/, formal: "SERVICIO DE IMPRESIÓN DE " },
+  { clave: /^(pago|pagar)\s+(de |del |de la |por |por el servicio de )?/, formal: "PAGO POR EL SERVICIO DE " },
+];
+
+/**
+ * Compras y servicios: propone la redacción completa y formal de lo que se escribió.
+ * «compra de combustible para apoyo del anexo X» → «ADQUISICIÓN DE COMBUSTIBLE PARA EL APOYO DEL ANEXO X».
+ */
+function sugerirGeneral(original: string, t: string, tipo?: string): string | null {
+  if (t.split(/\s+/).length < 2) return null;
+  const o = original.trim();
+  const cuerpo = (resto: string) => limpiar(o.slice(o.length - resto.length)).replace(/\bPARA APOYO\b/, "PARA EL APOYO");
+  let sug: string | null = null;
+  const c = t.match(VERBOS_COMPRA);
+  if (c) sug = `ADQUISICIÓN DE ${cuerpo(t.slice(c[0].length))}`;
+  if (!sug) {
+    for (const v of VERBOS_SERVICIO) {
+      const m = t.match(v.clave);
+      if (m) { sug = `${v.formal}${cuerpo(t.slice(m[0].length))}`; break; }
+    }
+  }
+  // Sin verbo: se completa según el tipo de gasto elegido
+  if (!sug && tipo === "compra" && !/^(adquisicion|servicio|pago)\b/.test(t)) sug = `ADQUISICIÓN DE ${limpiar(o)}`;
+  if (!sug && tipo === "servicio" && !/^(adquisicion|servicio|pago)\b/.test(t)) sug = `SERVICIO DE ${limpiar(o)}`;
+  if (!sug) return null;
+  return sinTildes(sug) === t ? null : sug;
 }

@@ -107,6 +107,19 @@ export async function editarRequerimiento(fd: FormData) {
 }
 
 /** Crea un expediente nuevo con los mismos datos (por ejemplo, después de anular uno con error). */
+/** Define con qué dinero se paga un expediente que se registró con «Definir después». */
+export async function asignarFuente(fd: FormData) {
+  await contextoMcp();
+  const supabase = await supabaseServidor();
+  const id = texto(fd, "id")!;
+  const fuente = texto(fd, "fuente_id");
+  if (!fuente) volver(ruta(id), "error", "Elija con qué dinero se paga este gasto.");
+  const { error } = await supabase.from("expedientes").update({ fuente_id: fuente }).eq("id", id).is("fuente_id", null);
+  if (error) volver(ruta(id), "error", mensajeError(error));
+  revalidatePath("/expedientes");
+  volver(ruta(id), "ok", "Listo: ya está definido con qué dinero se paga.");
+}
+
 export async function copiarExpediente(fd: FormData) {
   const ctx = await contextoMcp();
   const supabase = await supabaseServidor();

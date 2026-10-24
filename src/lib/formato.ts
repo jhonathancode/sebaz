@@ -1,4 +1,15 @@
 /** Nombre del sistema: se cambia con una variable de entorno, sin tocar código. */
+/** Logos que vienen incluidos con el sistema, por RUC (carpeta public/logos). Sirven mientras la MCP no suba el suyo. */
+const LOGOS_INCLUIDOS: Record<string, string> = {
+  "20706762286": "/logos/20706762286.jpg",
+};
+
+/** Logo de una MCP: el que subió (bucket "logos") o, si no, el incluido con el sistema. */
+export function logoMcp(mcp: { logo_path?: string | null; ruc?: string | null } | null | undefined): string | null {
+  if (!mcp) return null;
+  return urlLogo(mcp.logo_path) ?? (mcp.ruc ? LOGOS_INCLUIDOS[mcp.ruc] ?? null : null);
+}
+
 /** Dirección pública del logo de la MCP (bucket "logos"). */
 export function urlLogo(path: string | null | undefined): string | null {
   if (!path) return null;

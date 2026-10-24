@@ -22,10 +22,15 @@ export default function SugerenciaConcepto({ campo = "descripcion", tambienItem 
     const form = ref.current?.closest("form");
     const input = form?.querySelector<HTMLInputElement>(`input[name="${campo}"]`);
     if (!input) return;
-    const revisar = () => setSug(sugerirConcepto(input.value));
+    const tipo = () => form?.querySelector<HTMLInputElement>('input[name="tipo"]:checked')?.value;
+    const revisar = () => setSug(sugerirConcepto(input.value, undefined, tipo()));
     input.addEventListener("input", revisar);
+    form?.addEventListener("change", revisar);
     revisar();
-    return () => input.removeEventListener("input", revisar);
+    return () => {
+      input.removeEventListener("input", revisar);
+      form?.removeEventListener("change", revisar);
+    };
   }, [campo]);
 
   function usar() {

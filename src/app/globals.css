@@ -789,3 +789,19 @@ body:has(.marco-app[data-menu="oculto"]) .marca-mcp { display: inline; }
 .saludo { border-radius: 12px; }
 .empezar { border-radius: 12px; }
 .empezar-icono { border-radius: 50%; }
+
+/* Azul claro y moderno */
+:root {
+  --cabecera: #1f63d8; --cabecera-sub: #d6e4fb;
+  --primario: #2b6fe6; --primario-hover: #1f5bc7; --primario-claro: #a9c7f7;
+  --primario-fondo: #ecf3fe; --primario-texto: #1a56c2; --foco: #4b8cf5;
+  --azul-texto: #1a56c2; --azul-borde: #a9c7f7; --seleccion: #e3eefd; --marcado: #eef5ff;
+}
+:root[data-theme="dark"] {
+  --primario: #4a8cf0; --primario-hover: #6aa2f5; --primario-claro: #2c4d80; --primario-fondo: #13213a; --primario-texto: #a8c8fa; --foco: #6aa2f5;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --primario: #4a8cf0; --primario-hover: #6aa2f5; --primario-claro: #2c4d80; --primario-fondo: #13213a; --primario-texto: #a8c8fa; --foco: #6aa2f5;
+  }
+}

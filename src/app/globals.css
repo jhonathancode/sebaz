@@ -1393,3 +1393,50 @@ a.doc-paso:hover .ic { background: #fff; color: var(--primario); }
 /* PIN para aprobar de una vez: solo con «Pago fijo» elegido */
 .pin-auto { display: none; }
 form:has(input[name="tipo"][value="pago_fijo"]:checked) .pin-auto { display: block; }
+
+/* =====================================================================
+   BANDEJA DE MENSAJES: cada tipo con su color
+   ===================================================================== */
+.nt-aprobado { --nt: var(--primario); --nt-fondo: var(--primario-fondo); --nt-texto: var(--primario-texto); }
+.nt-devuelto { --nt: #d98a1f; --nt-fondo: var(--ambar-fondo, #fdf3e0); --nt-texto: #a8620a; }
+.nt-anulado { --nt: var(--rojo); --nt-fondo: var(--rojo-fondo); --nt-texto: var(--rojo); }
+.nt-pendiente { --nt: #c9a100; --nt-fondo: #fff8d6; --nt-texto: #8a6d00; }
+.nt-sistema { --nt: #8b5cf6; --nt-fondo: #f1ebff; --nt-texto: #6b3fd4; }
+.nt-mensaje { --nt: var(--verde); --nt-fondo: var(--verde-fondo); --nt-texto: var(--verde-texto); }
+:root[data-theme="dark"] .nt-pendiente { --nt-fondo: #302a12; --nt-texto: #e7cc62; }
+:root[data-theme="dark"] .nt-sistema { --nt-fondo: #241c3d; --nt-texto: #b9a2f7; }
+:root[data-theme="dark"] .nt-devuelto { --nt-fondo: #33291a; --nt-texto: #efb35a; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .nt-pendiente { --nt-fondo: #302a12; --nt-texto: #e7cc62; }
+  :root:not([data-theme="light"]) .nt-sistema { --nt-fondo: #241c3d; --nt-texto: #b9a2f7; }
+  :root:not([data-theme="light"]) .nt-devuelto { --nt-fondo: #33291a; --nt-texto: #efb35a; }
+}
+
+.bandeja { position: relative; }
+.bandeja-boton { position: relative; }
+.bandeja-n { position: absolute; top: -4px; right: -4px; min-width: 18px; height: 18px; padding: 0 5px; border-radius: 9px; background: #e5484d; color: #fff; font-size: 11px; font-weight: 800; display: grid; place-items: center; border: 2px solid var(--cabecera); line-height: 1; }
+.bandeja-panel { position: absolute; right: 0; top: calc(100% + 10px); width: min(400px, calc(100vw - 20px)); z-index: 60; background: var(--panel); color: var(--texto); border: 1px solid var(--borde); border-radius: 12px; box-shadow: 0 14px 36px rgba(0,0,0,.28); overflow: hidden; }
+.bandeja-cab { display: flex; justify-content: space-between; align-items: center; padding: 12px 14px; border-bottom: 1px solid var(--borde); }
+.enlace-chico { background: none; border: none; color: var(--primario-texto); font: inherit; font-size: 12.5px; font-weight: 600; cursor: pointer; padding: 0; }
+.enlace-chico:hover { text-decoration: underline; }
+.bandeja-lista { max-height: min(60vh, 420px); overflow-y: auto; display: flex; flex-direction: column; }
+.bandeja-pie { display: block; text-align: center; padding: 11px; border-top: 1px solid var(--borde); font-weight: 600; font-size: 13px; text-decoration: none; color: var(--primario-texto); background: var(--panel-2); }
+.aviso-item { all: unset; box-sizing: border-box; width: 100%; display: flex; gap: 11px; align-items: flex-start; padding: 11px 14px 11px 12px; cursor: pointer; border-left: 4px solid var(--nt); border-bottom: 1px solid var(--linea); background: transparent; opacity: .78; }
+.aviso-item:hover { background: var(--nt-fondo); opacity: 1; }
+.aviso-item.nuevo { background: var(--nt-fondo); opacity: 1; }
+.aviso-item:focus-visible { outline: 2px solid var(--foco); outline-offset: -2px; }
+.nt-ico { flex: none; width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; background: var(--nt); color: #fff; font-size: 15px; font-weight: 800; }
+.nt-texto { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.nt-titulo { font-weight: 700; font-size: 13.5px; line-height: 1.3; }
+.aviso-item:not(.nuevo) .nt-titulo { font-weight: 600; }
+.nt-detalle { font-size: 12.5px; color: var(--suave); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.nt-pie { font-size: 11.5px; color: var(--tenue); }
+.nt-etq { color: var(--nt-texto); font-weight: 700; }
+.aviso-fila { padding: 14px 18px 14px 16px; }
+.aviso-fila .nt-detalle { -webkit-line-clamp: 4; }
+.filas > form:last-child .aviso-item { border-bottom: none; }
+.chip-nt .nt-punto { width: 9px; height: 9px; border-radius: 50%; background: var(--nt); display: inline-block; }
+.chip-nt.activo { background: var(--nt-fondo); border-color: var(--nt); color: var(--nt-texto); }
+@media (max-width: 900px) {
+  .cabecera .bandeja-panel { position: fixed; top: calc(var(--cab-alto) + 4px); right: 8px; left: 8px; width: auto; }
+}

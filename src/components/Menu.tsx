@@ -94,6 +94,12 @@ const ICONOS: Record<string, React.ReactNode> = {
       <path d="M4 21a8 8 0 0 1 16 0" />
     </>
   ),
+  "/superadmin/mensajes": (
+    <>
+      <rect x="3" y="5" width="18" height="14" rx="2" />
+      <path d="m3.5 7 8.5 6 8.5-6" />
+    </>
+  ),
   "/superadmin/equipo": (
     <>
       <circle cx="9" cy="8" r="3.5" />

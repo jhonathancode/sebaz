@@ -160,3 +160,27 @@ export async function cambiarSoporte(fd: FormData) {
   if (error) volver("/superadmin/equipo", "error", mensajeError(error));
   volver("/superadmin/equipo", "ok", dar ? "Acceso de soporte otorgado." : "Acceso de soporte retirado.");
 }
+
+/** Envía un mensaje o una novedad del sistema a todos o a una municipalidad. */
+export async function enviarMensaje(fd: FormData) {
+  const ctx = await soloSuperadmin("/superadmin/mensajes");
+  const tipo = texto(fd, "tipo") === "sistema" ? "sistema" : "mensaje";
+  const titulo = texto(fd, "titulo");
+  const detalle = texto(fd, "detalle");
+  const para = texto(fd, "para") ?? "todos";
+  if (!titulo || titulo.length < 4) volver("/superadmin/mensajes", "error", "Escriba un título (mínimo 4 letras).");
+  if (titulo.length > 120 || (detalle?.length ?? 0) > 600) volver("/superadmin/mensajes", "error", "El título admite 120 letras y el texto 600.");
+  const servicio = supabaseServicio();
+  let consulta = servicio.from("miembros").select("user_id, mcp_id").eq("activo", true);
+  if (para !== "todos") consulta = consulta.eq("mcp_id", para);
+  const { data: miembros, error } = await consulta;
+  if (error) volver("/superadmin/mensajes", "error", mensajeError(error));
+  const destinos = new Map<string, string | null>();
+  for (const m of miembros ?? []) if (!destinos.has(m.user_id)) destinos.set(m.user_id, m.mcp_id);
+  if (destinos.size === 0) volver("/superadmin/mensajes", "error", "No hay usuarios activos a quienes enviar.");
+  const filas = [...destinos].map(([user_id, mcp_id]) => ({ user_id, mcp_id, tipo, titulo, detalle, de: ctx.userId }));
+  const { error: e2 } = await servicio.from("notificaciones").insert(filas);
+  if (e2) volver("/superadmin/mensajes", "error", mensajeError(e2));
+  revalidatePath("/", "layout");
+  volver("/superadmin/mensajes", "ok", `Mensaje enviado a ${destinos.size} persona(s).`);
+}

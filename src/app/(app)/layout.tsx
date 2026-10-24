@@ -1,6 +1,7 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import Bienvenida from "@/components/Bienvenida";
+import Bandeja from "@/components/Bandeja";
 import BotonTema from "@/components/BotonTema";
 import Menu, { BotonMenu, type ItemMenu } from "@/components/Menu";
 import MenuUsuario, { type EnlaceMenu } from "@/components/MenuUsuario";
@@ -9,6 +10,8 @@ import LogoSebaz from "@/components/LogoSebaz";
 import { APP_NOMBRE, logoMcp } from "@/lib/formato";
 import { tieneModulo } from "@/lib/modulos";
 import { supabaseServidor } from "@/lib/supabase/server";
+import type { Aviso } from "@/lib/notificaciones";
+import { abrirAviso, marcarTodasLeidas } from "./mensajes/acciones";
 
 async function salir() {
   "use server";
@@ -41,6 +44,23 @@ export default async function MarcoApp({ children }: { children: React.ReactNode
   }
   const menuOculto = cookieStore.get("menu")?.value === "oculto";
 
+  // Bandeja de mensajes (si la base aún no tiene la actualización, la campana no aparece)
+  let avisos: Aviso[] = [];
+  let sinLeer = 0;
+  let hayBandeja = false;
+  {
+    const supabase = await supabaseServidor();
+    const [{ data, error }, { count }] = await Promise.all([
+      supabase.from("notificaciones").select("id, tipo, titulo, detalle, enlace, leida_en, creado_en").eq("user_id", ctx.userId).order("creado_en", { ascending: false }).limit(12),
+      supabase.from("notificaciones").select("id", { count: "exact", head: true }).eq("user_id", ctx.userId).is("leida_en", null),
+    ]);
+    if (!error) {
+      hayBandeja = true;
+      avisos = (data ?? []) as Aviso[];
+      sinLeer = count ?? 0;
+    }
+  }
+
   // Trabajo diario arriba; administración bajo el nombre del usuario.
   // El superadmin tiene su propio panel (Sebaz como empresa); las MCP son sus clientes.
   const items: ItemMenu[] = ctx.esSuperadmin
@@ -50,6 +70,7 @@ export default async function MarcoApp({ children }: { children: React.ReactNode
         { href: "/superadmin/pagos", texto: "Pagos" },
         { href: "/superadmin/planes", texto: "Planes" },
         { href: "/superadmin/usuarios", texto: "Usuarios" },
+        { href: "/superadmin/mensajes", texto: "Mensajes y novedades" },
         { href: "/superadmin/equipo", texto: "Equipo de soporte" },
         { href: "/soporte", texto: "Activaciones y relevos" },
       ]
@@ -68,7 +89,10 @@ export default async function MarcoApp({ children }: { children: React.ReactNode
       ? [{ href: "/soporte", texto: "Panel de soporte" }]
       : [];
 
-  const enlaces: EnlaceMenu[] = [{ href: "/cuenta", texto: "Mi cuenta y contraseña", grupo: "cuenta" }];
+  const enlaces: EnlaceMenu[] = [
+    { href: "/mensajes", texto: "Mensajes", grupo: "cuenta" },
+    { href: "/cuenta", texto: "Mi cuenta, clave y PIN", grupo: "cuenta" },
+  ];
   if (ctx.mcp) {
     enlaces.push(
       { href: "/responsables", texto: "Responsables y relevos", grupo: "administracion" },
@@ -104,6 +128,7 @@ export default async function MarcoApp({ children }: { children: React.ReactNode
           </span>
         </div>
         <div className="acciones">
+          {hayBandeja && <Bandeja avisos={avisos} sinLeer={sinLeer} abrir={abrirAviso} marcarTodas={marcarTodasLeidas} />}
           <BotonTema inicial={tema === "dark" || tema === "light" ? tema : null} />
           <MenuUsuario
             nombre={ctx.nombre}

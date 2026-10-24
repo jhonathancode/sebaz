@@ -142,6 +142,7 @@ export default function SelectorRendicion({
         )}
         {puedeGenerar && (
           <BotonConfirmar
+            pin
             className="btn primario grande"
             disabled={!cuadra}
             pregunta="¿Generar la rendición?"

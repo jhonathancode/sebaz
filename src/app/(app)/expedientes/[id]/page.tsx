@@ -19,6 +19,7 @@ import { codigoCP, fecha, fechaHora, hoyISO, num3, soles } from "@/lib/formato";
 import { supabaseServidor } from "@/lib/supabase/server";
 import {
   agregarCotizacion,
+  anularExpedienteTotal,
   anularRegistro,
   asignarFuente,
   cambiarEstadoExpediente,
@@ -158,7 +159,7 @@ export default async function Expediente({ params, searchParams }: { params: Par
             <form action={cambiarEstadoExpediente}>
               <input type="hidden" name="id" value={id} />
               <input type="hidden" name="accion" value="aprobar" />
-              <BotonConfirmar className="btn primario grande" pregunta="¿Aprobar este requerimiento?" detalle="Después de aprobarlo ya no se puede cambiar el monto, salvo que se devuelva a borrador." textoConfirmar="Sí, aprobar">Aprobar requerimiento</BotonConfirmar>
+              <BotonConfirmar pin className="btn primario grande" pregunta="¿Aprobar este requerimiento?" detalle="Después de aprobarlo ya no se puede cambiar el monto, salvo que se devuelva a borrador." textoConfirmar="Sí, aprobar">Aprobar requerimiento</BotonConfirmar>
             </form>
           ),
         }
@@ -244,7 +245,7 @@ export default async function Expediente({ params, searchParams }: { params: Par
       accion: puedeRegistrar && !e.fuente_id ? (
         <span className="falta">Primero defina con qué dinero se paga (aviso de arriba).</span>
       ) : puedeRegistrar && (
-        <VentanaFlotante boton="Generar comprobante de pago" titulo={`Comprobante de pago por S/ ${soles(fijo ? total : orden?.monto)}`} accion={generarComprobante} textoGuardar="Generar comprobante" claseBoton="btn primario grande">
+        <VentanaFlotante boton="Generar comprobante de pago" titulo={`Comprobante de pago por S/ ${soles(fijo ? total : orden?.monto)}`} accion={generarComprobante} pin textoGuardar="Generar comprobante" claseBoton="btn primario grande">
           <input type="hidden" name="expediente_id" value={id} />
           <div className="rejilla-2">
             {fijo && (
@@ -728,14 +729,30 @@ export default async function Expediente({ params, searchParams }: { params: Par
                 <span className="tenue pequeno">Vuelve a borrador para corregirlo; después se aprueba otra vez.</span>
               </div>
             )}
-            {(e.estado === "borrador" || e.estado === "aprobado") && puedeRegistrar && !cp && (
-              <div>
-                <Motivo accion={cambiarEstadoExpediente} boton="Anular expediente" titulo={`Anular el expediente ${num3(e.numero)}-${e.anio}`} ayuda="Motivo de la anulación" campos={{ id, accion: "anular" }} />
-                <span className="tenue pequeno">No se borra: queda anulado con su motivo.</span>
+            {!anulado && e.estado === "rendido" && (
+              <div className="tenue pequeno">
+                Este expediente ya está en una rendición. Para anularlo, primero anule la rendición desde el menú «Rendición».
               </div>
             )}
-            {cp && cp.estado !== "anulado" && !anulado && (
-              <div className="tenue pequeno">Para anular este expediente, primero anule su comprobante de pago.</div>
+            {!anulado && e.estado !== "rendido" && puedeRegistrar && (!cp || puedeAprobar) && (
+              <div>
+                <Motivo
+                  accion={anularExpedienteTotal}
+                  pin
+                  boton="Anular expediente"
+                  titulo={`Anular el expediente ${num3(e.numero)}-${e.anio}`}
+                  ayuda={
+                    cp || nea
+                      ? `Motivo de la anulación. También se anulará${cp ? ` su comprobante de pago ${codigoCP(cp.numero, cp.origen)}${cp.cheque ? ` (cheque N° ${cp.cheque})` : ""}` : ""}${cp && nea ? " y" : ""}${nea ? ` su NEA ${num3(nea.numero)}-${nea.anio}` : ""}.`
+                      : "Motivo de la anulación"
+                  }
+                  campos={{ id }}
+                />
+                <span className="tenue pequeno">Sirve también si el expediente está completo y hubo un error. No se borra: queda anulado con su motivo.</span>
+              </div>
+            )}
+            {!anulado && cp && !puedeAprobar && (
+              <div className="tenue pequeno">Este expediente ya tiene comprobante de pago aprobado: lo anula el alcalde o el administrador.</div>
             )}
             {!anulado && tiene(ctx, "admin", "tesorero", "contador", "alcalde") && (
               <div>

@@ -124,7 +124,7 @@ export default async function Aprobaciones({ searchParams }: { searchParams: Par
               <span style={{ flex: 1 }} className="k-det">
                 Se aprueba lo marcado. Los pagos fijos de la lista generan solos su comprobante de pago, que luego se aprueba aquí mismo. Para quitar uno, desmárquelo.
               </span>
-              <BotonConfirmar className="btn primario grande" pregunta="¿Aprobar todo lo marcado?" detalle="Después de aprobar ya no se pueden cambiar los montos, salvo que se devuelvan a borrador." textoConfirmar="Sí, aprobar">
+              <BotonConfirmar pin className="btn primario grande" pregunta="¿Aprobar todo lo marcado?" detalle="Después de aprobar ya no se pueden cambiar los montos, salvo que se devuelvan a borrador." textoConfirmar="Sí, aprobar">
                 Aprobar lo marcado
               </BotonConfirmar>
             </div>

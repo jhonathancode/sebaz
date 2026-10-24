@@ -13,6 +13,7 @@ export default function Motivo({
   campos,
   peligro = true,
   titulo,
+  pin = false,
 }: {
   accion: (fd: FormData) => Promise<void>;
   boton: string;
@@ -20,6 +21,8 @@ export default function Motivo({
   campos: Record<string, string>;
   peligro?: boolean;
   titulo?: string;
+  /** Pide también el PIN personal. */
+  pin?: boolean;
 }) {
   const ref = useRef<HTMLDialogElement>(null);
   const [texto, setTexto] = useState("");
@@ -55,6 +58,12 @@ export default function Motivo({
               />
             </label>
             <span className="pequeno tenue">{texto.trim().length} / 10 caracteres mínimo</span>
+            {pin && (
+              <label className="campo" style={{ maxWidth: 220 }}>
+                Su PIN personal
+                <input name="pin" type="password" inputMode="numeric" autoComplete="off" maxLength={6} pattern="\d{4,6}" required placeholder="4 a 6 números" style={{ letterSpacing: ".3em", fontWeight: 700 }} />
+              </label>
+            )}
           </div>
           <div className="dialogo-pie">
             <button type="button" className="btn" onClick={() => ref.current?.close()}>

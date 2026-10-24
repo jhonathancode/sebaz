@@ -50,7 +50,7 @@ export default async function Comprobante({ params, searchParams }: { params: P;
           <form action={cambiarEstadoComprobante}>
             <input type="hidden" name="id" value={id} />
             <input type="hidden" name="accion" value="aprobar" />
-            <BotonConfirmar pregunta="¿Aprobar este comprobante de pago?" detalle="Aprobado ya no se edita: solo falta escribir el número de cheque." textoConfirmar="Sí, aprobar">Aprobar</BotonConfirmar>
+            <BotonConfirmar pin pregunta="¿Aprobar este comprobante de pago?" detalle="Aprobado ya no se edita: solo falta escribir el número de cheque." textoConfirmar="Sí, aprobar">Aprobar</BotonConfirmar>
           </form>
         )}
         {c.estado === "aprobado" && puedeAprobar && !c.cheque && (

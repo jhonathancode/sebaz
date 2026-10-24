@@ -3,7 +3,7 @@ import Avisos, { type ParamsAviso } from "@/components/Avisos";
 import Estado from "@/components/Estado";
 import CamposRequerimiento from "@/components/formularios/CamposRequerimiento";
 import VentanaFlotante from "@/components/VentanaFlotante";
-import { contextoMcp } from "@/lib/contexto";
+import { contextoMcp, tiene } from "@/lib/contexto";
 import { fecha, nombrePeriodo, num3, periodoActual, rangoPeriodo, soles } from "@/lib/formato";
 import { supabaseServidor } from "@/lib/supabase/server";
 import { cargarCatalogoPagosFijos, siguienteCheque } from "@/lib/pagosFijos";
@@ -95,7 +95,7 @@ export default async function Expedientes({ searchParams }: { searchParams: Para
           error={sp.nuevo === "1" ? sp.error : undefined}
           ancha
         >
-          <CamposRequerimiento fuentes={ctx.fuentes} pagosFijos={pagosFijos} chequeSugerido={chequeSugerido} />
+          <CamposRequerimiento fuentes={ctx.fuentes} pagosFijos={pagosFijos} chequeSugerido={chequeSugerido} puedeAprobar={tiene(ctx, "alcalde", "admin")} />
         </VentanaFlotante>
       </div>
       <Avisos ok={sp.ok} error={sp.error} />

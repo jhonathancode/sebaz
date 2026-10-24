@@ -3,6 +3,7 @@ import BotonConfirmar from "@/components/BotonConfirmar";
 import { obtenerContexto } from "@/lib/contexto";
 import { texto, volver } from "@/lib/acciones";
 import { supabaseServidor } from "@/lib/supabase/server";
+import { cambiarPin } from "./acciones";
 
 async function cambiarClave(fd: FormData) {
   "use server";
@@ -29,6 +30,17 @@ export default async function Cuenta({ searchParams }: { searchParams: ParamsAvi
           <label className="campo">Clave nueva (mínimo 10 caracteres)<input type="password" name="nueva" required minLength={10} autoComplete="new-password" /></label>
           <label className="campo">Repetir clave nueva<input type="password" name="repetir" required minLength={10} autoComplete="new-password" /></label>
           <BotonConfirmar pregunta="¿Cambiar su contraseña?" textoConfirmar="Sí, cambiar">Cambiar clave</BotonConfirmar>
+        </div>
+      </form>
+
+      <form action={cambiarPin} className="panel" style={{ maxWidth: 420 }}>
+        <div className="panel-cab">Cambiar PIN</div>
+        <div className="panel-cuerpo">
+          <span className="pequeno tenue">El PIN se le pide para aprobar y generar documentos. Es personal: no lo comparta.</span>
+          <label className="campo">PIN actual<input type="password" name="pin" required inputMode="numeric" maxLength={6} autoComplete="off" /></label>
+          <label className="campo">PIN nuevo (4 a 6 números)<input type="password" name="pin_nuevo" required inputMode="numeric" maxLength={6} pattern="\d{4,6}" autoComplete="off" /></label>
+          <label className="campo">Repetir PIN nuevo<input type="password" name="pin_repetir" required inputMode="numeric" maxLength={6} pattern="\d{4,6}" autoComplete="off" /></label>
+          <BotonConfirmar pregunta="¿Cambiar su PIN?" textoConfirmar="Sí, cambiar">Cambiar PIN</BotonConfirmar>
         </div>
       </form>
     </>

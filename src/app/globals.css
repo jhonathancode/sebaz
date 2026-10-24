@@ -1389,3 +1389,7 @@ a.doc-paso:hover .ic { background: #fff; color: var(--primario); }
   .doc-pos { justify-content: center; }
   .doc-pos .tenue { order: -1; width: 100%; text-align: center; }
 }
+
+/* PIN para aprobar de una vez: solo con «Pago fijo» elegido */
+.pin-auto { display: none; }
+form:has(input[name="tipo"][value="pago_fijo"]:checked) .pin-auto { display: block; }

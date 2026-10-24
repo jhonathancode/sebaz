@@ -5,8 +5,8 @@ import Avisos, { type ParamsAviso } from "@/components/Avisos";
 import Estado from "@/components/Estado";
 import { NOMBRE_ROL, obtenerContexto, type Rol } from "@/lib/contexto";
 import { fecha, hoyISO, soles } from "@/lib/formato";
-import { supabaseServidor } from "@/lib/supabase/server";
-import { agregarUsuario, cambiarEstadoMcp, crearMcp, registrarRelevo } from "./acciones";
+import { supabaseServicio, supabaseServidor } from "@/lib/supabase/server";
+import { agregarUsuario, cambiarEstadoMcp, crearMcp, registrarRelevo, restablecerPin } from "./acciones";
 
 const ROLES: Rol[] = ["admin", "tesorero", "alcalde", "contador", "regidor"];
 
@@ -30,6 +30,22 @@ export default async function Soporte({ searchParams }: { searchParams: ParamsAv
     ? await supabase.from("miembros").select("id, user_id, rol, cargo, desde, hasta, activo, perfiles(nombre)").eq("mcp_id", elegida.id).order("activo", { ascending: false })
     : { data: [] };
   const vigentes = (miembros ?? []).filter((m) => m.activo);
+  // Relevos anteriores, con el enlace temporal a su documento de respaldo
+  const { data: relevosRaw } = elegida
+    ? await supabase.from("relevos").select("id, sale, entra, rol, fecha, documento_tipo, documento_numero, documento_path, confirmado_con, creado_en").eq("mcp_id", elegida.id).order("fecha", { ascending: false })
+    : { data: [] };
+  const nombres = new Map((miembros ?? []).map((m) => [m.user_id, (m.perfiles as unknown as { nombre: string } | null)?.nombre ?? ""]));
+  const relevos = await Promise.all(
+    (relevosRaw ?? []).map(async (r) => {
+      let enlace: string | null = null;
+      try {
+        enlace = (await supabaseServicio().storage.from("relevos").createSignedUrl(r.documento_path, 600)).data?.signedUrl ?? null;
+      } catch {
+        enlace = null;
+      }
+      return { ...r, enlace };
+    }),
+  );
 
   const lista = elegida
     ? [
@@ -84,7 +100,7 @@ export default async function Soporte({ searchParams }: { searchParams: ParamsAv
                 <div className="panel-cab">Usuarios de {elegida.nombre}</div>
                 <div className="tabla-marco" style={{ border: "none" }}>
                   <table className="tabla">
-                    <thead><tr><th>Nombre</th><th>Cargo</th><th>Desde</th><th>Hasta</th><th>Acceso</th></tr></thead>
+                    <thead><tr><th>Nombre</th><th>Cargo</th><th>Desde</th><th>Hasta</th><th>Acceso</th><th>PIN</th></tr></thead>
                     <tbody>
                       {(miembros ?? []).map((m) => (
                         <tr key={m.id} className={!m.activo ? "anulado" : undefined}>
@@ -93,6 +109,16 @@ export default async function Soporte({ searchParams }: { searchParams: ParamsAv
                           <td>{fecha(m.desde)}</td>
                           <td>{m.hasta ? fecha(m.hasta) : "Vigente"}</td>
                           <td>{m.activo ? <span className="si">Con acceso</span> : "Sin acceso"}</td>
+                          <td>
+                            {m.activo && (
+                              <form action={restablecerPin}>
+                                <input type="hidden" name="user_id" value={m.user_id} />
+                                <input type="hidden" name="mcp_id" value={elegida.id} />
+                                <input type="hidden" name="volver" value={`/soporte?mcp=${elegida.id}`} />
+                                <BotonConfirmar className="btn chico contorno" pregunta="¿Restablecer el PIN de esta persona?" detalle="Solo hágalo si confirmó su identidad (llame al alcalde o a la persona). Al ingresar tendrá que elegir un PIN nuevo." textoConfirmar="Sí, restablecer">Restablecer</BotonConfirmar>
+                              </form>
+                            )}
+                          </td>
                         </tr>
                       ))}
                     </tbody>
@@ -123,32 +149,72 @@ export default async function Soporte({ searchParams }: { searchParams: ParamsAv
 
               <form action={registrarRelevo} className="panel">
                 <div className="panel-cab">Relevo (cambio de tesorera u otro cargo)</div>
-                <div className="panel-cuerpo rejilla">
-                  <input type="hidden" name="mcp_id" value={elegida.id} />
-                  <label className="campo">
-                    Sale
-                    <select name="sale" required>
-                      {vigentes.map((m) => (
-                        <option key={m.id} value={m.user_id}>
-                          {(m.perfiles as unknown as { nombre: string } | null)?.nombre} · {NOMBRE_ROL[m.rol as Rol]}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-                  <label className="campo">
-                    Cargo
-                    <select name="rol">
-                      {ROLES.map((r) => (
-                        <option key={r} value={r}>{NOMBRE_ROL[r]}</option>
-                      ))}
-                    </select>
-                  </label>
-                  <label className="campo">Correo de quien entra<input name="correo" type="email" required /></label>
-                  <label className="campo">Nombre de quien entra<input name="nombre" /></label>
-                  <label className="campo">Fecha del acta<input type="date" name="fecha" defaultValue={hoyISO()} required /></label>
-                  <div style={{ display: "flex", alignItems: "flex-end" }}><BotonConfirmar pregunta="¿Registrar el relevo?" detalle="Quien sale pierde el acceso desde la fecha del acta." textoConfirmar="Sí, registrar" peligro>Registrar relevo</BotonConfirmar></div>
+                <div className="panel-cuerpo">
+                  <div className="aviso info" style={{ margin: 0 }}>
+                    Para registrar el relevo hace falta el <b>documento que designa</b> a quien entra y haber <b>confirmado el cambio</b> con el alcalde. Queda guardado como respaldo.
+                  </div>
+                  <div className="rejilla">
+                    <input type="hidden" name="mcp_id" value={elegida.id} />
+                    <label className="campo">
+                      Sale
+                      <select name="sale" required>
+                        {vigentes.map((m) => (
+                          <option key={m.id} value={m.user_id}>
+                            {(m.perfiles as unknown as { nombre: string } | null)?.nombre} · {NOMBRE_ROL[m.rol as Rol]}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                    <label className="campo">
+                      Cargo
+                      <select name="rol">
+                        {ROLES.map((r) => (
+                          <option key={r} value={r}>{NOMBRE_ROL[r]}</option>
+                        ))}
+                      </select>
+                    </label>
+                    <label className="campo">Correo de quien entra<input name="correo" type="email" required /></label>
+                    <label className="campo">Nombre de quien entra<input name="nombre" /></label>
+                    <label className="campo">Fecha del acta<input type="date" name="fecha" defaultValue={hoyISO()} required /></label>
+                    <label className="campo">
+                      Documento de respaldo
+                      <select name="documento_tipo" required defaultValue="resolucion">
+                        <option value="resolucion">Resolución de Alcaldía</option>
+                        <option value="memorando">Memorando</option>
+                        <option value="acta">Acta de entrega</option>
+                        <option value="otro">Otro documento</option>
+                      </select>
+                    </label>
+                    <label className="campo">N° del documento<input name="documento_numero" placeholder="Ej.: 012-2026-MCP" /></label>
+                    <label className="campo ancho">Suba el documento (PDF, JPG o PNG, hasta 4 MB)<input type="file" name="documento" accept="application/pdf,image/jpeg,image/png" required /></label>
+                    <label className="campo ancho">¿Con quién confirmó el cambio y cómo?<input name="confirmado_con" required minLength={5} placeholder="Ej.: Alcalde Juan Pérez, por llamada el 24/10 a las 10:30" /></label>
+                  </div>
+                  <div><BotonConfirmar pregunta="¿Registrar el relevo?" detalle="Quien sale pierde el acceso desde la fecha del acta. Quedará guardado el documento de respaldo." textoConfirmar="Sí, registrar" peligro>Registrar relevo</BotonConfirmar></div>
                 </div>
               </form>
+
+              {relevos.length > 0 && (
+                <section className="panel">
+                  <div className="panel-cab">Relevos registrados</div>
+                  <div className="tabla-marco" style={{ border: "none" }}>
+                    <table className="tabla">
+                      <thead><tr><th>Fecha</th><th>Sale</th><th>Entra</th><th>Cargo</th><th>Documento</th><th>Confirmado con</th></tr></thead>
+                      <tbody>
+                        {relevos.map((r) => (
+                          <tr key={r.id}>
+                            <td>{fecha(r.fecha)}</td>
+                            <td>{nombres.get(r.sale ?? "") ?? "—"}</td>
+                            <td>{nombres.get(r.entra ?? "") ?? "—"}</td>
+                            <td>{NOMBRE_ROL[r.rol as Rol]}</td>
+                            <td>{r.enlace ? <a href={r.enlace} target="_blank" rel="noreferrer">{r.documento_tipo}{r.documento_numero ? ` ${r.documento_numero}` : ""}</a> : r.documento_tipo}</td>
+                            <td className="envolver">{r.confirmado_con}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </section>
+              )}
             </>
           )}
         </div>

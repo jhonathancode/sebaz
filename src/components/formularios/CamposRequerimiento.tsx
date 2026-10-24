@@ -39,7 +39,7 @@ function detalleFuente(f: Fuente) {
 }
 
 /** Formulario del requerimiento, en preguntas simples. */
-export default function CamposRequerimiento({ fuentes, valores, pagosFijos, chequeSugerido }: { fuentes: Fuente[]; valores?: ValoresRequerimiento; pagosFijos?: PagoFijoCatalogo[]; chequeSugerido?: string }) {
+export default function CamposRequerimiento({ fuentes, valores, pagosFijos, chequeSugerido, puedeAprobar = false }: { fuentes: Fuente[]; valores?: ValoresRequerimiento; pagosFijos?: PagoFijoCatalogo[]; chequeSugerido?: string; puedeAprobar?: boolean }) {
   const tipo = valores?.tipo ?? "compra";
   const fuentePorDefecto = fuentes.find((f) => f.tipo === "distrito")?.id ?? fuentes[0]?.id;
   // Al corregir un requerimiento que aún no tiene dinero definido, queda marcada «Definir después».
@@ -103,6 +103,17 @@ export default function CamposRequerimiento({ fuentes, valores, pagosFijos, cheq
         <fieldset className="pregunta">
           <legend>5. Cheque <span className="legend-nota">(opcional)</span></legend>
           <CampoCheque sugerido={chequeSugerido} />
+        </fieldset>
+      )}
+
+      {!valores && puedeAprobar && (
+        <fieldset className="pregunta pin-auto">
+          <legend>6. Aprobar de una vez <span className="legend-nota">(opcional, solo pagos fijos)</span></legend>
+          <label className="campo" style={{ maxWidth: 260 }}>
+            Su PIN
+            <input name="pin" type="password" inputMode="numeric" autoComplete="off" maxLength={6} pattern="\d{4,6}" placeholder="Déjelo vacío para solo registrar" style={{ letterSpacing: ".2em", fontWeight: 700 }} />
+          </label>
+          <p className="pequeno tenue" style={{ margin: "6px 0 0" }}>Con el PIN, el pago fijo se aprueba y su comprobante se genera en el acto. Sin PIN, queda registrado para aprobarlo después.</p>
         </fieldset>
       )}
 

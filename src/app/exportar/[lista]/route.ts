@@ -3,6 +3,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { contextoMcp } from "@/lib/contexto";
 import { codigoCP, nombrePeriodo, num3, periodoActual, rangoPeriodo } from "@/lib/formato";
 import { supabaseServidor } from "@/lib/supabase/server";
+import { cargarContabilidad, libro as libroContable, libroDiario, matriz, MESES_CORTOS, nombreRubro } from "@/lib/contabilidad";
 
 export const runtime = "nodejs";
 
@@ -218,6 +219,50 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ list
           { titulo: "Sale", ancho: 11, tipo: "cantidad" }, { titulo: "Saldo", ancho: 11, tipo: "cantidad" }, { titulo: "Precio S/", ancho: 13, tipo: "monto" }, { titulo: "Importe S/", ancho: 14, tipo: "monto" }],
         filas,
       };
+      break;
+    }
+    case "contabilidad": {
+      const ver = sp.get("ver") || "bancos";
+      const anio = Number(mes.slice(0, 4));
+      const d = await cargarContabilidad(supabase, mcpId, anio, ctx.fuentes);
+      if (ver === "bancos" || ver === "caja") {
+        const l = libroContable(d, ver, mes);
+        const filas: (string | number | null)[][] = [
+          [null, null, "SALDO ANTERIOR", null, null, l.anterior],
+          ...l.filas.map((m) => [fechaPe(m.fecha), m.documento, m.detalle, m.entra || null, m.sale || null, m.saldo]),
+        ];
+        hoja = {
+          titulo: `${ver === "bancos" ? "Libro Bancos" : "Libro Caja"} · ${nombrePeriodo(mes)}`,
+          columnas: [{ titulo: "Fecha", ancho: 12 }, { titulo: "Documento", ancho: 26 }, { titulo: "Detalle", ancho: 56 }, { titulo: "Ingreso S/", ancho: 14, tipo: "monto" }, { titulo: "Egreso S/", ancho: 14, tipo: "monto" }, { titulo: "Saldo S/", ancho: 14, tipo: "monto" }],
+          filas,
+          totales: ["TOTALES", null, "Saldo final", l.entradas, l.salidas, l.final],
+        };
+      } else if (ver === "diario") {
+        const filas: (string | number | null)[][] = [];
+        libroDiario(d, mes).forEach((a, i) => {
+          filas.push([i + 1, fechaPe(a.fecha), a.glosa, null, null]);
+          a.lineas.forEach((l) => filas.push([null, null, `   ${l.cuenta}`, l.debe || null, l.haber || null]));
+        });
+        hoja = {
+          titulo: `Libro diario simplificado · ${nombrePeriodo(mes)}`,
+          columnas: [{ titulo: "N°", ancho: 6 }, { titulo: "Fecha", ancho: 12 }, { titulo: "Cuenta / glosa", ancho: 70 }, { titulo: "Debe S/", ancho: 14, tipo: "monto" }, { titulo: "Haber S/", ancho: 14, tipo: "monto" }],
+          filas,
+          totales: ["TOTALES", null, null, suma(filas, 3), suma(filas, 4)],
+        };
+      } else {
+        const m1 = matriz(d.cps, (c) => `Gasto · ${c.partida}`, (c) => c.fecha, (c) => c.importe);
+        const m0 = matriz(
+          [...d.transferencias.map((t) => ({ k: `Ingreso · Transferencia ${t.municipalidad}`, f: t.fecha, v: t.monto })), ...d.ingresos.map((i) => ({ k: `Ingreso · Propios ${nombreRubro(i.rubro)}`, f: i.fecha, v: i.monto }))],
+          (x) => x.k, (x) => x.f, (x) => x.v,
+        );
+        const m2 = matriz(d.cps, (c) => `Función · ${c.funcion}`, (c) => c.fecha, (c) => c.importe);
+        const filas = [...m0.filas, ...m1.filas, ...m2.filas].map((f) => [f.nombre, ...f.meses, f.total]);
+        hoja = {
+          titulo: `Ejecución de ingresos y gastos ${anio}`,
+          columnas: [{ titulo: "Concepto", ancho: 46 }, ...MESES_CORTOS.map((x) => ({ titulo: x, ancho: 11, tipo: "monto" as const })), { titulo: "Total", ancho: 13, tipo: "monto" }],
+          filas,
+        };
+      }
       break;
     }
     default:

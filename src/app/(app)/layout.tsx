@@ -46,6 +46,7 @@ export default async function MarcoApp({ children }: { children: React.ReactNode
         { href: "/ingresos", texto: "Ingresos" },
         { href: "/almacen", texto: "Almacén" },
         { href: "/rendicion", texto: "Rendición" },
+        { href: "/contabilidad", texto: "Contabilidad" },
       ]
     : ctx.esSoporte
       ? [{ href: "/soporte", texto: "Panel de soporte" }]

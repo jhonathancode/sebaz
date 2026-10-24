@@ -1099,3 +1099,5 @@ a.kpi:hover { border-color: var(--primario-claro); transform: translateY(-1px); 
   .av-pasos { grid-template-columns: 1fr !important; }
   .av-paso a { padding: 10px 12px; }
 }
+.tabla.matriz td, .tabla.matriz th { padding: 7px 8px; }
+.tabla.matriz .mes-actual { background: var(--primario-fondo); }

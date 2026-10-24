@@ -49,6 +49,12 @@ const ICONOS: Record<string, React.ReactNode> = {
       <path d="M7 16.5h10" />
     </>
   ),
+  "/contabilidad": (
+    <>
+      <rect x="4" y="3" width="16" height="18" rx="2" />
+      <path d="M8 7h8M8 11h2M12 11h2M16 11h0M8 15h2M12 15h2M8 18h2M12 18h2M16 15v3" />
+    </>
+  ),
   "/rendicion": (
     <>
       <path d="M14 3H6.5A1.5 1.5 0 0 0 5 4.5v15A1.5 1.5 0 0 0 6.5 21h11a1.5 1.5 0 0 0 1.5-1.5V8Z" />

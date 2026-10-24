@@ -4,6 +4,7 @@ import { randomBytes } from "crypto";
 import { revalidatePath } from "next/cache";
 import { cookies } from "next/headers";
 import { obtenerContexto } from "@/lib/contexto";
+import { modulosDeFormulario } from "@/lib/modulos";
 import { mensajeError, numero, texto, volver } from "@/lib/acciones";
 import { supabaseServicio, supabaseServidor } from "@/lib/supabase/server";
 
@@ -25,7 +26,7 @@ async function soloSoporte() {
 }
 
 export async function crearMcp(fd: FormData) {
-  await soloSoporte();
+  const ctx = await soloSoporte();
   const supabase = await supabaseServidor();
   const ruc = (texto(fd, "ruc") ?? "").replace(/\D/g, "");
   const { data: mcp, error } = await supabase
@@ -36,6 +37,8 @@ export async function crearMcp(fd: FormData) {
       distrito: texto(fd, "distrito"),
       provincia: texto(fd, "provincia"),
       departamento: texto(fd, "departamento"),
+      // Módulos que el superadmin le habilita (si el formulario no los envía, todos)
+      ...(fd.has("modulos") || fd.has("con_modulos") ? { modulos: modulosDeFormulario(fd) } : {}),
     })
     .select("id")
     .single();
@@ -67,6 +70,8 @@ export async function crearMcp(fd: FormData) {
     if (e2) volver(`/soporte?mcp=${mcp.id}`, "error", "MCP creada, pero no sus transferencias: " + mensajeError(e2));
   }
   revalidatePath("/soporte");
+  revalidatePath("/superadmin/clientes");
+  if (ctx.esSuperadmin) volver(`/superadmin/clientes/${mcp.id}`, "ok", "Cliente dado de alta con 3 meses de prueba. Ahora cree sus usuarios en «Activaciones y relevos».");
   volver(`/soporte?mcp=${mcp.id}`, "ok", "MCP registrada. Ahora cree sus usuarios.");
 }
 

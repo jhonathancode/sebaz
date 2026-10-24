@@ -20,3 +20,20 @@ export function estadoCliente(estadoMcp: string, venceEl: string | null, diasGra
 export function mensual(precio: number, ciclo: string) {
   return ciclo === "anual" ? Math.round((precio / 12) * 100) / 100 : precio;
 }
+
+/** Día (AAAA-MM-DD) en hora de Lima de una marca de tiempo. */
+export const diaLima = (iso: string) => new Date(iso).toLocaleDateString("en-CA", { timeZone: "America/Lima" });
+
+export function sumarDias(dia: string, n: number): string {
+  const d = new Date(`${dia}T00:00:00Z`);
+  d.setUTCDate(d.getUTCDate() + n);
+  return d.toISOString().slice(0, 10);
+}
+
+/** Lunes de la semana de un día. */
+export function lunesDe(dia: string): string {
+  const d = new Date(`${dia}T00:00:00Z`).getUTCDay(); // 0 = domingo
+  return sumarDias(dia, -((d + 6) % 7));
+}
+
+export const ES_FECHA = /^\d{4}-\d{2}-\d{2}$/;

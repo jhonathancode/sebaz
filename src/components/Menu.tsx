@@ -62,7 +62,13 @@ const ICONOS: Record<string, React.ReactNode> = {
       <path d="m9 14.5 2 2 4-4.5" />
     </>
   ),
-  "/superadmin": (
+  "/superadmin/inicio": (
+    <>
+      <path d="M3 10.5 12 3l9 7.5" />
+      <path d="M5 9.5V20a1 1 0 0 0 1 1h4v-6h4v6h4a1 1 0 0 0 1-1V9.5" />
+    </>
+  ),
+  "/superadmin/clientes": (
     <>
       <path d="M3 21h18" />
       <path d="M5 21V9l7-5 7 5v12" />

@@ -6,9 +6,10 @@ import Motivo from "@/components/Motivo";
 import VentanaFlotante from "@/components/VentanaFlotante";
 import { NOMBRE_ROL, obtenerContexto, type Rol } from "@/lib/contexto";
 import { fecha, fechaHora, hoyISO, soles } from "@/lib/formato";
+import { MODULOS, modulosDe } from "@/lib/modulos";
 import { estadoCliente, mensual } from "@/lib/superadmin";
 import { supabaseServicio, supabaseServidor } from "@/lib/supabase/server";
-import { anularPago, cambiarEstadoCliente, guardarSuscripcion, registrarPago } from "../../acciones";
+import { anularPago, cambiarEstadoCliente, guardarModulos, guardarSuscripcion, registrarPago } from "../../acciones";
 
 const MEDIOS = [["transferencia", "Transferencia"], ["yape", "Yape"], ["plin", "Plin"], ["deposito", "Depósito"], ["efectivo", "Efectivo"], ["otro", "Otro"]];
 
@@ -159,6 +160,22 @@ export default async function Cliente({ params, searchParams }: { params: Promis
               </form>
             </section>
           )}
+
+          <section className="panel">
+            <div className="panel-cab">Módulos habilitados</div>
+            <form action={guardarModulos} className="panel-cuerpo">
+              <input type="hidden" name="mcp_id" value={id} />
+              <span className="pequeno tenue">Expedientes (requerimientos, comprobantes y pagos fijos) siempre está incluido. Si quita un módulo, el cliente deja de verlo, pero sus datos se conservan.</span>
+              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                {MODULOS.map((mo) => (
+                  <label key={mo.clave} style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                    <input type="checkbox" name="modulos" value={mo.clave} defaultChecked={modulosDe(m).includes(mo.clave)} /> {mo.texto}
+                  </label>
+                ))}
+              </div>
+              <BotonConfirmar className="btn primario" pregunta="¿Guardar los módulos de este cliente?" textoConfirmar="Sí, guardar">Guardar módulos</BotonConfirmar>
+            </form>
+          </section>
 
           <section className="panel">
             <div className="panel-cab">Acceso del cliente</div>

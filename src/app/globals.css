@@ -1212,3 +1212,19 @@ a.kpi:hover { border-color: var(--primario-claro); transform: translateY(-1px); 
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .lateral-menu { background: var(--menu); } }
 :root[data-theme="dark"] .boton-menu { background: #1e2228; border-color: #2e343c; }
 :root[data-theme="dark"] .login-marca { color: var(--primario-texto); }
+
+/* Logo de la municipalidad: centrado y grande, con su nombre debajo */
+.lm-mcp { align-items: center; text-align: center; gap: 10px; }
+.lm-escudo { width: 132px; height: 132px; border-radius: 50%; border: none; background: transparent; margin: 0 auto; }
+.lm-escudo img { width: 100%; height: 100%; object-fit: contain; border-radius: 50%; }
+.lm-escudo span { display: grid; place-items: center; width: 100%; height: 100%; border-radius: 50%; background: var(--panel-2); border: 1px solid var(--borde); }
+.lm-mcp-texto { align-items: center; }
+.login-logo-mcp { max-height: 150px; border-radius: 50%; }
+
+/* Lista de expedientes: documentos al alcance de un clic */
+.fila:has(.f-docs) { grid-template-columns: 110px minmax(0, 1fr) minmax(0, auto) auto auto; }
+.f-docs { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 6px; max-width: 360px; }
+.doc-chip { font-size: 12px; font-weight: 600; padding: 4px 10px; border-radius: 999px; border: 1px solid var(--primario-claro); background: var(--primario-fondo); color: var(--primario-texto); text-decoration: none; white-space: nowrap; }
+a.doc-chip:hover { background: var(--primario); border-color: var(--primario); color: #fff; }
+.doc-chip.pendiente { border-style: dashed; border-color: var(--borde-fuerte); background: transparent; color: var(--tenue); font-weight: 500; }
+@media (max-width: 1100px) { .fila:has(.f-docs) { grid-template-columns: 110px minmax(0, 1fr) auto; } .f-docs { grid-column: 2 / -1; justify-content: flex-start; max-width: none; } }

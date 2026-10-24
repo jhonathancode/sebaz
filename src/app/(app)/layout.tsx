@@ -5,7 +5,7 @@ import Menu, { BotonMenu, type ItemMenu } from "@/components/Menu";
 import MenuUsuario, { type EnlaceMenu } from "@/components/MenuUsuario";
 import { COOKIE_MCP, obtenerContexto, tiene } from "@/lib/contexto";
 import LogoSebaz from "@/components/LogoSebaz";
-import { APP_NOMBRE, urlLogo } from "@/lib/formato";
+import { APP_NOMBRE, logoMcp } from "@/lib/formato";
 import { tieneModulo } from "@/lib/modulos";
 import { supabaseServidor } from "@/lib/supabase/server";
 
@@ -129,7 +129,7 @@ export default async function MarcoApp({ children }: { children: React.ReactNode
                 ]
               : []
           }
-          mcp={ctx.mcp ? { nombre: ctx.mcp.nombre, ruc: ctx.mcp.ruc, logo: urlLogo(ctx.mcp.logo_path) } : null}
+          mcp={ctx.mcp ? { nombre: ctx.mcp.nombre, ruc: ctx.mcp.ruc, logo: logoMcp(ctx.mcp) } : null}
           panel={ctx.esSuperadmin ? APP_NOMBRE : ctx.esSoporte && !ctx.mcp ? "Soporte" : undefined}
         />
       )}

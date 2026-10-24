@@ -20,6 +20,7 @@ import { supabaseServidor } from "@/lib/supabase/server";
 import {
   agregarCotizacion,
   anularRegistro,
+  asignarFuente,
   cambiarEstadoExpediente,
   copiarExpediente,
   editarRequerimiento,
@@ -34,6 +35,9 @@ import { compraSinAlmacen } from "../../almacen/acciones";
 import { registrarCheque } from "../../comprobantes/acciones";
 
 type Params = Promise<{ id: string }>;
+
+/** Al elegir un paso arriba, el documento de abajo cambia al mismo. */
+const DOC_DE_PASO: Record<string, string> = { requerimiento: "requerimiento", cotizacion: "cotizaciones", orden: "orden", conformidad: "conformidad", comprobante: "comprobante" };
 type Busqueda = Promise<{ paso?: string; fase?: string; ok?: string; error?: string; editar?: string; ver?: string }>;
 
 const TIPO_GASTO: Record<string, string> = {
@@ -237,7 +241,9 @@ export default async function Expediente({ params, searchParams }: { params: Par
     sigue = {
       texto: "Genere el comprobante de pago.",
       ayuda: fijo ? "Escriba a quién se paga; el monto es el del requerimiento." : "Tenga a la mano la factura o boleta del proveedor.",
-      accion: puedeRegistrar && (
+      accion: puedeRegistrar && !e.fuente_id ? (
+        <span className="falta">Primero defina con qué dinero se paga (aviso de arriba).</span>
+      ) : puedeRegistrar && (
         <VentanaFlotante boton="Generar comprobante de pago" titulo={`Comprobante de pago por S/ ${soles(fijo ? total : orden?.monto)}`} accion={generarComprobante} textoGuardar="Generar comprobante" claseBoton="btn primario grande">
           <input type="hidden" name="expediente_id" value={id} />
           <div className="rejilla-2">
@@ -402,11 +408,34 @@ export default async function Expediente({ params, searchParams }: { params: Par
         </div>
         <div className="resumen-exp">
           <span><span className="etiqueta">Tipo</span>{TIPO_GASTO[e.tipo] ?? e.tipo}</span>
-          <span><span className="etiqueta">Se paga con</span>{fuente ? nombreFuente(fuente) : "—"}</span>
+          <span><span className="etiqueta">Se paga con</span>{fuente ? nombreFuente(fuente) : <span className="falta">Por definir</span>}</span>
           <span><span className="etiqueta">Monto</span><b>S/ {soles(total)}</b></span>
         </div>
       </div>
       <Avisos ok={sp.ok} error={sp.error} />
+
+      {!e.fuente_id && !anulado && (
+        <section className="aviso alerta aviso-accion" style={{ alignItems: "flex-end", flexWrap: "wrap" }}>
+          <span style={{ flex: "1 1 280px" }}>
+            <strong>Falta definir con qué dinero se paga este gasto.</strong> Es obligatorio antes de generar el comprobante de pago y cerrar el expediente.
+          </span>
+          {puedeRegistrar && (
+            <form action={asignarFuente} className="form-cheque">
+              <input type="hidden" name="id" value={id} />
+              <label className="campo">
+                Se paga con
+                <select name="fuente_id" required defaultValue="">
+                  <option value="" disabled>Elija…</option>
+                  {ctx.fuentes.map((f) => (
+                    <option key={f.id} value={f.id}>{nombreFuente(f)}</option>
+                  ))}
+                </select>
+              </label>
+              <BotonConfirmar className="btn primario" pregunta="¿Definir este dinero para el gasto?" detalle="Después ya no se podrá cambiar." textoConfirmar="Sí, definir">Definir</BotonConfirmar>
+            </form>
+          )}
+        </section>
+      )}
 
       <section className={`avance${anulado ? " anulado" : ""}`} aria-label="Avance del expediente">
         <div className="av-cab">
@@ -420,7 +449,7 @@ export default async function Expediente({ params, searchParams }: { params: Par
             const estado = p.hecho ? "hecho" : p.id === actual && !anulado ? "actual" : "pendiente";
             return (
               <li key={p.id} className={`av-paso ${estado}${p.id === visto ? " visto" : ""}`}>
-                <Link href={`/expedientes/${id}?paso=${p.id}`} scroll={false} aria-current={p.id === visto ? "step" : undefined}>
+                <Link href={`/expedientes/${id}?paso=${p.id}${DOC_DE_PASO[p.id] ? `&ver=${DOC_DE_PASO[p.id]}` : ""}`} scroll={false} aria-current={p.id === visto ? "step" : undefined}>
                   <span className="av-icono" aria-hidden="true">
                     {p.hecho ? (
                       <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round"><path d="m5 12.5 4.5 4.5L19 7.5" /></svg>

@@ -60,8 +60,13 @@ export default function ItemsRequerimiento({ inicial }: { inicial?: { cantidad: 
       const filasNuevas = (e as CustomEvent<Fila[]>).detail;
       if (Array.isArray(filasNuevas) && filasNuevas.length) setFilas(filasNuevas);
     };
+    const reiniciar = () => setFilas([nuevaFila()]);
     window.addEventListener("sebaz:llenar-items", llenar);
-    return () => window.removeEventListener("sebaz:llenar-items", llenar);
+    window.addEventListener("sebaz:reiniciar", reiniciar);
+    return () => {
+      window.removeEventListener("sebaz:llenar-items", llenar);
+      window.removeEventListener("sebaz:reiniciar", reiniciar);
+    };
   }, []);
 
   const cambiar = (i: number, campo: keyof Fila, valor: string) =>

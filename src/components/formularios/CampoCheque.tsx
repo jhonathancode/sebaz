@@ -13,6 +13,15 @@ export default function CampoCheque({ sugerido = "", inicial = "" }: { sugerido?
   const [cheque, setCheque] = useState(inicial || sugerido);
 
   useEffect(() => {
+    const reiniciar = () => {
+      setActivo(false);
+      setCheque(sugerido);
+    };
+    window.addEventListener("sebaz:reiniciar", reiniciar);
+    return () => window.removeEventListener("sebaz:reiniciar", reiniciar);
+  }, [sugerido]);
+
+  useEffect(() => {
     const form = caja.current?.closest("form");
     if (!form) return;
     const alCambiar = () => {

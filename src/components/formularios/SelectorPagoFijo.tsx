@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { MESES, soles } from "@/lib/formato";
 import { mesPendiente, type PagoFijoCatalogo } from "@/lib/pagosFijos";
 
@@ -24,6 +24,13 @@ export default function SelectorPagoFijo({ pagos, periodo }: { pagos: PagoFijoCa
   const [anio, setAnio] = useState(Number(periodo.slice(0, 4)));
   const [elegido, setElegido] = useState<{ id: string; mes: string } | null>(null);
   const mesActual = periodo;
+
+  // Al cambiar de tipo de gasto se suelta el pago elegido
+  useEffect(() => {
+    const soltar = () => setElegido(null);
+    window.addEventListener("sebaz:reiniciar", soltar);
+    return () => window.removeEventListener("sebaz:reiniciar", soltar);
+  }, []);
 
   function elegir(p: PagoFijoCatalogo, mes: string) {
     setElegido({ id: p.id, mes });

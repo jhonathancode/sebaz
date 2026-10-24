@@ -2,6 +2,7 @@ import { CLASIFICADORES } from "@/lib/catalogos";
 import type { Fuente } from "@/lib/contexto";
 import { hoyISO } from "@/lib/formato";
 import CampoCheque from "./CampoCheque";
+import ReinicioPorTipo from "./ReinicioPorTipo";
 import ItemsRequerimiento from "./ItemsRequerimiento";
 import SelectorPagoFijo from "./SelectorPagoFijo";
 import SugerenciaConcepto from "./SugerenciaConcepto";
@@ -40,11 +41,14 @@ function detalleFuente(f: Fuente) {
 /** Formulario del requerimiento, en preguntas simples. */
 export default function CamposRequerimiento({ fuentes, valores, pagosFijos, chequeSugerido }: { fuentes: Fuente[]; valores?: ValoresRequerimiento; pagosFijos?: PagoFijoCatalogo[]; chequeSugerido?: string }) {
   const tipo = valores?.tipo ?? "compra";
-  const fuente = valores?.fuente_id ?? fuentes.find((f) => f.tipo === "distrito")?.id ?? fuentes[0]?.id;
+  const fuentePorDefecto = fuentes.find((f) => f.tipo === "distrito")?.id ?? fuentes[0]?.id;
+  // Al corregir un requerimiento que aún no tiene dinero definido, queda marcada «Definir después».
+  const fuente = valores ? valores.fuente_id ?? "" : fuentePorDefecto;
   const hayPropios = fuentes.some((f) => f.tipo === "propios");
 
   return (
     <>
+      {!valores && <ReinicioPorTipo fuenteInicial={fuentePorDefecto} clasificadorInicial="2.3 Bienes y servicios" />}
       <fieldset className="pregunta">
         <legend>1. ¿Qué tipo de gasto es?</legend>
         <div className="opciones">
@@ -69,6 +73,11 @@ export default function CamposRequerimiento({ fuentes, valores, pagosFijos, cheq
               <span className="opcion-texto">{detalleFuente(f)}</span>
             </label>
           ))}
+          <label className="opcion">
+            <input type="radio" name="fuente_id" value="" defaultChecked={fuente === ""} />
+            <span className="opcion-titulo">Definir después</span>
+            <span className="opcion-texto">Aún no se sabe. Antes de generar el comprobante de pago se le preguntará.</span>
+          </label>
         </div>
         {!hayPropios && <p className="pequeno tenue" style={{ margin: "6px 0 0" }}>La opción «Ingresos propios» aún no está activa en su MCP. Avise a soporte.</p>}
       </fieldset>

@@ -17,6 +17,14 @@ const FASES: Record<string, string> = {
   comprobante: "Comprobante de pago",
 };
 const ORDEN_FASES = ["requerimiento", "cotizacion", "orden", "conformidad", "comprobante"];
+/** Documento que corresponde a cada fase (para abrirlo directo desde la lista). */
+const DOC_DE_FASE: Record<string, { clave: string; corto: string }> = {
+  requerimiento: { clave: "requerimiento", corto: "Requerimiento" },
+  cotizacion: { clave: "cotizaciones", corto: "Cotizaciones" },
+  orden: { clave: "orden", corto: "Orden" },
+  conformidad: { clave: "conformidad", corto: "Conformidad" },
+  comprobante: { clave: "comprobante", corto: "Comprobante" },
+};
 const TIPOS: Record<string, string> = { compra: "Compra de bienes", servicio: "Servicio externo", pago_fijo: "Pago fijo" };
 const ESTADOS = [
   { v: "", t: "Todos" },
@@ -175,6 +183,17 @@ export default async function Expedientes({ searchParams }: { searchParams: Para
                     </span>
                   )}
                 </div>
+              </div>
+              <div className="f-docs" aria-label="Documentos del expediente">
+                {pasos.map((p, i) => {
+                  const d = DOC_DE_FASE[p];
+                  const listo = i < hecho;
+                  return listo ? (
+                    <Link key={p} className="doc-chip" href={`/expedientes/${e.id}/documentos?doc=${d.clave}`} title={`Ver ${d.corto.toLowerCase()}`}>{d.corto}</Link>
+                  ) : (
+                    <span key={p} className="doc-chip pendiente" title="Aún no se genera">{d.corto}</span>
+                  );
+                })}
               </div>
               <div className="f-monto">
                 S/ {soles(e.monto)}

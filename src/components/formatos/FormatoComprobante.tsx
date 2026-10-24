@@ -3,7 +3,7 @@ import type { Mcp } from "@/lib/contexto";
 import { enLetras, fecha, soles } from "@/lib/formato";
 
 export type DatosCP = {
-  numero: number;
+  numero: number | null;
   fecha: string;
   beneficiario: string;
   beneficiario_doc: string | null;
@@ -28,7 +28,7 @@ export default function FormatoComprobante({ c, mcp }: { c: DatosCP; mcp: Mcp })
   const ctx = { mcp };
   return (
     <div className="hoja">
-      <Encabezado mcp={ctx.mcp} titulo="COMPROBANTE DE PAGO" numero={`N° ${String(c.numero).padStart(3, "0")} · Fecha ${fecha(c.fecha)}`} />
+      <Encabezado mcp={ctx.mcp} titulo="COMPROBANTE DE PAGO" numero={`N° ${c.numero ? String(c.numero).padStart(3, "0") : "(se asigna al emitir)"} · Fecha ${fecha(c.fecha)}`} />
       <table className="formato">
         <tbody>
           <tr><td className="etiqueta" style={{ width: 100 }}>Nombre</td><td>{c.beneficiario}{c.beneficiario_doc && ` · ${c.beneficiario_doc}`}</td></tr>

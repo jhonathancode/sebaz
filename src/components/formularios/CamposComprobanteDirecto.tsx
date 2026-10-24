@@ -45,6 +45,7 @@ export default function CamposComprobanteDirecto({ fuentes }: { fuentes: Fuente[
           </select>
         </label>
         <label className="campo">N° del sustento<input name="sustento_numero" placeholder="E001-12" /></label>
+        <label className="campo">N° de cheque<input name="cheque" inputMode="numeric" pattern="\d{4,12}" placeholder="Si ya lo giró; si no, después" /></label>
       </div>
     </>
   );

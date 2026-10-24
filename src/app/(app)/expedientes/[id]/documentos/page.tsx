@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import BotonPdf from "@/components/BotonPdf";
 import BotonImprimir, { ImprimirAlAbrir } from "@/components/BotonImprimir";
 import Estado from "@/components/Estado";
 import DocumentosExpediente from "@/components/formatos/DocumentosExpediente";
@@ -42,7 +43,8 @@ export default async function Documentos({
         </h1>
         <Estado valor={e.estado} />
         <span className="espacio" />
-        <BotonImprimir texto={doc === "todo" ? "Imprimir todo o guardar PDF" : "Imprimir o guardar PDF"} />
+        <BotonPdf nombre={`Expediente ${num3(e.numero)}-${e.anio}${doc === "todo" ? "" : " " + doc}`} className="btn primario" />
+        <BotonImprimir texto={doc === "todo" ? "Imprimir todo" : "Imprimir"} />
         {imprimir === "1" && <ImprimirAlAbrir />}
       </div>
 

@@ -6,6 +6,7 @@ import { mensajeError, numero, texto, volver } from "@/lib/acciones";
 import { supabaseServidor } from "@/lib/supabase/server";
 import { periodoActual } from "@/lib/formato";
 import { estadoPagosFijos, pasarAlMes } from "@/lib/pagosFijos";
+import { leerCheque } from "../comprobantes/acciones";
 
 /** "Función|Categoría" del selector → columnas separadas. */
 function funcionCategoria(fd: FormData) {
@@ -293,6 +294,7 @@ export async function generarComprobante(fd: FormData) {
     importe = Number(orden.monto);
   }
   if (importe <= 0) volver(destino, "error", "El monto del requerimiento debe ser mayor que cero.");
+  const cheque = await leerCheque(fd, destino);
 
   const { data, error } = await supabase
     .from("comprobantes_pago")
@@ -309,6 +311,7 @@ export async function generarComprobante(fd: FormData) {
       partida: exp.clasificador,
       sustento_tipo: texto(fd, "sustento_tipo"),
       sustento_numero: texto(fd, "sustento_numero"),
+      cheque,
       ...funcionCategoria(fd),
     })
     .select("id")

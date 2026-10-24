@@ -24,7 +24,7 @@ export function fechaHora(f: string | null | undefined): string {
 }
 
 export function num3(n: number | null | undefined): string {
-  return String(n ?? 0).padStart(3, "0");
+  return n ? String(n).padStart(3, "0") : "___";
 }
 
 export function codigoCP(numero: number | null | undefined, origen?: string): string {

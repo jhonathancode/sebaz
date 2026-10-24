@@ -11,11 +11,20 @@ function funcionCategoria(fd: FormData) {
 }
 
 /** Comprobante sin expediente: dietas, honorarios, remuneraciones, etc. */
+/** N° de cheque escrito en un formulario (opcional): solo dígitos. */
+export async function leerCheque(fd: FormData, volverA: string): Promise<string | null> {
+  const cheque = (texto(fd, "cheque") ?? "").replace(/\s/g, "");
+  if (!cheque) return null;
+  if (!/^\d{4,12}$/.test(cheque)) volver(volverA, "error", "El número de cheque debe tener solo dígitos (de 4 a 12).");
+  return cheque;
+}
+
 export async function crearComprobanteDirecto(fd: FormData) {
   const ctx = await contextoMcp();
   const supabase = await supabaseServidor();
   const importe = numero(fd, "importe");
   if (!importe || importe <= 0) volver("/comprobantes?nuevo=1", "error", "Escriba el importe.");
+  const cheque = await leerCheque(fd, "/comprobantes?nuevo=1");
   const { data, error } = await supabase
     .from("comprobantes_pago")
     .insert({
@@ -31,6 +40,7 @@ export async function crearComprobanteDirecto(fd: FormData) {
       partida: texto(fd, "partida"),
       sustento_tipo: texto(fd, "sustento_tipo"),
       sustento_numero: texto(fd, "sustento_numero"),
+      cheque,
       ...funcionCategoria(fd),
     })
     .select("id")
@@ -80,10 +90,13 @@ export async function registrarCheque(fd: FormData) {
   await contextoMcp();
   const supabase = await supabaseServidor();
   const id = texto(fd, "id")!;
+  // Si viene del expediente, vuelve a él.
+  const destino = texto(fd, "volver_a")?.startsWith("/expedientes/") ? texto(fd, "volver_a")! : `/comprobantes/${id}`;
   const cheque = (texto(fd, "cheque") ?? "").replace(/\s/g, "");
-  if (!/^\d{4,12}$/.test(cheque)) volver(`/comprobantes/${id}`, "error", "El número de cheque debe tener solo dígitos.");
+  if (!/^\d{4,12}$/.test(cheque)) volver(destino, "error", "El número de cheque debe tener solo dígitos (de 4 a 12).");
   const { error } = await supabase.from("comprobantes_pago").update({ cheque }).eq("id", id);
-  if (error) volver(`/comprobantes/${id}`, "error", mensajeError(error));
+  if (error) volver(destino, "error", mensajeError(error));
   revalidatePath("/comprobantes");
-  volver(`/comprobantes/${id}`, "ok", "Cheque registrado. El comprobante ya puede entrar en la rendición.");
+  revalidatePath(destino);
+  volver(destino, "ok", "Cheque registrado. Cuando el comprobante esté aprobado, ya puede entrar en la rendición.");
 }

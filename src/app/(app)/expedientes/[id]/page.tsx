@@ -1,12 +1,15 @@
 import Link from "next/link";
 import BotonConfirmar from "@/components/BotonConfirmar";
+import BotonPdf from "@/components/BotonPdf";
 import { notFound } from "next/navigation";
 import Avisos from "@/components/Avisos";
 import Estado from "@/components/Estado";
 import Motivo from "@/components/Motivo";
 import CamposRequerimiento, { nombreFuente } from "@/components/formularios/CamposRequerimiento";
 import VentanaFlotante from "@/components/VentanaFlotante";
-import DocumentosExpediente from "@/components/formatos/DocumentosExpediente";
+import DocumentosExpediente, { Memorando, Orden, type DatosExpediente } from "@/components/formatos/DocumentosExpediente";
+import FormatoComprobante from "@/components/formatos/FormatoComprobante";
+import { FormatoNea } from "@/components/formatos/FormatosAlmacen";
 import { cargarExpediente } from "@/lib/documentos";
 import SelectFuncion from "@/components/SelectFuncion";
 import { SUSTENTOS } from "@/lib/catalogos";
@@ -24,6 +27,8 @@ import {
   emitirOrden,
   generarComprobante,
 } from "../acciones";
+import { compraSinAlmacen } from "../../almacen/acciones";
+import { registrarCheque } from "../../comprobantes/acciones";
 
 type Params = Promise<{ id: string }>;
 type Busqueda = Promise<{ paso?: string; fase?: string; ok?: string; error?: string; editar?: string; ver?: string }>;
@@ -50,7 +55,7 @@ export default async function Expediente({ params, searchParams }: { params: Par
     .single();
   if (!e) notFound();
 
-  const [{ data: items }, { data: cotizaciones }, { data: ordenes }, { data: conformidades }, { data: cps }, { data: historial }] =
+  const [{ data: items }, { data: cotizaciones }, { data: ordenes }, { data: conformidades }, { data: cps }, { data: historial }, { data: neas }] =
     await Promise.all([
       supabase.from("expediente_items").select("*").eq("expediente_id", id).eq("anulado", false).order("item"),
       supabase.from("cotizaciones").select("*, proveedores(razon_social, num_doc)").eq("expediente_id", id).order("monto"),
@@ -63,6 +68,7 @@ export default async function Expediente({ params, searchParams }: { params: Par
         .or(`registro_id.eq.${id},despues->>expediente_id.eq.${id}`)
         .order("en", { ascending: false })
         .limit(30),
+      supabase.from("notas_entrada").select("id, numero, anio, fecha, anulado, anulado_motivo").eq("expediente_id", id).order("creado_en"),
     ]);
 
   const usuarios = new Map<string, string>();
@@ -78,6 +84,9 @@ export default async function Expediente({ params, searchParams }: { params: Par
   const orden = (ordenes ?? []).find((o) => !o.anulado);
   const conformidad = (conformidades ?? []).find((c) => !c.anulado);
   const cp = (cps ?? []).find((c) => c.estado !== "anulado");
+  const nea = (neas ?? []).find((n) => !n.anulado);
+  const conAlmacen = e.tipo === "compra";
+  const sinAlmacen = (e as { sin_almacen_motivo?: string | null }).sin_almacen_motivo ?? null;
   const elegida = cots.find((c) => c.elegida);
   const fijo = e.tipo === "pago_fijo";
   const anulado = e.estado === "anulado";
@@ -86,6 +95,16 @@ export default async function Expediente({ params, searchParams }: { params: Par
   const puedeAprobar = tiene(ctx, "alcalde", "admin");
   const nombreOrden = e.tipo === "compra" ? "orden de compra" : "orden de servicio";
   const fuente = e.fuentes as Parameters<typeof nombreFuente>[0] | null;
+
+  // Datos de los formatos (vista previa antes de emitir y vista del documento)
+  const [datosDoc, { data: tesoreroDoc }] = await Promise.all([
+    cargarExpediente(supabase, id),
+    supabase.from("miembros").select("cargo, perfiles(nombre)").eq("mcp_id", ctx.mcp.id).eq("rol", "tesorero").eq("activo", true).maybeSingle(),
+  ]);
+  const nombreTesorero = (tesoreroDoc?.perfiles as unknown as { nombre: string } | null)?.nombre ?? "";
+  const cargoTesorero = tesoreroDoc?.cargo ?? "Tesorero(a)";
+
+  const textoConformidad = `Mediante la presente se le comunica la CONFORMIDAD por ${e.descripcion.toLowerCase()}, a cargo de ${prov(orden?.proveedores)?.razon_social ?? ""}, a favor de la ${ctx.mcp.nombre}.`;
 
   // ------------------------------------------------------------------ pasos
   type Paso = { id: string; titulo: string; detalle: string; hecho: boolean };
@@ -97,6 +116,9 @@ export default async function Expediente({ params, searchParams }: { params: Par
           { id: "cotizacion", titulo: "Cotizaciones", detalle: elegida ? `Elegida: ${prov(elegida.proveedores)?.razon_social ?? ""}` : `${cots.length} registrada(s)`, hecho: !!elegida },
           { id: "orden", titulo: e.tipo === "compra" ? "Orden de compra" : "Orden de servicio", detalle: orden ? `N° ${num3(orden.numero)}-${orden.anio}` : "Pendiente", hecho: !!orden },
           { id: "conformidad", titulo: "Conformidad", detalle: conformidad ? `Memorando ${num3(conformidad.memorando_numero)}` : "Pendiente", hecho: !!conformidad },
+          ...(conAlmacen
+            ? [{ id: "almacen", titulo: "Almacén (NEA)", detalle: nea ? `NEA ${num3(nea.numero)}-${nea.anio}` : sinAlmacen ? "No pasa por almacén" : "Pendiente", hecho: !!nea || !!sinAlmacen }]
+            : []),
         ]),
     { id: "comprobante", titulo: "Comprobante de pago", detalle: cp ? codigoCP(cp.numero, cp.origen) : "Pendiente", hecho: !!cp },
   ];
@@ -148,7 +170,7 @@ export default async function Expediente({ params, searchParams }: { params: Par
       texto: `Emita la ${nombreOrden} a ${prov(elegida?.proveedores)?.razon_social} por S/ ${soles(elegida?.monto)}.`,
       ayuda: "La orden se imprime, se firma y se entrega al proveedor.",
       accion: puedeRegistrar && (
-        <VentanaFlotante boton={`Emitir ${nombreOrden}`} titulo={`Emitir ${nombreOrden}`} accion={emitirOrden} textoGuardar="Emitir orden" claseBoton="btn primario grande">
+        <VentanaFlotante boton={`Emitir ${nombreOrden}`} titulo={`Emitir ${nombreOrden}`} accion={emitirOrden} textoGuardar="Emitir orden" claseBoton="btn primario grande" vistaPrevia={{ base: { tipo: "orden", d: datosDoc, ordenTipo: e.tipo, monto: Number(elegida?.monto ?? 0), proveedor: elegida?.proveedores ?? null }, mcp: ctx.mcp }}>
           <input type="hidden" name="expediente_id" value={id} />
           <p style={{ margin: 0 }}>Proveedor: <b>{prov(elegida?.proveedores)?.razon_social}</b> · Monto: <b>S/ {soles(elegida?.monto)}</b></p>
           <div className="rejilla-2">
@@ -164,17 +186,28 @@ export default async function Expediente({ params, searchParams }: { params: Par
       texto: "Cuando el proveedor entregue, registre la conformidad.",
       ayuda: "Es el memorando del alcalde que dice que lo recibido está bien.",
       accion: puedeRegistrar && (
-        <VentanaFlotante boton="Registrar conformidad" titulo="Memorando de conformidad" accion={emitirConformidad} textoGuardar="Emitir memorando" claseBoton="btn primario grande">
+        <VentanaFlotante boton="Registrar conformidad" titulo="Memorando de conformidad" accion={emitirConformidad} textoGuardar="Emitir memorando" claseBoton="btn primario grande" vistaPrevia={{ base: { tipo: "conformidad", d: datosDoc, tesorero: nombreTesorero, cargo: cargoTesorero }, mcp: ctx.mcp }}>
           <input type="hidden" name="expediente_id" value={id} />
           <label className="campo">Fecha<input type="date" name="fecha" defaultValue={hoyISO()} required /></label>
           <label className="campo">
             Texto del memorando
             <textarea
               name="texto"
-              defaultValue={`Mediante la presente se le comunica la CONFORMIDAD por ${e.descripcion.toLowerCase()}, a cargo de ${prov(orden?.proveedores)?.razon_social ?? ""}, a favor de la ${ctx.mcp.nombre}.`}
+              defaultValue={textoConformidad}
             />
           </label>
         </VentanaFlotante>
+      ),
+    };
+  } else if (conAlmacen && !nea && !sinAlmacen && !cp) {
+    sigue = {
+      texto: "Registre la entrada de los bienes al almacén (NEA).",
+      ayuda: "Los bienes comprados entran al stock y luego se entregan con PECOSA. Si se consumieron de inmediato (por ejemplo combustible), indíquelo con «No pasa por almacén».",
+      accion: puedeRegistrar && (
+        <div className="acciones-fila">
+          <Link className="btn primario grande" href={`/almacen/nea/nueva?expediente=${id}`}>Ingresar al almacén (NEA)</Link>
+          <Motivo accion={compraSinAlmacen} boton="No pasa por almacén" titulo="Estos bienes no pasan por almacén" ayuda="¿Por qué? Ej.: combustible consumido en el traslado, refrigerio de la faena" campos={{ id }} peligro={false} />
+        </div>
       ),
     };
   } else if (!cp) {
@@ -182,7 +215,7 @@ export default async function Expediente({ params, searchParams }: { params: Par
       texto: "Genere el comprobante de pago.",
       ayuda: fijo ? "Escriba a quién se paga; el monto es el del requerimiento." : "Tenga a la mano la factura o boleta del proveedor.",
       accion: puedeRegistrar && (
-        <VentanaFlotante boton="Generar comprobante de pago" titulo={`Comprobante de pago por S/ ${soles(fijo ? total : orden?.monto)}`} accion={generarComprobante} textoGuardar="Generar comprobante" claseBoton="btn primario grande">
+        <VentanaFlotante boton="Generar comprobante de pago" titulo={`Comprobante de pago por S/ ${soles(fijo ? total : orden?.monto)}`} accion={generarComprobante} textoGuardar="Generar comprobante" claseBoton="btn primario grande" vistaPrevia={{ base: { tipo: "comprobante", beneficiario: fijo ? "" : prov(orden?.proveedores)?.razon_social ?? "", beneficiario_doc: fijo ? null : prov(orden?.proveedores)?.num_doc ?? null, concepto: fijo ? e.descripcion : orden?.concepto ?? e.descripcion, importe: Number(fijo ? total : orden?.monto ?? 0), partida: e.clasificador, hecho_por: ctx.nombre }, mcp: ctx.mcp }}>
           <input type="hidden" name="expediente_id" value={id} />
           <div className="rejilla-2">
             {fijo && (
@@ -201,6 +234,7 @@ export default async function Expediente({ params, searchParams }: { params: Par
               </select>
             </label>
             <label className="campo">Número del documento<input name="sustento_numero" placeholder="Ej.: F001-45" /></label>
+            <label className="campo">N° de cheque<input name="cheque" inputMode="numeric" pattern="\d{4,12}" placeholder="Si ya lo giró; si no, después" /></label>
             <SelectFuncion />
           </div>
         </VentanaFlotante>
@@ -209,12 +243,19 @@ export default async function Expediente({ params, searchParams }: { params: Par
   } else if (cp.estado === "borrador") {
     sigue = {
       texto: `El comprobante ${codigoCP(cp.numero, cp.origen)} espera la aprobación del alcalde.`,
-      accion: <Link className="btn primario grande" href={`/comprobantes/${cp.id}`}>Abrir comprobante</Link>,
+      ayuda: cp.cheque ? `Cheque N° ${cp.cheque}.` : "Mientras tanto, si ya giró el cheque, escriba su número aquí.",
+      accion: (
+        <div className="acciones-fila">
+          {!cp.cheque && puedeRegistrar && <FormCheque cpId={cp.id} expedienteId={id} />}
+          <Link className="btn contorno" href={`/comprobantes/${cp.id}`}>Abrir comprobante</Link>
+        </div>
+      ),
     };
   } else if (cp.estado === "aprobado" && !cp.cheque) {
     sigue = {
-      texto: "Cuando gire el cheque, escriba su número en el comprobante.",
-      accion: <Link className="btn primario grande" href={`/comprobantes/${cp.id}`}>Escribir número de cheque</Link>,
+      texto: `Escriba el número del cheque del comprobante ${codigoCP(cp.numero, cp.origen)}.`,
+      ayuda: "Sin cheque el gasto no puede entrar en la rendición. El número se escribe una sola vez.",
+      accion: puedeRegistrar ? <FormCheque cpId={cp.id} expedienteId={id} /> : <Link className="btn primario grande" href={`/comprobantes/${cp.id}`}>Abrir comprobante</Link>,
     };
   } else if (cp.estado === "aprobado") {
     sigue = {
@@ -239,14 +280,83 @@ export default async function Expediente({ params, searchParams }: { params: Par
         ]),
     { clave: "comprobante", nombre: "Comprobante de pago", listo: !!cp },
   ].filter((d) => d.listo);
-  // Vista previa: por defecto, el último documento que se generó.
-  const verClave = docs.some((x) => x.clave === sp.ver) ? sp.ver! : docs[docs.length - 1].clave;
-  const [datosDoc, { data: tesoreroDoc }] = await Promise.all([
-    cargarExpediente(supabase, id),
-    supabase.from("miembros").select("cargo, perfiles(nombre)").eq("mcp_id", ctx.mcp.id).eq("rol", "tesorero").eq("activo", true).maybeSingle(),
-  ]);
-  const nombreTesorero = (tesoreroDoc?.perfiles as unknown as { nombre: string } | null)?.nombre ?? "";
-  const cargoTesorero = tesoreroDoc?.cargo ?? "Tesorero(a)";
+  // Borrador del documento de la fase actual: se ve abajo antes de emitirlo.
+  const hoy = hoyISO();
+  const anioHoy = Number(hoy.slice(0, 4));
+  let borrador: { nombre: string; nodo: React.ReactNode } | null = null;
+  if (!anulado && aprobado) {
+    if (actual === "orden" && elegida) {
+      borrador = {
+        nombre: e.tipo === "compra" ? "Orden de compra" : "Orden de servicio",
+        nodo: (
+          <Orden
+            mcp={ctx.mcp}
+            d={{ ...datosDoc, orden: { numero: null, anio: anioHoy, fecha: hoy, plazo: elegida.plazo, concepto: e.descripcion, tipo: e.tipo, tipo_proceso: "Adjudicación directa", monto: elegida.monto, proveedores: elegida.proveedores } } as unknown as DatosExpediente}
+          />
+        ),
+      };
+    } else if (actual === "conformidad" && orden) {
+      borrador = {
+        nombre: "Memorando de conformidad",
+        nodo: (
+          <Memorando
+            mcp={ctx.mcp}
+            tesorero={nombreTesorero}
+            cargo={cargoTesorero}
+            d={{ ...datosDoc, conformidad: { memorando_numero: null, anio: anioHoy, fecha: hoy, texto: textoConformidad } } as unknown as DatosExpediente}
+          />
+        ),
+      };
+    } else if (actual === "almacen" && !nea) {
+      borrador = {
+        nombre: "Entrada al almacén (NEA)",
+        nodo: (
+          <FormatoNea
+            mcp={ctx.mcp}
+            n={{
+              numero: null,
+              anio: anioHoy,
+              fecha: hoy,
+              origen: "compra",
+              proveedor: prov(orden?.proveedores)?.razon_social ?? null,
+              documento_ref: null,
+              observacion: null,
+              orden: orden ? `O/C ${num3(orden.numero)}-${orden.anio}` : null,
+              expediente: `Exp. ${num3(e.numero)}-${e.anio}`,
+              items: lista.map((i) => ({ descripcion: i.descripcion, unidad: i.unidad, cantidad: Number(i.cantidad), precio_unitario: Number(i.precio_unitario) })),
+            }}
+          />
+        ),
+      };
+    } else if (actual === "comprobante" && !cp) {
+      borrador = {
+        nombre: "Comprobante de pago",
+        nodo: (
+          <FormatoComprobante
+            mcp={ctx.mcp}
+            c={{
+              numero: null,
+              fecha: hoy,
+              beneficiario: fijo ? "(se escribe al generar)" : prov(orden?.proveedores)?.razon_social ?? "",
+              beneficiario_doc: fijo ? null : prov(orden?.proveedores)?.num_doc ?? null,
+              concepto: fijo ? e.descripcion : orden?.concepto ?? e.descripcion,
+              importe: Number(fijo ? total : orden?.monto ?? 0),
+              deducciones: 0,
+              partida: e.clasificador,
+              funcional: null,
+              cheque: null,
+              hecho_por: ctx.nombre,
+            }}
+          />
+        ),
+      };
+    }
+  }
+  // Vista de abajo: por defecto, el documento de la fase en la que está (borrador si aún no se emite).
+  const opcionesVer = [...docs.map((x) => x.clave), ...(borrador ? ["borrador"] : [])];
+  const verClave = opcionesVer.includes(sp.ver ?? "") ? sp.ver! : borrador ? "borrador" : docs[docs.length - 1].clave;
+  const viendoBorrador = verClave === "borrador" && !!borrador;
+
 
   const nombreTabla: Record<string, string> = {
     expedientes: "el expediente",
@@ -408,11 +518,30 @@ export default async function Expediente({ params, searchParams }: { params: Par
                 {!c.anulado && (
                   <div className="acciones-fila">
                     <Link className="btn chico contorno" href={`/expedientes/${id}/documentos?doc=conformidad`}>Ver e imprimir</Link>
-                    {!cp && puedeRegistrar && (
+                    {!cp && !nea && puedeRegistrar && (
                       <Motivo accion={anularRegistro} boton="Anular" titulo="Anular la conformidad" ayuda="Motivo" campos={{ expediente_id: id, tabla: "conformidades", registro_id: c.id, fase: "conformidad" }} />
                     )}
                   </div>
                 )}
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {visto === "almacen" && conAlmacen && (
+        <section className="panel">
+          <div className="panel-cab">Entrada al almacén</div>
+          <div className="panel-cuerpo">
+            {sinAlmacen && <div className="aviso info" style={{ margin: 0 }}>No pasa por almacén: {sinAlmacen}</div>}
+            {(neas ?? []).length === 0 && !sinAlmacen && <span className="tenue">Todavía no se registra la entrada al almacén.</span>}
+            {(neas ?? []).map((n) => (
+              <div key={n.id} className="fila-doc">
+                <div>
+                  <b>NEA N° {num3(n.numero)}-{n.anio}</b> · {fecha(n.fecha)}
+                  {n.anulado && <div className="pequeno no">Anulada: {n.anulado_motivo}</div>}
+                </div>
+                <Link className="btn chico contorno" href={`/almacen/nea/${n.id}`}>Ver e imprimir</Link>
               </div>
             ))}
           </div>
@@ -438,10 +567,11 @@ export default async function Expediente({ params, searchParams }: { params: Par
 
       <section className="panel vista-previa">
         <div className="panel-cab">
-          <span>Así va su documento</span>
-          <div className="acciones-fila">
+          <span>{viendoBorrador ? `Así quedará: ${borrador!.nombre}` : "Así va su documento"}</span>
+          <div className="acciones-fila" style={viendoBorrador ? { display: "none" } : undefined}>
             <Link className="btn chico contorno" href={`/expedientes/${id}/documentos?doc=${verClave}`}>Ver en grande</Link>
-            <Link className="btn chico primario" href={`/expedientes/${id}/documentos?doc=${verClave}&imprimir=1`}>Imprimir o guardar PDF</Link>
+            <BotonPdf nombre={`Expediente ${num3(e.numero)}-${e.anio} ${verClave}`} selector=".vista-previa .hoja" className="btn chico primario" />
+            <Link className="btn chico contorno" href={`/expedientes/${id}/documentos?doc=${verClave}&imprimir=1`}>Imprimir</Link>
             {docs.length > 1 && (
               <Link className="btn chico contorno" href={`/expedientes/${id}/documentos?doc=todo&imprimir=1`}>Imprimir todo el expediente</Link>
             )}
@@ -461,9 +591,30 @@ export default async function Expediente({ params, searchParams }: { params: Par
               {x.nombre}
             </Link>
           ))}
+          {borrador && (
+            <Link
+              role="tab"
+              aria-selected={viendoBorrador}
+              scroll={false}
+              className={`chip borrador${viendoBorrador ? " activo" : ""}`}
+              href={`/expedientes/${id}?ver=borrador${sp.paso ? `&paso=${sp.paso}` : ""}`}
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><path d="M12 20h9" /><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" /></svg>
+              {borrador.nombre} · por emitir
+            </Link>
+          )}
         </div>
+        {viendoBorrador && (
+          <div className="aviso info" style={{ margin: "12px 14px 0" }}>
+            Borrador: así quedará el documento de este paso. El número se pone al emitirlo con el botón de «Lo que sigue».
+          </div>
+        )}
         <div className="mesa">
-          <DocumentosExpediente d={datosDoc} mcp={ctx.mcp} clave={verClave} tesorero={nombreTesorero} cargo={cargoTesorero} />
+          {viendoBorrador ? (
+            <div className="hoja-borrador">{borrador!.nodo}</div>
+          ) : (
+            <DocumentosExpediente d={datosDoc} mcp={ctx.mcp} clave={verClave} tesorero={nombreTesorero} cargo={cargoTesorero} />
+          )}
         </div>
       </section>
 
@@ -473,7 +624,7 @@ export default async function Expediente({ params, searchParams }: { params: Par
           <div className="panel-cuerpo otras">
             {e.estado === "borrador" && puedeRegistrar && (
               <div>
-                <VentanaFlotante boton="Corregir requerimiento" titulo={`Corregir requerimiento ${num3(e.numero)}-${e.anio}`} accion={editarRequerimiento} textoGuardar="Guardar cambios" abierta={sp.editar === "1"} error={sp.editar === "1" ? sp.error : undefined} ancha claseBoton="btn contorno">
+                <VentanaFlotante boton="Corregir requerimiento" titulo={`Corregir requerimiento ${num3(e.numero)}-${e.anio}`} accion={editarRequerimiento} textoGuardar="Guardar cambios" vistaPrevia={{ base: { tipo: "requerimiento" }, mcp: ctx.mcp }} abierta={sp.editar === "1"} error={sp.editar === "1" ? sp.error : undefined} ancha claseBoton="btn contorno">
                   <input type="hidden" name="id" value={id} />
                   <CamposRequerimiento
                     fuentes={ctx.fuentes}
@@ -531,6 +682,23 @@ export default async function Expediente({ params, searchParams }: { params: Par
         </div>
       </details>
     </>
+  );
+}
+
+/** Escribir el N° de cheque sin salir del expediente. */
+function FormCheque({ cpId, expedienteId }: { cpId: string; expedienteId: string }) {
+  return (
+    <form action={registrarCheque} className="form-cheque">
+      <input type="hidden" name="id" value={cpId} />
+      <input type="hidden" name="volver_a" value={`/expedientes/${expedienteId}`} />
+      <label className="campo">
+        N° de cheque
+        <input name="cheque" inputMode="numeric" pattern="\d{4,12}" required placeholder="Solo números" />
+      </label>
+      <BotonConfirmar className="btn primario grande" pregunta="¿Guardar el número de cheque?" detalle="Revíselo bien: el número de cheque se escribe una sola vez." textoConfirmar="Sí, guardar">
+        Guardar cheque
+      </BotonConfirmar>
+    </form>
   );
 }
 

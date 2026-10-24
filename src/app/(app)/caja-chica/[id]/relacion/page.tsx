@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import BotonPdf from "@/components/BotonPdf";
 import BotonImprimir from "@/components/BotonImprimir";
 import Encabezado from "@/components/Encabezado";
 import Firmas from "@/components/Firmas";
@@ -28,6 +29,7 @@ export default async function Relacion({ params }: { params: Promise<{ id: strin
       <div className="titulo-ventana no-imprimir">
         <Link className="btn" href={`/caja-chica?mes=${caja.periodo}&fuente=${caja.fuente_id}`}>← Volver a la caja chica</Link>
         <span className="espacio" />
+        <BotonPdf nombre="Relacion de gastos de caja chica" />
         <BotonImprimir />
       </div>
       <div className="hoja">

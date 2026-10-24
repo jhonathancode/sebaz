@@ -40,7 +40,7 @@ function sufijo(mcp: Mcp) {
   return mcp.nombre.replace(/municipalidad( del)?( centro poblado)?/i, "").trim().toUpperCase();
 }
 
-function Requerimiento({ d, mcp }: { d: Datos; mcp: Mcp }) {
+export function Requerimiento({ d, mcp }: { d: Datos; mcp: Mcp }) {
   const e = d.e!;
   const total = d.items.reduce((s, i) => s + Number(i.total), 0);
   return (
@@ -96,7 +96,7 @@ function Cotizaciones({ d, mcp }: { d: Datos; mcp: Mcp }) {
   );
 }
 
-function Orden({ d, mcp }: { d: Datos; mcp: Mcp }) {
+export function Orden({ d, mcp }: { d: Datos; mcp: Mcp }) {
   const e = d.e!;
   const orden = d.orden!;
   const p = orden.proveedores as unknown as Proveedor | null;
@@ -152,7 +152,7 @@ function Orden({ d, mcp }: { d: Datos; mcp: Mcp }) {
   );
 }
 
-function Memorando({ d, mcp, tesorero, cargo }: { d: Datos; mcp: Mcp; tesorero: string; cargo: string }) {
+export function Memorando({ d, mcp, tesorero, cargo }: { d: Datos; mcp: Mcp; tesorero: string; cargo: string }) {
   const conf = d.conformidad!;
   return (
     <div className="hoja" style={{ maxWidth: 760 }}>

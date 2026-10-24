@@ -2,6 +2,7 @@ import Link from "next/link";
 import BotonConfirmar from "@/components/BotonConfirmar";
 import { notFound } from "next/navigation";
 import Avisos from "@/components/Avisos";
+import BotonPdf from "@/components/BotonPdf";
 import BotonImprimir from "@/components/BotonImprimir";
 import Estado from "@/components/Estado";
 import Firmas from "@/components/Firmas";
@@ -98,6 +99,8 @@ export default async function Informe({
         {!anulada && tiene(ctx, "admin", "tesorero") && (
           <Motivo accion={anularRendicion} boton="Anular rendición" ayuda="Motivo de la anulación" campos={{ id }} />
         )}
+        <a className="btn contorno no-imprimir" href={`/exportar/rendicion?id=${id}`}>Descargar Excel</a>
+        <BotonPdf nombre="Informe de rendicion" />
         <BotonImprimir texto="Imprimir informe" />
       </div>
       <div className="no-imprimir">

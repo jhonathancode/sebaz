@@ -34,6 +34,7 @@ export default async function MarcoApp({ children }: { children: React.ReactNode
         { href: "/comprobantes", texto: "Comprobantes de pago" },
         { href: "/caja-chica", texto: "Caja chica" },
         { href: "/ingresos", texto: "Ingresos" },
+        { href: "/almacen", texto: "Almacén" },
         { href: "/rendicion", texto: "Rendición" },
       ]
     : ctx.esSoporte
@@ -92,6 +93,15 @@ export default async function MarcoApp({ children }: { children: React.ReactNode
         <Menu
           items={items}
           nuevo={!!ctx.mcp && tiene(ctx, "admin", "tesorero", "contador")}
+          abajo={
+            ctx.mcp
+              ? [
+                  { href: "/configuracion", texto: "Configuración" },
+                  ...(tiene(ctx, "admin") || ctx.esSoporte ? [{ href: "/responsables", texto: "Responsables" }] : []),
+                  ...(tiene(ctx, "admin", "alcalde") ? [{ href: "/auditoria", texto: "Auditoría" }] : []),
+                ]
+              : []
+          }
           mcp={ctx.mcp ? { nombre: ctx.mcp.nombre, ruc: ctx.mcp.ruc, logo: urlLogo(ctx.mcp.logo_path) } : null}
         />
       )}

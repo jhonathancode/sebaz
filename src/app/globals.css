@@ -805,3 +805,57 @@ body:has(.marco-app[data-menu="oculto"]) .marca-mcp { display: inline; }
     --primario: #4a8cf0; --primario-hover: #6aa2f5; --primario-claro: #2c4d80; --primario-fondo: #13213a; --primario-texto: #a8c8fa; --foco: #6aa2f5;
   }
 }
+.item-fila.corta { grid-template-columns: 28px minmax(220px, 3fr) minmax(110px, 1fr) minmax(130px, auto); }
+@media (max-width: 760px) { .item-fila.corta { grid-template-columns: 1fr 1fr; } }
+.sello-anulado { border: 3px solid #b3261e; color: #b3261e; font-weight: 800; letter-spacing: .2em; text-align: center; padding: 4px; margin-bottom: 10px; }
+.rejilla-3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr)); gap: 12px 14px; }
+.chip.borrador { border-style: dashed; }
+.hoja-borrador { width: 100%; display: flex; justify-content: center; }
+.hoja-borrador > .hoja { max-width: 900px; width: 100%; box-shadow: 0 1px 3px rgba(0,0,0,.15); }
+.form-cheque { display: flex; gap: 8px; align-items: flex-end; flex-wrap: wrap; } .form-cheque .campo { min-width: 180px; }
+.lateral-menu ul.lm-abajo { margin-top: auto; padding: 8px 0 12px; border-top: 1px solid var(--borde); }
+
+/* ------------------------------------------- formularios profesionales */
+.vf-cab { background: var(--panel); padding: 16px 24px; }
+.vf-cab h2 { font-size: 17px; font-weight: 700; letter-spacing: -0.01em; }
+.vf-cuerpo { padding: 6px 24px 20px; gap: 0; }
+.vf-pie { padding: 14px 24px; }
+.vf-cuerpo > .aviso { margin-top: 16px; }
+
+fieldset.pregunta, details.pregunta {
+  border: none; border-top: 1px solid var(--borde); border-radius: 0; padding: 18px 0 18px; margin: 0;
+}
+.vf-cuerpo > fieldset.pregunta:first-of-type, .vf-cuerpo > input[type="hidden"] + fieldset.pregunta { border-top: none; }
+fieldset.pregunta > legend {
+  float: left; width: 100%; padding: 0; margin: 0 0 12px;
+  font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--suave);
+}
+fieldset.pregunta > legend + * { clear: both; }
+
+.opciones { gap: 10px; margin-top: 0; }
+label.opcion {
+  border-radius: 8px; padding: 12px 14px 12px 42px; background: var(--panel); border: 1px solid var(--borde);
+  transition: border-color .12s, background .12s, box-shadow .12s;
+}
+label.opcion input { left: 14px; top: 13px; width: 16px; height: 16px; }
+label.opcion:hover { border-color: var(--primario-claro); background: var(--panel-2); }
+label.opcion:has(input:checked) { border-color: var(--primario); background: var(--primario-fondo); box-shadow: inset 0 0 0 1px var(--primario); }
+label.opcion:has(input:focus-visible) { outline: 2px solid var(--foco); outline-offset: 2px; }
+.opcion-titulo { font-size: 14px; }
+.opcion-texto { line-height: 1.4; margin-top: 2px; }
+
+.item-fila { background: var(--panel); border-color: var(--borde); border-radius: 8px; }
+.items-pie { margin-top: 4px; }
+
+details.mas-datos > summary {
+  list-style: none; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--suave);
+}
+details.mas-datos > summary::-webkit-details-marker { display: none; }
+details.mas-datos > summary::before { content: "+ "; color: var(--primario); }
+details.mas-datos[open] > summary::before { content: "− "; }
+details.mas-datos > summary:hover { color: var(--primario-texto); }
+
+.campo { font-size: 13px; font-weight: 600; color: var(--suave); }
+.campo input, .campo select, .campo textarea { font-weight: 400; color: var(--texto); }
+.items-total { display: flex; align-items: baseline; gap: 12px; padding: 10px 16px; border-radius: 8px; background: var(--primario-fondo); color: var(--primario-texto); font-weight: 600; }
+.items-total b { font-size: 20px; color: var(--texto); }

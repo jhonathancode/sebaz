@@ -32,6 +32,7 @@ export default async function Expedientes({ searchParams }: { searchParams: Para
     .order("numero", { ascending: false });
   if (sp.estado) consulta = consulta.eq("estado", sp.estado);
   if (sp.q) consulta = consulta.ilike("descripcion", `%${sp.q}%`);
+  if (sp.tipo) consulta = consulta.eq("tipo", sp.tipo);
   const { data: lista } = await consulta;
 
   const filas = (lista ?? []).map((e) => ({
@@ -66,10 +67,20 @@ export default async function Expedientes({ searchParams }: { searchParams: Para
           Buscar
           <input name="q" defaultValue={sp.q ?? ""} placeholder="Descripción del requerimiento" />
         </label>
+        <label className="campo">
+          Tipo
+          <select name="tipo" defaultValue={sp.tipo ?? ""}>
+            <option value="">Todos</option>
+            <option value="compra">Compra de bienes</option>
+            <option value="servicio">Servicio externo</option>
+            <option value="pago_fijo">Pago fijo</option>
+          </select>
+        </label>
         <button className="btn" type="submit">Filtrar</button>
+        <a className="btn contorno" href={`/exportar/expedientes?mes=${periodo}&estado=${sp.estado ?? ""}&tipo=${sp.tipo ?? ""}&q=${encodeURIComponent(sp.q ?? "")}`}>Descargar Excel</a>
         </form>
         <span className="espacio" />
-        <VentanaFlotante boton="+ Nuevo requerimiento" claseBoton="btn primario grande" titulo="Nuevo requerimiento" accion={crearExpediente} textoGuardar="Guardar requerimiento" abierta={sp.nuevo === "1"} error={sp.nuevo === "1" ? sp.error : undefined} ancha>
+        <VentanaFlotante boton="+ Nuevo requerimiento" claseBoton="btn primario grande" titulo="Nuevo requerimiento" accion={crearExpediente} textoGuardar="Guardar requerimiento" vistaPrevia={{ base: { tipo: "requerimiento" }, mcp: ctx.mcp }} abierta={sp.nuevo === "1"} error={sp.nuevo === "1" ? sp.error : undefined} ancha>
           <CamposRequerimiento fuentes={ctx.fuentes} />
         </VentanaFlotante>
       </div>

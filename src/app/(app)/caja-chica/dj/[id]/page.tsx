@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import BotonPdf from "@/components/BotonPdf";
 import BotonImprimir from "@/components/BotonImprimir";
 import Firmas from "@/components/Firmas";
 import { contextoMcp } from "@/lib/contexto";
@@ -24,6 +25,7 @@ export default async function DeclaracionJurada({ params }: { params: Promise<{ 
       <div className="titulo-ventana no-imprimir">
         <Link className="btn" href={`/caja-chica?mes=${caja?.periodo}&fuente=${caja?.fuente_id}`}>← Volver a la caja chica</Link>
         <span className="espacio" />
+        <BotonPdf nombre="Declaracion jurada" />
         <BotonImprimir />
       </div>
       <div className="hoja" style={{ maxWidth: 760 }}>

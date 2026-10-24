@@ -15,7 +15,7 @@ export type ValoresRequerimiento = {
 };
 
 const TIPOS = [
-  { valor: "compra", titulo: "Compra de bienes", texto: "Útiles, materiales, combustible. Lleva cotizaciones y orden de compra." },
+  { valor: "compra", titulo: "Compra de bienes", texto: "Útiles, materiales, herramientas. Lleva cotizaciones, orden de compra y entra al almacén (NEA)." },
   { valor: "servicio", titulo: "Servicio externo", texto: "Un trabajo por un tiempo: alquiler, mantenimiento, asesoría. Lleva cotizaciones y orden de servicio." },
   { valor: "pago_fijo", titulo: "Pago fijo", texto: "Dietas del alcalde y regidores, personal contratado. No lleva cotizaciones." },
 ];

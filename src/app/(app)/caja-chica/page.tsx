@@ -73,6 +73,7 @@ export default async function CajaChica({ searchParams }: { searchParams: Params
           </select>
         </label>
         <button className="btn" type="submit">Ver</button>
+        <a className="btn contorno" href={`/exportar/caja-chica?mes=${periodo}`}>Descargar Excel</a>
         </form>
         <span className="espacio" />
         {caja && abierta && puede && (

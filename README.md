@@ -46,6 +46,7 @@ Las pruebas de estas reglas están en `supabase/tests/pruebas_reglas.sql`.
    - `20261023000000_cuadres.sql` (la caja chica y la rendición solo se cierran si cuadran exacto)
    - `20261024000000_fecha_limite.sql` (día límite de la rendición por municipalidad)
    - `20261024010000_logos.sql` (logo de la MCP)
+   - `20261024020000_almacen.sql` (almacén: NEA, PECOSA, stock; la compra de bienes pasa por almacén)
    - O, más fácil: pegar `supabase/ACTUALIZAR_BASE.sql` (trae todas las actualizaciones juntas y se puede repetir sin problema)
 3. En **Authentication → Sign In / Providers → Email**, desactive **Allow new users to sign up**. Los usuarios solo los crea soporte.
 4. En **Authentication → Users → Add user**, cree su usuario de soporte (correo y clave).

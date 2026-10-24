@@ -11,6 +11,9 @@
   "dependencies": {
     "@supabase/ssr": "^0.12.7",
     "@supabase/supabase-js": "^2.118.0",
+    "exceljs": "^4.4.0",
+    "html2canvas-pro": "^1.6.7",
+    "jspdf": "^4.2.1",
     "next": "15.5.28",
     "react": "19.1.0",
     "react-dom": "19.1.0"
@@ -23,5 +26,8 @@
     "eslint": "^9",
     "eslint-config-next": "15.5.28",
     "typescript": "^5"
+  },
+  "overrides": {
+    "uuid": "^11.1.1"
   }
 }

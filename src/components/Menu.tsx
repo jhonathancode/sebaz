@@ -42,11 +42,37 @@ const ICONOS: Record<string, React.ReactNode> = {
       <path d="M18 13v7M15 17l3 3 3-3" />
     </>
   ),
+  "/almacen": (
+    <>
+      <path d="M3 8.5 12 4l9 4.5v10a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 18.5Z" />
+      <path d="M7 20v-7h10v7" />
+      <path d="M7 16.5h10" />
+    </>
+  ),
   "/rendicion": (
     <>
       <path d="M14 3H6.5A1.5 1.5 0 0 0 5 4.5v15A1.5 1.5 0 0 0 6.5 21h11a1.5 1.5 0 0 0 1.5-1.5V8Z" />
       <path d="M14 3v5h5" />
       <path d="m9 14.5 2 2 4-4.5" />
+    </>
+  ),
+  "/configuracion": (
+    <>
+      <circle cx="12" cy="12" r="3" />
+      <path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1Z" />
+    </>
+  ),
+  "/responsables": (
+    <>
+      <circle cx="9" cy="8" r="3.5" />
+      <path d="M2.5 20a6.5 6.5 0 0 1 13 0" />
+      <path d="M16 4.5a3.5 3.5 0 0 1 0 7M18 14.5a6.5 6.5 0 0 1 3.5 5.5" />
+    </>
+  ),
+  "/auditoria": (
+    <>
+      <path d="M9 4h6l1 2h3v15H5V6h3Z" />
+      <path d="M9 11h6M9 15h4" />
     </>
   ),
   "/soporte": (
@@ -89,7 +115,7 @@ export function BotonMenu() {
 
 export type DatosMcpMenu = { nombre: string; ruc: string | null; logo: string | null } | null;
 
-export default function Menu({ items, nuevo = true, mcp }: { items: ItemMenu[]; nuevo?: boolean; mcp: DatosMcpMenu }) {
+export default function Menu({ items, abajo = [], nuevo = true, mcp }: { items: ItemMenu[]; abajo?: ItemMenu[]; nuevo?: boolean; mcp: DatosMcpMenu }) {
   const ruta = usePathname();
 
   // En celular, al cambiar de página se cierra el menú.
@@ -147,6 +173,22 @@ export default function Menu({ items, nuevo = true, mcp }: { items: ItemMenu[]; 
             );
           })}
         </ul>
+
+        {abajo.length > 0 && (
+          <ul className="lm-abajo">
+            {abajo.map((i) => {
+              const activo = ruta === i.href || ruta.startsWith(i.href + "/");
+              return (
+                <li key={i.href}>
+                  <Link href={i.href} className={activo ? "activo" : undefined} aria-current={activo ? "page" : undefined}>
+                    <Icono href={i.href} />
+                    <span>{i.texto}</span>
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
+        )}
       </nav>
     </>
   );

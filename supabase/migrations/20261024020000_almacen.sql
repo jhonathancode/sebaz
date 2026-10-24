@@ -1,0 +1,362 @@
+-- =====================================================================
+-- Almacén
+--   * Catálogo de bienes de la MCP (código correlativo).
+--   * NEA  (Nota de Entrada al Almacén): entrada de bienes, normalmente de
+--          una compra con conformidad; también donaciones u otros.
+--   * PECOSA (Pedido Comprobante de Salida): entrega de bienes a un área.
+--   * Stock y valor (costo promedio) calculados de los movimientos.
+--   Reglas: no se entrega más de lo que hay; no se anula una NEA si sus
+--   bienes ya salieron; nada se borra; mes cerrado no admite cambios.
+--   Una compra de bienes pasa por almacén antes del comprobante de pago,
+--   salvo que se indique por qué no (consumo inmediato).
+-- =====================================================================
+
+create table if not exists almacen_bienes (
+  id            uuid primary key default gen_random_uuid(),
+  mcp_id        uuid not null references mcps(id),
+  codigo        int  not null,
+  descripcion   text not null,
+  unidad        text not null default 'UNIDAD',
+  stock_minimo  numeric(12,3) not null default 0 check (stock_minimo >= 0),
+  activo        boolean not null default true,
+  creado_por    uuid default auth.uid() references perfiles(id),
+  creado_en     timestamptz not null default now(),
+  unique (mcp_id, descripcion, unidad),
+  unique (mcp_id, codigo)
+);
+
+create table if not exists notas_entrada (
+  id              uuid primary key default gen_random_uuid(),
+  mcp_id          uuid not null references mcps(id),
+  anio            int  not null default extract(year from current_date)::int,
+  numero          int,
+  fecha           date not null default current_date,
+  origen          text not null default 'compra' check (origen in ('compra', 'donacion', 'otro')),
+  expediente_id   uuid references expedientes(id),
+  proveedor       text,
+  documento_ref   text,
+  observacion     text,
+  anulado         boolean not null default false,
+  anulado_motivo  text,
+  anulado_por     uuid references perfiles(id),
+  anulado_en      timestamptz,
+  creado_por      uuid default auth.uid() references perfiles(id),
+  creado_en       timestamptz not null default now()
+);
+create unique index if not exists nea_vigente_por_expediente on notas_entrada (expediente_id)
+  where expediente_id is not null and not anulado;
+
+create table if not exists nota_entrada_items (
+  id               uuid primary key default gen_random_uuid(),
+  mcp_id           uuid not null references mcps(id),
+  nea_id           uuid not null references notas_entrada(id),
+  item             int  not null,
+  bien_id          uuid not null references almacen_bienes(id),
+  cantidad         numeric(12,3) not null check (cantidad > 0),
+  precio_unitario  numeric(12,4) not null check (precio_unitario >= 0),
+  total            numeric(12,2) generated always as (round(cantidad * precio_unitario, 2)) stored
+);
+
+create table if not exists pecosas (
+  id                 uuid primary key default gen_random_uuid(),
+  mcp_id             uuid not null references mcps(id),
+  anio               int  not null default extract(year from current_date)::int,
+  numero             int,
+  fecha              date not null default current_date,
+  area_solicitante   text not null,
+  solicitante        text,
+  finalidad          text,
+  anulado            boolean not null default false,
+  anulado_motivo     text,
+  anulado_por        uuid references perfiles(id),
+  anulado_en         timestamptz,
+  creado_por         uuid default auth.uid() references perfiles(id),
+  creado_en          timestamptz not null default now()
+);
+
+create table if not exists pecosa_items (
+  id               uuid primary key default gen_random_uuid(),
+  mcp_id           uuid not null references mcps(id),
+  pecosa_id        uuid not null references pecosas(id),
+  item             int  not null,
+  bien_id          uuid not null references almacen_bienes(id),
+  cantidad         numeric(12,3) not null check (cantidad > 0),
+  precio_unitario  numeric(12,4) not null default 0 check (precio_unitario >= 0),
+  total            numeric(12,2) generated always as (round(cantidad * precio_unitario, 2)) stored
+);
+
+-- Motivo para pasar una compra al comprobante sin NEA (consumo inmediato)
+alter table expedientes add column if not exists sin_almacen_motivo text;
+
+-- ---------------------------------------------------------------- stock
+create or replace view almacen_stock with (security_invoker = true) as
+select b.id as bien_id, b.mcp_id, b.codigo, b.descripcion, b.unidad, b.stock_minimo, b.activo,
+       coalesce(e.cant, 0) as entradas,
+       coalesce(s.cant, 0) as salidas,
+       coalesce(e.cant, 0) - coalesce(s.cant, 0) as stock,
+       case when coalesce(e.cant, 0) > 0 then round(e.valor / e.cant, 4) else 0 end as costo_promedio,
+       round((coalesce(e.cant, 0) - coalesce(s.cant, 0))
+             * case when coalesce(e.cant, 0) > 0 then e.valor / e.cant else 0 end, 2) as valor
+from almacen_bienes b
+left join (
+  select i.bien_id, sum(i.cantidad) as cant, sum(i.total) as valor
+  from nota_entrada_items i join notas_entrada n on n.id = i.nea_id
+  where not n.anulado group by i.bien_id
+) e on e.bien_id = b.id
+left join (
+  select i.bien_id, sum(i.cantidad) as cant
+  from pecosa_items i join pecosas p on p.id = i.pecosa_id
+  where not p.anulado group by i.bien_id
+) s on s.bien_id = b.id;
+
+create or replace function stock_bien(p_bien uuid) returns numeric
+language sql stable security definer set search_path = public as $$
+  select coalesce((select sum(i.cantidad) from nota_entrada_items i join notas_entrada n on n.id = i.nea_id
+                   where i.bien_id = p_bien and not n.anulado), 0)
+       - coalesce((select sum(i.cantidad) from pecosa_items i join pecosas p on p.id = i.pecosa_id
+                   where i.bien_id = p_bien and not p.anulado), 0);
+$$;
+
+create or replace function costo_promedio_bien(p_bien uuid) returns numeric
+language sql stable security definer set search_path = public as $$
+  select coalesce(round(sum(i.total) / nullif(sum(i.cantidad), 0), 4), 0)
+  from nota_entrada_items i join notas_entrada n on n.id = i.nea_id
+  where i.bien_id = p_bien and not n.anulado;
+$$;
+
+-- ------------------------------------------------------- emitir una NEA
+-- p_items: [{"descripcion": "...", "unidad": "...", "cantidad": 1, "precio_unitario": 2.5}]
+-- Cada bien se busca por descripción y unidad; si no existe, se crea.
+create or replace function emitir_nea(p_mcp uuid, p_fecha date, p_origen text, p_expediente uuid,
+                                      p_proveedor text, p_documento_ref text, p_observacion text, p_items jsonb)
+returns uuid
+language plpgsql security definer set search_path = public as $$
+declare v_id uuid; v_item jsonb; v_bien uuid; v_n int := 0; v_desc text; v_und text; v_tipo text;
+begin
+  if not puede_registrar(p_mcp) then raise exception 'Sin permiso para registrar en el almacén.'; end if;
+  if coalesce(jsonb_array_length(p_items), 0) = 0 then raise exception 'Agregue al menos un bien.'; end if;
+  if p_expediente is not null then
+    select tipo into v_tipo from expedientes where id = p_expediente and mcp_id = p_mcp and estado in ('aprobado', 'rendido');
+    if v_tipo is null then raise exception 'El expediente no está aprobado.'; end if;
+    if v_tipo <> 'compra' then raise exception 'Solo las compras de bienes entran al almacén.'; end if;
+    if not exists (select 1 from conformidades where expediente_id = p_expediente and not anulado) then
+      raise exception 'Primero registre la conformidad: los bienes entran al almacén cuando se reciben conformes.';
+    end if;
+  end if;
+
+  insert into notas_entrada (mcp_id, fecha, origen, expediente_id, proveedor, documento_ref, observacion)
+  values (p_mcp, coalesce(p_fecha, current_date), coalesce(p_origen, 'compra'), p_expediente,
+          nullif(trim(p_proveedor), ''), nullif(trim(p_documento_ref), ''), nullif(trim(p_observacion), ''))
+  returning id into v_id;
+
+  for v_item in select * from jsonb_array_elements(p_items) loop
+    v_desc := upper(trim(v_item->>'descripcion'));
+    v_und  := upper(coalesce(nullif(trim(v_item->>'unidad'), ''), 'UNIDAD'));
+    if v_desc = '' then continue; end if;
+    select id into v_bien from almacen_bienes where mcp_id = p_mcp and descripcion = v_desc and unidad = v_und;
+    if v_bien is null then
+      insert into almacen_bienes (mcp_id, codigo, descripcion, unidad)
+      values (p_mcp, siguiente_numero(p_mcp, 'bien', 0), v_desc, v_und)
+      returning id into v_bien;
+    end if;
+    v_n := v_n + 1;
+    insert into nota_entrada_items (mcp_id, nea_id, item, bien_id, cantidad, precio_unitario)
+    values (p_mcp, v_id, v_n, v_bien, (v_item->>'cantidad')::numeric, coalesce((v_item->>'precio_unitario')::numeric, 0));
+  end loop;
+  if v_n = 0 then raise exception 'Agregue al menos un bien.'; end if;
+  return v_id;
+end $$;
+
+-- ---------------------------------------------------- emitir una PECOSA
+-- p_items: [{"bien_id": "...", "cantidad": 2}]
+create or replace function emitir_pecosa(p_mcp uuid, p_fecha date, p_area text, p_solicitante text,
+                                         p_finalidad text, p_items jsonb)
+returns uuid
+language plpgsql security definer set search_path = public as $$
+declare v_id uuid; v_item jsonb; v_bien almacen_bienes; v_n int := 0; v_cant numeric; v_stock numeric;
+begin
+  if not puede_registrar(p_mcp) then raise exception 'Sin permiso para registrar en el almacén.'; end if;
+  if coalesce(trim(p_area), '') = '' then raise exception 'Escriba el área que recibe los bienes.'; end if;
+  if coalesce(jsonb_array_length(p_items), 0) = 0 then raise exception 'Agregue al menos un bien.'; end if;
+
+  insert into pecosas (mcp_id, fecha, area_solicitante, solicitante, finalidad)
+  values (p_mcp, coalesce(p_fecha, current_date), upper(trim(p_area)), nullif(upper(trim(p_solicitante)), ''),
+          nullif(upper(trim(p_finalidad)), ''))
+  returning id into v_id;
+
+  for v_item in select * from jsonb_array_elements(p_items) loop
+    -- Se bloquea el bien para que dos entregas a la vez no pasen el stock
+    select * into v_bien from almacen_bienes where id = (v_item->>'bien_id')::uuid and mcp_id = p_mcp for update;
+    if not found then raise exception 'Bien no encontrado en el almacén.'; end if;
+    v_cant := (v_item->>'cantidad')::numeric;
+    if v_cant is null or v_cant <= 0 then raise exception 'La cantidad de % debe ser mayor que cero.', v_bien.descripcion; end if;
+    v_stock := stock_bien(v_bien.id);
+    if v_cant > v_stock then
+      raise exception 'No hay suficiente %: hay % % y se quiere entregar %.',
+        v_bien.descripcion, trim(to_char(v_stock, 'FM999G990D###')), v_bien.unidad, trim(to_char(v_cant, 'FM999G990D###'));
+    end if;
+    v_n := v_n + 1;
+    insert into pecosa_items (mcp_id, pecosa_id, item, bien_id, cantidad, precio_unitario)
+    values (p_mcp, v_id, v_n, v_bien.id, v_cant, costo_promedio_bien(v_bien.id));
+  end loop;
+  return v_id;
+end $$;
+
+-- --------------------------------------------------------------- anular
+create or replace function validar_anulacion_almacen() returns trigger
+language plpgsql as $$
+declare r record;
+begin
+  if old.anulado then raise exception 'El documento está anulado y no se puede cambiar.'; end if;
+  if (to_jsonb(new) - array['anulado','anulado_motivo','anulado_por','anulado_en'])
+     is distinct from (to_jsonb(old) - array['anulado','anulado_motivo','anulado_por','anulado_en']) then
+    raise exception 'Un documento de almacén emitido no se edita: anúlelo y emita otro.';
+  end if;
+  if new.anulado then
+    if coalesce(length(trim(new.anulado_motivo)), 0) < 10 then
+      raise exception 'Para anular escriba un motivo de al menos 10 caracteres.';
+    end if;
+    new.anulado_por := auth.uid();
+    new.anulado_en := now();
+    if tg_table_name = 'notas_entrada' then
+      for r in select b.descripcion, b.unidad, sum(i.cantidad) as cant, stock_bien(i.bien_id) as stock
+               from nota_entrada_items i join almacen_bienes b on b.id = i.bien_id
+               where i.nea_id = new.id group by i.bien_id, b.descripcion, b.unidad loop
+        if r.stock - r.cant < 0 then
+          raise exception 'No se puede anular: parte de % ya se entregó (queda % % en almacén). Anule primero la PECOSA.',
+            r.descripcion, trim(to_char(r.stock, 'FM999G990D###')), r.unidad;
+        end if;
+      end loop;
+    end if;
+  end if;
+  return new;
+end $$;
+
+create or replace function prohibir_cambio() returns trigger
+language plpgsql as $$
+begin
+  raise exception 'Los ítems de un documento emitido no se cambian: anule el documento.';
+end $$;
+
+-- ------------------------------------------- comprobante de una compra
+-- Una compra de bienes necesita su NEA (o el motivo de por qué no pasa
+-- por almacén) antes del comprobante de pago.
+create or replace function validar_cp_expediente() returns trigger
+language plpgsql as $$
+declare v_tipo text; v_sin text;
+begin
+  if new.expediente_id is not null then
+    select tipo, sin_almacen_motivo into v_tipo, v_sin from expedientes where id = new.expediente_id and estado = 'aprobado';
+    if v_tipo is null then
+      raise exception 'El requerimiento del expediente no está aprobado.';
+    end if;
+    if v_tipo <> 'pago_fijo'
+       and not exists (select 1 from conformidades where expediente_id = new.expediente_id and not anulado) then
+      raise exception 'El expediente no tiene conformidad: aún no se puede generar el comprobante de pago.';
+    end if;
+    if v_tipo = 'compra' and v_sin is null
+       and not exists (select 1 from notas_entrada where expediente_id = new.expediente_id and not anulado) then
+      raise exception 'Primero registre la entrada al almacén (NEA) de los bienes comprados, o indique por qué no pasan por almacén.';
+    end if;
+  end if;
+  return new;
+end $$;
+
+-- El motivo "sin almacén" se puede escribir aunque el expediente ya esté aprobado
+create or replace function validar_documento() returns trigger
+language plpgsql as $$
+declare
+  libres text[] := array['estado','motivo_devolucion','anulado_motivo','anulado_por','anulado_en',
+                         'actualizado_por','actualizado_en','fase','sin_almacen_motivo'];
+begin
+  new.actualizado_por := auth.uid();
+  new.actualizado_en  := now();
+
+  if old.estado = 'anulado' then
+    raise exception 'El documento está anulado y no se puede cambiar.';
+  end if;
+
+  if new.estado <> old.estado then
+    if not (
+      (old.estado = 'borrador' and new.estado in ('aprobado', 'anulado')) or
+      (old.estado = 'aprobado' and new.estado in ('borrador', 'rendido', 'anulado')) or
+      (old.estado = 'rendido'  and new.estado = 'aprobado')
+    ) then
+      raise exception 'Cambio de estado no permitido: % → %', old.estado, new.estado;
+    end if;
+    if old.estado = 'borrador' and new.estado = 'aprobado'
+       and not tiene_rol(new.mcp_id, array['alcalde','admin']::rol_mcp[]) then
+      raise exception 'Solo el alcalde o el administrador pueden aprobar.';
+    end if;
+    if old.estado = 'aprobado' and new.estado = 'borrador'
+       and coalesce(trim(new.motivo_devolucion), '') = '' then
+      raise exception 'Para devolver un documento escriba el motivo.';
+    end if;
+    if new.estado = 'anulado' then
+      if coalesce(length(trim(new.anulado_motivo)), 0) < 10 then
+        raise exception 'Para anular escriba un motivo de al menos 10 caracteres.';
+      end if;
+      new.anulado_por := auth.uid();
+      new.anulado_en  := now();
+    end if;
+  end if;
+
+  if tg_table_name = 'expedientes' and new.sin_almacen_motivo is distinct from old.sin_almacen_motivo then
+    if old.sin_almacen_motivo is not null then
+      raise exception 'El motivo de "no pasa por almacén" ya se registró.';
+    end if;
+    if coalesce(length(trim(new.sin_almacen_motivo)), 0) < 10 then
+      raise exception 'Explique en al menos 10 caracteres por qué estos bienes no pasan por almacén.';
+    end if;
+  end if;
+
+  if old.estado <> 'borrador' then
+    if tg_table_name = 'comprobantes_pago' and (to_jsonb(old)->>'cheque') is null then
+      libres := array_append(libres, 'cheque');
+    end if;
+    if (to_jsonb(new) - libres) is distinct from (to_jsonb(old) - libres) then
+      raise exception 'El documento ya no está en borrador: no se puede editar. Devuélvalo o anúlelo.';
+    end if;
+  end if;
+  return new;
+end $$;
+
+-- ----------------------------------------------------------- disparadores
+do $$
+declare t text;
+begin
+  foreach t in array array['almacen_bienes','notas_entrada','nota_entrada_items','pecosas','pecosa_items'] loop
+    execute format('drop trigger if exists %I on %I', t || '_auditoria', t);
+    execute format('create trigger %I after insert or update on %I for each row execute function registrar_auditoria()', t || '_auditoria', t);
+    execute format('drop trigger if exists %I on %I', t || '_sin_borrado', t);
+    execute format('create trigger %I before delete on %I for each row execute function prohibir_borrado()', t || '_sin_borrado', t);
+    execute format('alter table %I enable row level security', t);
+    execute format('drop policy if exists %I on %I', t || '_ver', t);
+    execute format('create policy %I on %I for select using (es_miembro(mcp_id))', t || '_ver', t);
+  end loop;
+  foreach t in array array['notas_entrada','pecosas'] loop
+    execute format('drop trigger if exists %I on %I', t || '_periodo', t);
+    execute format('create trigger %I before insert or update on %I for each row execute function validar_periodo_abierto()', t || '_periodo', t);
+    execute format('drop trigger if exists %I on %I', t || '_numero', t);
+    execute format('create trigger %I before insert on %I for each row execute function asignar_numero()', t || '_numero', t);
+    execute format('drop trigger if exists %I on %I', t || '_anular', t);
+    execute format('create trigger %I before update on %I for each row execute function validar_anulacion_almacen()', t || '_anular', t);
+    execute format('drop policy if exists %I on %I', t || '_anular', t);
+    execute format('create policy %I on %I for update using (puede_registrar(mcp_id)) with check (puede_registrar(mcp_id))', t || '_anular', t);
+  end loop;
+  foreach t in array array['nota_entrada_items','pecosa_items'] loop
+    execute format('drop trigger if exists %I on %I', t || '_fijo', t);
+    execute format('create trigger %I before update on %I for each row execute function prohibir_cambio()', t || '_fijo', t);
+  end loop;
+end $$;
+
+-- El catálogo de bienes: se corrige el stock mínimo o se desactiva un bien
+drop policy if exists almacen_bienes_editar on almacen_bienes;
+create policy almacen_bienes_editar on almacen_bienes for update
+  using (puede_registrar(mcp_id)) with check (puede_registrar(mcp_id));
+
+revoke execute on function emitir_nea(uuid, date, text, uuid, text, text, text, jsonb) from public, anon;
+revoke execute on function emitir_pecosa(uuid, date, text, text, text, jsonb) from public, anon;
+grant execute on function emitir_nea(uuid, date, text, uuid, text, text, text, jsonb) to authenticated;
+grant execute on function emitir_pecosa(uuid, date, text, text, text, jsonb) to authenticated;
+grant select on almacen_stock to authenticated;

@@ -70,6 +70,9 @@ export default async function Inicio() {
     supabase.from("comprobantes_pago").select("id, numero, origen, fecha, concepto, importe, estado, creado_en").eq("mcp_id", mcpId).neq("origen", "expediente").neq("estado", "anulado").order("creado_en", { ascending: false }).limit(3),
     estadoPagosFijos(supabase, mcpId, periodo),
   ]);
+  // Bienes por reponer (si el almacén ya está activo)
+  const { data: stockBajo } = await supabase.from("almacen_stock").select("bien_id, stock, stock_minimo").eq("mcp_id", mcpId).gt("stock_minimo", 0);
+  const porReponer = (stockBajo ?? []).filter((b) => Number(b.stock) <= Number(b.stock_minimo)).length;
 
   const lista = cps ?? [];
   const transferencias = ctx.fuentes.filter((f) => f.tipo !== "propios");
@@ -395,6 +398,15 @@ export default async function Inicio() {
                 </Link>
               </li>
             ))}
+            {porReponer > 0 && (
+              <li>
+                <Link href="/almacen?filtro=minimo">
+                  <span className="cuenta alerta">{porReponer}</span>
+                  <span className="texto">Bienes por reponer<small>Llegaron a su stock mínimo en el almacén</small></span>
+                  <span className="flecha" aria-hidden="true">›</span>
+                </Link>
+              </li>
+            )}
             <li>
               <Link href="/caja-chica">
                 <span className={`cuenta ${caja ? "ok" : "alerta"}`}>{caja ? "✓" : "!"}</span>

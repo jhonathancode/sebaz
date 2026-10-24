@@ -2,6 +2,7 @@ import Link from "next/link";
 import BotonConfirmar from "@/components/BotonConfirmar";
 import { notFound } from "next/navigation";
 import Avisos from "@/components/Avisos";
+import BotonPdf from "@/components/BotonPdf";
 import BotonImprimir from "@/components/BotonImprimir";
 import FormatoComprobante from "@/components/formatos/FormatoComprobante";
 import Estado from "@/components/Estado";
@@ -54,6 +55,7 @@ export default async function Comprobante({ params, searchParams }: { params: P;
         {(borrador || c.estado === "aprobado") && puedeRegistrar && (
           <Motivo accion={cambiarEstadoComprobante} boton="Anular" ayuda="Motivo de la anulación" campos={{ id, accion: "anular" }} />
         )}
+        <BotonPdf nombre="Comprobante de pago" />
         <BotonImprimir />
         <Link className="btn" href="/comprobantes">Cerrar</Link>
       </div>

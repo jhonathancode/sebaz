@@ -13,4 +13,6 @@ psql -v ON_ERROR_STOP=1 -q -d prueba_mcp -f migrations/20261023000000_cuadres.sq
 psql -v ON_ERROR_STOP=1 -q -At -d prueba_mcp -f tests/pruebas_cuadres.sql 2>&1 | grep -E 'OK|PASARON|ERROR'
 psql -v ON_ERROR_STOP=1 -q -d prueba_mcp -f migrations/20261024000000_fecha_limite.sql
 psql -v ON_ERROR_STOP=1 -q -d prueba_mcp -f migrations/20261024010000_logos.sql
+psql -v ON_ERROR_STOP=1 -q -d prueba_mcp -f migrations/20261024020000_almacen.sql
+psql -v ON_ERROR_STOP=1 -q -At -d prueba_mcp -f tests/pruebas_almacen.sql 2>&1 | grep -E 'OK|PASARON|ERROR'
 psql -v ON_ERROR_STOP=1 -q -d prueba_mcp -f ACTUALIZAR_BASE.sql 2>&1 | grep -v NOTICE | grep -E "actualizada|ERROR"

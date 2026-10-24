@@ -21,7 +21,8 @@ export function mensajeError(e: { message?: string } | null | undefined): string
   if (m.includes("row-level security")) return "No tiene permiso para esta acción.";
   if (m.includes("pago_fijo_mes_unico")) return "Ese pago fijo ya está registrado para ese mes. Elija otro mes o revise los expedientes.";
   if (m.includes("duplicate key")) return "Ya existe un registro con esos datos.";
-  if (m.includes("expedientes_tipo_check") || m.includes("fuentes_tipo_check") || m.includes("dia_limite") || m.includes("emitir_nea") || m.includes("emitir_pecosa") || m.includes("almacen_stock") || m.includes("sin_almacen_motivo") || m.includes("pago_fijo_id") || m.includes("mes_pagado"))
+  // Solo cuando de verdad falta una columna o tabla en la base (no por cualquier error que la mencione)
+  if (/does not exist|schema cache|violates check constraint "(expedientes|fuentes)_tipo_check"/.test(m) && /(dia_limite|emitir_nea|emitir_pecosa|almacen|sin_almacen_motivo|pago_fijo|mes_pagado|tipo_check|logo)/.test(m))
     return "El sistema necesita una actualización (ACTUALIZAR_BASE.sql). Avise a soporte.";
   if (m.includes("violates check constraint")) return "Algún dato no tiene el formato correcto.";
   return m;

@@ -33,6 +33,8 @@ export type Fuente = {
 };
 
 export type Contexto = {
+  /** Dueño del sistema: controla clientes, planes y pagos. */
+  esSuperadmin: boolean;
   userId: string;
   nombre: string;
   esSoporte: boolean;
@@ -56,7 +58,7 @@ export const obtenerContexto = cache(async (): Promise<Contexto> => {
 
   const hoy = new Date().toISOString().slice(0, 10);
   const [{ data: perfil }, { data: membresias }, cookieStore] = await Promise.all([
-    supabase.from("perfiles").select("nombre, es_soporte").eq("id", userId).single(),
+    supabase.from("perfiles").select("*").eq("id", userId).single(),
     supabase
       .from("miembros")
       .select("mcp_id, rol, cargo, desde, hasta, mcps(*, fuentes(*))")
@@ -89,7 +91,8 @@ export const obtenerContexto = cache(async (): Promise<Contexto> => {
   return {
     userId,
     nombre: perfil?.nombre || (claims.email as string | undefined) || "",
-    esSoporte: perfil?.es_soporte ?? false,
+    esSoporte: !!(perfil?.es_soporte || perfil?.es_superadmin),
+    esSuperadmin: !!perfil?.es_superadmin,
     mcp,
     mcps,
     roles: vigentes.filter((m) => m.mcp_id === mcpId).map((m) => m.rol as Rol),

@@ -51,6 +51,7 @@ Las pruebas de estas reglas están en `supabase/tests/pruebas_reglas.sql`.
    - `20261024040000_corrige_aprobar_comprobante.sql` (corrige el error al aprobar comprobantes)
    - `20261024050000_cheque_previsto.sql` (cheque anotado en el pago fijo)
    - `20261024060000_contabilidad.sql` (saldo inicial, transferencias recibidas, conciliación, cheques cobrados)
+   - `20261024070000_superadmin.sql` (superadmin: clientes, planes, suscripciones, pagos de clientes, equipo de soporte)
    - O, más fácil: pegar `supabase/ACTUALIZAR_BASE.sql` (trae todas las actualizaciones juntas y se puede repetir sin problema)
 3. En **Authentication → Sign In / Providers → Email**, desactive **Allow new users to sign up**. Los usuarios solo los crea soporte.
 4. En **Authentication → Users → Add user**, cree su usuario de soporte (correo y clave).

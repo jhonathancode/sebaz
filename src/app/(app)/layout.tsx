@@ -51,6 +51,7 @@ export default async function MarcoApp({ children }: { children: React.ReactNode
     : ctx.esSoporte
       ? [{ href: "/soporte", texto: "Panel de soporte" }]
       : [];
+  if (ctx.esSuperadmin) items.unshift({ href: "/superadmin", texto: "Superadmin" });
 
   const enlaces: EnlaceMenu[] = [{ href: "/cuenta", texto: "Mi cuenta y contraseña", grupo: "cuenta" }];
   if (ctx.mcp) {
@@ -61,9 +62,11 @@ export default async function MarcoApp({ children }: { children: React.ReactNode
     );
   }
   if (ctx.esSoporte) enlaces.push({ href: "/soporte", texto: "Panel de soporte", grupo: "soporte" });
+  if (ctx.esSuperadmin) enlaces.push({ href: "/superadmin", texto: "Superadmin: clientes y pagos", grupo: "soporte" });
 
   // Si la MCP no tiene la fuente "propios", la base no tiene la última actualización.
   const baseDesactualizada = ctx.esSoporte && !!ctx.mcp && !ctx.fuentes.some((f) => f.tipo === "propios");
+  const suspendida = !!ctx.mcp && ctx.mcp.estado === "suspendida" && !ctx.esSoporte;
   const cargo = [...ctx.cargos, ...(ctx.esSoporte ? ["Soporte"] : [])].join(" · ") || "Sin cargo vigente";
 
   return (
@@ -123,7 +126,17 @@ export default async function MarcoApp({ children }: { children: React.ReactNode
             Mientras tanto no se puede registrar «Pago fijo» ni pagar con «Ingresos propios». Este aviso solo lo ve soporte.
           </div>
         )}
-        {children}
+        {suspendida ? (
+          <div className="kpi rojo" style={{ maxWidth: 640, margin: "40px auto", gap: 10 }}>
+            <span className="k-et">Servicio suspendido</span>
+            <span className="k-val">{ctx.mcp?.nombre}</span>
+            <span className="k-det">
+              El acceso al sistema de esta municipalidad está suspendido. Sus datos se conservan completos. Para reactivarlo, comuníquese con soporte.
+            </span>
+          </div>
+        ) : (
+          children
+        )}
       </main>
       </div>
     </>

@@ -902,3 +902,18 @@ form:has(input[name="tipo"][value="pago_fijo"]:checked) .selector-pf { display: 
 .lm-admin > summary .lm-flecha { margin-left: auto; transition: transform .15s; transform: rotate(180deg); }
 .lm-admin[open] > summary .lm-flecha { transform: none; }
 .lm-admin ul a { padding-left: 24px; font-size: 13.5px; }
+
+/* Lo positivo (aprobado, emitido, listo, ✓) en azul; lo negativo (anulado, errores) en rojo */
+:root {
+  --verde: #2b6fe6; --verde-hover: #1f5bc7; --verde-texto: #1a56c2; --verde-fondo: #e8f0fe; --verde-borde: #a9c7f7;
+}
+:root[data-theme="dark"] {
+  --verde: #4a8cf0; --verde-hover: #6aa2f5; --verde-texto: #a8c8fa; --verde-fondo: #13213a; --verde-borde: #2c4d80;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --verde: #4a8cf0; --verde-hover: #6aa2f5; --verde-texto: #a8c8fa; --verde-fondo: #13213a; --verde-borde: #2c4d80;
+  }
+}
+.estado.aprobado, .estado.emitido, .estado.rendido { font-weight: 600; }
+.estado.anulado, .estado.anulada { background: var(--rojo-fondo); color: var(--rojo); border-color: var(--rojo-borde); font-weight: 600; }

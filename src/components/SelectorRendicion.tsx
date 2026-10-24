@@ -58,109 +58,100 @@ export default function SelectorRendicion({
     });
   }
 
+  const [ver, setVer] = useState<"todos" | "listos" | "pendientes">("todos");
+  const visibles = filas.filter((f) => (ver === "listos" ? f.disponible : ver === "pendientes" ? !f.disponible : true));
+  const pendientes = filas.filter((f) => !f.disponible);
+  const ancho = transferencia ? Math.min(100, (total / transferencia) * 100) : 0;
+
   return (
-    <form action={accion} className="columnas">
+    <form action={accion} className="rend-grid">
       {Object.entries(ocultos).map(([k, v]) => (
         <input key={k} type="hidden" name={k} value={v} />
       ))}
       {[...marcados].map((id) => (
         <input key={id} type="hidden" name="cp" value={id} />
       ))}
-      <div className="principal">
-        <div className="panel">
-          <div className="panel-cab">Marque los comprobantes de pago que entran en esta rendición</div>
-          <div className="tabla-marco" style={{ border: "none" }}>
-            <table className="tabla" style={{ minWidth: 860 }}>
-              <thead>
-                <tr>
-                  <th>
-                    <input
-                      type="checkbox"
-                      aria-label="Marcar todos"
-                      checked={todos}
-                      onChange={() => setMarcados(todos ? new Set() : new Set(disponibles.map((f) => f.id)))}
-                    />
-                  </th>
-                  <th>N° CP</th><th>Fecha</th><th>N° cheque</th><th>Beneficiario</th><th>Concepto</th><th>Se pagó con</th><th className="num">Importe S/</th><th>Situación</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filas.length === 0 && (
-                  <tr><td colSpan={9} className="tenue">No hay comprobantes de pago de esta municipalidad pendientes de rendir.</td></tr>
-                )}
-                {filas.map((f) => (
-                  <tr key={f.id} className={marcados.has(f.id) ? "marcado" : !f.disponible ? "anulado" : undefined}>
-                    <td>
-                      <input
-                        type="checkbox"
-                        aria-label={`Marcar ${f.codigo}`}
-                        checked={marcados.has(f.id)}
-                        disabled={!f.disponible}
-                        onChange={() => alternar(f.id)}
-                      />
-                    </td>
-                    <td style={{ fontWeight: 500 }}>{f.codigo}</td>
-                    <td>{f.fecha}</td>
-                    <td>{f.cheque ?? "—"}</td>
-                    <td>{f.beneficiario}</td>
-                    <td className="envolver">{f.concepto}</td>
-                    <td>{f.propio ? <span className="estado abierta">Ingresos propios</span> : "Transferencia"}</td>
-                    <td className="num">{fmt(f.importe)}</td>
-                    <td>{f.disponible ? <span className="si">Listo</span> : <span className="no">{f.motivo}</span>}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+
+      <div style={{ display: "flex", flexDirection: "column", gap: 12, minWidth: 0 }}>
+        <div className="filtros">
+          <div className="grupo" role="group" aria-label="Mostrar">
+            <button type="button" className={`f-chip${ver === "todos" ? " activo" : ""}`} onClick={() => setVer("todos")}>Todos <span className="n">{filas.length}</span></button>
+            <button type="button" className={`f-chip${ver === "listos" ? " activo" : ""}`} onClick={() => setVer("listos")}>Listos <span className="n">{disponibles.length}</span></button>
+            <button type="button" className={`f-chip${ver === "pendientes" ? " activo rojo" : ""}`} onClick={() => setVer("pendientes")}>Por completar <span className="n">{pendientes.length}</span></button>
           </div>
+          <span style={{ flex: 1 }} />
+          {disponibles.length > 0 && (
+            <button type="button" className="btn chico contorno" onClick={() => setMarcados(todos ? new Set() : new Set(disponibles.map((f) => f.id)))}>
+              {todos ? "Desmarcar todos" : "Marcar todos los listos"}
+            </button>
+          )}
         </div>
+
+        <div className="filas">
+          {visibles.length === 0 && (
+            <div className="vacio">{filas.length === 0 ? "No hay comprobantes de pago de esta municipalidad pendientes de rendir." : "Nada en este filtro."}</div>
+          )}
+          {visibles.map((f) => {
+            const m = marcados.has(f.id);
+            return (
+              <label key={f.id} className={`cp-sel${m ? " marcado" : ""}${!f.disponible ? " bloqueado" : ""}`}>
+                <input type="checkbox" checked={m} disabled={!f.disponible} onChange={() => alternar(f.id)} aria-label={`Marcar ${f.codigo}`} />
+                <div className="f-num" style={{ fontWeight: 700 }}>
+                  {f.codigo}
+                  <small style={{ display: "block", fontWeight: 400, color: "var(--tenue)", fontSize: 12 }}>{f.fecha}</small>
+                </div>
+                <div style={{ minWidth: 0 }}>
+                  <div style={{ fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{f.beneficiario}</div>
+                  <div className="f-meta" style={{ display: "flex", flexWrap: "wrap", gap: "4px 10px", fontSize: 12.5, color: "var(--tenue)", marginTop: 3 }}>
+                    <span style={{ overflow: "hidden", textOverflow: "ellipsis" }}>{f.concepto}</span>
+                    {f.cheque && <span className="etq">Cheque {f.cheque}</span>}
+                    {f.propio && <span className="etq azul">Ingresos propios</span>}
+                  </div>
+                </div>
+                <div className="c-monto">S/ {fmt(f.importe)}</div>
+                <div className="c-estado">
+                  {f.disponible ? <span className="estado aprobado">Listo</span> : <span className="estado anulado">{f.motivo}</span>}
+                </div>
+              </label>
+            );
+          })}
+        </div>
+        {pendientes.length > 0 && (
+          <p className="pequeno tenue" style={{ margin: 0 }}>
+            Los que dicen «Falta aprobar» o «Falta el cheque» no se pueden marcar: complételos en su comprobante de pago.
+          </p>
+        )}
       </div>
-      <aside className="lateral">
-        <section className="panel">
-          <div className="panel-cab">Cuadro de la rendición</div>
-          <table className="tabla">
-            <tbody>
-              <tr><td>Transferencia de {municipalidad}</td><td className="num">{fmt(transferencia)}</td></tr>
-              <tr><td>Pagado con la transferencia</td><td className="num">{fmt(total)}</td></tr>
-              <tr style={{ fontWeight: 600, background: saldo < 0 ? "var(--rojo-fondo)" : saldo === 0 ? "var(--verde-fondo)" : "var(--ambar-fondo)" }}>
-                <td>Saldo por rendir</td>
-                <td className="num">{fmt(saldo)}</td>
-              </tr>
-              {hayPropios && (
-                <tr><td>Pagado con ingresos propios <span className="tenue pequeno">(sale aparte)</span></td><td className="num">{fmt(totalPropios)}</td></tr>
-              )}
-            </tbody>
-          </table>
-          <div className="panel-cuerpo">
-            <div style={{ display: "flex", justifyContent: "space-between" }} className="pequeno tenue">
-              <span>Rendido</span>
-              <span>{pct} %</span>
-            </div>
-            <div style={{ height: 12, background: "var(--linea)", borderRadius: 6, overflow: "hidden" }}>
-              <div style={{ width: `${pct}%`, height: "100%", background: "var(--primario)" }} />
-            </div>
-            {cuadra ? (
-              <div className="aviso ok">Cuadra: lo marcado es igual a lo transferido.</div>
-            ) : saldo < 0 ? (
-              <div className="aviso error">Lo marcado pasa lo transferido en S/ {fmt(-saldo)}. Desmarque algún comprobante.</div>
-            ) : (
-              <div className="aviso info">Faltan S/ {fmt(saldo)} para llegar a lo transferido. La rendición se arma cuando cuadra exacto.</div>
-            )}
-            {puedeGenerar && (
-              <BotonConfirmar
-                className="btn primario"
-                disabled={!cuadra}
-                pregunta="¿Generar la rendición?"
-                detalle={`Se rendirán ${marcados.size} comprobante(s) por S/ ${fmt(total + totalPropios)}. Después quedan bloqueados; para corregir habría que anular la rendición.`}
-                textoConfirmar="Sí, generar rendición"
-              >
-                Generar rendición
-              </BotonConfirmar>
-            )}
-            <span className="pequeno tenue">
-              Al generar, los comprobantes quedan como rendidos y no pueden usarse en otra rendición. Para corregir se anula la rendición con motivo.
-            </span>
-          </div>
-        </section>
+
+      <aside className="rend-cuadro" aria-live="polite">
+        <span className="r-et">{cuadra ? "¡Cuadra!" : saldo < 0 ? "Se pasa de lo transferido" : "Falta para cuadrar"}</span>
+        <span className={`r-saldo ${cuadra ? "ok" : saldo < 0 ? "mal" : ""}`}>S/ {fmt(Math.abs(saldo))}</span>
+        <div className="r-barra"><div className={saldo < 0 ? "pasa" : undefined} style={{ width: `${ancho}%` }} /></div>
+        <dl>
+          <dt>Transferencia</dt><dd>{fmt(transferencia)}</dd>
+          <dt>Marcado ({[...marcados].filter((id) => !filas.find((x) => x.id === id)?.propio).length})</dt><dd>{fmt(total)}</dd>
+          {hayPropios && (<><dt>Ingresos propios <span className="tenue pequeno">(aparte)</span></dt><dd>{fmt(totalPropios)}</dd></>)}
+          <dt>Avance</dt><dd>{pct} %</dd>
+        </dl>
+        {cuadra ? (
+          <div className="aviso ok" style={{ margin: 0 }}>Lo marcado es igual a lo transferido de {municipalidad}. Ya puede generar la rendición.</div>
+        ) : saldo < 0 ? (
+          <div className="aviso error" style={{ margin: 0 }}>Desmarque comprobantes por S/ {fmt(-saldo)}.</div>
+        ) : (
+          <div className="aviso info" style={{ margin: 0 }}>La rendición se arma cuando lo marcado llega exacto a lo transferido.</div>
+        )}
+        {puedeGenerar && (
+          <BotonConfirmar
+            className="btn primario grande"
+            disabled={!cuadra}
+            pregunta="¿Generar la rendición?"
+            detalle={`Se rendirán ${marcados.size} comprobante(s) por S/ ${fmt(total + totalPropios)}. Después quedan bloqueados; para corregir habría que anular la rendición.`}
+            textoConfirmar="Sí, generar rendición"
+          >
+            Generar rendición
+          </BotonConfirmar>
+        )}
+        <span className="pequeno tenue">Al generar, los comprobantes quedan como rendidos. Para corregir se anula la rendición con motivo.</span>
       </aside>
     </form>
   );

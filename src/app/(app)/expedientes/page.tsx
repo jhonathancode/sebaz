@@ -16,6 +16,15 @@ const FASES: Record<string, string> = {
   conformidad: "Conformidad",
   comprobante: "Comprobante de pago",
 };
+const ORDEN_FASES = ["requerimiento", "cotizacion", "orden", "conformidad", "comprobante"];
+const TIPOS: Record<string, string> = { compra: "Compra de bienes", servicio: "Servicio externo", pago_fijo: "Pago fijo" };
+const ESTADOS = [
+  { v: "", t: "Todos" },
+  { v: "borrador", t: "Por aprobar" },
+  { v: "aprobado", t: "En proceso" },
+  { v: "rendido", t: "Rendidos" },
+  { v: "anulado", t: "Anulados" },
+];
 
 export default async function Expedientes({ searchParams }: { searchParams: ParamsAviso }) {
   const sp = await searchParams;
@@ -23,7 +32,11 @@ export default async function Expedientes({ searchParams }: { searchParams: Para
   const supabase = await supabaseServidor();
   const periodo = sp.mes ?? periodoActual();
   const { desde, hasta } = rangoPeriodo(periodo);
+  const estado = sp.estado ?? "";
+  const tipo = sp.tipo ?? "";
+  const q = sp.q ?? "";
 
+  // Se traen todos los del mes (con búsqueda y tipo) para contar por estado; el estado se filtra aquí.
   let consulta = supabase
     .from("expedientes")
     .select("id, anio, numero, fecha, tipo, descripcion, area_usuaria, fase, estado, expediente_items(total, anulado)")
@@ -31,116 +44,157 @@ export default async function Expedientes({ searchParams }: { searchParams: Para
     .gte("fecha", desde)
     .lte("fecha", hasta)
     .order("numero", { ascending: false });
-  if (sp.estado) consulta = consulta.eq("estado", sp.estado);
-  if (sp.q) consulta = consulta.ilike("descripcion", `%${sp.q}%`);
-  if (sp.tipo) consulta = consulta.eq("tipo", sp.tipo);
+  if (q) consulta = consulta.ilike("descripcion", `%${q}%`);
+  if (tipo) consulta = consulta.eq("tipo", tipo);
   const [{ data: lista }, pagosFijos] = await Promise.all([consulta, cargarCatalogoPagosFijos(supabase, ctx.mcp.id)]);
 
-  const filas = (lista ?? []).map((e) => ({
+  const todos = (lista ?? []).map((e) => ({
     ...e,
     monto: (e.expediente_items as { total: number; anulado: boolean }[]).filter((i) => !i.anulado).reduce((s, i) => s + Number(i.total), 0),
   }));
-  const total = filas.filter((f) => f.estado !== "anulado").reduce((s, f) => s + f.monto, 0);
+  const filas = estado ? todos.filter((e) => e.estado === estado) : todos;
+  const cuenta = (v: string) => (v ? todos.filter((e) => e.estado === v).length : todos.length);
+  const vigentes = todos.filter((e) => e.estado !== "anulado");
+  const totalMes = vigentes.reduce((s, e) => s + e.monto, 0);
+  const totalLista = filas.filter((f) => f.estado !== "anulado").reduce((s, f) => s + f.monto, 0);
+  const porAprobar = todos.filter((e) => e.estado === "borrador");
+  const enProceso = todos.filter((e) => e.estado === "aprobado");
+  const rendidos = todos.filter((e) => e.estado === "rendido");
+
+  const enlace = (cambios: Record<string, string>) => {
+    const p = new URLSearchParams({ mes: periodo, estado, tipo, q, ...cambios });
+    [...p.keys()].forEach((k) => !p.get(k) && p.delete(k));
+    return `/expedientes?${p.toString()}`;
+  };
 
   return (
     <>
-      <div className="titulo-ventana">
-        <h1>Expedientes · {nombrePeriodo(periodo)}</h1>
-        <span className="espacio" />
-        <Link className="btn contorno" href={`/comprobantes?mes=${periodo}`}>Ver comprobantes de pago</Link>
-      </div>
-      <Avisos ok={sp.ok} error={sp.error} />
-      <div className="barra">
-        <form method="get" style={{ display: "contents" }}>
-        <label className="campo">
-          Mes
-          <input type="month" name="mes" defaultValue={periodo} />
-        </label>
-        <label className="campo">
-          Estado
-          <select name="estado" defaultValue={sp.estado ?? ""}>
-            <option value="">Todos</option>
-            <option value="borrador">Borrador</option>
-            <option value="aprobado">Aprobado</option>
-            <option value="rendido">Rendido</option>
-            <option value="anulado">Anulado</option>
-          </select>
-        </label>
-        <label className="campo" style={{ flex: "1 1 200px" }}>
-          Buscar
-          <input name="q" defaultValue={sp.q ?? ""} placeholder="Descripción del requerimiento" />
-        </label>
-        <label className="campo">
-          Tipo
-          <select name="tipo" defaultValue={sp.tipo ?? ""}>
-            <option value="">Todos</option>
-            <option value="compra">Compra de bienes</option>
-            <option value="servicio">Servicio externo</option>
-            <option value="pago_fijo">Pago fijo</option>
-          </select>
-        </label>
-        <button className="btn" type="submit">Filtrar</button>
-        <a className="btn contorno" href={`/exportar/expedientes?mes=${periodo}&estado=${sp.estado ?? ""}&tipo=${sp.tipo ?? ""}&q=${encodeURIComponent(sp.q ?? "")}`}>Descargar Excel</a>
+      <div className="cab-vista">
+        <div>
+          <h1>Expedientes</h1>
+          <div className="sub">Cada gasto, del requerimiento al comprobante de pago</div>
+        </div>
+        <form className="selector-mes" method="get">
+          <input type="hidden" name="estado" value={estado} />
+          <input type="hidden" name="tipo" value={tipo} />
+          <input type="month" name="mes" defaultValue={periodo} aria-label="Mes" />
+          <button className="btn chico" type="submit">Ver</button>
         </form>
         <span className="espacio" />
-        <VentanaFlotante boton="+ Nuevo requerimiento" claseBoton="btn primario grande" titulo="Nuevo requerimiento" accion={crearExpediente} textoGuardar="Guardar requerimiento" vistaPrevia={{ base: { tipo: "requerimiento" }, mcp: ctx.mcp }} abierta={sp.nuevo === "1"} error={sp.nuevo === "1" ? sp.error : undefined} ancha>
+        <Link className="btn contorno" href={`/comprobantes?mes=${periodo}`}>Comprobantes de pago</Link>
+        <a className="btn contorno" href={`/exportar/expedientes?mes=${periodo}&estado=${estado}&tipo=${tipo}&q=${encodeURIComponent(q)}`}>Descargar Excel</a>
+        <VentanaFlotante
+          boton="+ Nuevo requerimiento"
+          claseBoton="btn primario grande"
+          titulo="Nuevo requerimiento"
+          accion={crearExpediente}
+          textoGuardar="Guardar requerimiento"
+          vistaPrevia={{ base: { tipo: "requerimiento" }, mcp: ctx.mcp }}
+          abierta={sp.nuevo === "1"}
+          error={sp.nuevo === "1" ? sp.error : undefined}
+          ancha
+        >
           <CamposRequerimiento fuentes={ctx.fuentes} pagosFijos={pagosFijos} />
         </VentanaFlotante>
       </div>
+      <Avisos ok={sp.ok} error={sp.error} />
 
-      <div className="tabla-marco">
-        <table className="tabla" style={{ minWidth: 900 }}>
-          <thead>
-            <tr>
-              <th>N°</th>
-              <th>Fecha</th>
-              <th>Tipo</th>
-              <th>Descripción</th>
-              <th>Área usuaria</th>
-              <th>Fase</th>
-              <th>Estado</th>
-              <th className="num">Monto S/</th>
-              <th className="num">Acciones</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filas.length === 0 && (
-              <tr>
-                <td colSpan={9} className="tenue">No hay expedientes en este mes.</td>
-              </tr>
-            )}
-            {filas.map((e) => (
-              <tr key={e.id} className={e.estado === "anulado" ? "anulado" : undefined}>
-                <td style={{ fontWeight: 600 }}>{num3(e.numero)}-{e.anio}</td>
-                <td>{fecha(e.fecha)}</td>
-                <td>{e.tipo === "compra" ? "Compra" : e.tipo === "servicio" ? "Servicio" : "Pago fijo"}</td>
-                <td className="envolver tachar">{e.descripcion}</td>
-                <td>{e.area_usuaria ?? "—"}</td>
-                <td>{FASES[e.fase]}</td>
-                <td><Estado valor={e.estado} /></td>
-                <td className="num tachar">{soles(e.monto)}</td>
-                <td>
-                  <div className="acciones-fila">
-                    <Link className="btn chico contorno" href={`/expedientes/${e.id}`}>Abrir</Link>
-                    <Link className="btn chico" href={`/expedientes/${e.id}/documentos`}>Documentos</Link>
-                  </div>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-          <tfoot>
-            <tr>
-              <td colSpan={7}>Total vigente del mes</td>
-              <td className="num">{soles(total)}</td>
-              <td></td>
-            </tr>
-          </tfoot>
-        </table>
+      <div className="kpis">
+        <div className="kpi azul">
+          <span className="k-et">Gasto de {nombrePeriodo(periodo)}</span>
+          <span className="k-val">S/ {soles(totalMes)}</span>
+          <span className="k-det">{vigentes.length} expedientes vigentes</span>
+        </div>
+        <Link className={`kpi${porAprobar.length ? " alerta" : ""}`} href={enlace({ estado: "borrador" })}>
+          <span className="k-et">Por aprobar</span>
+          <span className="k-val">{porAprobar.length}</span>
+          <span className="k-det">S/ {soles(porAprobar.reduce((s, e) => s + e.monto, 0))} esperan al alcalde</span>
+        </Link>
+        <Link className="kpi" href={enlace({ estado: "aprobado" })}>
+          <span className="k-et">En proceso</span>
+          <span className="k-val">{enProceso.length}</span>
+          <span className="k-det">Aprobados, avanzando al pago</span>
+        </Link>
+        <Link className="kpi" href={enlace({ estado: "rendido" })}>
+          <span className="k-et">Rendidos</span>
+          <span className="k-val">{rendidos.length}</span>
+          <span className="k-det">Ya entraron en una rendición</span>
+        </Link>
       </div>
-      <div className="pie">
-        <span>{filas.length} expedientes</span>
-        <span>Nada se elimina: los expedientes se anulan con motivo.</span>
+
+      <div className="filtros">
+        <div className="grupo" role="group" aria-label="Estado">
+          {ESTADOS.map((x) => (
+            <Link key={x.v} className={`f-chip${estado === x.v ? " activo" : ""}${x.v === "anulado" ? " rojo" : ""}`} href={enlace({ estado: x.v })}>
+              {x.t} <span className="n">{cuenta(x.v)}</span>
+            </Link>
+          ))}
+        </div>
+        <div className="grupo" role="group" aria-label="Tipo">
+          <span className="grupo-et">Tipo</span>
+          {[["", "Todos"], ["compra", "Compra"], ["servicio", "Servicio"], ["pago_fijo", "Pago fijo"]].map(([v, t]) => (
+            <Link key={v} className={`f-chip${tipo === v ? " activo" : ""}`} href={enlace({ tipo: v })}>{t}</Link>
+          ))}
+        </div>
+        <form className="buscador" method="get" role="search">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><circle cx="11" cy="11" r="7" /><path d="m20 20-3.5-3.5" /></svg>
+          <input type="hidden" name="mes" value={periodo} />
+          <input type="hidden" name="estado" value={estado} />
+          <input type="hidden" name="tipo" value={tipo} />
+          <input name="q" defaultValue={q} placeholder="Buscar por descripción…" aria-label="Buscar" />
+          <button className="btn chico" type="submit">Buscar</button>
+        </form>
       </div>
+
+      <div className="filas">
+        {filas.length === 0 && (
+          <div className="vacio">
+            {todos.length === 0 ? "No hay expedientes en este mes. Empiece con «+ Nuevo requerimiento»." : "Ningún expediente con ese filtro."}
+          </div>
+        )}
+        {filas.map((e) => {
+          const pasos = e.tipo === "pago_fijo" ? ["requerimiento", "comprobante"] : ORDEN_FASES;
+          const hecho = e.estado === "rendido" ? pasos.length : Math.max(1, pasos.indexOf(e.fase) + 1);
+          return (
+            <div key={e.id} className={`fila${e.estado === "anulado" ? " anulada" : ""}`}>
+              <div className="f-num">
+                {num3(e.numero)}-{e.anio}
+                <small>{fecha(e.fecha)}</small>
+              </div>
+              <div className="f-desc">
+                <Link href={`/expedientes/${e.id}`} title={e.descripcion}>{e.descripcion}</Link>
+                <div className="f-meta">
+                  <span className="etq">{TIPOS[e.tipo] ?? e.tipo}</span>
+                  {e.area_usuaria && <span>{e.area_usuaria}</span>}
+                  {e.estado !== "anulado" && (
+                    <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
+                      <span className="puntos" aria-hidden="true">
+                        {pasos.map((p, i) => <i key={p} className={i < hecho ? "ok" : undefined} />)}
+                      </span>
+                      {e.estado === "rendido" ? "Rendido" : FASES[e.fase]}
+                    </span>
+                  )}
+                </div>
+              </div>
+              <div className="f-monto">
+                S/ {soles(e.monto)}
+                <small><Estado valor={e.estado} /></small>
+              </div>
+              <div className="f-acc">
+                <Link className="btn chico primario" href={`/expedientes/${e.id}`}>Abrir</Link>
+                <Link className="btn chico contorno" href={`/expedientes/${e.id}/documentos`}>Documentos</Link>
+              </div>
+            </div>
+          );
+        })}
+        {filas.length > 0 && (
+          <div className="pie-filas">
+            <span>{filas.length} expediente(s){estado || tipo || q ? " con este filtro" : ""}</span>
+            <span>Total vigente S/ {soles(totalLista)}</span>
+          </div>
+        )}
+      </div>
+      <p className="pequeno tenue" style={{ margin: 0 }}>Nada se elimina: los expedientes se anulan con motivo y quedan en el historial.</p>
     </>
   );
 }

@@ -20,41 +20,45 @@ export default async function Rendicion({ searchParams }: { searchParams: Params
     return <div className="aviso info">La MCP no tiene municipalidades que transfieren configuradas. Pida a soporte que las registre.</div>;
   }
 
-  const { data: vigente } = await supabase
-    .from("rendiciones")
-    .select("id, numero, anio, estado, transferencia, creado_en")
-    .eq("mcp_id", ctx.mcp.id)
-    .eq("fuente_id", fuente.id)
-    .eq("periodo", periodo)
-    .neq("estado", "anulada")
-    .maybeSingle();
-
   const { hasta } = rangoPeriodo(periodo);
-  let filas: FilaCP[] = [];
-  if (!vigente) {
-    const { data: cps } = await supabase
+  // De una sola vez: rendiciones del mes y comprobantes pendientes de todas las municipalidades
+  const [{ data: delMes }, { data: cps }] = await Promise.all([
+    supabase.from("rendiciones").select("id, numero, anio, estado, transferencia, fuente_id, creado_en").eq("mcp_id", ctx.mcp.id).eq("periodo", periodo).neq("estado", "anulada"),
+    supabase
       .from("comprobantes_pago")
       .select("id, numero, origen, fecha, beneficiario, concepto, importe, cheque, estado, fuente_id")
       .eq("mcp_id", ctx.mcp.id)
-      .in("fuente_id", [fuente.id, ...(propios ? [propios.id] : [])])
+      .in("fuente_id", [...municipalidades.map((f) => f.id), ...(propios ? [propios.id] : [])])
       .in("estado", ["borrador", "aprobado"])
       .lte("fecha", hasta)
-      .order("fecha");
-    filas = (cps ?? []).map((c) => {
-      const motivo = c.estado !== "aprobado" ? "Falta aprobar" : !c.cheque ? "Falta el cheque" : undefined;
-      return {
-        id: c.id,
-        codigo: codigoCP(c.numero, c.origen),
-        fecha: fecha(c.fecha),
-        beneficiario: c.beneficiario,
-        concepto: c.concepto,
-        cheque: c.cheque,
-        importe: Number(c.importe),
-        disponible: !motivo,
-        motivo,
-        propio: c.fuente_id === propios?.id,
-      };
-    });
+      .order("fecha"),
+  ]);
+  const vigente = (delMes ?? []).find((r) => r.fuente_id === fuente.id) ?? null;
+  const resumen = municipalidades.map((f) => {
+    const r = (delMes ?? []).find((x) => x.fuente_id === f.id);
+    const listos = (cps ?? []).filter((c) => c.fuente_id === f.id && c.estado === "aprobado" && c.cheque).reduce((s, c) => s + Number(c.importe), 0);
+    return { f, r, listos, pct: Number(f.monto_mensual) ? Math.min(100, Math.round((listos / Number(f.monto_mensual)) * 100)) : 0 };
+  });
+
+  let filas: FilaCP[] = [];
+  if (!vigente) {
+    filas = (cps ?? [])
+      .filter((c) => c.fuente_id === fuente.id || c.fuente_id === propios?.id)
+      .map((c) => {
+        const motivo = c.estado !== "aprobado" ? "Falta aprobar" : !c.cheque ? "Falta el cheque" : undefined;
+        return {
+          id: c.id,
+          codigo: codigoCP(c.numero, c.origen),
+          fecha: fecha(c.fecha),
+          beneficiario: c.beneficiario,
+          concepto: c.concepto,
+          cheque: c.cheque,
+          importe: Number(c.importe),
+          disponible: !motivo,
+          motivo,
+          propio: c.fuente_id === propios?.id,
+        };
+      });
   }
 
   const { data: anteriores } = await supabase
@@ -66,32 +70,45 @@ export default async function Rendicion({ searchParams }: { searchParams: Params
 
   return (
     <>
-      <div className="titulo-ventana"><h1>Rendición · {nombrePeriodo(periodo)}</h1></div>
+      <div className="cab-vista">
+        <div>
+          <h1>Rendición de {nombrePeriodo(periodo)}</h1>
+          <div className="sub">
+            Formato {fuente.formato === "perene" ? "Perené: informe de gestión, capítulos I y II" : fuente.formato === "chanchamayo" ? "Chanchamayo: ingresos por rubro y gastos por función" : "general"}
+          </div>
+        </div>
+        <form className="selector-mes" method="get">
+          <input type="hidden" name="fuente" value={fuente.id} />
+          <input type="month" name="mes" defaultValue={periodo} aria-label="Mes a rendir" />
+          <button className="btn chico" type="submit">Ver</button>
+        </form>
+      </div>
       <Avisos ok={sp.ok} error={sp.error} />
 
-      <div className="pestanas" role="tablist" aria-label="Municipalidad que transfiere">
-        {municipalidades.map((f) => (
-          <Link key={f.id} role="tab" aria-selected={f.id === fuente.id} className={f.id === fuente.id ? "activo" : undefined} href={`/rendicion?mes=${periodo}&fuente=${f.id}`}>
-            {f.tipo === "distrito" ? "Distrito" : "Provincia"}: {f.municipalidad} · S/ {soles(f.monto_mensual)}
+      <div className="muni-tabs" role="tablist" aria-label="Municipalidad que transfiere">
+        {resumen.map(({ f, r, listos, pct }) => (
+          <Link key={f.id} role="tab" aria-selected={f.id === fuente.id} className={`muni-tab${f.id === fuente.id ? " activo" : ""}`} href={`/rendicion?mes=${periodo}&fuente=${f.id}`}>
+            <div className="m-cab">
+              <span className="m-nom">{f.tipo === "distrito" ? "Distrito" : "Provincia"} · {f.municipalidad.replace(/^municipalidad (distrital|provincial) de /i, "")}</span>
+              <span className="m-monto">S/ {soles(f.monto_mensual)}</span>
+            </div>
+            <div className="k-barra"><div style={{ width: `${r ? 100 : pct}%` }} /></div>
+            <span className="m-det">
+              {r ? <>Rendición {String(r.numero).padStart(3, "0")}-{r.anio} generada <Estado valor={r.estado} /></> : `Listo con cheque S/ ${soles(listos)} · ${pct} %`}
+            </span>
           </Link>
         ))}
       </div>
-      <form className="barra" method="get">
-        <input type="hidden" name="fuente" value={fuente.id} />
-        <label className="campo">Mes a rendir<input type="month" name="mes" defaultValue={periodo} /></label>
-        <button className="btn" type="submit">Ver</button>
-        <span className="pequeno tenue" style={{ alignSelf: "center" }}>
-          Formato: {fuente.formato === "perene" ? "Perené (informe de gestión, capítulos I y II)" : fuente.formato === "chanchamayo" ? "Chanchamayo (ingresos por rubro y gastos por función)" : "General"}
-        </span>
-      </form>
 
       {vigente ? (
-        <div className="barra" style={{ alignItems: "center" }}>
-          <b>Rendición N° {String(vigente.numero).padStart(3, "0")}-{vigente.anio}</b>
+        <div className="kpi azul" style={{ flexDirection: "row", alignItems: "center", flexWrap: "wrap", gap: 14 }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: 4, flex: 1 }}>
+            <span className="k-et">Rendición N° {String(vigente.numero).padStart(3, "0")}-{vigente.anio}</span>
+            <span className="k-val">S/ {soles(vigente.transferencia)}</span>
+            <span className="k-det">Ya está generada para este mes. Ábrala para imprimir o descargar el informe.</span>
+          </div>
           <Estado valor={vigente.estado} />
-          <span>Transferencia S/ {soles(vigente.transferencia)}</span>
-          <span className="espacio" />
-          <Link className="btn primario" href={`/rendicion/${vigente.id}`}>Ver e imprimir el informe</Link>
+          <Link className="btn primario grande" href={`/rendicion/${vigente.id}`}>Ver el informe</Link>
         </div>
       ) : (
         <SelectorRendicion

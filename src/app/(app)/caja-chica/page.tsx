@@ -53,88 +53,66 @@ export default async function CajaChica({ searchParams }: { searchParams: Params
   const abierta = caja?.estado === "abierta";
   const cp = caja?.comprobantes_pago as unknown as { id: string; numero: number; origen: string; estado: string } | null;
 
-  return (
-    <>
-      <div className="titulo-ventana">
-        <h1>Caja chica · {nombrePeriodo(periodo)}</h1>
-        {caja && <Estado valor={caja.estado} />}
-      </div>
-      <Avisos ok={sp.ok} error={sp.error} />
-
-      <div className="barra">
-        <form method="get" style={{ display: "contents" }}>
-        <label className="campo">Mes<input type="month" name="mes" defaultValue={periodo} /></label>
+  const cuadra = !!caja && Math.round(saldo * 100) === 0;
+  const fuenteNombre = ctx.fuentes.find((f) => f.id === fuenteId)?.municipalidad ?? "";
+  const formGasto = caja && abierta && puede && (
+    <VentanaFlotante boton="+ Registrar gasto" titulo="Registrar un gasto de caja chica" accion={agregarGasto} textoGuardar="Agregar gasto" claseBoton="btn primario grande">
+      <input type="hidden" name="caja_id" value={caja.id} />
+      <input type="hidden" name="periodo" value={periodo} />
+      <input type="hidden" name="fuente_id" value={fuenteId} />
+      <div className="rejilla">
+        <label className="campo">Fecha<input type="date" name="fecha" required defaultValue={hoyISO().startsWith(periodo) ? hoyISO() : `${periodo}-01`} /></label>
         <label className="campo">
-          Fondo pagado con
-          <select name="fuente" defaultValue={fuenteId}>
-            {ctx.fuentes.map((f) => (
-              <option key={f.id} value={f.id}>{f.municipalidad}</option>
+          Sustento
+          <select name="sustento_tipo" defaultValue="DJ">
+            {SUSTENTOS.map((x) => (
+              <option key={x.codigo} value={x.codigo}>{x.nombre}</option>
             ))}
           </select>
         </label>
-        <button className="btn" type="submit">Ver</button>
-        <a className="btn contorno" href={`/exportar/caja-chica?mes=${periodo}`}>Descargar Excel</a>
+        <label className="campo">N° del documento (no para DJ)<input name="sustento_numero" placeholder="B001-3516" /></label>
+        <label className="campo">Razón social o comisionado<input name="razon_social" required /></label>
+        <label className="campo ancho">Concepto<input name="concepto" required placeholder="Salida a Perené: verificación de documentos para la rendición" /></label>
+        <label className="campo">Monto S/<input name="monto" required inputMode="decimal" /></label>
+      </div>
+      <p className="pequeno tenue" style={{ margin: 0 }}>Saldo disponible del fondo: S/ {soles(saldo)}. Con declaración jurada, el formato se imprime desde la lista.</p>
+    </VentanaFlotante>
+  );
+
+  return (
+    <>
+      <div className="cab-vista">
+        <div>
+          <h1>Caja chica {caja && <Estado valor={caja.estado} />}</h1>
+          <div className="sub">Fondo de {nombrePeriodo(periodo)}{fuenteNombre ? ` · pagado con ${fuenteNombre}` : ""}</div>
+        </div>
+        <form className="selector-mes" method="get">
+          <input type="month" name="mes" defaultValue={periodo} aria-label="Mes" />
+          {ctx.fuentes.length > 1 && (
+            <select name="fuente" defaultValue={fuenteId} aria-label="Fondo pagado con">
+              {ctx.fuentes.map((f) => (
+                <option key={f.id} value={f.id}>{f.municipalidad.replace(/^municipalidad (distrital|provincial) de /i, "")}</option>
+              ))}
+            </select>
+          )}
+          <button className="btn chico" type="submit">Ver</button>
         </form>
         <span className="espacio" />
-        {caja && abierta && puede && (
-          <VentanaFlotante boton="Registrar gasto" titulo="Registrar un gasto de caja chica" accion={agregarGasto} textoGuardar="Agregar gasto" claseBoton="btn">
-            <input type="hidden" name="caja_id" value={caja.id} />
-            <input type="hidden" name="periodo" value={periodo} />
-            <input type="hidden" name="fuente_id" value={fuenteId} />
-            <div className="rejilla">
-              <label className="campo">Fecha<input type="date" name="fecha" required defaultValue={hoyISO().startsWith(periodo) ? hoyISO() : `${periodo}-01`} /></label>
-              <label className="campo">
-                Sustento
-                <select name="sustento_tipo" defaultValue="DJ">
-                  {SUSTENTOS.map((x) => (
-                    <option key={x.codigo} value={x.codigo}>{x.nombre}</option>
-                  ))}
-                </select>
-              </label>
-              <label className="campo">N° del documento (no para DJ)<input name="sustento_numero" placeholder="B001-3516" /></label>
-              <label className="campo">Razón social o comisionado<input name="razon_social" required /></label>
-              <label className="campo ancho">Concepto<input name="concepto" required placeholder="Salida a Perené: verificación de documentos para la rendición" /></label>
-              <label className="campo">Monto S/<input name="monto" required inputMode="decimal" /></label>
-            </div>
-            <p className="pequeno tenue" style={{ margin: 0 }}>Saldo disponible del fondo: S/ {soles(saldo)}. Con declaración jurada, el formato se imprime desde la lista.</p>
-          </VentanaFlotante>
-        )}
-        {caja && (
-          <Link className="btn" href={`/caja-chica/${caja.id}/relacion`}>Imprimir relación</Link>
-        )}
-        {caja && abierta && puede && (
-          <form action={liquidarCaja}>
-            <input type="hidden" name="caja_id" value={caja.id} />
-            <input type="hidden" name="periodo" value={periodo} />
-            <input type="hidden" name="fuente_id" value={fuenteId} />
-            <BotonConfirmar
-              disabled={Math.round(saldo * 100) !== 0}
-              pregunta="¿Está seguro de cerrar la caja chica?"
-              detalle={`Se generará el comprobante de pago por S/ ${soles(gastado)}. Cerrada, ya no admite gastos ni cambios.`}
-              textoConfirmar="Sí, cerrar caja chica"
-              peligro
-            >
-              Cerrar caja chica
-            </BotonConfirmar>
-          </form>
-        )}
+        {caja && <a className="btn contorno" href={`/exportar/caja-chica?mes=${periodo}`}>Descargar Excel</a>}
+        {caja && <Link className="btn contorno" href={`/caja-chica/${caja.id}/relacion`}>Relación de gastos</Link>}
+        {formGasto}
       </div>
-      {caja && abierta && Math.round(saldo * 100) !== 0 && (
-        <div className={`aviso ${saldo > 0 ? "info" : "error"}`}>
-          {saldo > 0
-            ? `Para cerrar la caja chica debe gastar todo el fondo. Falta registrar S/ ${soles(saldo)} en gastos.`
-            : `Lo gastado pasa el fondo por S/ ${soles(-saldo)}. Anule o corrija algún gasto para poder cerrar.`}
-        </div>
-      )}
-      {caja && abierta && Math.round(saldo * 100) === 0 && (
-        <div className="aviso ok">La caja chica cuadra: lo gastado es igual al fondo. Ya puede cerrarla.</div>
-      )}
+      <Avisos ok={sp.ok} error={sp.error} />
 
-      {!caja && (
-        puede ? (
-          <div className="aviso info" style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
-            <span style={{ flex: 1 }}>Aún no se abre el fondo de caja chica de este mes.</span>
-            <VentanaFlotante boton="Abrir fondo del mes" titulo="Abrir el fondo de caja chica" accion={abrirCaja} textoGuardar="Abrir fondo">
+      {!caja &&
+        (puede ? (
+          <div className="kpi azul" style={{ flexDirection: "row", alignItems: "center", gap: 16, flexWrap: "wrap" }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: 4, flex: 1 }}>
+              <span className="k-et">Caja chica de {nombrePeriodo(periodo)}</span>
+              <span className="k-val">Aún no se abre el fondo</span>
+              <span className="k-det">Ábralo con el monto que se retiró (normalmente S/ 2,000 de la transferencia) y el responsable.</span>
+            </div>
+            <VentanaFlotante boton="Abrir fondo del mes" titulo="Abrir el fondo de caja chica" accion={abrirCaja} textoGuardar="Abrir fondo" claseBoton="btn primario grande">
               <input type="hidden" name="periodo" value={periodo} />
               <input type="hidden" name="fuente_id" value={fuenteId} />
               <div className="rejilla-2">
@@ -154,93 +132,102 @@ export default async function CajaChica({ searchParams }: { searchParams: Params
           </div>
         ) : (
           <div className="aviso info">No hay fondo de caja chica abierto este mes.</div>
-        )
-      )}
+        ))}
 
       {caja && (
-        <div className="columnas">
-          <div className="principal">
-            <div className="tabla-marco">
-              <table className="tabla" style={{ minWidth: 860 }}>
-                <thead>
-                  <tr><th>N°</th><th>Fecha</th><th>Sustento</th><th>N° doc.</th><th>Razón social</th><th>Concepto</th><th className="num">Monto S/</th><th></th></tr>
-                </thead>
-                <tbody>
-                  {(gastos ?? []).length === 0 && <tr><td colSpan={8} className="tenue">Aún no hay gastos.</td></tr>}
-                  {(gastos ?? []).map((g, i) => (
-                    <tr key={g.id} className={g.anulado ? "anulado" : undefined}>
-                      <td>{i + 1}</td>
-                      <td>{fecha(g.fecha)}</td>
-                      <td>{g.sustento_tipo}</td>
-                      <td>{g.sustento_numero ?? "S/N"}</td>
-                      <td>{g.razon_social}</td>
-                      <td className="envolver tachar">
-                        {g.concepto}
-                        {g.anulado && <div className="pequeno">Anulado: {g.anulado_motivo}</div>}
-                      </td>
-                      <td className="num tachar">{soles(g.monto)}</td>
-                      <td>
-                        {g.sustento_tipo === "DJ" && !g.anulado && <Link className="btn" href={`/caja-chica/dj/${g.id}`}>DJ</Link>}{" "}
-                        {abierta && !g.anulado && puede && (
-                          <Motivo accion={anularGasto} boton="Anular" ayuda="Motivo" campos={{ gasto_id: g.id, periodo, fuente_id: fuenteId ?? "" }} />
-                        )}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-                <tfoot>
-                  <tr><td colSpan={6}>Total gastado</td><td className="num">{soles(gastado)}</td><td></td></tr>
-                </tfoot>
-              </table>
+        <>
+          <div className="kpis">
+            <div className="kpi">
+              <span className="k-et">Fondo</span>
+              <span className="k-val">S/ {soles(fondo)}</span>
+              <span className="k-det">Responsable: {(caja.perfiles as { nombre: string } | null)?.nombre}</span>
             </div>
-
+            <div className="kpi">
+              <span className="k-et">Gastado</span>
+              <span className="k-val">S/ {soles(gastado)}</span>
+              <div className="k-barra"><div style={{ width: `${Math.min(pct, 100)}%` }} /></div>
+              <span className="k-det">{pct} % del fondo · {vigentes.length} gasto(s)</span>
+            </div>
+            <div className={`kpi ${cuadra ? "azul" : saldo < 0 ? "rojo" : "alerta"}`}>
+              <span className="k-et">{cuadra ? "Cuadra" : saldo < 0 ? "Se pasó del fondo" : "Falta gastar"}</span>
+              <span className="k-val">S/ {soles(Math.abs(saldo))}</span>
+              <span className="k-det">{cuadra ? (abierta ? "Ya puede cerrar la caja chica" : "Caja liquidada") : saldo < 0 ? "Anule o corrija algún gasto" : "Para cerrar, lo gastado debe ser igual al fondo"}</span>
+            </div>
+            <div className="kpi">
+              <span className="k-et">Por sustento</span>
+              <span className="k-det" style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 4 }}>
+                {porTipo.size === 0 && "Aún no hay gastos"}
+                {[...porTipo].map(([t, v]) => (
+                  <span key={t} className="etq" title={NOMBRE_SUSTENTO[t] ?? t}>{t} · {v.n} · S/ {soles(v.total)}</span>
+                ))}
+              </span>
+              {cp && (
+                <span className="k-det" style={{ marginTop: 6 }}>
+                  Comprobante: <Link href={`/comprobantes/${cp.id}`}>{codigoCP(cp.numero, cp.origen)}</Link> <Estado valor={cp.estado} />
+                </span>
+              )}
+            </div>
           </div>
 
-          <aside className="lateral">
-            <section className="panel">
-              <div className="panel-cab">Estado del fondo</div>
-              <table className="tabla">
-                <tbody>
-                  <tr><td>Fondo</td><td className="num">{soles(fondo)}</td></tr>
-                  <tr><td>Gastado ({vigentes.length})</td><td className="num">{soles(gastado)}</td></tr>
-                  <tr style={{ fontWeight: 600 }}><td>Saldo</td><td className="num">{soles(saldo)}</td></tr>
-                </tbody>
-              </table>
-              <div className="panel-cuerpo">
-                <div style={{ display: "flex", justifyContent: "space-between" }} className="pequeno tenue"><span>Gastado</span><span>{pct} %</span></div>
-                <div style={{ height: 12, background: "var(--linea)", borderRadius: 6, overflow: "hidden" }}>
-                  <div style={{ width: `${Math.min(pct, 100)}%`, height: "100%", background: "var(--primario)" }} />
+          <div className="filas">
+            {(gastos ?? []).length === 0 && <div className="vacio">Aún no hay gastos. Registre el primero con «+ Registrar gasto».</div>}
+            {(gastos ?? []).map((g, i) => (
+              <div key={g.id} className={`fila${g.anulado ? " anulada" : ""}`}>
+                <div className="f-num">
+                  N° {i + 1}
+                  <small>{fecha(g.fecha)}</small>
                 </div>
-                <div className="pequeno">Responsable: {(caja.perfiles as { nombre: string } | null)?.nombre}</div>
-                {cp && (
-                  <div>
-                    Comprobante: <Link href={`/comprobantes/${cp.id}`}>{codigoCP(cp.numero, cp.origen)}</Link> <Estado valor={cp.estado} />
+                <div className="f-desc">
+                  <span className="f-titulo">{g.concepto}</span>
+                  <div className="f-meta">
+                    <span className="etq">{g.sustento_tipo}{g.sustento_numero ? ` ${g.sustento_numero}` : ""}</span>
+                    <span>{g.razon_social}</span>
+                    {g.anulado && <span className="no">Anulado: {g.anulado_motivo}</span>}
                   </div>
-                )}
+                </div>
+                <div className="f-monto">S/ {soles(g.monto)}</div>
+                <div className="f-acc">
+                  {g.sustento_tipo === "DJ" && !g.anulado && <Link className="btn chico contorno" href={`/caja-chica/dj/${g.id}`}>Declaración jurada</Link>}
+                  {abierta && !g.anulado && puede && (
+                    <Motivo accion={anularGasto} boton="Anular" ayuda="Motivo" campos={{ gasto_id: g.id, periodo, fuente_id: fuenteId ?? "" }} />
+                  )}
+                </div>
               </div>
-            </section>
-            <section className="panel">
-              <div className="panel-cab">Por tipo de sustento</div>
-              <table className="tabla">
-                <tbody>
-                  {[...porTipo].map(([t, v]) => (
-                    <tr key={t}><td>{NOMBRE_SUSTENTO[t] ?? t} ({v.n})</td><td className="num">{soles(v.total)}</td></tr>
-                  ))}
-                </tbody>
-              </table>
-            </section>
-            <section className="panel">
-              <div className="panel-cab">Al liquidar</div>
-              <div className="panel-cuerpo">
-                <ul className="lista-reglas">
-                  <li>Se genera un comprobante de pago por lo gastado, con la relación de gastos.</li>
-                  <li>Ese comprobante entra en la rendición como una sola línea.</li>
-                  <li>Liquidada, la caja ya no admite gastos ni cambios.</li>
-                </ul>
+            ))}
+            {(gastos ?? []).length > 0 && (
+              <div className="pie-filas">
+                <span>Total gastado</span>
+                <span>S/ {soles(gastado)}</span>
               </div>
-            </section>
-          </aside>
-        </div>
+            )}
+          </div>
+
+          {abierta && puede && (
+            <div className="kpi" style={{ flexDirection: "row", alignItems: "center", gap: 16, flexWrap: "wrap" }}>
+              <div style={{ display: "flex", flexDirection: "column", gap: 4, flex: 1, minWidth: 240 }}>
+                <span className="k-et">Cerrar (liquidar) la caja chica</span>
+                <span className="k-det">
+                  Se genera un comprobante de pago por lo gastado, con la relación de gastos, y entra en la rendición como una sola línea.
+                  {!cuadra && ` Falta ${saldo > 0 ? `registrar S/ ${soles(saldo)}` : `quitar S/ ${soles(-saldo)}`} para poder cerrar.`}
+                </span>
+              </div>
+              <form action={liquidarCaja}>
+                <input type="hidden" name="caja_id" value={caja.id} />
+                <input type="hidden" name="periodo" value={periodo} />
+                <input type="hidden" name="fuente_id" value={fuenteId} />
+                <BotonConfirmar
+                  className="btn primario grande"
+                  disabled={!cuadra}
+                  pregunta="¿Está seguro de cerrar la caja chica?"
+                  detalle={`Se generará el comprobante de pago por S/ ${soles(gastado)}. Cerrada, ya no admite gastos ni cambios.`}
+                  textoConfirmar="Sí, cerrar caja chica"
+                >
+                  Cerrar caja chica
+                </BotonConfirmar>
+              </form>
+            </div>
+          )}
+        </>
       )}
     </>
   );

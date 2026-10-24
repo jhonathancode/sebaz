@@ -1,11 +1,12 @@
 import SelectFuncion from "@/components/SelectFuncion";
 import { nombreFuente } from "./CamposRequerimiento";
+import SugerenciaConcepto from "./SugerenciaConcepto";
 import { CLASIFICADORES, SUSTENTOS } from "@/lib/catalogos";
 import type { Fuente } from "@/lib/contexto";
 import { hoyISO } from "@/lib/formato";
 
 /** Comprobante de pago sin expediente: dietas, honorarios, servicios mensuales. */
-export default function CamposComprobanteDirecto({ fuentes }: { fuentes: Fuente[] }) {
+export default function CamposComprobanteDirecto({ fuentes, chequeSugerido = "" }: { fuentes: Fuente[]; chequeSugerido?: string }) {
   return (
     <>
       <div className="aviso info pequeno">
@@ -25,6 +26,7 @@ export default function CamposComprobanteDirecto({ fuentes }: { fuentes: Fuente[
         <label className="campo">Beneficiario<input name="beneficiario" required /></label>
         <label className="campo">DNI o RUC<input name="beneficiario_doc" inputMode="numeric" /></label>
         <label className="campo ancho">Concepto<input name="concepto" required placeholder="Pago de dieta de regidor, mes de octubre 2026" /></label>
+        <div className="ancho"><SugerenciaConcepto campo="concepto" tambienItem={false} /></div>
         <label className="campo">Importe S/<input name="importe" required inputMode="decimal" /></label>
         <label className="campo">Deducciones S/<input name="deducciones" inputMode="decimal" defaultValue="0" /></label>
         <label className="campo">
@@ -45,7 +47,7 @@ export default function CamposComprobanteDirecto({ fuentes }: { fuentes: Fuente[
           </select>
         </label>
         <label className="campo">N° del sustento<input name="sustento_numero" placeholder="E001-12" /></label>
-        <label className="campo">N° de cheque<input name="cheque" inputMode="numeric" pattern="\d{4,12}" placeholder="Si ya lo giró; si no, después" /></label>
+        <label className="campo">N° de cheque<input name="cheque" inputMode="numeric" pattern="\d{4,12}" defaultValue={chequeSugerido} placeholder="Si ya lo giró; si no, después" /></label>
       </div>
     </>
   );

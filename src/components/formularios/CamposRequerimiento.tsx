@@ -3,6 +3,7 @@ import type { Fuente } from "@/lib/contexto";
 import { hoyISO } from "@/lib/formato";
 import ItemsRequerimiento from "./ItemsRequerimiento";
 import SelectorPagoFijo from "./SelectorPagoFijo";
+import SugerenciaConcepto from "./SugerenciaConcepto";
 import type { PagoFijoCatalogo } from "@/lib/pagosFijos";
 import { periodoActual } from "@/lib/formato";
 
@@ -77,6 +78,7 @@ export default function CamposRequerimiento({ fuentes, valores, pagosFijos }: { 
           Escriba en una línea para qué es este gasto
           <input name="descripcion" required defaultValue={valores?.descripcion ?? ""} placeholder="Ej.: Compra de útiles de oficina para la tesorería" />
         </label>
+        <SugerenciaConcepto />
       </fieldset>
 
       <fieldset className="pregunta">

@@ -12,6 +12,7 @@ import { CLASIFICADORES, SUSTENTOS } from "@/lib/catalogos";
 import { contextoMcp, tiene } from "@/lib/contexto";
 import { codigoCP, fechaHora } from "@/lib/formato";
 import { supabaseServidor } from "@/lib/supabase/server";
+import { siguienteCheque } from "@/lib/pagosFijos";
 import { cambiarEstadoComprobante, editarComprobante, registrarCheque } from "../acciones";
 
 type P = Promise<{ id: string }>;
@@ -22,11 +23,14 @@ export default async function Comprobante({ params, searchParams }: { params: P;
   const sp = await searchParams;
   const ctx = await contextoMcp();
   const supabase = await supabaseServidor();
-  const { data: c } = await supabase
-    .from("comprobantes_pago")
-    .select("*, fuentes(municipalidad), expedientes(numero, anio), perfiles!comprobantes_pago_creado_por_fkey(nombre)")
-    .eq("id", id)
-    .single();
+  const [{ data: c }, chequeSugerido] = await Promise.all([
+    supabase
+      .from("comprobantes_pago")
+      .select("*, fuentes(municipalidad), expedientes(numero, anio), perfiles!comprobantes_pago_creado_por_fkey(nombre)")
+      .eq("id", id)
+      .single(),
+    siguienteCheque(supabase, ctx.mcp.id),
+  ]);
   if (!c) notFound();
 
   const exp = c.expedientes as { numero: number; anio: number } | null;
@@ -76,7 +80,7 @@ export default async function Comprobante({ params, searchParams }: { params: P;
               <div className="panel-cab">Registrar cheque al girar</div>
               <div className="panel-cuerpo">
                 <input type="hidden" name="id" value={id} />
-                <label className="campo">N° de cheque<input name="cheque" required inputMode="numeric" /></label>
+                <label className="campo">N° de cheque (siguiente de la chequera)<input name="cheque" required inputMode="numeric" defaultValue={chequeSugerido} /></label>
                 <BotonConfirmar pregunta="¿Guardar este número de cheque?" detalle="El cheque se escribe una sola vez y ya no se puede cambiar." textoConfirmar="Sí, guardar cheque">Guardar cheque</BotonConfirmar>
                 <span className="pequeno tenue">El cheque se escribe una sola vez. Sin cheque, el comprobante no entra en la rendición.</span>
               </div>

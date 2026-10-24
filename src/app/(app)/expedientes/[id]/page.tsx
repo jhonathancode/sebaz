@@ -11,6 +11,7 @@ import DocumentosExpediente, { Memorando, Orden, type DatosExpediente } from "@/
 import FormatoComprobante from "@/components/formatos/FormatoComprobante";
 import { FormatoNea } from "@/components/formatos/FormatosAlmacen";
 import { cargarExpediente } from "@/lib/documentos";
+import { siguienteCheque } from "@/lib/pagosFijos";
 import SelectFuncion from "@/components/SelectFuncion";
 import { SUSTENTOS } from "@/lib/catalogos";
 import { contextoMcp, tiene } from "@/lib/contexto";
@@ -98,12 +99,13 @@ export default async function Expediente({ params, searchParams }: { params: Par
 
   // Datos de los formatos (vista previa antes de emitir y vista del documento)
   const pagoFijoId = (e as { pago_fijo_id?: string | null }).pago_fijo_id ?? null;
-  const [datosDoc, { data: tesoreroDoc }, { data: pagoFijo }] = await Promise.all([
+  const [datosDoc, { data: tesoreroDoc }, { data: pagoFijo }, chequeSugerido] = await Promise.all([
     cargarExpediente(supabase, id),
     supabase.from("miembros").select("cargo, perfiles(nombre)").eq("mcp_id", ctx.mcp.id).eq("rol", "tesorero").eq("activo", true).maybeSingle(),
     pagoFijoId
       ? supabase.from("pagos_fijos").select("beneficiario, beneficiario_doc").eq("id", pagoFijoId).maybeSingle()
       : Promise.resolve({ data: null as { beneficiario: string | null; beneficiario_doc: string | null } | null }),
+    siguienteCheque(supabase, ctx.mcp.id),
   ]);
   const nombreTesorero = (tesoreroDoc?.perfiles as unknown as { nombre: string } | null)?.nombre ?? "";
   const cargoTesorero = tesoreroDoc?.cargo ?? "Tesorero(a)";
@@ -238,7 +240,7 @@ export default async function Expediente({ params, searchParams }: { params: Par
               </select>
             </label>
             <label className="campo">Número del documento<input name="sustento_numero" placeholder="Ej.: F001-45" /></label>
-            <label className="campo">N° de cheque<input name="cheque" inputMode="numeric" pattern="\d{4,12}" placeholder="Si ya lo giró; si no, después" /></label>
+            <label className="campo">N° de cheque (siguiente de la chequera)<input name="cheque" inputMode="numeric" pattern="\d{4,12}" defaultValue={chequeSugerido} placeholder="Si ya lo giró; si no, después" /></label>
             <SelectFuncion />
           </div>
         </VentanaFlotante>
@@ -250,7 +252,7 @@ export default async function Expediente({ params, searchParams }: { params: Par
       ayuda: cp.cheque ? `Cheque N° ${cp.cheque}.` : "Mientras tanto, si ya giró el cheque, escriba su número aquí.",
       accion: (
         <div className="acciones-fila">
-          {!cp.cheque && puedeRegistrar && <FormCheque cpId={cp.id} expedienteId={id} />}
+          {!cp.cheque && puedeRegistrar && <FormCheque cpId={cp.id} expedienteId={id} sugerido={chequeSugerido} />}
           <Link className="btn contorno" href={`/comprobantes/${cp.id}`}>Abrir comprobante</Link>
         </div>
       ),
@@ -259,7 +261,7 @@ export default async function Expediente({ params, searchParams }: { params: Par
     sigue = {
       texto: `Escriba el número del cheque del comprobante ${codigoCP(cp.numero, cp.origen)}.`,
       ayuda: "Sin cheque el gasto no puede entrar en la rendición. El número se escribe una sola vez.",
-      accion: puedeRegistrar ? <FormCheque cpId={cp.id} expedienteId={id} /> : <Link className="btn primario grande" href={`/comprobantes/${cp.id}`}>Abrir comprobante</Link>,
+      accion: puedeRegistrar ? <FormCheque cpId={cp.id} expedienteId={id} sugerido={chequeSugerido} /> : <Link className="btn primario grande" href={`/comprobantes/${cp.id}`}>Abrir comprobante</Link>,
     };
   } else if (cp.estado === "aprobado") {
     sigue = {
@@ -690,14 +692,14 @@ export default async function Expediente({ params, searchParams }: { params: Par
 }
 
 /** Escribir el N° de cheque sin salir del expediente. */
-function FormCheque({ cpId, expedienteId }: { cpId: string; expedienteId: string }) {
+function FormCheque({ cpId, expedienteId, sugerido = "" }: { cpId: string; expedienteId: string; sugerido?: string }) {
   return (
     <form action={registrarCheque} className="form-cheque">
       <input type="hidden" name="id" value={cpId} />
       <input type="hidden" name="volver_a" value={`/expedientes/${expedienteId}`} />
       <label className="campo">
         N° de cheque
-        <input name="cheque" inputMode="numeric" pattern="\d{4,12}" required placeholder="Solo números" />
+        <input name="cheque" inputMode="numeric" pattern="\d{4,12}" required defaultValue={sugerido} placeholder="Solo números" />
       </label>
       <BotonConfirmar className="btn primario grande" pregunta="¿Guardar el número de cheque?" detalle="Revíselo bien: el número de cheque se escribe una sola vez." textoConfirmar="Sí, guardar">
         Guardar cheque

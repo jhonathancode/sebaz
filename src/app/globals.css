@@ -1040,3 +1040,10 @@ a.kpi:hover { border-color: var(--primario-claro); transform: translateY(-1px); 
 .muni-tab .m-det { font-size: 12.5px; color: var(--tenue); }
 .muni-tab .k-barra { height: 6px; border-radius: 6px; background: var(--linea); overflow: hidden; }
 .muni-tab .k-barra > div { height: 100%; background: var(--primario); }
+.dos-columnas { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; align-items: start; }
+.dos-columnas > .columna { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+@media (max-width: 900px) { .dos-columnas { grid-template-columns: 1fr; } }
+.sugerencia { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-top: 8px; padding: 8px 10px 8px 12px; border-radius: 8px; background: var(--primario-fondo); border: 1px dashed var(--primario-claro); }
+.sugerencia[hidden] { display: none; }
+.sugerencia .s-et { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--primario-texto); }
+.sugerencia .s-txt { flex: 1; font-weight: 600; min-width: 200px; }

@@ -6,6 +6,7 @@ import VentanaFlotante from "@/components/VentanaFlotante";
 import { contextoMcp } from "@/lib/contexto";
 import { codigoCP, fecha, nombrePeriodo, periodoActual, rangoPeriodo, soles } from "@/lib/formato";
 import { supabaseServidor } from "@/lib/supabase/server";
+import { siguienteCheque } from "@/lib/pagosFijos";
 import { crearComprobanteDirecto } from "./acciones";
 
 const ORIGEN: Record<string, string> = { expediente: "Expediente", caja_chica: "Caja chica", directo: "Directo" };
@@ -28,7 +29,7 @@ export default async function Comprobantes({ searchParams }: { searchParams: Par
   if (sp.fuente) q = q.eq("fuente_id", sp.fuente);
   const buscar = (sp.q ?? "").replace(/[,()%*\\]/g, " ").trim();
   if (buscar) q = q.or(`beneficiario.ilike.%${buscar}%,concepto.ilike.%${buscar}%,cheque.ilike.%${buscar}%`);
-  const { data } = await q;
+  const [{ data }, chequeSugerido] = await Promise.all([q, siguienteCheque(supabase, ctx.mcp.id)]);
   const filas = data ?? [];
   const total = filas.filter((f) => f.estado !== "anulado").reduce((s, f) => s + Number(f.importe), 0);
 
@@ -69,7 +70,7 @@ export default async function Comprobantes({ searchParams }: { searchParams: Par
         </form>
         <span className="espacio" />
         <VentanaFlotante boton="Nuevo comprobante directo" titulo="Nuevo comprobante de pago directo" accion={crearComprobanteDirecto} textoGuardar="Guardar en borrador" vistaPrevia={{ base: { tipo: "comprobante_directo", hecho_por: ctx.nombre }, mcp: ctx.mcp }} abierta={sp.nuevo === "1"} error={sp.nuevo === "1" ? sp.error : undefined}>
-          <CamposComprobanteDirecto fuentes={ctx.fuentes} />
+          <CamposComprobanteDirecto fuentes={ctx.fuentes} chequeSugerido={chequeSugerido} />
         </VentanaFlotante>
       </div>
 

@@ -322,7 +322,8 @@ export default async function Inicio() {
         </div>
       </section>
 
-      <div className="rejilla-2" style={{ alignItems: "start" }}>
+      <div className="dos-columnas">
+        <div className="columna">
         {/* 1. Pagos fijos del mes */}
         <section className="panel" aria-label="Pagos fijos del mes">
           <div className="panel-cab">
@@ -396,28 +397,6 @@ export default async function Inicio() {
           </div>
         </section>
 
-        {/* 5. Cuenta del Banco de la Nación */}
-        <section className="panel" aria-label="Cuenta del banco">
-          <div className="panel-cab">
-            Cuenta del {ctx.mcp.banco_nombre || "Banco de la Nación"} en {mesActual}
-            {ctx.mcp.banco_cuenta && <span className="tenue pequeno">N° {ctx.mcp.banco_cuenta}</span>}
-          </div>
-          <table className="tabla">
-            <tbody>
-              {tarjetas.map((t) => (
-                <tr key={t.f.id}><td>Transferencia de {t.f.municipalidad.replace(/^municipalidad (distrital|provincial) de /i, "")}</td><td className="num">+ {soles(t.transferencia)}</td></tr>
-              ))}
-              <tr><td>Cheques girados ({cheques.length})</td><td className="num">− {soles(girado)}</td></tr>
-              <tr style={{ fontWeight: 600 }}><td>Debería quedar en la cuenta</td><td className="num">{soles(recibido - girado)}</td></tr>
-            </tbody>
-          </table>
-          <div className="panel-cuerpo pequeno tenue" style={{ paddingTop: 8 }}>
-            Compare con su estado de cuenta. Si no coincide, puede faltar registrar un cheque o la transferencia aún no llegó.
-          </div>
-        </section>
-      </div>
-
-      <div className="rejilla-2" style={{ alignItems: "start" }}>
         <section className="panel" aria-label="Pendientes">
           <div className="panel-cab">Pendientes</div>
           <ul className="pendientes">
@@ -452,6 +431,27 @@ export default async function Inicio() {
           </ul>
         </section>
 
+        </div>
+        <div className="columna">
+        {/* 5. Cuenta del Banco de la Nación */}
+        <section className="panel" aria-label="Cuenta del banco">
+          <div className="panel-cab">
+            Cuenta del {ctx.mcp.banco_nombre || "Banco de la Nación"} en {mesActual}
+            {ctx.mcp.banco_cuenta && <span className="tenue pequeno">N° {ctx.mcp.banco_cuenta}</span>}
+          </div>
+          <table className="tabla">
+            <tbody>
+              {tarjetas.map((t) => (
+                <tr key={t.f.id}><td>Transferencia de {t.f.municipalidad.replace(/^municipalidad (distrital|provincial) de /i, "")}</td><td className="num">+ {soles(t.transferencia)}</td></tr>
+              ))}
+              <tr><td>Cheques girados ({cheques.length})</td><td className="num">− {soles(girado)}</td></tr>
+              <tr style={{ fontWeight: 600 }}><td>Debería quedar en la cuenta</td><td className="num">{soles(recibido - girado)}</td></tr>
+            </tbody>
+          </table>
+          <div className="panel-cuerpo pequeno tenue" style={{ paddingTop: 8 }}>
+            Compare con su estado de cuenta. Si no coincide, puede faltar registrar un cheque o la transferencia aún no llegó.
+          </div>
+        </section>
         <section className="panel" aria-label="Gastos del mes por función">
           <div className="panel-cab">
             Gastos del mes por función
@@ -475,6 +475,7 @@ export default async function Inicio() {
             )}
           </div>
         </section>
+        </div>
       </div>
 
       {/* 6. Documentos listos para imprimir */}

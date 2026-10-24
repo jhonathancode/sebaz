@@ -122,3 +122,22 @@ export function mesPendiente(pagados: string[], periodo: string): string {
   }
   return `${anio + 1}-01`;
 }
+
+/** Siguiente número de la chequera: el cheque más alto usado + 1 (con los mismos dígitos). */
+export async function siguienteCheque(supabase: Cliente, mcpId: string): Promise<string> {
+  const { data } = await supabase
+    .from("comprobantes_pago")
+    .select("cheque")
+    .eq("mcp_id", mcpId)
+    .not("cheque", "is", null)
+    .order("creado_en", { ascending: false })
+    .limit(200);
+  let mayor = "";
+  for (const c of data ?? []) {
+    const v = String(c.cheque ?? "").replace(/\D/g, "");
+    if (v && (v.length > mayor.length || (v.length === mayor.length && v > mayor))) mayor = v;
+  }
+  if (!mayor) return "";
+  const sig = String(BigInt(mayor) + BigInt(1));
+  return sig.padStart(mayor.length, "0");
+}

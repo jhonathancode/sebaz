@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { contextoMcp } from "@/lib/contexto";
 import { mensajeError, texto, volver } from "@/lib/acciones";
+import { exigirPin } from "@/lib/pin";
 import { supabaseServidor } from "@/lib/supabase/server";
 
 export async function generarRendicion(fd: FormData) {
@@ -11,6 +12,7 @@ export async function generarRendicion(fd: FormData) {
   const periodo = texto(fd, "periodo")!;
   const fuente = texto(fd, "fuente_id")!;
   const destino = `/rendicion?mes=${periodo}&fuente=${fuente}`;
+  await exigirPin(ctx.userId, fd, destino);
   const cps = fd.getAll("cp").map(String).filter(Boolean);
   if (cps.length === 0) volver(destino, "error", "Marque al menos un comprobante de pago.");
   const { data, error } = await supabase.rpc("generar_rendicion", {

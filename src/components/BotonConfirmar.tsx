@@ -14,6 +14,7 @@ export default function BotonConfirmar({
   className = "btn primario",
   disabled = false,
   peligro = false,
+  pin = false,
 }: {
   children: React.ReactNode;
   pregunta: string;
@@ -22,9 +23,12 @@ export default function BotonConfirmar({
   className?: string;
   disabled?: boolean;
   peligro?: boolean;
+  /** Pide el PIN personal antes de enviar (acciones delicadas). */
+  pin?: boolean;
 }) {
   const boton = useRef<HTMLButtonElement>(null);
   const dialogo = useRef<HTMLDialogElement>(null);
+  const campoPin = useRef<HTMLInputElement>(null);
 
   function abrir() {
     const form = boton.current?.form;
@@ -37,6 +41,11 @@ export default function BotonConfirmar({
   }
 
   function confirmar() {
+    if (pin && !/^\d{4,6}$/.test(campoPin.current?.value ?? "")) {
+      campoPin.current?.focus();
+      campoPin.current?.reportValidity();
+      return;
+    }
     dialogo.current?.close();
     boton.current?.form?.requestSubmit();
   }
@@ -53,11 +62,35 @@ export default function BotonConfirmar({
             <p style={{ margin: 0 }}>{detalle}</p>
           </div>
         )}
+        {pin && (
+          <div className="dialogo-cuerpo">
+            <label className="campo">
+              Su PIN personal
+              <input
+                ref={campoPin}
+                name="pin"
+                type="password"
+                inputMode="numeric"
+                autoComplete="off"
+                maxLength={6}
+                pattern="\d{4,6}"
+                placeholder="4 a 6 números"
+                style={{ letterSpacing: ".3em", fontWeight: 700, maxWidth: 200 }}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    confirmar();
+                  }
+                }}
+              />
+            </label>
+          </div>
+        )}
         <div className="dialogo-pie">
           <button type="button" className="btn" onClick={() => dialogo.current?.close()}>
             No, volver
           </button>
-          <button type="button" className={`btn ${peligro ? "peligro" : "primario"}`} onClick={confirmar} autoFocus>
+          <button type="button" className={`btn ${peligro ? "peligro" : "primario"}`} onClick={confirmar} autoFocus={!pin}>
             {textoConfirmar}
           </button>
         </div>

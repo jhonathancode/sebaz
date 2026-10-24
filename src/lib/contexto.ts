@@ -1,7 +1,8 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { cache } from "react";
-import { supabaseServidor } from "@/lib/supabase/server";
+import { supabaseServicio, supabaseServidor } from "@/lib/supabase/server";
+import { VERSION_TERMINOS } from "@/lib/terminos";
 
 export type Rol = "admin" | "tesorero" | "alcalde" | "contador" | "regidor";
 
@@ -46,6 +47,8 @@ export type Contexto = {
   /** Cargo como sale en documentos (o el nombre del rol si no se escribió). */
   cargos: string[];
   fuentes: Fuente[];
+  /** Falta aceptar las condiciones de uso o elegir el PIN (primer ingreso). */
+  ingresoPendiente: { terminos: boolean; pin: boolean } | null;
 };
 
 export const COOKIE_MCP = "mcp_actual";
@@ -92,6 +95,19 @@ export const obtenerContexto = cache(async (): Promise<Contexto> => {
     fuentes = (fs ?? []).filter((f) => f.activo).sort((a, b) => a.tipo.localeCompare(b.tipo));
   }
 
+  // Primer ingreso: condiciones de uso y PIN personal (si la base aún no tiene la actualización, no estorba)
+  let ingresoPendiente: Contexto["ingresoPendiente"] = null;
+  try {
+    const { data, error } = await supabaseServicio().from("perfil_seguridad").select("pin_hash, acepto_terminos_en, acepto_version").eq("user_id", userId).maybeSingle();
+    if (!error) {
+      const terminos = !data?.acepto_terminos_en || data.acepto_version !== VERSION_TERMINOS;
+      const pin = !data?.pin_hash;
+      if (terminos || pin) ingresoPendiente = { terminos, pin };
+    }
+  } catch {
+    ingresoPendiente = null;
+  }
+
   return {
     userId,
     nombre: perfil?.nombre || (claims.email as string | undefined) || "",
@@ -102,6 +118,7 @@ export const obtenerContexto = cache(async (): Promise<Contexto> => {
     roles: vigentes.filter((m) => m.mcp_id === mcpId).map((m) => m.rol as Rol),
     cargos: vigentes.filter((m) => m.mcp_id === mcpId).map((m) => m.cargo || NOMBRE_ROL[m.rol as Rol]),
     fuentes,
+    ingresoPendiente,
   };
 });
 

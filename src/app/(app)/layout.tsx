@@ -1,5 +1,6 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
+import Bienvenida from "@/components/Bienvenida";
 import BotonTema from "@/components/BotonTema";
 import Menu, { BotonMenu, type ItemMenu } from "@/components/Menu";
 import MenuUsuario, { type EnlaceMenu } from "@/components/MenuUsuario";
@@ -26,6 +27,8 @@ async function cambiarMcp(fd: FormData) {
 export default async function MarcoApp({ children }: { children: React.ReactNode }) {
   const [ctx, cookieStore] = await Promise.all([obtenerContexto(), cookies()]);
   const tema = cookieStore.get("tema")?.value;
+  // Primer ingreso: condiciones de uso y PIN, antes de cualquier pantalla
+  if (ctx.ingresoPendiente) return <Bienvenida nombre={ctx.nombre} pendiente={ctx.ingresoPendiente} salir={salir} />;
   // Pendientes de firma (solo para quien aprueba)
   let porAprobar = 0;
   if (ctx.mcp && tiene(ctx, "alcalde", "admin")) {

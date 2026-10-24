@@ -2,6 +2,8 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   poweredByHeader: false,
+  // Los documentos de respaldo de los relevos se suben por formulario (Vercel admite hasta 4,5 MB por envío)
+  experimental: { serverActions: { bodySizeLimit: "4.5mb" } },
   async headers() {
     return [
       {

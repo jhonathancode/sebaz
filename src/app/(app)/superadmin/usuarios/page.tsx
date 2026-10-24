@@ -1,3 +1,4 @@
+import { restablecerPin } from "../../soporte/acciones";
 import { cookies } from "next/headers";
 import Link from "next/link";
 import Avisos, { type ParamsAviso } from "@/components/Avisos";
@@ -75,6 +76,11 @@ export default async function Usuarios({ searchParams }: { searchParams: ParamsA
                     <input type="hidden" name="user_id" value={u.id} />
                     <input type="hidden" name="correo" value={u.correo} />
                     <BotonConfirmar className="btn chico contorno" pregunta={`¿Dar una clave temporal nueva a ${u.correo}?`} detalle="La clave anterior deja de funcionar." textoConfirmar="Sí, generar">Nueva clave</BotonConfirmar>
+                  </form>
+                  <form action={restablecerPin}>
+                    <input type="hidden" name="user_id" value={u.id} />
+                    <input type="hidden" name="volver" value="/superadmin/usuarios" />
+                    <BotonConfirmar className="btn chico contorno" pregunta={`¿Restablecer el PIN de ${u.correo}?`} detalle="Solo si confirmó su identidad. Al ingresar tendrá que elegir un PIN nuevo." textoConfirmar="Sí, restablecer">Restablecer PIN</BotonConfirmar>
                   </form>
                   <form action={bloquearUsuario}>
                     <input type="hidden" name="user_id" value={u.id} />

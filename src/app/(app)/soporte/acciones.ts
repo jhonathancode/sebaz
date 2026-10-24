@@ -125,19 +125,41 @@ export async function agregarUsuario(fd: FormData) {
   volver(destino, "ok", usuario.clave ? "Usuario creado." : "El usuario ya existía: se le agregó el cargo en esta MCP.");
 }
 
+const TIPOS_DOC_RELEVO = ["resolucion", "memorando", "acta", "otro"];
+const MIME_DOC = ["application/pdf", "image/jpeg", "image/png"];
+
+/**
+ * Relevo con respaldo: exige el documento que designa a quien entra (resolución, memorando o
+ * acta) y a quién se llamó para confirmarlo. Todo queda guardado junto al relevo.
+ */
 export async function registrarRelevo(fd: FormData) {
-  await soloSoporte();
+  const ctx = await soloSoporte();
   const mcpId = texto(fd, "mcp_id")!;
   const destino = `/soporte?mcp=${mcpId}`;
   const correo = texto(fd, "correo");
   if (!correo) volver(destino, "error", "Escriba el correo de quien entra.");
+  const tipoDoc = texto(fd, "documento_tipo") ?? "";
+  if (!TIPOS_DOC_RELEVO.includes(tipoDoc)) volver(destino, "error", "Elija qué documento respalda el relevo.");
+  const archivo = fd.get("documento");
+  if (!(archivo instanceof File) || archivo.size === 0) volver(destino, "error", "Suba el documento que designa a quien entra (PDF o foto).");
+  if (archivo.size > 4 * 1024 * 1024) volver(destino, "error", "El documento pesa más de 4 MB. Suba una versión más liviana.");
+  if (!MIME_DOC.includes(archivo.type)) volver(destino, "error", "El documento debe ser PDF, JPG o PNG.");
+  const confirmado = texto(fd, "confirmado_con");
+  if (!confirmado || confirmado.length < 5) volver(destino, "error", "Escriba con quién confirmó el cambio (por ejemplo, el alcalde) y cómo.");
+
   let usuario: { id: string; clave?: string };
   try {
     usuario = await usuarioPorCorreo(correo, texto(fd, "nombre") ?? "");
   } catch (e) {
     volver(destino, "error", (e as Error).message);
   }
-  if (texto(fd, "nombre")) await supabaseServicio().from("perfiles").update({ nombre: texto(fd, "nombre") }).eq("id", usuario.id);
+  const servicio = supabaseServicio();
+  const extension = archivo.type === "application/pdf" ? "pdf" : archivo.type === "image/png" ? "png" : "jpg";
+  const ruta = `${mcpId}/${Date.now()}-${tipoDoc}.${extension}`;
+  const { error: eSubida } = await servicio.storage.from("relevos").upload(ruta, archivo, { contentType: archivo.type });
+  if (eSubida) volver(destino, "error", "No se pudo guardar el documento: " + eSubida.message);
+
+  if (texto(fd, "nombre")) await servicio.from("perfiles").update({ nombre: texto(fd, "nombre") }).eq("id", usuario.id);
   const supabase = await supabaseServidor();
   const { error } = await supabase.rpc("registrar_relevo", {
     p_mcp: mcpId,
@@ -146,9 +168,41 @@ export async function registrarRelevo(fd: FormData) {
     p_rol: texto(fd, "rol"),
     p_fecha: texto(fd, "fecha"),
   });
-  if (error) volver(destino, "error", mensajeError(error));
+  if (error) {
+    await servicio.storage.from("relevos").remove([ruta]);
+    volver(destino, "error", mensajeError(error));
+  }
+  const { error: eRegistro } = await supabase.from("relevos").insert({
+    mcp_id: mcpId,
+    sale: texto(fd, "sale"),
+    entra: usuario.id,
+    rol: texto(fd, "rol"),
+    fecha: texto(fd, "fecha"),
+    documento_tipo: tipoDoc,
+    documento_numero: texto(fd, "documento_numero"),
+    documento_path: ruta,
+    confirmado_con: confirmado,
+    registrado_por: ctx.userId,
+  });
   if (usuario.clave) await guardarClaveTemporal(correo, usuario.clave);
-  volver(destino, "ok", "Relevo registrado: quien sale pierde el acceso desde esa fecha.");
+  revalidatePath("/soporte");
+  if (eRegistro) volver(destino, "ok", "Relevo registrado, pero no se pudo guardar su constancia: " + mensajeError(eRegistro));
+  volver(destino, "ok", "Relevo registrado con su documento de respaldo: quien sale pierde el acceso desde esa fecha.");
+}
+
+/** Borra el PIN de una persona: al ingresar tendrá que elegir uno nuevo. Queda en la auditoría. */
+export async function restablecerPin(fd: FormData) {
+  const ctx = await soloSoporte();
+  const usuario = texto(fd, "user_id")!;
+  const destino = texto(fd, "volver") ?? "/soporte";
+  const servicio = supabaseServicio();
+  const { error } = await servicio
+    .from("perfil_seguridad")
+    .update({ pin_hash: null, pin_actualizado_en: null, pin_intentos: 0, pin_bloqueado_hasta: null })
+    .eq("user_id", usuario);
+  if (error) volver(destino, "error", "No se pudo restablecer el PIN.");
+  await servicio.from("auditoria").insert({ mcp_id: texto(fd, "mcp_id"), user_id: ctx.userId, tabla: "perfil_seguridad", registro_id: usuario, accion: "restablecer_pin" });
+  volver(destino, "ok", "PIN restablecido: la persona elegirá uno nuevo al ingresar.");
 }
 
 export async function cambiarEstadoMcp(fd: FormData) {

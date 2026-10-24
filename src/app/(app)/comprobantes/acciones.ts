@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { exigirPin } from "@/lib/pin";
 import { contextoMcp } from "@/lib/contexto";
 import { mensajeError, numero, texto, volver } from "@/lib/acciones";
 import { supabaseServidor } from "@/lib/supabase/server";
@@ -72,10 +73,11 @@ export async function editarComprobante(fd: FormData) {
 }
 
 export async function cambiarEstadoComprobante(fd: FormData) {
-  await contextoMcp();
+  const ctxCp = await contextoMcp();
   const supabase = await supabaseServidor();
   const id = texto(fd, "id")!;
   const accion = texto(fd, "accion");
+  if (accion === "aprobar") await exigirPin(ctxCp.userId, fd, `/comprobantes/${id}`);
   const cambios: Record<string, string | null> = {};
   if (accion === "aprobar") cambios.estado = "aprobado";
   if (accion === "devolver") Object.assign(cambios, { estado: "borrador", motivo_devolucion: texto(fd, "motivo") });

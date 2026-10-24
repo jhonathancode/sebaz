@@ -29,4 +29,6 @@ psql -v ON_ERROR_STOP=1 -q -At -d prueba_mcp -f tests/pruebas_superadmin_separad
 psql -v ON_ERROR_STOP=1 -q -d prueba_mcp -f migrations/20261024090000_modulos.sql
 psql -v ON_ERROR_STOP=1 -q -d prueba_mcp -f migrations/20261024100000_login_mcp.sql
 psql -v ON_ERROR_STOP=1 -q -d prueba_mcp -f migrations/20261024110000_fuente_despues.sql
+psql -v ON_ERROR_STOP=1 -q -d prueba_mcp -f migrations/20261024120000_pin_terminos_relevos.sql
+psql -v ON_ERROR_STOP=1 -q -d prueba_mcp -f migrations/20261024130000_anular_expediente_total.sql
 psql -v ON_ERROR_STOP=1 -q -d prueba_mcp -f ACTUALIZAR_BASE.sql 2>&1 | grep -v NOTICE | grep -E "actualizada|ERROR"

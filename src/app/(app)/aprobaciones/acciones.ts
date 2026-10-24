@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { contextoMcp, tiene } from "@/lib/contexto";
 import { mensajeError, volver } from "@/lib/acciones";
+import { exigirPin } from "@/lib/pin";
 import { chequeMasUno, comprobanteAutomatico } from "@/lib/comprobanteAuto";
 import { siguienteCheque } from "@/lib/pagosFijos";
 import { supabaseServidor } from "@/lib/supabase/server";
@@ -15,6 +16,7 @@ export async function aprobarEnBloque(fd: FormData) {
   const exps = fd.getAll("exp").map(String);
   const cps = fd.getAll("cp").map(String);
   if (exps.length + cps.length === 0) volver("/aprobaciones", "error", "Marque al menos un documento.");
+  await exigirPin(ctx.userId, fd, "/aprobaciones");
 
   const errores: string[] = [];
   let aprobados = 0;

@@ -18,6 +18,7 @@ export default function VentanaFlotante({
   claseBoton = "btn primario",
   confirmar,
   error,
+  pin = false,
 }: {
   boton: string;
   titulo: string;
@@ -32,6 +33,8 @@ export default function VentanaFlotante({
   confirmar?: string;
   /** Mensaje de error del último intento, se muestra dentro de la ventana. */
   error?: string;
+  /** Pide el PIN personal al guardar. */
+  pin?: boolean;
 }) {
   const ref = useRef<HTMLDialogElement>(null);
 
@@ -64,7 +67,7 @@ export default function VentanaFlotante({
             <button type="button" className="btn" onClick={() => ref.current?.close()}>
               Cancelar
             </button>
-            <BotonConfirmar pregunta={confirmar ?? `¿Está seguro de ${textoGuardar.toLowerCase()}?`} detalle="Revise que los datos estén bien antes de continuar." textoConfirmar={`Sí, ${textoGuardar.toLowerCase()}`}>
+            <BotonConfirmar pin={pin} pregunta={confirmar ?? `¿Está seguro de ${textoGuardar.toLowerCase()}?`} detalle="Revise que los datos estén bien antes de continuar." textoConfirmar={`Sí, ${textoGuardar.toLowerCase()}`}>
               {textoGuardar}
             </BotonConfirmar>
           </div>

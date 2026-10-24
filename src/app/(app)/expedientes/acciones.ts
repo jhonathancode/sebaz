@@ -6,6 +6,7 @@ import { mensajeError, numero, texto, volver } from "@/lib/acciones";
 import { supabaseServidor } from "@/lib/supabase/server";
 import { MESES, periodoActual } from "@/lib/formato";
 import { cargarCatalogoPagosFijos, estadoPagosFijos, pasarAlMes, siguienteCheque } from "@/lib/pagosFijos";
+import { exigirPin } from "@/lib/pin";
 import { comprobanteAutomatico } from "@/lib/comprobanteAuto";
 import { leerCheque } from "../comprobantes/acciones";
 
@@ -68,7 +69,8 @@ export async function crearExpediente(fd: FormData) {
 
   revalidatePath("/expedientes");
   // Pago fijo de la lista con cheque: si quien registra puede aprobar, todo queda listo de una vez.
-  if (pagoFijo && tiene(ctx, "alcalde", "admin")) {
+  if (pagoFijo && tiene(ctx, "alcalde", "admin") && texto(fd, "pin")) {
+    await exigirPin(ctx.userId, fd, ruta(data.id));
     const { error: eA } = await supabase.from("expedientes").update({ estado: "aprobado" }).eq("id", data.id);
     if (!eA) {
       const usado = await comprobanteAutomatico(supabase, ctx.mcp.id, data.id, chequePrevisto ?? (await siguienteCheque(supabase, ctx.mcp.id)), true);
@@ -156,10 +158,11 @@ export async function copiarExpediente(fd: FormData) {
 }
 
 export async function cambiarEstadoExpediente(fd: FormData) {
-  await contextoMcp();
+  const ctxEstado = await contextoMcp();
   const supabase = await supabaseServidor();
   const id = texto(fd, "id")!;
   const accion = texto(fd, "accion");
+  if (accion === "aprobar") await exigirPin(ctxEstado.userId, fd, ruta(id));
   const cambios: Record<string, string | null> = {};
   if (accion === "aprobar") cambios.estado = "aprobado";
   else if (accion === "devolver") {
@@ -183,6 +186,32 @@ export async function cambiarEstadoExpediente(fd: FormData) {
   }
   const msj = { aprobar: "Requerimiento aprobado.", devolver: "Devuelto a borrador.", anular: "Expediente anulado." };
   volver(ruta(id, accion === "aprobar" ? "cotizacion" : undefined), "ok", msj[accion as keyof typeof msj] ?? "Listo.");
+}
+
+/**
+ * Anula un expediente en cualquier punto (incluso completo): su comprobante de pago y su NEA
+ * se anulan con él, todo o nada. Pide el PIN y un motivo. Nada se borra.
+ */
+export async function anularExpedienteTotal(fd: FormData) {
+  const ctx = await contextoMcp();
+  const id = texto(fd, "id")!;
+  await exigirPin(ctx.userId, fd, ruta(id));
+  const supabase = await supabaseServidor();
+  const { data, error } = await supabase.rpc("anular_expediente_total", { p_expediente: id, p_motivo: texto(fd, "motivo") });
+  if (error) volver(ruta(id), "error", mensajeError(error));
+  const [cps, neas, cheques] = String(data ?? "0|0|").split("|");
+  const partes = [
+    Number(cps) ? `${cps} comprobante(s) de pago` : "",
+    Number(neas) ? `${neas} NEA (el stock del almacén se corrigió)` : "",
+  ].filter(Boolean);
+  revalidatePath("/expedientes");
+  revalidatePath("/comprobantes");
+  revalidatePath("/almacen");
+  volver(
+    ruta(id),
+    "ok",
+    `Expediente anulado${partes.length ? ` junto con ${partes.join(" y ")}` : ""}.${cheques ? ` El cheque N° ${cheques} quedó sin uso: archívelo o anótelo como anulado.` : ""}`,
+  );
 }
 
 /** Busca el proveedor por documento; si no existe, lo registra. */
@@ -334,6 +363,7 @@ export async function generarComprobante(fd: FormData) {
   const supabase = await supabaseServidor();
   const id = texto(fd, "expediente_id")!;
   const destino = ruta(id, "comprobante");
+  await exigirPin(ctx.userId, fd, destino);
   const { data: exp } = await supabase
     .from("expedientes")
     .select("tipo, fuente_id, descripcion, clasificador, expediente_items(total, anulado)")

@@ -1221,13 +1221,21 @@ a.kpi:hover { border-color: var(--primario-claro); transform: translateY(-1px); 
 .lm-mcp-texto { align-items: center; }
 .login-logo-mcp { max-height: 150px; border-radius: 50%; }
 
-/* Lista de expedientes: documentos al alcance de un clic */
-.fila:has(.f-docs) { grid-template-columns: 110px minmax(0, 1fr) minmax(0, auto) auto auto; }
-.f-docs { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 6px; max-width: 360px; }
-.doc-chip { font-size: 12px; font-weight: 600; padding: 4px 10px; border-radius: 999px; border: 1px solid var(--primario-claro); background: var(--primario-fondo); color: var(--primario-texto); text-decoration: none; white-space: nowrap; }
-a.doc-chip:hover { background: var(--primario); border-color: var(--primario); color: #fff; }
-.doc-chip.pendiente { border-style: dashed; border-color: var(--borde-fuerte); background: transparent; color: var(--tenue); font-weight: 500; }
-@media (max-width: 1100px) { .fila:has(.f-docs) { grid-template-columns: 110px minmax(0, 1fr) auto; } .f-docs { grid-column: 2 / -1; justify-content: flex-start; max-width: none; } }
+/* Lista de expedientes: documentos como pasos, en orden y al alcance de un clic */
+.doc-pasos { display: flex; flex-wrap: wrap; align-items: center; row-gap: 6px; margin-top: 9px; }
+.doc-par { display: inline-flex; align-items: center; }
+.doc-sep { width: 12px; height: 2px; background: var(--borde-fuerte); opacity: .5; }
+.doc-sep.ok { background: var(--primario); opacity: 1; }
+.doc-paso { display: inline-flex; align-items: center; gap: 6px; padding: 3px 11px 3px 4px; border-radius: 999px; border: 1px solid var(--primario-claro); background: var(--primario-fondo); color: var(--primario-texto); font-size: 12px; font-weight: 600; text-decoration: none; white-space: nowrap; }
+.doc-paso .ic { width: 18px; height: 18px; border-radius: 50%; display: grid; place-items: center; background: var(--primario); color: #fff; font-size: 11px; font-weight: 800; flex: none; }
+/* Gana a la regla general de los enlaces de la lista (que los pone en bloque) */
+.fila .f-desc a.doc-paso { display: inline-flex; overflow: visible; font-size: 12px; font-weight: 600; color: var(--primario-texto); }
+.fila .f-desc a.doc-paso:hover { background: var(--primario); border-color: var(--primario); color: #fff; }
+a.doc-paso:hover .ic { background: #fff; color: var(--primario); }
+.doc-paso.pendiente { border-style: dashed; border-color: var(--borde-fuerte); background: transparent; color: var(--tenue); font-weight: 500; }
+.doc-paso.pendiente .ic { background: transparent; border: 2px solid var(--borde-fuerte); }
+.doc-paso.siguiente { border-color: var(--primario); color: var(--primario-texto); font-weight: 600; }
+.doc-paso.siguiente .ic { border-color: var(--primario); }
 
 /* Celular: la cabecera cabe en una sola fila (menú, marca, nombre, tema y usuario) */
 @media (max-width: 900px) {
@@ -1279,11 +1287,10 @@ a.doc-chip:hover { background: var(--primario); border-color: var(--primario); c
   .buscador { flex: 1 1 100%; }
 
   /* Listas (expedientes, pagos, clientes): una tarjeta por fila */
-  .fila, .fila:has(.f-docs), .fila[style] { grid-template-columns: minmax(0, 1fr) auto !important; gap: 6px 10px; padding: 12px 14px; }
+  .fila, .fila[style] { grid-template-columns: minmax(0, 1fr) auto !important; gap: 6px 10px; padding: 12px 14px; }
   .fila .f-num { grid-column: 1 / -1; grid-row: auto; }
   .fila .f-desc { grid-column: 1 / -1; }
   .fila .f-desc a, .fila .f-desc .f-titulo { white-space: normal; overflow: visible; }
-  .fila .f-docs { grid-column: 1 / -1; justify-content: flex-start; max-width: none; }
   .fila .f-monto { grid-column: 1; text-align: left; font-size: 16px; }
   .fila .f-monto small { display: inline-block; margin: 0 0 0 8px; }
   .fila .f-acc { grid-column: 2; justify-content: flex-end; flex-wrap: wrap; }
@@ -1351,4 +1358,9 @@ a.doc-chip:hover { background: var(--primario); border-color: var(--primario); c
   .filtros { min-width: 0; max-width: 100%; }
   .av-paso a { min-width: 0; }
   .av-det { white-space: normal; }
+}
+@media (max-width: 760px) {
+  .doc-pasos { gap: 6px; }
+  .doc-sep { display: none; }
+  .doc-paso, .fila .f-desc a.doc-paso { font-size: 11.5px; padding: 3px 9px 3px 4px; }
 }

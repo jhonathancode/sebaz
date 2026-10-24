@@ -9,13 +9,6 @@ import { supabaseServidor } from "@/lib/supabase/server";
 import { cargarCatalogoPagosFijos, siguienteCheque } from "@/lib/pagosFijos";
 import { crearExpediente } from "./acciones";
 
-const FASES: Record<string, string> = {
-  requerimiento: "Requerimiento",
-  cotizacion: "Cotizaciones",
-  orden: "Orden",
-  conformidad: "Conformidad",
-  comprobante: "Comprobante de pago",
-};
 const ORDEN_FASES = ["requerimiento", "cotizacion", "orden", "conformidad", "comprobante"];
 /** Documento que corresponde a cada fase (para abrirlo directo desde la lista). */
 const DOC_DE_FASE: Record<string, { clave: string; corto: string }> = {
@@ -174,26 +167,28 @@ export default async function Expedientes({ searchParams }: { searchParams: Para
                 <div className="f-meta">
                   <span className="etq">{TIPOS[e.tipo] ?? e.tipo}</span>
                   {e.area_usuaria && <span>{e.area_usuaria}</span>}
-                  {e.estado !== "anulado" && (
-                    <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
-                      <span className="puntos" aria-hidden="true">
-                        {pasos.map((p, i) => <i key={p} className={i < hecho ? "ok" : undefined} />)}
-                      </span>
-                      {e.estado === "rendido" ? "Rendido" : FASES[e.fase]}
-                    </span>
-                  )}
                 </div>
-              </div>
-              <div className="f-docs" aria-label="Documentos del expediente">
-                {pasos.map((p, i) => {
-                  const d = DOC_DE_FASE[p];
-                  const listo = i < hecho;
-                  return listo ? (
-                    <Link key={p} className="doc-chip" href={`/expedientes/${e.id}/documentos?doc=${d.clave}`} title={`Ver ${d.corto.toLowerCase()}`}>{d.corto}</Link>
-                  ) : (
-                    <span key={p} className="doc-chip pendiente" title="Aún no se genera">{d.corto}</span>
-                  );
-                })}
+                <div className="doc-pasos" aria-label="Documentos del expediente">
+                  {pasos.map((p, i) => {
+                    const d = DOC_DE_FASE[p];
+                    const listo = i < hecho;
+                    const siguiente = i === hecho && e.estado !== "anulado" && e.estado !== "rendido";
+                    return (
+                      <span key={p} className="doc-par">
+                        {i > 0 && <i className={`doc-sep${listo ? " ok" : ""}`} aria-hidden="true" />}
+                        {listo ? (
+                          <Link className="doc-paso" href={`/expedientes/${e.id}/documentos?doc=${d.clave}`} title={`Ver ${d.corto.toLowerCase()}`}>
+                            <span className="ic" aria-hidden="true">✓</span>{d.corto}
+                          </Link>
+                        ) : (
+                          <span className={`doc-paso pendiente${siguiente ? " siguiente" : ""}`} title={siguiente ? "Es el que sigue" : "Aún no se genera"}>
+                            <span className="ic" aria-hidden="true" />{d.corto}
+                          </span>
+                        )}
+                      </span>
+                    );
+                  })}
+                </div>
               </div>
               <div className="f-monto">
                 S/ {soles(e.monto)}

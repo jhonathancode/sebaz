@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { contextoMcp } from "@/lib/contexto";
+import { contextoMcp, tiene } from "@/lib/contexto";
 import { mensajeError, numero, texto, volver } from "@/lib/acciones";
 import { supabaseServidor } from "@/lib/supabase/server";
 import { MESES, periodoActual } from "@/lib/formato";
@@ -52,9 +52,11 @@ export async function crearExpediente(fd: FormData) {
   // Pago fijo de la lista: qué pago y de qué mes (para no pagarlo dos veces)
   const pagoFijo = cabecera.tipo === "pago_fijo" ? texto(fd, "pago_fijo_id") : null;
   const mesPagado = pagoFijo ? texto(fd, "mes_pagado") : null;
+  const chequePrevisto = cabecera.tipo === "pago_fijo" ? (texto(fd, "cheque_previsto") ?? "").replace(/\D/g, "") || null : null;
+  if (chequePrevisto && !/^\d{4,12}$/.test(chequePrevisto)) volver("/expedientes?nuevo=1", "error", "El número de cheque debe tener de 4 a 12 dígitos.");
   const { data, error } = await supabase
     .from("expedientes")
-    .insert({ mcp_id: ctx.mcp.id, ...cabecera, ...(pagoFijo ? { pago_fijo_id: pagoFijo, mes_pagado: mesPagado } : {}) })
+    .insert({ mcp_id: ctx.mcp.id, ...cabecera, ...(pagoFijo ? { pago_fijo_id: pagoFijo, mes_pagado: mesPagado } : {}), ...(chequePrevisto ? { cheque_previsto: chequePrevisto } : {}) })
     .select("id")
     .single();
   if (error || !data) volver("/expedientes?nuevo=1", "error", mensajeError(error));
@@ -65,7 +67,24 @@ export async function crearExpediente(fd: FormData) {
   if (e2) volver(ruta(data.id), "error", "Se creó el expediente pero no sus ítems: " + mensajeError(e2));
 
   revalidatePath("/expedientes");
-  volver(ruta(data.id), "ok", "Requerimiento registrado. Envíelo al alcalde para su aprobación.");
+  // Pago fijo de la lista con cheque: si quien registra puede aprobar, todo queda listo de una vez.
+  if (pagoFijo && tiene(ctx, "alcalde", "admin")) {
+    const { error: eA } = await supabase.from("expedientes").update({ estado: "aprobado" }).eq("id", data.id);
+    if (!eA) {
+      const usado = await comprobanteAutomatico(supabase, ctx.mcp.id, data.id, chequePrevisto ?? (await siguienteCheque(supabase, ctx.mcp.id)), true);
+      if (usado !== null) {
+        revalidatePath("/comprobantes");
+        volver(ruta(data.id), "ok", `Listo: pago fijo aprobado y comprobante de pago generado${usado ? ` con el cheque N° ${usado}` : ""}. Ya puede entrar en la rendición.`);
+      }
+    }
+  }
+  volver(
+    ruta(data.id),
+    "ok",
+    pagoFijo
+      ? "Pago fijo registrado. Cuando el alcalde lo apruebe (en «Por aprobar»), su comprobante de pago se genera y aprueba solo, con el cheque anotado."
+      : "Requerimiento registrado. Envíelo al alcalde para su aprobación.",
+  );
 }
 
 /** Corrige un requerimiento en borrador: los ítems anteriores quedan anulados en el historial. */
@@ -143,10 +162,10 @@ export async function cambiarEstadoExpediente(fd: FormData) {
   if (accion === "aprobar") {
     // Pago fijo de la lista: el comprobante de pago se genera solo, con el cheque siguiente.
     const ctx = await contextoMcp();
-    const usado = await comprobanteAutomatico(supabase, ctx.mcp.id, id, await siguienteCheque(supabase, ctx.mcp.id));
+    const usado = await comprobanteAutomatico(supabase, ctx.mcp.id, id, await siguienteCheque(supabase, ctx.mcp.id), true);
     if (usado !== null) {
       revalidatePath("/comprobantes");
-      volver(ruta(id), "ok", `Requerimiento aprobado y comprobante de pago generado${usado ? ` con el cheque N° ${usado}` : ""}. Solo falta aprobar el comprobante.`);
+      volver(ruta(id), "ok", `Pago fijo aprobado: su comprobante de pago se generó y aprobó${usado ? ` con el cheque N° ${usado}` : ""}. Ya puede entrar en la rendición.`);
     }
   }
   const msj = { aprobar: "Requerimiento aprobado.", devolver: "Devuelto a borrador.", anular: "Expediente anulado." };

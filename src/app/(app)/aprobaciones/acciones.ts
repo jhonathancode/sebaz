@@ -35,10 +35,10 @@ export async function aprobarEnBloque(fd: FormData) {
       continue;
     }
     aprobados++;
-    const usado = await comprobanteAutomatico(supabase, ctx.mcp.id, id, cheque);
+    const usado = await comprobanteAutomatico(supabase, ctx.mcp.id, id, cheque, true);
     if (usado !== null) {
       generados++;
-      if (usado) cheque = chequeMasUno(usado);
+      if (usado && usado === cheque) cheque = chequeMasUno(usado);
     }
   }
 
@@ -47,7 +47,7 @@ export async function aprobarEnBloque(fd: FormData) {
   revalidatePath("/comprobantes");
   revalidatePath("/inicio");
   const partes = [`Se aprobaron ${aprobados} documento(s).`];
-  if (generados) partes.push(`Se generaron ${generados} comprobante(s) de pago de pagos fijos: apruébelos aquí mismo.`);
+  if (generados) partes.push(`Se generaron y aprobaron ${generados} comprobante(s) de pago de pagos fijos: ya pueden entrar en la rendición.`);
   if (errores.length) partes.push(`No se pudieron aprobar ${errores.length}: ${errores[0]}`);
   volver("/aprobaciones", errores.length && !aprobados ? "error" : "ok", partes.join(" "));
 }

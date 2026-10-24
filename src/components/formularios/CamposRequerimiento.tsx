@@ -37,7 +37,7 @@ function detalleFuente(f: Fuente) {
 }
 
 /** Formulario del requerimiento, en preguntas simples. */
-export default function CamposRequerimiento({ fuentes, valores, pagosFijos }: { fuentes: Fuente[]; valores?: ValoresRequerimiento; pagosFijos?: PagoFijoCatalogo[] }) {
+export default function CamposRequerimiento({ fuentes, valores, pagosFijos, chequeSugerido }: { fuentes: Fuente[]; valores?: ValoresRequerimiento; pagosFijos?: PagoFijoCatalogo[]; chequeSugerido?: string }) {
   const tipo = valores?.tipo ?? "compra";
   const fuente = valores?.fuente_id ?? fuentes.find((f) => f.tipo === "distrito")?.id ?? fuentes[0]?.id;
   const hayPropios = fuentes.some((f) => f.tipo === "propios");
@@ -55,7 +55,7 @@ export default function CamposRequerimiento({ fuentes, valores, pagosFijos }: { 
             </label>
           ))}
         </div>
-        {pagosFijos && <SelectorPagoFijo pagos={pagosFijos} periodo={periodoActual()} />}
+        {pagosFijos && <SelectorPagoFijo pagos={pagosFijos} periodo={periodoActual()} chequeSugerido={chequeSugerido} />}
       </fieldset>
 
       <fieldset className="pregunta">

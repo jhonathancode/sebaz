@@ -19,7 +19,7 @@ function escribir(el: HTMLInputElement | HTMLSelectElement | null, valor: string
  * Lista de pagos fijos de la MCP con los meses del año: los pagados salen con ✓
  * y no se pueden elegir; se propone el primer mes pendiente.
  */
-export default function SelectorPagoFijo({ pagos, periodo }: { pagos: PagoFijoCatalogo[]; periodo: string }) {
+export default function SelectorPagoFijo({ pagos, periodo, chequeSugerido = "" }: { pagos: PagoFijoCatalogo[]; periodo: string; chequeSugerido?: string }) {
   const caja = useRef<HTMLDivElement>(null);
   const [anio, setAnio] = useState(Number(periodo.slice(0, 4)));
   const [elegido, setElegido] = useState<{ id: string; mes: string } | null>(null);
@@ -98,6 +98,17 @@ export default function SelectorPagoFijo({ pagos, periodo }: { pagos: PagoFijoCa
               </div>
             );
           })}
+        </div>
+      )}
+      {pagos.length > 0 && (
+        <div className="pf-cheque">
+          <label className="campo">
+            N° de cheque
+            <input name="cheque_previsto" inputMode="numeric" pattern="\d{4,12}" defaultValue={chequeSugerido} placeholder="Siguiente de la chequera" />
+          </label>
+          <span className="pequeno tenue">
+            Viene el siguiente de la chequera. Al aprobar el pago fijo, su comprobante de pago se genera y aprueba solo con este cheque.
+          </span>
         </div>
       )}
       <p className="pequeno tenue" style={{ margin: "8px 0 0" }}>

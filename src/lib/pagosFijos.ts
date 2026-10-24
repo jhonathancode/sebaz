@@ -132,8 +132,16 @@ export async function siguienteCheque(supabase: Cliente, mcpId: string): Promise
     .not("cheque", "is", null)
     .order("creado_en", { ascending: false })
     .limit(200);
+  const { data: previstos } = await supabase
+    .from("expedientes")
+    .select("cheque_previsto")
+    .eq("mcp_id", mcpId)
+    .not("cheque_previsto", "is", null)
+    .neq("estado", "anulado")
+    .order("creado_en", { ascending: false })
+    .limit(100);
   let mayor = "";
-  for (const c of data ?? []) {
+  for (const c of [...(data ?? []), ...(previstos ?? []).map((p) => ({ cheque: p.cheque_previsto }))]) {
     const v = String(c.cheque ?? "").replace(/\D/g, "");
     if (v && (v.length > mayor.length || (v.length === mayor.length && v > mayor))) mayor = v;
   }

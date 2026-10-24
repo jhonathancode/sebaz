@@ -6,7 +6,7 @@ import VentanaFlotante from "@/components/VentanaFlotante";
 import { contextoMcp } from "@/lib/contexto";
 import { fecha, nombrePeriodo, num3, periodoActual, rangoPeriodo, soles } from "@/lib/formato";
 import { supabaseServidor } from "@/lib/supabase/server";
-import { cargarCatalogoPagosFijos } from "@/lib/pagosFijos";
+import { cargarCatalogoPagosFijos, siguienteCheque } from "@/lib/pagosFijos";
 import { crearExpediente } from "./acciones";
 
 const FASES: Record<string, string> = {
@@ -46,7 +46,7 @@ export default async function Expedientes({ searchParams }: { searchParams: Para
     .order("numero", { ascending: false });
   if (q) consulta = consulta.ilike("descripcion", `%${q}%`);
   if (tipo) consulta = consulta.eq("tipo", tipo);
-  const [{ data: lista }, pagosFijos] = await Promise.all([consulta, cargarCatalogoPagosFijos(supabase, ctx.mcp.id)]);
+  const [{ data: lista }, pagosFijos, chequeSugerido] = await Promise.all([consulta, cargarCatalogoPagosFijos(supabase, ctx.mcp.id), siguienteCheque(supabase, ctx.mcp.id)]);
 
   const todos = (lista ?? []).map((e) => ({
     ...e,
@@ -94,7 +94,7 @@ export default async function Expedientes({ searchParams }: { searchParams: Para
           error={sp.nuevo === "1" ? sp.error : undefined}
           ancha
         >
-          <CamposRequerimiento fuentes={ctx.fuentes} pagosFijos={pagosFijos} />
+          <CamposRequerimiento fuentes={ctx.fuentes} pagosFijos={pagosFijos} chequeSugerido={chequeSugerido} />
         </VentanaFlotante>
       </div>
       <Avisos ok={sp.ok} error={sp.error} />

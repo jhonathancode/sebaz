@@ -14,10 +14,16 @@ export function chequeMasUno(cheque: string): string {
  * cheque usado, o null si no correspondía (no es pago fijo de la lista, no hay
  * beneficiario o ya tiene comprobante).
  */
-export async function comprobanteAutomatico(supabase: Cliente, mcpId: string, expedienteId: string, cheque: string): Promise<string | null> {
+export async function comprobanteAutomatico(
+  supabase: Cliente,
+  mcpId: string,
+  expedienteId: string,
+  cheque: string,
+  aprobar = false,
+): Promise<string | null> {
   const { data: e } = await supabase
     .from("expedientes")
-    .select("id, tipo, estado, fecha, descripcion, fuente_id, clasificador, pago_fijo_id, expediente_items(total, anulado)")
+    .select("id, tipo, estado, fecha, descripcion, fuente_id, clasificador, pago_fijo_id, cheque_previsto, expediente_items(total, anulado)")
     .eq("id", expedienteId)
     .single();
   if (!e || e.tipo !== "pago_fijo" || e.estado !== "aprobado" || !e.pago_fijo_id || !e.fuente_id) return null;
@@ -27,7 +33,8 @@ export async function comprobanteAutomatico(supabase: Cliente, mcpId: string, ex
   if (ya && ya.length) return null;
   const importe = (e.expediente_items as { total: number; anulado: boolean }[]).filter((i) => !i.anulado).reduce((s, i) => s + Number(i.total), 0);
   if (importe <= 0) return null;
-  const { error } = await supabase.from("comprobantes_pago").insert({
+  const numeroCheque = e.cheque_previsto || cheque;
+  const { data: cp, error } = await supabase.from("comprobantes_pago").insert({
     mcp_id: mcpId,
     fecha: new Date().toLocaleDateString("en-CA", { timeZone: "America/Lima" }),
     origen: "expediente",
@@ -39,9 +46,11 @@ export async function comprobanteAutomatico(supabase: Cliente, mcpId: string, ex
     importe,
     partida: e.clasificador,
     sustento_tipo: "REC",
-    cheque: cheque || null,
-  });
-  if (error) return null;
+    cheque: numeroCheque || null,
+  }).select("id").single();
+  if (error || !cp) return null;
   await supabase.from("expedientes").update({ fase: "comprobante" }).eq("id", e.id);
-  return cheque || "";
+  // Quien aprobó el pago fijo aprueba también su comprobante (mismo monto, mismo beneficiario)
+  if (aprobar) await supabase.from("comprobantes_pago").update({ estado: "aprobado" }).eq("id", cp.id);
+  return numeroCheque || "";
 }

@@ -15,6 +15,7 @@ import {
   rangoPeriodo,
   soles,
 } from "@/lib/formato";
+import { tieneModulo } from "@/lib/modulos";
 import { cargarCatalogoPagosFijos, estadoPagosFijos } from "@/lib/pagosFijos";
 import { supabaseServidor } from "@/lib/supabase/server";
 import { copiarPagosFijos } from "../expedientes/acciones";
@@ -207,7 +208,7 @@ export default async function Inicio() {
         </div>
       </section>
 
-      {atrasadas.map((a) => (
+      {(tieneModulo(ctx.mcp, "rendicion") ? atrasadas : []).map((a) => (
         <div key={a.f.id} className={`aviso ${a.dias < 0 ? "error" : "alerta"} aviso-accion`}>
           <span>
             <strong>Falta la rendición de {mesAnterior} a {a.f.municipalidad}.</strong> Tiene {a.n} comprobante(s) por S/ {soles(a.monto)} sin rendir. Fecha límite: {fechaLarga(a.limite)} ({cuentaRegresiva(a.dias)}).
@@ -297,7 +298,7 @@ export default async function Inicio() {
               </Link>
             );
           })}
-          {propios && (
+          {propios && tieneModulo(ctx.mcp, "ingresos") && (
             <Link className="tarjeta" href="/ingresos" style={{ gap: 10 }}>
               <span className="etiqueta">Ingresos propios del mes</span>
               <div style={{ display: "flex", alignItems: "baseline", gap: 8, flexWrap: "wrap" }}>
@@ -401,7 +402,7 @@ export default async function Inicio() {
                 </Link>
               </li>
             ))}
-            {porReponer > 0 && (
+            {porReponer > 0 && tieneModulo(ctx.mcp, "almacen") && (
               <li>
                 <Link href="/almacen?filtro=minimo">
                   <span className="cuenta alerta">{porReponer}</span>
@@ -410,6 +411,7 @@ export default async function Inicio() {
                 </Link>
               </li>
             )}
+            {tieneModulo(ctx.mcp, "caja_chica") && (
             <li>
               <Link href="/caja-chica">
                 <span className={`cuenta ${caja ? "ok" : "alerta"}`}>{caja ? "✓" : "!"}</span>
@@ -420,6 +422,7 @@ export default async function Inicio() {
                 <span className="flecha" aria-hidden="true">›</span>
               </Link>
             </li>
+            )}
           </ul>
         </section>
 

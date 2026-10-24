@@ -18,6 +18,8 @@ export type Mcp = {
   capitulo1: Record<string, string>;
   estado: string;
   logo_path?: string | null;
+  /** Módulos habilitados por el superadmin (no existe antes de la actualización). */
+  modulos?: string[] | null;
 };
 
 export type Fuente = {
@@ -106,7 +108,7 @@ export const obtenerContexto = cache(async (): Promise<Contexto> => {
 /** Exige una MCP elegida; si no hay, manda a la pantalla que corresponda. */
 export async function contextoMcp() {
   const ctx = await obtenerContexto();
-  if (!ctx.mcp) redirect(ctx.esSuperadmin ? "/superadmin" : ctx.esSoporte ? "/soporte" : "/sin-acceso");
+  if (!ctx.mcp) redirect(ctx.esSuperadmin ? "/superadmin/inicio" : ctx.esSoporte ? "/soporte" : "/sin-acceso");
   return ctx as Contexto & { mcp: Mcp };
 }
 

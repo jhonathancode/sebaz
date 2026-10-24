@@ -5,6 +5,7 @@ import Menu, { BotonMenu, type ItemMenu } from "@/components/Menu";
 import MenuUsuario, { type EnlaceMenu } from "@/components/MenuUsuario";
 import { COOKIE_MCP, obtenerContexto, tiene } from "@/lib/contexto";
 import { APP_NOMBRE, urlLogo } from "@/lib/formato";
+import { tieneModulo } from "@/lib/modulos";
 import { supabaseServidor } from "@/lib/supabase/server";
 
 async function salir() {
@@ -40,7 +41,8 @@ export default async function MarcoApp({ children }: { children: React.ReactNode
   // El superadmin tiene su propio panel (Sebaz como empresa); las MCP son sus clientes.
   const items: ItemMenu[] = ctx.esSuperadmin
     ? [
-        { href: "/superadmin", texto: "Clientes" },
+        { href: "/superadmin/inicio", texto: "Inicio" },
+        { href: "/superadmin/clientes", texto: "Clientes" },
         { href: "/superadmin/pagos", texto: "Pagos" },
         { href: "/superadmin/planes", texto: "Planes" },
         { href: "/superadmin/usuarios", texto: "Usuarios" },
@@ -52,11 +54,11 @@ export default async function MarcoApp({ children }: { children: React.ReactNode
         { href: "/inicio", texto: "Inicio" },
         ...(tiene(ctx, "alcalde", "admin") ? [{ href: "/aprobaciones", texto: "Por aprobar", n: porAprobar }] : []),
         { href: "/expedientes", texto: "Expedientes" },
-        { href: "/caja-chica", texto: "Caja chica" },
-        { href: "/ingresos", texto: "Ingresos" },
-        { href: "/almacen", texto: "Almacén" },
-        { href: "/rendicion", texto: "Rendición" },
-        { href: "/contabilidad", texto: "Contabilidad" },
+        ...(tieneModulo(ctx.mcp, "caja_chica") ? [{ href: "/caja-chica", texto: "Caja chica" }] : []),
+        ...(tieneModulo(ctx.mcp, "ingresos") ? [{ href: "/ingresos", texto: "Ingresos" }] : []),
+        ...(tieneModulo(ctx.mcp, "almacen") ? [{ href: "/almacen", texto: "Almacén" }] : []),
+        ...(tieneModulo(ctx.mcp, "rendicion") ? [{ href: "/rendicion", texto: "Rendición" }] : []),
+        ...(tieneModulo(ctx.mcp, "contabilidad") ? [{ href: "/contabilidad", texto: "Contabilidad" }] : []),
       ]
     : ctx.esSoporte
       ? [{ href: "/soporte", texto: "Panel de soporte" }]

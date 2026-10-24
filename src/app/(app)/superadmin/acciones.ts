@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { cookies } from "next/headers";
 import { obtenerContexto } from "@/lib/contexto";
 import { mensajeError, numero, texto, volver } from "@/lib/acciones";
+import { modulosDeFormulario } from "@/lib/modulos";
 import { supabaseServicio, supabaseServidor } from "@/lib/supabase/server";
 
 async function soloSuperadmin(destino = "/superadmin") {
@@ -33,8 +34,20 @@ export async function guardarSuscripcion(fd: FormData) {
     })
     .eq("mcp_id", mcp);
   if (error) volver(cliente(mcp), "error", mensajeError(error));
-  revalidatePath("/superadmin");
+  revalidatePath("/superadmin/clientes");
   volver(cliente(mcp), "ok", "Suscripción actualizada.");
+}
+
+/** Qué módulos tiene habilitados un cliente. Quitar un módulo solo lo oculta: no borra datos. */
+export async function guardarModulos(fd: FormData) {
+  await soloSuperadmin();
+  const supabase = await supabaseServidor();
+  const mcp = texto(fd, "mcp_id")!;
+  const { error } = await supabase.from("mcps").update({ modulos: modulosDeFormulario(fd) }).eq("id", mcp);
+  if (error) volver(cliente(mcp), "error", mensajeError(error));
+  revalidatePath("/superadmin/clientes");
+  revalidatePath("/", "layout");
+  volver(cliente(mcp), "ok", "Módulos actualizados. Los datos de los módulos quitados se conservan.");
 }
 
 export async function registrarPago(fd: FormData) {
@@ -55,7 +68,7 @@ export async function registrarPago(fd: FormData) {
     p_comprobante: texto(fd, "comprobante"),
   });
   if (error) volver(cliente(mcp), "error", mensajeError(error));
-  revalidatePath("/superadmin");
+  revalidatePath("/superadmin/clientes");
   volver(cliente(mcp), "ok", "Pago registrado: el vencimiento se extendió y el cliente queda activo.");
 }
 
@@ -65,7 +78,7 @@ export async function anularPago(fd: FormData) {
   const mcp = texto(fd, "mcp_id")!;
   const { error } = await supabase.rpc("anular_pago_cliente", { p_pago: texto(fd, "id"), p_motivo: texto(fd, "motivo") });
   if (error) volver(cliente(mcp), "error", mensajeError(error));
-  revalidatePath("/superadmin");
+  revalidatePath("/superadmin/clientes");
   volver(cliente(mcp), "ok", "Pago anulado: el vencimiento se corrigió.");
 }
 
@@ -78,7 +91,7 @@ export async function cambiarEstadoCliente(fd: FormData) {
   if (!["activa", "prueba", "suspendida"].includes(estado ?? "")) volver(cliente(mcp), "error", "Estado no válido.");
   const { error } = await supabase.from("mcps").update({ estado }).eq("id", mcp);
   if (error) volver(cliente(mcp), "error", mensajeError(error));
-  revalidatePath("/superadmin");
+  revalidatePath("/superadmin/clientes");
   volver(cliente(mcp), "ok", estado === "suspendida" ? "Cliente suspendido: sus usuarios ya no pueden trabajar. Sus datos se conservan." : "Cliente reactivado.");
 }
 
@@ -95,7 +108,7 @@ export async function guardarPlan(fd: FormData) {
   };
   const { error } = id ? await supabase.from("planes").update(datos).eq("id", id) : await supabase.from("planes").insert(datos);
   if (error) volver("/superadmin/planes", "error", mensajeError(error));
-  revalidatePath("/superadmin");
+  revalidatePath("/superadmin/clientes");
   volver("/superadmin/planes", "ok", id ? "Plan actualizado." : "Plan creado.");
 }
 

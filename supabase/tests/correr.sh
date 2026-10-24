@@ -26,4 +26,5 @@ psql -v ON_ERROR_STOP=1 -q -d prueba_mcp -f migrations/20261024070000_superadmin
 psql -v ON_ERROR_STOP=1 -q -At -d prueba_mcp -f tests/pruebas_superadmin.sql 2>&1 | grep -E 'OK|PASARON|ERROR'
 psql -v ON_ERROR_STOP=1 -q -d prueba_mcp -f migrations/20261024080000_superadmin_separado.sql
 psql -v ON_ERROR_STOP=1 -q -At -d prueba_mcp -f tests/pruebas_superadmin_separado.sql 2>&1 | grep -E 'OK|PASARON|ERROR'
+psql -v ON_ERROR_STOP=1 -q -d prueba_mcp -f migrations/20261024090000_modulos.sql
 psql -v ON_ERROR_STOP=1 -q -d prueba_mcp -f ACTUALIZAR_BASE.sql 2>&1 | grep -v NOTICE | grep -E "actualizada|ERROR"

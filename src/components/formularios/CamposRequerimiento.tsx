@@ -64,7 +64,7 @@ export default function CamposRequerimiento({ fuentes, valores }: { fuentes: Fue
             </label>
           ))}
         </div>
-        {!hayPropios && <p className="pequeno tenue" style={{ margin: "6px 0 0" }}>La opción «Ingresos propios» aparece cuando soporte termina de configurar la MCP.</p>}
+        {!hayPropios && <p className="pequeno tenue" style={{ margin: "6px 0 0" }}>La opción «Ingresos propios» aún no está activa en su MCP. Avise a soporte.</p>}
       </fieldset>
 
       <fieldset className="pregunta">

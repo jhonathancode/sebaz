@@ -47,22 +47,22 @@
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
     color-scheme: dark;
-    --fondo: #0e1520;
-    --panel: #151f2b;
-    --panel-2: #1b2734;
-    --texto: #e2e9f1;
-    --suave: #b3c1cf;
-    --tenue: #91a1b2;
-    --borde: #2c3b4d;
-    --borde-fuerte: #46586d;
-    --linea: #243243;
-    --cabecera: #0a1a30;
-    --cabecera-texto: #e8f0f8;
-    --cabecera-sub: #9fb4cc;
-    --menu: #121c28;
-    --tabla-cab: #1e2b3a;
-    --seleccion: #1b3150;
-    --marcado: #172a42;
+    --fondo: #000000;
+    --panel: #121212;
+    --panel-2: #1a1a1a;
+    --texto: #ececec;
+    --suave: #c4c4c4;
+    --tenue: #9e9e9e;
+    --borde: #2b2b2b;
+    --borde-fuerte: #474747;
+    --linea: #232323;
+    --cabecera: #000000;
+    --cabecera-texto: #f2f2f2;
+    --cabecera-sub: #a9a9a9;
+    --menu: #0b0b0b;
+    --tabla-cab: #1e1e1e;
+    --seleccion: #262626;
+    --marcado: #1c1c1c;
     --primario: #4a8de0;
     --primario-hover: #64a0ea;
     --primario-claro: #2b4e7a;
@@ -87,22 +87,22 @@
 }
 :root[data-theme="dark"] {
   color-scheme: dark;
-  --fondo: #0e1520;
-  --panel: #151f2b;
-  --panel-2: #1b2734;
-  --texto: #e2e9f1;
-  --suave: #b3c1cf;
-  --tenue: #91a1b2;
-  --borde: #2c3b4d;
-  --borde-fuerte: #46586d;
-  --linea: #243243;
-  --cabecera: #0a1a30;
-  --cabecera-texto: #e8f0f8;
-  --cabecera-sub: #9fb4cc;
-  --menu: #121c28;
-  --tabla-cab: #1e2b3a;
-  --seleccion: #1b3150;
-  --marcado: #172a42;
+  --fondo: #000000;
+  --panel: #121212;
+  --panel-2: #1a1a1a;
+  --texto: #ececec;
+  --suave: #c4c4c4;
+  --tenue: #9e9e9e;
+  --borde: #2b2b2b;
+  --borde-fuerte: #474747;
+  --linea: #232323;
+  --cabecera: #000000;
+  --cabecera-texto: #f2f2f2;
+  --cabecera-sub: #a9a9a9;
+  --menu: #0b0b0b;
+  --tabla-cab: #1e1e1e;
+  --seleccion: #262626;
+  --marcado: #1c1c1c;
   --primario: #4a8de0;
   --primario-hover: #64a0ea;
   --primario-claro: #2b4e7a;
@@ -472,8 +472,8 @@ form.desplegable-seccion label.campo { padding: 4px 4px 0; }
 
 /* ------------------------------------------------------------ inicio */
 :root { --pista: #e3e9f1; }
-:root[data-theme="dark"] { --pista: #243243; }
-@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --pista: #243243; } }
+:root[data-theme="dark"] { --pista: #232323; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --pista: #232323; } }
 .saludo {
   border: 1px solid var(--borde); border-radius: 12px; padding: 18px 20px; display: flex; flex-wrap: wrap; gap: 14px; align-items: center;
   background: linear-gradient(120deg, var(--primario-fondo) 0%, var(--panel) 70%);
@@ -600,3 +600,32 @@ details.historial-plegable > summary.panel-cab { justify-content: flex-start; }
 .empezar-texto span { opacity: .9; font-size: 14px; }
 .empezar-flecha { font-size: 28px; flex: none; }
 @media (max-width: 600px) { .empezar { padding: 16px; gap: 12px; } .empezar-flecha { display: none; } }
+
+/* ------------------------------------------------ contenido centrado */
+/* En pantallas anchas todo se alinea a un ancho cómodo y centrado. */
+:root { --ancho: 1320px; }
+.cabecera { padding-inline: max(20px, calc((100% - var(--ancho)) / 2)); }
+.menu { padding-inline: max(16px, calc((100% - var(--ancho)) / 2)); }
+.ventana { width: calc(100% - 32px); max-width: var(--ancho); margin: 0 auto 16px; }
+.hoja { width: 100%; margin-inline: auto; }
+.columnas > .principal > .hoja { margin-inline: 0; }
+@media (max-width: 640px) { .ventana { width: 100%; margin: 0; } }
+@media print { .ventana { width: auto; max-width: none; margin: 0; } }
+
+/* ---------------------------------- documentos como hojas de papel */
+.chip.activo { background: var(--primario); border-color: var(--primario); color: #fff; font-weight: 600; }
+.chip.activo:hover { color: #fff; }
+.vista-pestanas { padding: 12px 14px 0; }
+.mesa {
+  background: var(--mesa); padding: 24px 16px; display: flex; flex-direction: column;
+  align-items: center; gap: 24px; overflow-x: auto;
+}
+.vista-previa .mesa { margin-top: 12px; border-top: 1px solid var(--borde); max-height: 760px; overflow-y: auto; }
+.mesa > .hoja { max-width: 900px; width: 100%; margin: 0; box-shadow: 0 2px 10px rgba(0,0,0,.18); border-radius: 2px; }
+:root { --mesa: #e6ebf1; }
+:root[data-theme="dark"] { --mesa: #050505; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --mesa: #050505; } }
+@media print {
+  .mesa { background: none; padding: 0; gap: 0; display: block; overflow: visible; }
+  .mesa > .hoja { box-shadow: none; max-width: none; }
+}

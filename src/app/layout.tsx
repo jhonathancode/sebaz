@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { cookies } from "next/headers";
+import Mayusculas from "@/components/Mayusculas";
 import { APP_NOMBRE } from "@/lib/formato";
 import "./globals.css";
 
@@ -18,7 +19,10 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
         {/* eslint-disable-next-line @next/next/no-page-custom-font */}
         <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet" />
       </head>
-      <body>{children}</body>
+      <body>
+        <Mayusculas />
+        {children}
+      </body>
     </html>
   );
 }

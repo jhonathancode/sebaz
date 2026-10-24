@@ -6,6 +6,8 @@ import Estado from "@/components/Estado";
 import Motivo from "@/components/Motivo";
 import CamposRequerimiento, { nombreFuente } from "@/components/formularios/CamposRequerimiento";
 import VentanaFlotante from "@/components/VentanaFlotante";
+import DocumentosExpediente from "@/components/formatos/DocumentosExpediente";
+import { cargarExpediente } from "@/lib/documentos";
 import SelectFuncion from "@/components/SelectFuncion";
 import { SUSTENTOS } from "@/lib/catalogos";
 import { contextoMcp, tiene } from "@/lib/contexto";
@@ -24,7 +26,7 @@ import {
 } from "../acciones";
 
 type Params = Promise<{ id: string }>;
-type Busqueda = Promise<{ paso?: string; fase?: string; ok?: string; error?: string; editar?: string }>;
+type Busqueda = Promise<{ paso?: string; fase?: string; ok?: string; error?: string; editar?: string; ver?: string }>;
 
 const TIPO_GASTO: Record<string, string> = {
   compra: "Compra de bienes",
@@ -237,6 +239,14 @@ export default async function Expediente({ params, searchParams }: { params: Par
         ]),
     { clave: "comprobante", nombre: "Comprobante de pago", listo: !!cp },
   ].filter((d) => d.listo);
+  // Vista previa: por defecto, el último documento que se generó.
+  const verClave = docs.some((x) => x.clave === sp.ver) ? sp.ver! : docs[docs.length - 1].clave;
+  const [datosDoc, { data: tesoreroDoc }] = await Promise.all([
+    cargarExpediente(supabase, id),
+    supabase.from("miembros").select("cargo, perfiles(nombre)").eq("mcp_id", ctx.mcp.id).eq("rol", "tesorero").eq("activo", true).maybeSingle(),
+  ]);
+  const nombreTesorero = (tesoreroDoc?.perfiles as unknown as { nombre: string } | null)?.nombre ?? "";
+  const cargoTesorero = tesoreroDoc?.cargo ?? "Tesorero(a)";
 
   const nombreTabla: Record<string, string> = {
     expedientes: "el expediente",
@@ -426,30 +436,44 @@ export default async function Expediente({ params, searchParams }: { params: Par
         </section>
       )}
 
-      <div className="rejilla-2" style={{ alignItems: "start" }}>
-        <section className="panel">
-          <div className="panel-cab">
-            Documentos para imprimir
-            {docs.length > 1 && <Link className="btn chico primario" href={`/expedientes/${id}/documentos?doc=todo`}>Imprimir todo</Link>}
+      <section className="panel vista-previa">
+        <div className="panel-cab">
+          <span>Así va su documento</span>
+          <div className="acciones-fila">
+            <Link className="btn chico contorno" href={`/expedientes/${id}/documentos?doc=${verClave}`}>Ver en grande</Link>
+            <Link className="btn chico primario" href={`/expedientes/${id}/documentos?doc=${verClave}&imprimir=1`}>Imprimir o guardar PDF</Link>
+            {docs.length > 1 && (
+              <Link className="btn chico contorno" href={`/expedientes/${id}/documentos?doc=todo&imprimir=1`}>Imprimir todo el expediente</Link>
+            )}
           </div>
-          <div className="panel-cuerpo">
-            <div className="chips">
-              {docs.map((d) => (
-                <Link key={d.clave} className="chip" href={`/expedientes/${id}/documentos?doc=${d.clave}`}>
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><path d="M14 2v6h6" /></svg>
-                  {d.nombre}
-                </Link>
-              ))}
-            </div>
-          </div>
-        </section>
+        </div>
+        <div className="chips vista-pestanas" role="tablist" aria-label="Documentos del expediente">
+          {docs.map((x) => (
+            <Link
+              key={x.clave}
+              role="tab"
+              aria-selected={x.clave === verClave}
+              scroll={false}
+              className={`chip${x.clave === verClave ? " activo" : ""}`}
+              href={`/expedientes/${id}?ver=${x.clave}${sp.paso ? `&paso=${sp.paso}` : ""}`}
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><path d="M14 2v6h6" /></svg>
+              {x.nombre}
+            </Link>
+          ))}
+        </div>
+        <div className="mesa">
+          <DocumentosExpediente d={datosDoc} mcp={ctx.mcp} clave={verClave} tesorero={nombreTesorero} cargo={cargoTesorero} />
+        </div>
+      </section>
 
+      <div>
         <section className="panel">
           <div className="panel-cab">¿Se equivocó?</div>
           <div className="panel-cuerpo otras">
             {e.estado === "borrador" && puedeRegistrar && (
               <div>
-                <VentanaFlotante boton="Corregir requerimiento" titulo={`Corregir requerimiento ${num3(e.numero)}-${e.anio}`} accion={editarRequerimiento} textoGuardar="Guardar cambios" abierta={sp.editar === "1"} ancha claseBoton="btn contorno">
+                <VentanaFlotante boton="Corregir requerimiento" titulo={`Corregir requerimiento ${num3(e.numero)}-${e.anio}`} accion={editarRequerimiento} textoGuardar="Guardar cambios" abierta={sp.editar === "1"} error={sp.editar === "1" ? sp.error : undefined} ancha claseBoton="btn contorno">
                   <input type="hidden" name="id" value={id} />
                   <CamposRequerimiento
                     fuentes={ctx.fuentes}

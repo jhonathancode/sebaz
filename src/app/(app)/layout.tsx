@@ -49,6 +49,8 @@ export default async function MarcoApp({ children }: { children: React.ReactNode
   }
   if (ctx.esSoporte) enlaces.push({ href: "/soporte", texto: "Panel de soporte", grupo: "soporte" });
 
+  // Si la MCP no tiene la fuente "propios", la base no tiene la última actualización.
+  const baseDesactualizada = ctx.esSoporte && !!ctx.mcp && !ctx.fuentes.some((f) => f.tipo === "propios");
   const cargo = [...ctx.cargos, ...(ctx.esSoporte ? ["Soporte"] : [])].join(" · ") || "Sin cargo vigente";
 
   return (
@@ -80,7 +82,15 @@ export default async function MarcoApp({ children }: { children: React.ReactNode
         </div>
       </header>
       <Menu items={items} />
-      <main className="ventana">{children}</main>
+      <main className="ventana">
+        {baseDesactualizada && (
+          <div className="aviso error no-imprimir">
+            <strong>Base de datos sin actualizar.</strong> Falta ejecutar <code>supabase/ACTUALIZAR_BASE.sql</code> en Supabase (SQL Editor → Run).
+            Mientras tanto no se puede registrar «Pago fijo» ni pagar con «Ingresos propios». Este aviso solo lo ve soporte.
+          </div>
+        )}
+        {children}
+      </main>
     </>
   );
 }

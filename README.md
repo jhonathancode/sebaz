@@ -44,6 +44,7 @@ Las pruebas de estas reglas están en `supabase/tests/pruebas_reglas.sql`.
    - `20261019000000_esquema_inicial.sql`
    - `20261019010000_tipos_y_propios.sql` (pago fijo, ingresos propios como fuente, corrección de requerimientos)
    - `20261023000000_cuadres.sql` (la caja chica y la rendición solo se cierran si cuadran exacto)
+   - O, más fácil: pegar `supabase/ACTUALIZAR_BASE.sql` (trae las dos últimas juntas y se puede repetir sin problema)
 3. En **Authentication → Sign In / Providers → Email**, desactive **Allow new users to sign up**. Los usuarios solo los crea soporte.
 4. En **Authentication → Users → Add user**, cree su usuario de soporte (correo y clave).
 5. En **SQL Editor**, conviértalo en soporte:

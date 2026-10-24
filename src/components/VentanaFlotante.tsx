@@ -17,6 +17,7 @@ export default function VentanaFlotante({
   ancha = false,
   claseBoton = "btn primario",
   confirmar,
+  error,
 }: {
   boton: string;
   titulo: string;
@@ -29,6 +30,8 @@ export default function VentanaFlotante({
   claseBoton?: string;
   /** Pregunta de confirmación antes de guardar. */
   confirmar?: string;
+  /** Mensaje de error del último intento, se muestra dentro de la ventana. */
+  error?: string;
 }) {
   const ref = useRef<HTMLDialogElement>(null);
 
@@ -49,7 +52,14 @@ export default function VentanaFlotante({
               ×
             </button>
           </div>
-          <div className="vf-cuerpo">{children}</div>
+          <div className="vf-cuerpo">
+            {error && (
+              <div className="aviso error" role="alert">
+                <strong>No se pudo guardar.</strong> {error}
+              </div>
+            )}
+            {children}
+          </div>
           <div className="vf-pie">
             <button type="button" className="btn" onClick={() => ref.current?.close()}>
               Cancelar

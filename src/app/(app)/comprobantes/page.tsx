@@ -61,7 +61,7 @@ export default async function Comprobantes({ searchParams }: { searchParams: Par
         <button className="btn" type="submit">Filtrar</button>
         </form>
         <span className="espacio" />
-        <VentanaFlotante boton="Nuevo comprobante directo" titulo="Nuevo comprobante de pago directo" accion={crearComprobanteDirecto} textoGuardar="Guardar en borrador" abierta={sp.nuevo === "1"}>
+        <VentanaFlotante boton="Nuevo comprobante directo" titulo="Nuevo comprobante de pago directo" accion={crearComprobanteDirecto} textoGuardar="Guardar en borrador" abierta={sp.nuevo === "1"} error={sp.nuevo === "1" ? sp.error : undefined}>
           <CamposComprobanteDirecto fuentes={ctx.fuentes} />
         </VentanaFlotante>
       </div>

@@ -36,8 +36,11 @@ begin
   end if;
   return new;
 end $$;
+drop trigger if exists cotizaciones_pago_fijo on cotizaciones;
 create trigger cotizaciones_pago_fijo before insert on cotizaciones for each row execute function validar_pago_fijo();
+drop trigger if exists ordenes_pago_fijo on ordenes;
 create trigger ordenes_pago_fijo before insert on ordenes for each row execute function validar_pago_fijo();
+drop trigger if exists conformidades_pago_fijo on conformidades;
 create trigger conformidades_pago_fijo before insert on conformidades for each row execute function validar_pago_fijo();
 
 -- 2. Ingresos propios como fuente ------------------------------------------
@@ -57,6 +60,7 @@ begin
   on conflict (mcp_id, tipo) do nothing;
   return new;
 end $$;
+drop trigger if exists mcps_fuente_propios on mcps;
 create trigger mcps_fuente_propios after insert on mcps for each row execute function crear_fuente_propios();
 
 -- La rendición a una municipalidad puede incluir lo pagado con ingresos propios
@@ -108,5 +112,6 @@ begin
   end if;
   return new;
 end $$;
+drop trigger if exists expediente_items_borrador on expediente_items;
 create trigger expediente_items_borrador before insert or update on expediente_items
   for each row execute function validar_item_expediente();

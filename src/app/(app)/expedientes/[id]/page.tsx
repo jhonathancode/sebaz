@@ -2,6 +2,7 @@ import Link from "next/link";
 import BotonConfirmar from "@/components/BotonConfirmar";
 import BotonPdf from "@/components/BotonPdf";
 import { notFound } from "next/navigation";
+import AutoDocumento from "@/components/AutoDocumento";
 import Avisos from "@/components/Avisos";
 import Estado from "@/components/Estado";
 import Motivo from "@/components/Motivo";
@@ -255,6 +256,7 @@ export default async function Expediente({ params, searchParams }: { params: Par
             {fijo && (
               <>
                 <label className="campo">A quién se paga<input name="beneficiario" required placeholder="Nombre completo" defaultValue={pagoFijo?.beneficiario ?? ""} /></label>
+                <AutoDocumento doc="beneficiario_doc" nombre="beneficiario" />
                 <label className="campo">DNI o RUC<input name="beneficiario_doc" inputMode="numeric" maxLength={11} defaultValue={pagoFijo?.beneficiario_doc ?? ""} /></label>
               </>
             )}

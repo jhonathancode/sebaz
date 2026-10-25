@@ -1,3 +1,4 @@
+import AutoDocumento from "@/components/AutoDocumento";
 import SelectFuncion from "@/components/SelectFuncion";
 import { nombreFuente } from "./CamposRequerimiento";
 import SugerenciaConcepto from "./SugerenciaConcepto";
@@ -24,7 +25,8 @@ export default function CamposComprobanteDirecto({ fuentes, chequeSugerido = "" 
           </select>
         </label>
         <label className="campo">Beneficiario<input name="beneficiario" required /></label>
-        <label className="campo">DNI o RUC<input name="beneficiario_doc" inputMode="numeric" /></label>
+        <label className="campo">DNI o RUC<input name="beneficiario_doc" inputMode="numeric" maxLength={11} /></label>
+        <AutoDocumento doc="beneficiario_doc" nombre="beneficiario" />
         <label className="campo ancho">Concepto<input name="concepto" required placeholder="Pago de dieta de regidor, mes de octubre 2026" /></label>
         <div className="ancho"><SugerenciaConcepto campo="concepto" tambienItem={false} /></div>
         <label className="campo">Importe S/<input name="importe" required inputMode="decimal" /></label>

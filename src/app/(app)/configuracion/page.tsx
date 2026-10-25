@@ -1,3 +1,4 @@
+import AutoDocumento from "@/components/AutoDocumento";
 import Avisos, { type ParamsAviso } from "@/components/Avisos";
 import BotonConfirmar from "@/components/BotonConfirmar";
 import Encabezado from "@/components/Encabezado";
@@ -31,6 +32,7 @@ export default async function Configuracion({ searchParams }: { searchParams: Pa
       <label className="campo">Concepto<input name="concepto" required defaultValue={p?.concepto ?? ""} placeholder="Ej.: DIETA DEL ALCALDE, HONORARIOS DEL ASESOR CONTABLE" /></label>
       <label className="campo">A quién se paga<input name="beneficiario" defaultValue={p?.beneficiario ?? ""} placeholder="Nombre completo" /></label>
       <label className="campo">DNI o RUC<input name="beneficiario_doc" inputMode="numeric" maxLength={11} defaultValue={p?.beneficiario_doc ?? ""} /></label>
+      <AutoDocumento doc="beneficiario_doc" nombre="beneficiario" />
       <label className="campo">Monto mensual S/<input name="monto" required inputMode="decimal" defaultValue={p ? String(p.monto) : ""} placeholder="0.00" /></label>
       <label className="campo">
         Se paga con
@@ -92,6 +94,7 @@ export default async function Configuracion({ searchParams }: { searchParams: Pa
                     RUC
                     <input name="ruc" defaultValue={m.ruc ?? ""} inputMode="numeric" maxLength={11} placeholder="11 dígitos" />
                   </label>
+                  <AutoDocumento doc="ruc" nombre="nombre" direccion="direccion" />
                   <label className="campo">
                     Dirección
                     <input name="direccion" defaultValue={m.direccion ?? ""} placeholder="Av., jirón o calle, Mz., Lt." />

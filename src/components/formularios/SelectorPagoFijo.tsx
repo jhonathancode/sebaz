@@ -81,7 +81,40 @@ export default function SelectorPagoFijo({ pagos, periodo }: { pagos: PagoFijoCa
   const nPend = info.filter((x) => x.atrasado).length;
 
   const sel = pagos.find((p) => p.id === elegido?.id);
-  const resumen = sel && elegido ? `${sel.concepto} · ${nombreMes(elegido.mes)}` : null;
+
+  /** Suelta el pago elegido y vacía lo que se había llenado, para volver a ver la lista. */
+  function cambiarPago() {
+    setElegido(null);
+    setAviso(null);
+    const form = caja.current?.closest("form");
+    escribir(form?.querySelector<HTMLInputElement>('input[name="descripcion"]') ?? null, "");
+    window.dispatchEvent(new CustomEvent("sebaz:limpiar-items"));
+  }
+
+  // Con un pago elegido se oculta todo lo demás: solo se ve el pago que se hará
+  if (sel && elegido) {
+    const [ea, em] = elegido.mes.split("-").map(Number);
+    return (
+      <div className="selector-pf" ref={caja}>
+        <input type="hidden" name="pago_fijo_id" value={elegido.id} />
+        <input type="hidden" name="mes_pagado" value={elegido.mes} />
+        <div className="pfx-elegido">
+          <span className="pfx-elegido-et">Pago fijo elegido</span>
+          <div className="pfx-elegido-cuerpo">
+            <div className="pfx-datos">
+              <span className="pfx-elegido-concepto">{sel.concepto}</span>
+              {sel.beneficiario && <span className="pfx-quien">A: {sel.beneficiario}{sel.beneficiario_doc ? ` · ${sel.beneficiario_doc}` : ""}</span>}
+            </div>
+            <div className="pfx-elegido-mes">
+              <span className="pfx-estado">{MESES[em - 1].toUpperCase()} {ea}</span>
+              <span className="pfx-elegido-monto">S/ {soles(sel.monto)}</span>
+            </div>
+          </div>
+          <button type="button" className="btn chico contorno" onClick={cambiarPago}>Cambiar pago</button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="selector-pf" ref={caja}>
@@ -181,15 +214,7 @@ export default function SelectorPagoFijo({ pagos, periodo }: { pagos: PagoFijoCa
           </div>
         </>
       )}
-      {resumen ? (
-        <div className="pf-resumen">
-          <span className="s-et">Se va a pagar</span>
-          <b>{resumen}</b>
-          <span>S/ {soles(sel!.monto)}</span>
-        </div>
-      ) : (
-        pagos.length > 0 && <p className="pequeno tenue" style={{ margin: "10px 0 0" }}>Al elegir, se llenan solos el «para qué es» y el monto.</p>
-      )}
+      {pagos.length > 0 && <p className="pequeno tenue" style={{ margin: "10px 0 0" }}>Al elegir, se llenan solos el «para qué es» y el monto.</p>}
     </div>
   );
 }

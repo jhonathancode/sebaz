@@ -61,11 +61,13 @@ export default function ItemsRequerimiento({ inicial }: { inicial?: { cantidad: 
       if (Array.isArray(filasNuevas) && filasNuevas.length) setFilas(filasNuevas);
     };
     const reiniciar = () => setFilas([nuevaFila()]);
+    window.addEventListener("sebaz:limpiar-items", reiniciar);
     window.addEventListener("sebaz:llenar-items", llenar);
     window.addEventListener("sebaz:reiniciar", reiniciar);
     return () => {
       window.removeEventListener("sebaz:llenar-items", llenar);
       window.removeEventListener("sebaz:reiniciar", reiniciar);
+      window.removeEventListener("sebaz:limpiar-items", reiniciar);
     };
   }, []);
 

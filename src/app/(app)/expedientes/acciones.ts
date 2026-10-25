@@ -5,7 +5,7 @@ import { contextoMcp, tiene } from "@/lib/contexto";
 import { mensajeError, numero, texto, volver } from "@/lib/acciones";
 import { supabaseServidor } from "@/lib/supabase/server";
 import { MESES, periodoActual } from "@/lib/formato";
-import { cargarCatalogoPagosFijos, estadoPagosFijos, pasarAlMes, siguienteCheque } from "@/lib/pagosFijos";
+import { cargarCatalogoPagosFijos, estadoPagosFijos, mesPendiente, pasarAlMes, siguienteCheque } from "@/lib/pagosFijos";
 import { exigirPin } from "@/lib/pin";
 import { comprobanteAutomatico } from "@/lib/comprobanteAuto";
 import { leerCheque } from "../comprobantes/acciones";
@@ -53,6 +53,18 @@ export async function crearExpediente(fd: FormData) {
   // Pago fijo de la lista: qué pago y de qué mes (para no pagarlo dos veces)
   const pagoFijo = cabecera.tipo === "pago_fijo" ? texto(fd, "pago_fijo_id") : null;
   const mesPagado = pagoFijo ? texto(fd, "mes_pagado") : null;
+  // Solo se paga el mes que sigue, en orden (también se comprueba aquí por si se saltaron la pantalla)
+  if (pagoFijo && mesPagado) {
+    const catalogo = await cargarCatalogoPagosFijos(supabase, ctx.mcp.id, false);
+    const elegido = catalogo.find((p) => p.id === pagoFijo);
+    if (elegido) {
+      const pendiente = mesPendiente(elegido.pagados, periodoActual());
+      if (mesPagado !== pendiente) {
+        const [a, m] = pendiente.split("-").map(Number);
+        volver("/expedientes?nuevo=1", "error", `No se puede pagar ese mes todavía: está pendiente el mes de ${MESES[m - 1].toUpperCase()} ${a}. Pague primero ese.`);
+      }
+    }
+  }
   const chequePrevisto = (texto(fd, "cheque_previsto") ?? "").replace(/\D/g, "") || null;
   if (chequePrevisto && !/^\d{4,12}$/.test(chequePrevisto)) volver("/expedientes?nuevo=1", "error", "El número de cheque debe tener de 4 a 12 dígitos.");
   const { data, error } = await supabase

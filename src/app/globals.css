@@ -1464,3 +1464,31 @@ form:has(input[name="tipo"][value="pago_fijo"]:checked) .pin-auto { display: blo
 /* Gestión anterior (antes de un cambio de tesorería) */
 .etq.rojo { background: var(--rojo-fondo); border-color: var(--rojo-borde); color: var(--rojo); }
 .etq.ambar { background: var(--ambar-fondo); border-color: var(--ambar-borde); color: var(--ambar); }
+
+/* Pagos fijos: lista compacta (sirve para 20 o más) */
+.pfx-herr { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center; margin-bottom: 10px; }
+.pfx-buscar { flex: 1 1 220px; min-width: 0; }
+.pfx-filtros { display: flex; gap: 6px; flex-wrap: wrap; }
+.pfx-lista { display: flex; flex-direction: column; border: 1px solid var(--borde); border-radius: 12px; background: var(--panel); max-height: 400px; overflow-y: auto; }
+.pfx-fila { border-top: 1px solid var(--linea); }
+.pfx-fila:first-child { border-top: none; }
+.pfx-fila.elegido { background: var(--primario-fondo); box-shadow: inset 3px 0 0 var(--primario); }
+.pfx-linea { display: grid; grid-template-columns: minmax(0, 1fr) auto auto auto auto; gap: 8px 12px; align-items: center; padding: 9px 12px 9px 14px; }
+.pfx-datos { display: flex; flex-direction: column; min-width: 0; }
+.pfx-concepto { font-weight: 700; font-size: 13.5px; text-transform: uppercase; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pfx-quien { font-size: 12px; color: var(--tenue); text-transform: uppercase; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pfx-estado { font-size: 11.5px; font-weight: 700; padding: 3px 9px; border-radius: 999px; white-space: nowrap; border: 1px solid var(--azul-borde); background: var(--primario-fondo); color: var(--primario-texto); }
+.pfx-estado.pend { background: var(--ambar-fondo); border-color: var(--ambar-borde); color: var(--ambar); }
+.pfx-monto { font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.pfx-abrir { width: 30px; height: 30px; display: grid; place-items: center; border: 1px solid var(--borde); border-radius: 8px; background: var(--panel); color: var(--tenue); cursor: pointer; }
+.pfx-abrir:hover { color: var(--primario-texto); border-color: var(--primario-claro); }
+.pfx-detalle { display: flex; flex-direction: column; gap: 10px; padding: 2px 14px 14px; }
+.pf-mes.bloqueado { opacity: .6; border-style: dashed; }
+.pf-mes.bloqueado:hover { border-color: var(--ambar-borde); color: var(--ambar); opacity: 1; }
+@media (max-width: 760px) {
+  .pfx-linea { grid-template-columns: minmax(0, 1fr) auto; }
+  .pfx-estado { grid-column: 1; justify-self: start; }
+  .pfx-monto { grid-column: 2; grid-row: 2; }
+  .pfx-linea > .btn { grid-column: 1; justify-self: start; }
+  .pfx-abrir { grid-column: 2; grid-row: 1; justify-self: end; }
+}

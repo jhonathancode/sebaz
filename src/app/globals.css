@@ -1500,3 +1500,10 @@ form:has(input[name="tipo"][value="pago_fijo"]:checked) .pin-auto { display: blo
 .pfx-elegido-concepto { font-size: 17px; font-weight: 800; text-transform: uppercase; }
 .pfx-elegido-mes { display: flex; align-items: center; gap: 12px; }
 .pfx-elegido-monto { font-size: 20px; font-weight: 800; font-variant-numeric: tabular-nums; }
+
+/* Consulta automática de RUC y DNI */
+.auto-doc { font-size: 12.5px; margin-top: -4px; }
+.auto-doc-buscando { color: var(--tenue); }
+.auto-doc-ok { display: inline-block; padding: 3px 10px; border-radius: 8px; background: var(--primario-fondo); border: 1px solid var(--azul-borde); color: var(--primario-texto); font-weight: 600; }
+.auto-doc-ok.mal { background: var(--rojo-fondo); border-color: var(--rojo-borde); color: var(--rojo); }
+.auto-doc-aviso { color: var(--ambar); }

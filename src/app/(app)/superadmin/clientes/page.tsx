@@ -1,3 +1,4 @@
+import AutoDocumento from "@/components/AutoDocumento";
 import Link from "next/link";
 import Avisos, { type ParamsAviso } from "@/components/Avisos";
 import VentanaFlotante from "@/components/VentanaFlotante";
@@ -75,6 +76,7 @@ export default async function Superadmin({ searchParams }: { searchParams: Param
           <div className="rejilla-2">
             <label className="campo">Nombre<input name="nombre" required placeholder="Municipalidad del Centro Poblado ..." /></label>
             <label className="campo">RUC<input name="ruc" inputMode="numeric" maxLength={11} /></label>
+            <AutoDocumento doc="ruc" nombre="nombre" />
             <label className="campo">Distrito<input name="distrito" defaultValue="Perené" /></label>
             <label className="campo">Provincia<input name="provincia" defaultValue="Chanchamayo" /></label>
             <label className="campo">Departamento<input name="departamento" defaultValue="Junín" /></label>

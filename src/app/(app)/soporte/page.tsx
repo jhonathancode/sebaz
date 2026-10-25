@@ -1,3 +1,4 @@
+import AutoDocumento from "@/components/AutoDocumento";
 import { cookies } from "next/headers";
 import BotonConfirmar from "@/components/BotonConfirmar";
 import Link from "next/link";
@@ -132,7 +133,8 @@ export default async function Soporte({ searchParams }: { searchParams: ParamsAv
                   <input type="hidden" name="mcp_id" value={elegida.id} />
                   <label className="campo">Correo<input name="correo" type="email" required /></label>
                   <label className="campo">Nombre completo<input name="nombre" required /></label>
-                  <label className="campo">DNI<input name="dni" inputMode="numeric" /></label>
+                  <label className="campo">DNI<input name="dni" inputMode="numeric" maxLength={8} /></label>
+                  <AutoDocumento doc="dni" nombre="nombre" />
                   <label className="campo">
                     Rol
                     <select name="rol">
@@ -263,7 +265,8 @@ export default async function Soporte({ searchParams }: { searchParams: ParamsAv
               <div className="panel-cab">Dar de alta una MCP</div>
               <div className="panel-cuerpo">
                 <label className="campo">Nombre<input name="nombre" required placeholder="Municipalidad del Centro Poblado ..." /></label>
-                <label className="campo">RUC<input name="ruc" inputMode="numeric" /></label>
+                <label className="campo">RUC<input name="ruc" inputMode="numeric" maxLength={11} /></label>
+                <AutoDocumento doc="ruc" nombre="nombre" />
                 <label className="campo">Distrito<input name="distrito" defaultValue="Perené" /></label>
                 <label className="campo">Provincia<input name="provincia" defaultValue="Chanchamayo" /></label>
                 <label className="campo">Departamento<input name="departamento" defaultValue="Junín" /></label>

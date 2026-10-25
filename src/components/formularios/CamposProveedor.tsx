@@ -1,5 +1,6 @@
 "use client";
 
+import AutoDocumento from "@/components/AutoDocumento";
 import { useRef, useState } from "react";
 
 export type ProveedorConocido = { num_doc: string; razon_social: string; direccion: string | null; telefono: string | null };
@@ -28,6 +29,7 @@ export default function CamposProveedor({ proveedores, prefijo = "prov" }: { pro
 
   return (
     <div ref={caja} className="rejilla-2">
+      <AutoDocumento doc="num_doc" nombre="razon_social" direccion="direccion" />
       <datalist id={`${prefijo}-docs`}>
         {proveedores.map((p) => (
           <option key={p.num_doc} value={p.num_doc}>{p.razon_social}</option>

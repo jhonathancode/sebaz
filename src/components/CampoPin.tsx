@@ -1,6 +1,7 @@
 "use client";
 
-import { forwardRef, useState } from "react";
+import { forwardRef, useState, useTransition } from "react";
+import { verificarMiPin } from "@/app/(app)/cuenta/acciones";
 
 /**
  * Campo de PIN: seis casillas y teclado numérico en pantalla.
@@ -14,15 +15,49 @@ const CampoPin = forwardRef<
     required?: boolean;
     onEnter?: () => void;
     teclado?: boolean;
+    /** Muestra el botón "Verificar": si el PIN es correcto se oculta el teclado y sale el aviso. */
+    verificar?: boolean;
   }
->(function CampoPin({ name, etiqueta, required, onEnter, teclado = true }, ref) {
+>(function CampoPin({ name, etiqueta, required, onEnter, teclado = true, verificar = false }, ref) {
   const [valor, setValor] = useState("");
-  const poner = (v: string) => setValor(v.replace(/\D/g, "").slice(0, 6));
+  const [correcto, setCorrecto] = useState(false);
+  const [aviso, setAviso] = useState("");
+  const [pendiente, empezar] = useTransition();
+  const poner = (v: string) => {
+    setAviso("");
+    setValor(v.replace(/\D/g, "").slice(0, 6));
+  };
+  const comprobar = () =>
+    empezar(async () => {
+      const r = await verificarMiPin(valor);
+      if (r.ok) {
+        setCorrecto(true);
+        setAviso("");
+      } else {
+        setAviso(r.mensaje);
+        setValor("");
+      }
+    });
+  const cambiar = () => {
+    setCorrecto(false);
+    setValor("");
+    setAviso("");
+  };
 
   return (
     <div className="pin-campo">
-      {etiqueta && <span className="pin-etiqueta">{etiqueta}</span>}
-      <div className="pin-casillas">
+      {correcto && (
+        <div className="pin-correcto" role="status">
+          <span className="pin-visto">✓</span>
+          <span>
+            <b>PIN correcto</b>
+            <small>Identidad confirmada</small>
+          </span>
+          <button type="button" className="pin-cambiar" onClick={cambiar}>Cambiar</button>
+        </div>
+      )}
+      {!correcto && etiqueta && <span className="pin-etiqueta">{etiqueta}</span>}
+      <div className="pin-casillas" style={correcto ? { display: "none" } : undefined}>
         {[0, 1, 2, 3, 4, 5].map((i) => (
           <span key={i} className={`pin-casilla ${i < valor.length ? "llena" : ""} ${i === valor.length ? "activa" : ""}`} aria-hidden>
             {i < valor.length ? "●" : ""}
@@ -49,7 +84,7 @@ const CampoPin = forwardRef<
           className="pin-real"
         />
       </div>
-      {teclado && (
+      {teclado && !correcto && (
         <div className="pin-teclado">
           {["1", "2", "3", "4", "5", "6", "7", "8", "9"].map((n) => (
             <button key={n} type="button" tabIndex={-1} onClick={() => poner(valor + n)}>
@@ -67,7 +102,13 @@ const CampoPin = forwardRef<
           </button>
         </div>
       )}
-      <span className="pin-ayuda">De 4 a 6 números</span>
+      {verificar && !correcto && valor.length >= 4 && (
+        <button type="button" className="btn primario pin-verificar" onClick={comprobar} disabled={pendiente}>
+          {pendiente ? "Verificando…" : "Verificar PIN"}
+        </button>
+      )}
+      {aviso && <span className="pin-error" role="alert">{aviso}</span>}
+      {!correcto && <span className="pin-ayuda">De 4 a 6 números</span>}
     </div>
   );
 });

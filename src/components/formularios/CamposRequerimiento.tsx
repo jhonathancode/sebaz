@@ -110,7 +110,7 @@ export default function CamposRequerimiento({ fuentes, valores, pagosFijos, cheq
       {!valores && puedeAprobar && (
         <fieldset className="pregunta pin-auto">
           <legend>6. Aprobar de una vez <span className="legend-nota">(opcional, solo pagos fijos)</span></legend>
-          <CampoPin name="pin" etiqueta="Su PIN" />
+          <CampoPin name="pin" etiqueta="Su PIN" verificar />
           <p className="pequeno tenue" style={{ margin: "6px 0 0" }}>Con el PIN, el pago fijo se aprueba y su comprobante se genera en el acto. Sin PIN, queda registrado para aprobarlo después.</p>
         </fieldset>
       )}

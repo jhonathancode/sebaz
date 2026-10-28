@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { obtenerContexto } from "@/lib/contexto";
 import { texto, volver } from "@/lib/acciones";
-import { exigirPin, hashPin, pinValido } from "@/lib/pin";
+import { comprobarPin, exigirPin, hashPin, pinValido } from "@/lib/pin";
 import { supabaseServicio } from "@/lib/supabase/server";
 import { VERSION_TERMINOS } from "@/lib/terminos";
 
@@ -48,4 +48,10 @@ export async function cambiarPin(fd: FormData) {
     .eq("user_id", ctx.userId);
   if (error) volver("/cuenta", "error", "No se pudo cambiar el PIN.");
   volver("/cuenta", "ok", "PIN cambiado.");
+}
+
+/** Verifica el PIN de quien está conectado, sin hacer nada más. */
+export async function verificarMiPin(pin: string): Promise<{ ok: boolean; mensaje: string }> {
+  const ctx = await obtenerContexto();
+  return comprobarPin(ctx.userId, String(pin ?? "").trim());
 }

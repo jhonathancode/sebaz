@@ -67,3 +67,38 @@ export async function exigirPin(userId: string, fd: FormData, destino: string): 
   await servicio.from("perfil_seguridad").update({ pin_intentos: intentos }).eq("user_id", userId);
   volver(destino, "error", `PIN incorrecto. Le quedan ${MAX_INTENTOS - intentos} intento(s).`);
 }
+
+/** Comprueba el PIN sin ejecutar ninguna acción (para avisar "PIN correcto" antes de guardar). Cuenta los intentos fallidos igual que exigirPin. */
+export async function comprobarPin(userId: string, pin: string): Promise<{ ok: boolean; mensaje: string }> {
+  let registro: { pin_hash: string | null; pin_intentos: number; pin_bloqueado_hasta: string | null } | null = null;
+  try {
+    const { data, error } = await supabaseServicio()
+      .from("perfil_seguridad")
+      .select("pin_hash, pin_intentos, pin_bloqueado_hasta")
+      .eq("user_id", userId)
+      .maybeSingle();
+    if (error) return { ok: true, mensaje: "" };
+    registro = data;
+  } catch {
+    return { ok: true, mensaje: "" };
+  }
+  if (!registro?.pin_hash) return { ok: true, mensaje: "" };
+  if (registro.pin_bloqueado_hasta && new Date(registro.pin_bloqueado_hasta) > new Date()) {
+    return { ok: false, mensaje: "PIN bloqueado por varios intentos fallidos. Espere unos minutos o pida a soporte que lo restablezca." };
+  }
+  const servicio = supabaseServicio();
+  if (/^\d{4,6}$/.test(pin) && pinCorrecto(pin, registro.pin_hash)) {
+    if (registro.pin_intentos > 0) await servicio.from("perfil_seguridad").update({ pin_intentos: 0, pin_bloqueado_hasta: null }).eq("user_id", userId);
+    return { ok: true, mensaje: "" };
+  }
+  const intentos = registro.pin_intentos + 1;
+  if (intentos >= MAX_INTENTOS) {
+    await servicio
+      .from("perfil_seguridad")
+      .update({ pin_intentos: 0, pin_bloqueado_hasta: new Date(Date.now() + MINUTOS_BLOQUEO * 60000).toISOString() })
+      .eq("user_id", userId);
+    return { ok: false, mensaje: `PIN incorrecto ${MAX_INTENTOS} veces: quedó bloqueado ${MINUTOS_BLOQUEO} minutos.` };
+  }
+  await servicio.from("perfil_seguridad").update({ pin_intentos: intentos }).eq("user_id", userId);
+  return { ok: false, mensaje: `PIN incorrecto. Le quedan ${MAX_INTENTOS - intentos} intento(s).` };
+}

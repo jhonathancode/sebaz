@@ -60,7 +60,7 @@ export default function Motivo({
             </label>
             <span className="pequeno tenue">{texto.trim().length} / 10 caracteres mínimo</span>
             {pin && (
-              <CampoPin name="pin" etiqueta="Su PIN personal" required />
+              <CampoPin name="pin" etiqueta="Su PIN personal" required verificar />
             )}
           </div>
           <div className="dialogo-pie">

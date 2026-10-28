@@ -79,6 +79,9 @@ export type PagoFijoCatalogo = {
   clasificador: string | null;
   activo: boolean;
   pagados: string[];
+  /** Redacción de la última vez (ya aprobada o mejorada): se reutiliza cambiando solo el mes y el año. */
+  descripcion_modelo: string | null;
+  mes_modelo: string | null;
 };
 
 /** Lista de pagos fijos y meses pagados (vacía si la base aún no tiene la actualización). */
@@ -106,6 +109,8 @@ export async function cargarCatalogoPagosFijos(supabase: Cliente, mcpId: string,
     clasificador: p.clasificador,
     activo: p.activo,
     pagados: (porPago.get(p.id) ?? []).sort(),
+    descripcion_modelo: (p.descripcion_modelo as string | null | undefined) ?? null,
+    mes_modelo: (p.mes_modelo as string | null | undefined) ?? null,
   }));
 }
 

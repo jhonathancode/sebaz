@@ -1507,3 +1507,4 @@ form:has(input[name="tipo"][value="pago_fijo"]:checked) .pin-auto { display: blo
 .auto-doc-ok { display: inline-block; padding: 3px 10px; border-radius: 8px; background: var(--primario-fondo); border: 1px solid var(--azul-borde); color: var(--primario-texto); font-weight: 600; }
 .auto-doc-ok.mal { background: var(--rojo-fondo); border-color: var(--rojo-borde); color: var(--rojo); }
 .auto-doc-aviso { color: var(--ambar); }
+.pfx-guardada { font-size: 12px; font-weight: 600; color: var(--primario-texto); margin-top: 2px; }

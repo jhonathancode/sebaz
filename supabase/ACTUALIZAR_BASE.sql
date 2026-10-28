@@ -1543,5 +1543,38 @@ drop trigger if exists expedientes_fijar_flujo on expedientes;
 create trigger expedientes_fijar_flujo before insert on expedientes
   for each row execute function fijar_flujo_pago_fijo();
 
+-- Un pago fijo simple (dietas) no lleva cotizaciones, orden ni conformidad; con expediente completo sí
+create or replace function validar_pago_fijo() returns trigger
+language plpgsql as $$
+begin
+  if exists (select 1 from expedientes where id = new.expediente_id and tipo = 'pago_fijo' and not flujo_completo) then
+    raise exception 'Un pago fijo simple no lleva cotizaciones, orden ni conformidad.';
+  end if;
+  return new;
+end $$;
+
+-- El comprobante exige conformidad en todo expediente, salvo el pago fijo simple
+create or replace function validar_cp_expediente() returns trigger
+language plpgsql as $$
+declare v_tipo text; v_sin text; v_completo boolean;
+begin
+  if new.expediente_id is not null then
+    select tipo, sin_almacen_motivo, flujo_completo into v_tipo, v_sin, v_completo from expedientes where id = new.expediente_id and estado = 'aprobado';
+    if v_tipo is null then
+      raise exception 'El requerimiento del expediente no está aprobado.';
+    end if;
+    if (v_tipo <> 'pago_fijo' or v_completo)
+       and not exists (select 1 from conformidades where expediente_id = new.expediente_id and not anulado) then
+      raise exception 'El expediente no tiene conformidad: aún no se puede generar el comprobante de pago.';
+    end if;
+    if v_tipo = 'compra' and v_sin is null
+       and not exists (select 1 from notas_entrada where expediente_id = new.expediente_id and not anulado) then
+      raise exception 'Primero registre la entrada al almacén (NEA) de los bienes comprados, o indique por qué no pasan por almacén.';
+    end if;
+  end if;
+  return new;
+end $$;
+
+
 commit;
 select 'Base de datos actualizada' as resultado;

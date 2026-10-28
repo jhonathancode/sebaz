@@ -58,7 +58,7 @@ const CampoPin = forwardRef<
       )}
       {!correcto && etiqueta && <span className="pin-etiqueta">{etiqueta}</span>}
       <div className="pin-casillas" style={correcto ? { display: "none" } : undefined}>
-        {[0, 1, 2, 3, 4, 5].map((i) => (
+        {Array.from({ length: Math.min(6, Math.max(4, valor.length + 1)) }, (_, i) => i).map((i) => (
           <span key={i} className={`pin-casilla ${i < valor.length ? "llena" : ""} ${i === valor.length ? "activa" : ""}`} aria-hidden>
             {i < valor.length ? "●" : ""}
           </span>

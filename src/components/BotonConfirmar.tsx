@@ -65,7 +65,7 @@ export default function BotonConfirmar({
         )}
         {pin && (
           <div className="dialogo-cuerpo">
-            <CampoPin ref={campoPin} name="pin" etiqueta="Su PIN personal" onEnter={confirmar} />
+            <CampoPin ref={campoPin} name="pin" etiqueta="Su PIN personal" onEnter={confirmar} verificar />
           </div>
         )}
         <div className="dialogo-pie">

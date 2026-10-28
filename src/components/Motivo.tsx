@@ -1,5 +1,6 @@
 "use client";
 
+import CampoPin from "@/components/CampoPin";
 import { useRef, useState } from "react";
 
 /**
@@ -59,10 +60,7 @@ export default function Motivo({
             </label>
             <span className="pequeno tenue">{texto.trim().length} / 10 caracteres mínimo</span>
             {pin && (
-              <label className="campo" style={{ maxWidth: 220 }}>
-                Su PIN personal
-                <input name="pin" type="password" inputMode="numeric" autoComplete="off" maxLength={6} pattern="\d{4,6}" required placeholder="4 a 6 números" style={{ letterSpacing: ".3em", fontWeight: 700 }} />
-              </label>
+              <CampoPin name="pin" etiqueta="Su PIN personal" required />
             )}
           </div>
           <div className="dialogo-pie">

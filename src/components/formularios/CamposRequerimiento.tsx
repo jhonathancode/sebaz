@@ -24,7 +24,7 @@ export type ValoresRequerimiento = {
 const TIPOS = [
   { valor: "compra", titulo: "Compra de bienes", texto: "Útiles, materiales, herramientas. Lleva cotizaciones, orden de compra y entra al almacén (NEA)." },
   { valor: "servicio", titulo: "Servicio externo", texto: "Un trabajo por un tiempo: alquiler, mantenimiento, asesoría. Lleva cotizaciones y orden de servicio." },
-  { valor: "pago_fijo", titulo: "Pago fijo", texto: "Dietas del alcalde y regidores, personal contratado. No lleva cotizaciones." },
+  { valor: "pago_fijo", titulo: "Pago fijo", texto: "Dietas del alcalde y regidores, personal contratado, asesores. No lleva cotizaciones." },
 ];
 
 /** Nombre corto y claro de cada fuente de dinero. */
@@ -111,7 +111,7 @@ export default function CamposRequerimiento({ fuentes, valores, pagosFijos, cheq
         <fieldset className="pregunta pin-auto">
           <legend>6. Aprobar de una vez <span className="legend-nota">(opcional, solo pagos fijos)</span></legend>
           <CampoPin name="pin" etiqueta="Su PIN" verificar />
-          <p className="pequeno tenue" style={{ margin: "6px 0 0" }}>Con el PIN, el pago fijo se aprueba y su comprobante se genera en el acto. Sin PIN, queda registrado para aprobarlo después.</p>
+          <p className="pequeno tenue" style={{ margin: "6px 0 0" }}>Con el PIN, el pago fijo se aprueba en el acto (las dietas también generan su comprobante; los demás siguen con orden y conformidad). Sin PIN, queda registrado para aprobarlo después.</p>
         </fieldset>
       )}
 

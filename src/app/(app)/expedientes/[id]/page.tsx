@@ -98,7 +98,9 @@ export default async function Expediente({ params, searchParams }: { params: Par
   const conAlmacen = e.tipo === "compra";
   const sinAlmacen = (e as { sin_almacen_motivo?: string | null }).sin_almacen_motivo ?? null;
   const elegida = cots.find((c) => c.elegida);
-  const fijo = e.tipo === "pago_fijo";
+  const completoFijo = e.tipo === "pago_fijo" && !!(e as { flujo_completo?: boolean }).flujo_completo;
+  // Pago fijo simple (dietas): solo requerimiento y comprobante
+  const fijo = e.tipo === "pago_fijo" && !completoFijo;
   const anulado = e.estado === "anulado";
   const aprobado = e.estado === "aprobado" || e.estado === "rendido";
   // Gestión anterior (antes de un cambio de tesorería): 30 días de gracia y luego bloqueado
@@ -133,7 +135,9 @@ export default async function Expediente({ params, searchParams }: { params: Par
     ...(fijo
       ? []
       : [
-          { id: "cotizacion", titulo: "Cotizaciones", detalle: elegida ? `Elegida: ${prov(elegida.proveedores)?.razon_social ?? ""}` : `${cots.length} registrada(s)`, hecho: !!elegida },
+          ...(completoFijo && elegida
+            ? []
+            : [{ id: "cotizacion", titulo: completoFijo ? "Proveedor" : "Cotizaciones", detalle: elegida ? `Elegida: ${prov(elegida.proveedores)?.razon_social ?? ""}` : completoFijo ? "Pendiente" : `${cots.length} registrada(s)`, hecho: !!elegida }]),
           { id: "orden", titulo: e.tipo === "compra" ? "Orden de compra" : "Orden de servicio", detalle: orden ? `N° ${num3(orden.numero)}-${orden.anio}` : "Pendiente", hecho: !!orden },
           { id: "conformidad", titulo: "Conformidad", detalle: conformidad ? `Memorando ${num3(conformidad.memorando_numero)}` : "Pendiente", hecho: !!conformidad },
           ...(conAlmacen
@@ -310,7 +314,7 @@ export default async function Expediente({ params, searchParams }: { params: Par
     ...(fijo
       ? []
       : [
-          { clave: "cotizaciones", nombre: "Cuadro comparativo", listo: cots.length > 0 },
+          { clave: "cotizaciones", nombre: "Cuadro comparativo", listo: cots.length > 0 && !completoFijo },
           { clave: "orden", nombre: e.tipo === "compra" ? "Orden de compra" : "Orden de servicio", listo: !!orden },
           { clave: "conformidad", nombre: "Memorando de conformidad", listo: !!conformidad },
         ]),
@@ -327,7 +331,7 @@ export default async function Expediente({ params, searchParams }: { params: Par
         nodo: (
           <Orden
             mcp={ctx.mcp}
-            d={{ ...datosDoc, orden: { numero: null, anio: anioHoy, fecha: hoy, plazo: elegida.plazo, concepto: e.descripcion, tipo: e.tipo, tipo_proceso: "Adjudicación directa", monto: elegida.monto, proveedores: elegida.proveedores } } as unknown as DatosExpediente}
+            d={{ ...datosDoc, orden: { numero: null, anio: anioHoy, fecha: hoy, plazo: elegida.plazo, concepto: e.descripcion, tipo: e.tipo === "compra" ? "compra" : "servicio", tipo_proceso: "Adjudicación directa", monto: elegida.monto, proveedores: elegida.proveedores } } as unknown as DatosExpediente}
           />
         ),
       };

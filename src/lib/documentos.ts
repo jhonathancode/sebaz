@@ -66,5 +66,7 @@ export function listaDocumentos(d: Awaited<ReturnType<typeof cargarExpediente>>)
       listo: !!cp,
     },
   ];
-  return e?.tipo === "pago_fijo" ? lista.filter((x) => x.clave === "requerimiento" || x.clave === "comprobante") : lista;
+  if (e?.tipo !== "pago_fijo") return lista;
+  // Pago fijo simple (dietas): solo requerimiento y comprobante. Con expediente completo: sin cuadro comparativo.
+  return e.flujo_completo ? lista.filter((x) => x.clave !== "cotizaciones") : lista.filter((x) => x.clave === "requerimiento" || x.clave === "comprobante");
 }

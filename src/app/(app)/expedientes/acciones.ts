@@ -85,6 +85,10 @@ export async function crearExpediente(fd: FormData) {
     await exigirPin(ctx.userId, fd, ruta(data.id));
     const { error: eA } = await supabase.from("expedientes").update({ estado: "aprobado" }).eq("id", data.id);
     if (!eA) {
+      if (await proveedorDelPagoFijo(supabase, ctx.mcp.id, data.id)) {
+        revalidatePath("/expedientes");
+        volver(ruta(data.id, "orden"), "ok", "Pago fijo aprobado. Siga con la orden de servicio, la conformidad y el comprobante de pago.");
+      }
       const usado = await comprobanteAutomatico(supabase, ctx.mcp.id, data.id, chequePrevisto ?? (await siguienteCheque(supabase, ctx.mcp.id)), true);
       if (usado !== null) {
         revalidatePath("/comprobantes");
@@ -190,6 +194,7 @@ export async function cambiarEstadoExpediente(fd: FormData) {
   if (accion === "aprobar") {
     // Pago fijo de la lista: el comprobante de pago se genera solo, con el cheque siguiente.
     const ctx = await contextoMcp();
+    if (await proveedorDelPagoFijo(supabase, ctx.mcp.id, id)) volver(ruta(id, "orden"), "ok", "Pago fijo aprobado. Siga con la orden de servicio, la conformidad y el comprobante de pago.");
     const usado = await comprobanteAutomatico(supabase, ctx.mcp.id, id, await siguienteCheque(supabase, ctx.mcp.id), true);
     if (usado !== null) {
       revalidatePath("/comprobantes");
@@ -224,6 +229,42 @@ export async function anularExpedienteTotal(fd: FormData) {
     "ok",
     `Expediente anulado${partes.length ? ` junto con ${partes.join(" y ")}` : ""}.${cheques ? ` El cheque N° ${cheques} quedó sin uso: archívelo o anótelo como anulado.` : ""}`,
   );
+}
+
+/**
+ * Pago fijo con expediente completo: al aprobarse queda elegido, sin cotizar, el beneficiario de la
+ * lista como proveedor (por el monto del requerimiento) para poder emitir la orden de servicio.
+ * Si el pago no tiene un DNI o RUC válido, no se hace y el paso de proveedor se completa a mano.
+ */
+async function proveedorDelPagoFijo(supabase: Awaited<ReturnType<typeof supabaseServidor>>, mcpId: string, expedienteId: string): Promise<boolean> {
+  const { data: e } = await supabase
+    .from("expedientes")
+    .select("tipo, estado, pago_fijo_id, flujo_completo, expediente_items(total, anulado)")
+    .eq("id", expedienteId)
+    .single();
+  if (!e || e.tipo !== "pago_fijo" || e.estado !== "aprobado" || !e.flujo_completo || !e.pago_fijo_id) return false;
+  const { data: ya } = await supabase.from("cotizaciones").select("id").eq("expediente_id", expedienteId).eq("elegida", true).eq("anulado", false).limit(1);
+  if (ya && ya.length) return true;
+  const { data: pf } = await supabase.from("pagos_fijos").select("beneficiario, beneficiario_doc").eq("id", e.pago_fijo_id).single();
+  const doc = (pf?.beneficiario_doc ?? "").replace(/\D/g, "");
+  if (!pf?.beneficiario || (doc.length !== 8 && doc.length !== 11)) return false;
+  let proveedorId: string | null = null;
+  const { data: existe } = await supabase.from("proveedores").select("id").eq("mcp_id", mcpId).eq("num_doc", doc).maybeSingle();
+  if (existe) proveedorId = existe.id;
+  else {
+    const { data: nuevo } = await supabase
+      .from("proveedores")
+      .insert({ mcp_id: mcpId, tipo_doc: doc.length === 8 ? "DNI" : "RUC", num_doc: doc, razon_social: pf.beneficiario })
+      .select("id")
+      .single();
+    proveedorId = nuevo?.id ?? null;
+  }
+  if (!proveedorId) return false;
+  const monto = (e.expediente_items as { total: number; anulado: boolean }[]).filter((i) => !i.anulado).reduce((s, i) => s + Number(i.total), 0);
+  const { error } = await supabase.from("cotizaciones").insert({ mcp_id: mcpId, expediente_id: expedienteId, proveedor_id: proveedorId, monto, elegida: true });
+  if (error) return false;
+  await supabase.from("expedientes").update({ fase: "cotizacion" }).eq("id", expedienteId).eq("fase", "requerimiento");
+  return true;
 }
 
 /** Busca el proveedor por documento; si no existe, lo registra. */
@@ -328,7 +369,7 @@ export async function emitirOrden(fd: FormData) {
   const { error } = await supabase.from("ordenes").insert({
     mcp_id: ctx.mcp.id,
     expediente_id: id,
-    tipo: exp.tipo,
+    tipo: exp.tipo === "compra" ? "compra" : "servicio",
     fecha: texto(fd, "fecha"),
     proveedor_id: elegida.proveedor_id,
     concepto: texto(fd, "concepto") ?? exp.descripcion,
@@ -347,9 +388,9 @@ export async function emitirOrden(fd: FormData) {
     });
     if (e2) volver(ruta(id), "error", `La orden se emitió, pero no la conformidad: ${mensajeError(e2)}`);
     await supabase.from("expedientes").update({ fase: "conformidad" }).eq("id", id);
-    volver(ruta(id), "ok", `Orden de ${exp.tipo} y memorando de conformidad emitidos.`);
+    volver(ruta(id), "ok", `Orden de ${exp.tipo === "compra" ? "compra" : "servicio"} y memorando de conformidad emitidos.`);
   }
-  volver(destino, "ok", `Orden de ${exp.tipo} emitida.`);
+  volver(destino, "ok", `Orden de ${exp.tipo === "compra" ? "compra" : "servicio"} emitida.`);
 }
 
 export async function emitirConformidad(fd: FormData) {
@@ -378,7 +419,7 @@ export async function generarComprobante(fd: FormData) {
   await exigirPin(ctx.userId, fd, destino);
   const { data: exp } = await supabase
     .from("expedientes")
-    .select("tipo, fuente_id, descripcion, clasificador, expediente_items(total, anulado)")
+    .select("tipo, flujo_completo, fuente_id, descripcion, clasificador, expediente_items(total, anulado)")
     .eq("id", id)
     .single();
   if (!exp) volver(destino, "error", "Expediente no encontrado.");
@@ -388,8 +429,8 @@ export async function generarComprobante(fd: FormData) {
   let beneficiarioDoc: string | null;
   let concepto: string;
   let importe: number;
-  if (exp.tipo === "pago_fijo") {
-    // Pago fijo: sin orden; el beneficiario se escribe aquí y el monto es el del requerimiento.
+  if (exp.tipo === "pago_fijo" && !exp.flujo_completo) {
+    // Pago fijo simple (dietas): sin orden; el beneficiario se escribe aquí y el monto es el del requerimiento.
     beneficiario = texto(fd, "beneficiario");
     beneficiarioDoc = (texto(fd, "beneficiario_doc") ?? "").replace(/\D/g, "") || null;
     if (!beneficiario) volver(destino, "error", "Escriba a quién se paga.");

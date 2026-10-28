@@ -21,3 +21,12 @@ end $$;
 drop trigger if exists expedientes_guardar_redaccion on expedientes;
 create trigger expedientes_guardar_redaccion after insert or update of descripcion on expedientes
   for each row execute function guardar_redaccion_pago_fijo();
+
+-- Pagos fijos ya registrados: toma como modelo el último expediente no anulado de cada uno
+update pagos_fijos p
+   set descripcion_modelo = e.descripcion, mes_modelo = e.mes_pagado
+  from (select distinct on (pago_fijo_id) pago_fijo_id, descripcion, mes_pagado
+          from expedientes
+         where pago_fijo_id is not null and mes_pagado is not null and estado <> 'anulado'
+         order by pago_fijo_id, mes_pagado desc) e
+ where p.id = e.pago_fijo_id and p.descripcion_modelo is null;

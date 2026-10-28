@@ -267,6 +267,15 @@ async function proveedorDelPagoFijo(supabase: Awaited<ReturnType<typeof supabase
   return true;
 }
 
+/** Pago fijo con expediente completo: deja como proveedor elegido al beneficiario de la lista (un clic). */
+export async function elegirProveedorDelPago(fd: FormData) {
+  const ctx = await contextoMcp();
+  const supabase = await supabaseServidor();
+  const id = texto(fd, "expediente_id")!;
+  if (await proveedorDelPagoFijo(supabase, ctx.mcp.id, id)) volver(ruta(id, "orden"), "ok", "Proveedor elegido. Ya puede emitir la orden de servicio.");
+  volver(ruta(id, "cotizacion"), "error", "No se pudo: el pago fijo no tiene un DNI o RUC válido del beneficiario. Regístrelo con «Un solo proveedor».");
+}
+
 /** Busca el proveedor por documento; si no existe, lo registra. */
 async function proveedorPorDocumento(mcpId: string, fd: FormData, volverA: string): Promise<string> {
   const supabase = await supabaseServidor();

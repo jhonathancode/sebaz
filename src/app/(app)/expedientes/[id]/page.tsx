@@ -32,6 +32,7 @@ import {
   emitirOrden,
   generarComprobante,
   proveedorUnico,
+  elegirProveedorDelPago,
 } from "../acciones";
 import CamposProveedor, { type ProveedorConocido } from "@/components/formularios/CamposProveedor";
 import { compraSinAlmacen } from "../../almacen/acciones";
@@ -178,6 +179,20 @@ export default async function Expediente({ params, searchParams }: { params: Par
             ? `El alcalde lo devolvió por: ${e.motivo_devolucion}. Corríjalo con «Corregir requerimiento» (abajo) y avísele para que lo apruebe.`
             : "Avísele al alcalde: cuando lo apruebe podrá seguir con el siguiente paso.",
         };
+  } else if (completoFijo && !elegida) {
+    sigue = {
+      texto: "Confirme a quién se paga: será el proveedor de la orden de servicio.",
+      ayuda: "Es un pago fijo, no se cotiza. Con un clic queda elegido el beneficiario de la lista y pasa a la orden de servicio.",
+      accion: puedeRegistrar && (
+        <div className="acciones-fila">
+          <form action={elegirProveedorDelPago}>
+            <input type="hidden" name="expediente_id" value={id} />
+            <button className="btn primario grande" type="submit">Usar {pagoFijo?.beneficiario ?? "al beneficiario"} como proveedor</button>
+          </form>
+          <FormProveedorUnico id={id} monto={total} proveedores={proveedores} />
+        </div>
+      ),
+    };
   } else if (!fijo && !elegida) {
     sigue = cots.length === 0
       ? {
@@ -538,7 +553,7 @@ export default async function Expediente({ params, searchParams }: { params: Par
         </section>
       )}
 
-      {visto === "cotizacion" && !fijo && (
+      {visto === "cotizacion" && !fijo && !completoFijo && (
         <section className="panel">
           <div className="panel-cab">
             Cotizaciones

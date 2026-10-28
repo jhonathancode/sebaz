@@ -1,5 +1,4 @@
 import { CLASIFICADORES } from "@/lib/catalogos";
-import CampoPin from "@/components/CampoPin";
 import type { Fuente } from "@/lib/contexto";
 import { hoyISO } from "@/lib/formato";
 import CampoCheque from "./CampoCheque";
@@ -40,7 +39,7 @@ function detalleFuente(f: Fuente) {
 }
 
 /** Formulario del requerimiento, en preguntas simples. */
-export default function CamposRequerimiento({ fuentes, valores, pagosFijos, chequeSugerido, puedeAprobar = false }: { fuentes: Fuente[]; valores?: ValoresRequerimiento; pagosFijos?: PagoFijoCatalogo[]; chequeSugerido?: string; puedeAprobar?: boolean }) {
+export default function CamposRequerimiento({ fuentes, valores, pagosFijos, chequeSugerido }: { fuentes: Fuente[]; valores?: ValoresRequerimiento; pagosFijos?: PagoFijoCatalogo[]; chequeSugerido?: string }) {
   const tipo = valores?.tipo ?? "compra";
   const fuentePorDefecto = fuentes.find((f) => f.tipo === "distrito")?.id ?? fuentes[0]?.id;
   // Al corregir un requerimiento que aún no tiene dinero definido, queda marcada «Definir después».
@@ -104,14 +103,6 @@ export default function CamposRequerimiento({ fuentes, valores, pagosFijos, cheq
         <fieldset className="pregunta">
           <legend>5. Cheque <span className="legend-nota">(opcional)</span></legend>
           <CampoCheque sugerido={chequeSugerido} />
-        </fieldset>
-      )}
-
-      {!valores && puedeAprobar && (
-        <fieldset className="pregunta pin-auto">
-          <legend>6. Aprobar de una vez <span className="legend-nota">(opcional, solo pagos fijos)</span></legend>
-          <CampoPin name="pin" etiqueta="Su PIN" verificar />
-          <p className="pequeno tenue" style={{ margin: "6px 0 0" }}>Con el PIN, el pago fijo se aprueba en el acto (las dietas también generan su comprobante; los demás siguen con orden y conformidad). Sin PIN, queda registrado para aprobarlo después.</p>
         </fieldset>
       )}
 

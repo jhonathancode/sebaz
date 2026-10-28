@@ -17,8 +17,10 @@ const CampoPin = forwardRef<
     teclado?: boolean;
     /** Muestra el botón "Verificar": si el PIN es correcto se oculta el teclado y sale el aviso. */
     verificar?: boolean;
+    /** Avisa cada vez que cambia lo escrito. */
+    onCambio?: (valor: string) => void;
   }
->(function CampoPin({ name, etiqueta, required, onEnter, teclado = true, verificar = false }, ref) {
+>(function CampoPin({ name, etiqueta, required, onEnter, teclado = true, verificar = false, onCambio }, ref) {
   const [valor, setValor] = useState("");
   const [correcto, setCorrecto] = useState(false);
   const [aviso, setAviso] = useState("");
@@ -32,17 +34,20 @@ const CampoPin = forwardRef<
       } else {
         setAviso(r.mensaje);
         setValor("");
+        onCambio?.("");
       }
     });
   const poner = (v: string) => {
     setAviso("");
     const nuevo = v.replace(/\D/g, "").slice(0, 4);
     setValor(nuevo);
+    onCambio?.(nuevo);
     if (verificar && nuevo.length === 4) comprobar(nuevo);
   };
   const cambiar = () => {
     setCorrecto(false);
     setValor("");
+    onCambio?.("");
     setAviso("");
   };
 

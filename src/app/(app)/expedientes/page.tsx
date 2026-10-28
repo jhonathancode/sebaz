@@ -41,7 +41,7 @@ export default async function Expedientes({ searchParams }: { searchParams: Para
   // Se traen todos los del mes (con búsqueda y tipo) para contar por estado; el estado se filtra aquí.
   let consulta = supabase
     .from("expedientes")
-    .select("id, anio, numero, fecha, tipo, descripcion, area_usuaria, fase, estado, expediente_items(total, anulado)")
+    .select("id, anio, numero, fecha, tipo, flujo_completo, descripcion, area_usuaria, fase, estado, expediente_items(total, anulado)")
     .eq("mcp_id", ctx.mcp.id)
     .gte("fecha", desde)
     .lte("fecha", hasta)
@@ -155,7 +155,12 @@ export default async function Expedientes({ searchParams }: { searchParams: Para
           </div>
         )}
         {filas.map((e) => {
-          const pasos = e.tipo === "pago_fijo" ? ["requerimiento", "comprobante"] : ORDEN_FASES;
+          const pasos =
+            e.tipo !== "pago_fijo"
+              ? ORDEN_FASES
+              : (e as { flujo_completo?: boolean }).flujo_completo
+                ? ["requerimiento", "orden", "conformidad", "comprobante"] // pago fijo con expediente completo: sin cotizaciones
+                : ["requerimiento", "comprobante"];
           const hecho = e.estado === "rendido" ? pasos.length : Math.max(1, pasos.indexOf(e.fase) + 1);
           return (
             <div key={e.id} className={`fila${e.estado === "anulado" ? " anulada" : ""}`}>

@@ -1508,3 +1508,18 @@ form:has(input[name="tipo"][value="pago_fijo"]:checked) .pin-auto { display: blo
 .auto-doc-ok.mal { background: var(--rojo-fondo); border-color: var(--rojo-borde); color: var(--rojo); }
 .auto-doc-aviso { color: var(--ambar); }
 .pfx-guardada { font-size: 12px; font-weight: 600; color: var(--primario-texto); margin-top: 2px; }
+
+/* PIN con casillas y teclado */
+.pin-campo { display: flex; flex-direction: column; align-items: center; gap: 10px; width: fit-content; max-width: 100%; }
+.pin-etiqueta { font-size: 13px; font-weight: 600; }
+.pin-casillas { position: relative; display: flex; gap: 8px; }
+.pin-casilla { width: 38px; height: 46px; border: 1.5px solid var(--borde-fuerte); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 18px; background: var(--panel); transition: border-color .15s, box-shadow .15s; }
+.pin-casilla.llena { border-color: var(--primario); }
+.pin-casilla.activa { border-color: var(--primario); box-shadow: 0 0 0 3px var(--foco); }
+.pin-real { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: text; border: 0; padding: 0; font-size: 16px; }
+.pin-teclado { display: grid; grid-template-columns: repeat(3, 62px); gap: 8px; }
+.pin-teclado button { height: 44px; border-radius: 12px; border: 1px solid var(--borde-fuerte); background: var(--panel); color: inherit; font-size: 18px; font-weight: 600; cursor: pointer; }
+.pin-teclado button:hover { border-color: var(--primario); }
+.pin-teclado button:active { transform: scale(.96); }
+.pin-teclado button.aux { font-size: 13px; font-weight: 500; opacity: .8; }
+.pin-ayuda { font-size: 12px; opacity: .6; }

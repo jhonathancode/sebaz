@@ -1,4 +1,5 @@
 import Avisos, { type ParamsAviso } from "@/components/Avisos";
+import CampoPin from "@/components/CampoPin";
 import BotonConfirmar from "@/components/BotonConfirmar";
 import { obtenerContexto } from "@/lib/contexto";
 import { texto, volver } from "@/lib/acciones";
@@ -37,9 +38,9 @@ export default async function Cuenta({ searchParams }: { searchParams: ParamsAvi
         <div className="panel-cab">Cambiar PIN</div>
         <div className="panel-cuerpo">
           <span className="pequeno tenue">El PIN se le pide para aprobar y generar documentos. Es personal: no lo comparta.</span>
-          <label className="campo">PIN actual<input type="password" name="pin" required inputMode="numeric" maxLength={6} autoComplete="off" /></label>
-          <label className="campo">PIN nuevo (4 a 6 números)<input type="password" name="pin_nuevo" required inputMode="numeric" maxLength={6} pattern="\d{4,6}" autoComplete="off" /></label>
-          <label className="campo">Repetir PIN nuevo<input type="password" name="pin_repetir" required inputMode="numeric" maxLength={6} pattern="\d{4,6}" autoComplete="off" /></label>
+          <CampoPin name="pin" etiqueta="PIN actual" required />
+          <CampoPin name="pin_nuevo" etiqueta="PIN nuevo" required />
+          <CampoPin name="pin_repetir" etiqueta="Repetir PIN nuevo" required />
           <BotonConfirmar pregunta="¿Cambiar su PIN?" textoConfirmar="Sí, cambiar">Cambiar PIN</BotonConfirmar>
         </div>
       </form>

@@ -1,5 +1,6 @@
 "use client";
 
+import CampoPin from "@/components/CampoPin";
 import { useRef } from "react";
 
 /**
@@ -64,26 +65,7 @@ export default function BotonConfirmar({
         )}
         {pin && (
           <div className="dialogo-cuerpo">
-            <label className="campo">
-              Su PIN personal
-              <input
-                ref={campoPin}
-                name="pin"
-                type="password"
-                inputMode="numeric"
-                autoComplete="off"
-                maxLength={6}
-                pattern="\d{4,6}"
-                placeholder="4 a 6 números"
-                style={{ letterSpacing: ".3em", fontWeight: 700, maxWidth: 200 }}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") {
-                    e.preventDefault();
-                    confirmar();
-                  }
-                }}
-              />
-            </label>
+            <CampoPin ref={campoPin} name="pin" etiqueta="Su PIN personal" onEnter={confirmar} />
           </div>
         )}
         <div className="dialogo-pie">

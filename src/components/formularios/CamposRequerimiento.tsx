@@ -1,4 +1,5 @@
 import { CLASIFICADORES } from "@/lib/catalogos";
+import CampoPin from "@/components/CampoPin";
 import type { Fuente } from "@/lib/contexto";
 import { hoyISO } from "@/lib/formato";
 import CampoCheque from "./CampoCheque";
@@ -109,10 +110,7 @@ export default function CamposRequerimiento({ fuentes, valores, pagosFijos, cheq
       {!valores && puedeAprobar && (
         <fieldset className="pregunta pin-auto">
           <legend>6. Aprobar de una vez <span className="legend-nota">(opcional, solo pagos fijos)</span></legend>
-          <label className="campo" style={{ maxWidth: 260 }}>
-            Su PIN
-            <input name="pin" type="password" inputMode="numeric" autoComplete="off" maxLength={6} pattern="\d{4,6}" placeholder="Déjelo vacío para solo registrar" style={{ letterSpacing: ".2em", fontWeight: 700 }} />
-          </label>
+          <CampoPin name="pin" etiqueta="Su PIN" />
           <p className="pequeno tenue" style={{ margin: "6px 0 0" }}>Con el PIN, el pago fijo se aprueba y su comprobante se genera en el acto. Sin PIN, queda registrado para aprobarlo después.</p>
         </fieldset>
       )}

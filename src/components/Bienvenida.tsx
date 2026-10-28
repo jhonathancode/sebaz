@@ -1,4 +1,5 @@
 import BotonConfirmar from "@/components/BotonConfirmar";
+import CampoPin from "@/components/CampoPin";
 import LogoSebaz from "@/components/LogoSebaz";
 import { TERMINOS } from "@/lib/terminos";
 import { completarIngreso } from "@/app/(app)/cuenta/acciones";
@@ -39,8 +40,8 @@ export default function Bienvenida({ nombre, pendiente, salir }: { nombre: strin
                 <div className="pequeno tenue">De 4 a 6 números. Se le pedirá para aprobar, generar comprobantes y rendiciones. No lo comparta: si lo olvida, solo soporte puede restablecerlo.</div>
               </div>
               <div className="rejilla-2">
-                <label className="campo">PIN<input name="pin_nuevo" type="password" inputMode="numeric" autoComplete="off" maxLength={6} pattern="\d{4,6}" required style={{ letterSpacing: ".3em", fontWeight: 700 }} /></label>
-                <label className="campo">Repita el PIN<input name="pin_repetir" type="password" inputMode="numeric" autoComplete="off" maxLength={6} pattern="\d{4,6}" required style={{ letterSpacing: ".3em", fontWeight: 700 }} /></label>
+                <CampoPin name="pin_nuevo" etiqueta="Cree su PIN" required />
+                <CampoPin name="pin_repetir" etiqueta="Repita el PIN" required />
               </div>
             </div>
           )}

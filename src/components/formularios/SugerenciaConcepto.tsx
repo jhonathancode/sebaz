@@ -23,11 +23,19 @@ export default function SugerenciaConcepto({ campo = "descripcion", tambienItem 
     const input = form?.querySelector<HTMLInputElement>(`input[name="${campo}"]`);
     if (!input) return;
     const tipo = () => form?.querySelector<HTMLInputElement>('input[name="tipo"]:checked')?.value;
-    const revisar = () => setSug(sugerirConcepto(input.value, undefined, tipo()));
+    // Si el texto salió de la redacción ya aprobada de un pago fijo, no se sugiere nada mientras no se cambie
+    let silenciado: string | null = null;
+    const revisar = () => setSug(silenciado !== null && input.value === silenciado ? null : sugerirConcepto(input.value, undefined, tipo()));
+    const alGuardada = (e: Event) => {
+      silenciado = (e as CustomEvent<{ texto: string }>).detail?.texto ?? null;
+      revisar();
+    };
+    window.addEventListener("sebaz:redaccion-guardada", alGuardada);
     input.addEventListener("input", revisar);
     form?.addEventListener("change", revisar);
     revisar();
     return () => {
+      window.removeEventListener("sebaz:redaccion-guardada", alGuardada);
       input.removeEventListener("input", revisar);
       form?.removeEventListener("change", revisar);
     };

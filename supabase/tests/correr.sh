@@ -34,4 +34,5 @@ psql -v ON_ERROR_STOP=1 -q -d prueba_mcp -f migrations/20261024130000_anular_exp
 psql -v ON_ERROR_STOP=1 -q -d prueba_mcp -f migrations/20261024140000_notificaciones.sql
 psql -v ON_ERROR_STOP=1 -q -d prueba_mcp -f migrations/20261024150000_bloqueo_gestion.sql
 psql -v ON_ERROR_STOP=1 -q -d prueba_mcp -f migrations/20261024160000_consultas_documento.sql
+psql -v ON_ERROR_STOP=1 -q -d prueba_mcp -f migrations/20261024170000_pago_fijo_redaccion.sql
 psql -v ON_ERROR_STOP=1 -q -d prueba_mcp -f ACTUALIZAR_BASE.sql 2>&1 | grep -v NOTICE | grep -E "actualizada|ERROR"

@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { MESES, soles } from "@/lib/formato";
-import { mesPendiente, type PagoFijoCatalogo } from "@/lib/pagosFijos";
+import { mesPendiente, pasarAlMes, type PagoFijoCatalogo } from "@/lib/pagosFijos";
 
 const CORTO = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Set", "Oct", "Nov", "Dic"];
 
@@ -47,8 +47,11 @@ export default function SelectorPagoFijo({ pagos, periodo }: { pagos: PagoFijoCa
     const form = caja.current?.closest("form");
     if (!form) return;
     const [a, m] = mes.split("-").map(Number);
-    const texto = `${p.concepto} - ${MESES[m - 1].toUpperCase()} ${a}`;
+    // Si este pago ya se registró antes, se usa su redacción guardada, cambiando solo el mes y el año
+    const guardada = p.descripcion_modelo && p.mes_modelo ? pasarAlMes(p.descripcion_modelo, p.mes_modelo, mes) : null;
+    const texto = guardada ?? `${p.concepto} - ${MESES[m - 1].toUpperCase()} ${a}`;
     escribir(form.querySelector<HTMLInputElement>('input[name="descripcion"]'), texto);
+    if (guardada) window.dispatchEvent(new CustomEvent("sebaz:redaccion-guardada", { detail: { texto } }));
     if (p.fuente_id) form.querySelector<HTMLInputElement>(`input[name="fuente_id"][value="${p.fuente_id}"]`)?.click();
     if (p.clasificador) escribir(form.querySelector<HTMLSelectElement>('select[name="clasificador"]'), p.clasificador);
     window.dispatchEvent(
@@ -103,6 +106,7 @@ export default function SelectorPagoFijo({ pagos, periodo }: { pagos: PagoFijoCa
           <div className="pfx-elegido-cuerpo">
             <div className="pfx-datos">
               <span className="pfx-elegido-concepto">{sel.concepto}</span>
+              {sel.descripcion_modelo && <span className="pfx-guardada">✓ Con la redacción ya aprobada de este pago</span>}
               {sel.beneficiario && <span className="pfx-quien">A: {sel.beneficiario}{sel.beneficiario_doc ? ` · ${sel.beneficiario_doc}` : ""}</span>}
             </div>
             <div className="pfx-elegido-mes">

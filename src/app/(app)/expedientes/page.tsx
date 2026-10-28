@@ -95,8 +95,9 @@ export default async function Expedientes({ searchParams }: { searchParams: Para
           abierta={sp.nuevo === "1"}
           error={sp.nuevo === "1" ? sp.error : undefined}
           ancha
+          pinOpcionalSi={tiene(ctx, "alcalde", "admin") ? 'input[name="tipo"][value="pago_fijo"]:checked' : undefined}
         >
-          <CamposRequerimiento fuentes={ctx.fuentes} pagosFijos={pagosFijos} chequeSugerido={chequeSugerido} puedeAprobar={tiene(ctx, "alcalde", "admin")} />
+          <CamposRequerimiento fuentes={ctx.fuentes} pagosFijos={pagosFijos} chequeSugerido={chequeSugerido} />
         </VentanaFlotante>
       </div>
       <Avisos ok={sp.ok} error={sp.error} />

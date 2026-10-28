@@ -112,6 +112,7 @@ export async function guardarPagoFijo(fd: FormData) {
     unidad: (texto(fd, "unidad") ?? "MES").toUpperCase(),
     fuente_id: texto(fd, "fuente_id"),
     clasificador: texto(fd, "clasificador"),
+    expediente_completo: texto(fd, "completo") === "1",
   };
   const { error } = id
     ? await supabase.from("pagos_fijos").update(datos).eq("id", id)

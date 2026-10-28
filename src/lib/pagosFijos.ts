@@ -81,6 +81,8 @@ export type PagoFijoCatalogo = {
   pagados: string[];
   /** Redacción de la última vez (ya aprobada o mejorada): se reutiliza cambiando solo el mes y el año. */
   descripcion_modelo: string | null;
+  /** true: lleva orden de servicio y conformidad; false (dietas): solo requerimiento y comprobante. */
+  expediente_completo: boolean;
   mes_modelo: string | null;
 };
 
@@ -110,6 +112,7 @@ export async function cargarCatalogoPagosFijos(supabase: Cliente, mcpId: string,
     activo: p.activo,
     pagados: (porPago.get(p.id) ?? []).sort(),
     descripcion_modelo: (p.descripcion_modelo as string | null | undefined) ?? null,
+    expediente_completo: (p.expediente_completo as boolean | null | undefined) ?? true,
     mes_modelo: (p.mes_modelo as string | null | undefined) ?? null,
   }));
 }

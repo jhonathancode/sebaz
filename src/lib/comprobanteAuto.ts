@@ -23,10 +23,12 @@ export async function comprobanteAutomatico(
 ): Promise<string | null> {
   const { data: e } = await supabase
     .from("expedientes")
-    .select("id, tipo, estado, fecha, descripcion, fuente_id, clasificador, pago_fijo_id, cheque_previsto, expediente_items(total, anulado)")
+    .select("id, tipo, estado, fecha, descripcion, fuente_id, clasificador, pago_fijo_id, flujo_completo, cheque_previsto, expediente_items(total, anulado)")
     .eq("id", expedienteId)
     .single();
   if (!e || e.tipo !== "pago_fijo" || e.estado !== "aprobado" || !e.pago_fijo_id || !e.fuente_id) return null;
+  // Con expediente completo el comprobante se genera al final (después de la orden y la conformidad)
+  if ((e as { flujo_completo?: boolean }).flujo_completo) return null;
   const { data: pf } = await supabase.from("pagos_fijos").select("beneficiario, beneficiario_doc").eq("id", e.pago_fijo_id).single();
   if (!pf?.beneficiario) return null;
   const { data: ya } = await supabase.from("comprobantes_pago").select("id").eq("expediente_id", e.id).neq("estado", "anulado").limit(1);

@@ -99,6 +99,7 @@ export default async function CajaChica({ searchParams }: { searchParams: Params
         </form>
         <span className="espacio" />
         {caja && <a className="btn contorno" href={`/exportar/caja-chica?mes=${periodo}`}>Descargar Excel</a>}
+        {caja && <Link className="btn contorno" href={`/caja-chica/${caja.id}/requerimiento`}>Requerimiento</Link>}
         {caja && <Link className="btn contorno" href={`/caja-chica/${caja.id}/relacion`}>Relación de gastos</Link>}
         {formGasto}
       </div>

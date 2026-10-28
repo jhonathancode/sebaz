@@ -51,6 +51,13 @@ export default async function Configuracion({ searchParams }: { searchParams: Pa
         </select>
       </label>
       <label className="campo">Unidad<input name="unidad" defaultValue={p?.unidad ?? "MES"} /></label>
+      <label className="campo" style={{ gridColumn: "1 / -1", flexDirection: "row", alignItems: "flex-start", gap: 10 }}>
+        <input type="checkbox" name="completo" value="1" defaultChecked={p ? p.expediente_completo : true} style={{ width: "auto", marginTop: 3 }} />
+        <span>
+          <b>Lleva expediente completo</b>
+          <span className="pequeno tenue" style={{ display: "block" }}>Con orden de servicio y memorando de conformidad antes del comprobante. Desmárquelo solo para las dietas del alcalde y regidores (solo requerimiento y comprobante).</span>
+        </span>
+      </label>
     </div>
   );
 

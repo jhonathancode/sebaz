@@ -18,9 +18,9 @@ export function pinCorrecto(pin: string, guardado: string): boolean {
   return calculado.length === esperado.length && timingSafeEqual(calculado, esperado);
 }
 
-/** 4 a 6 dígitos, sin repetir el mismo número ni seguir una secuencia. */
+/** 4 dígitos, sin repetir el mismo número ni seguir una secuencia. */
 export function pinValido(pin: string): string | null {
-  if (!/^\d{4,6}$/.test(pin)) return "El PIN debe tener de 4 a 6 números.";
+  if (!/^\d{4}$/.test(pin)) return "El PIN debe tener 4 números.";
   if (/^(\d)\1+$/.test(pin)) return "El PIN no puede ser un solo número repetido.";
   if ("0123456789".includes(pin) || "9876543210".includes(pin)) return "El PIN no puede ser una secuencia (1234, 4321...).";
   return null;

@@ -37,7 +37,7 @@ export default function Bienvenida({ nombre, pendiente, salir }: { nombre: strin
             <div className="panel" style={{ padding: 14, display: "flex", flexDirection: "column", gap: 10 }}>
               <div>
                 <b>Su PIN personal</b>
-                <div className="pequeno tenue">De 4 a 6 números. Se le pedirá para aprobar, generar comprobantes y rendiciones. No lo comparta: si lo olvida, solo soporte puede restablecerlo.</div>
+                <div className="pequeno tenue">De 4 números. Se le pedirá para aprobar, generar comprobantes y rendiciones. No lo comparta: si lo olvida, solo soporte puede restablecerlo.</div>
               </div>
               <div className="rejilla-2">
                 <CampoPin name="pin_nuevo" etiqueta="Cree su PIN" required />

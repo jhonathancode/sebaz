@@ -42,7 +42,7 @@ export default function BotonConfirmar({
   }
 
   function confirmar() {
-    if (pin && !/^\d{4,6}$/.test(campoPin.current?.value ?? "")) {
+    if (pin && !/^\d{4}$/.test(campoPin.current?.value ?? "")) {
       campoPin.current?.focus();
       campoPin.current?.reportValidity();
       return;

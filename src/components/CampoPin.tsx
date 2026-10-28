@@ -23,13 +23,9 @@ const CampoPin = forwardRef<
   const [correcto, setCorrecto] = useState(false);
   const [aviso, setAviso] = useState("");
   const [pendiente, empezar] = useTransition();
-  const poner = (v: string) => {
-    setAviso("");
-    setValor(v.replace(/\D/g, "").slice(0, 6));
-  };
-  const comprobar = () =>
+  const comprobar = (pin: string) =>
     empezar(async () => {
-      const r = await verificarMiPin(valor);
+      const r = await verificarMiPin(pin);
       if (r.ok) {
         setCorrecto(true);
         setAviso("");
@@ -38,6 +34,12 @@ const CampoPin = forwardRef<
         setValor("");
       }
     });
+  const poner = (v: string) => {
+    setAviso("");
+    const nuevo = v.replace(/\D/g, "").slice(0, 4);
+    setValor(nuevo);
+    if (verificar && nuevo.length === 4) comprobar(nuevo);
+  };
   const cambiar = () => {
     setCorrecto(false);
     setValor("");
@@ -58,7 +60,7 @@ const CampoPin = forwardRef<
       )}
       {!correcto && etiqueta && <span className="pin-etiqueta">{etiqueta}</span>}
       <div className="pin-casillas" style={correcto ? { display: "none" } : undefined}>
-        {Array.from({ length: Math.min(6, Math.max(4, valor.length + 1)) }, (_, i) => i).map((i) => (
+        {[0, 1, 2, 3].map((i) => (
           <span key={i} className={`pin-casilla ${i < valor.length ? "llena" : ""} ${i === valor.length ? "activa" : ""}`} aria-hidden>
             {i < valor.length ? "●" : ""}
           </span>
@@ -69,8 +71,8 @@ const CampoPin = forwardRef<
           type="password"
           inputMode="numeric"
           autoComplete="off"
-          maxLength={6}
-          pattern="\d{4,6}"
+          maxLength={4}
+          pattern="\d{4}"
           required={required}
           value={valor}
           aria-label={etiqueta ?? "PIN"}
@@ -102,13 +104,9 @@ const CampoPin = forwardRef<
           </button>
         </div>
       )}
-      {verificar && !correcto && valor.length >= 4 && (
-        <button type="button" className="btn primario pin-verificar" onClick={comprobar} disabled={pendiente}>
-          {pendiente ? "Verificando…" : "Verificar PIN"}
-        </button>
-      )}
+      {pendiente && <span className="pin-ayuda">Verificando…</span>}
       {aviso && <span className="pin-error" role="alert">{aviso}</span>}
-      {!correcto && <span className="pin-ayuda">De 4 a 6 números</span>}
+      {!correcto && <span className="pin-ayuda">4 números</span>}
     </div>
   );
 });

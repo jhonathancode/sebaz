@@ -10,7 +10,7 @@ import { cargarCatalogoPagosFijos, type PagoFijoCatalogo } from "@/lib/pagosFijo
 import { contextoMcp, tiene } from "@/lib/contexto";
 import { fechaHora, nombrePeriodo, periodoActual, soles, urlLogo } from "@/lib/formato";
 import { supabaseServidor } from "@/lib/supabase/server";
-import { cerrarMes, guardarCapitulo1, guardarDatosMcp, guardarDiaLimite, reabrirMes, subirLogo, guardarPagoFijo, alternarPagoFijo } from "./acciones";
+import { cerrarMes, guardarCapitulo1, guardarDatosMcp, guardarDiaLimite, reabrirMes, subirLogo, guardarPagoFijo, alternarPagoFijo, guardarExigirPin } from "./acciones";
 
 export default async function Configuracion({ searchParams }: { searchParams: ParamsAviso }) {
   const sp = await searchParams;
@@ -297,6 +297,26 @@ export default async function Configuracion({ searchParams }: { searchParams: Pa
                   )}
                 </form>
               ))}
+            </div>
+          </section>
+
+          <section className="panel">
+            <div className="panel-cab">Seguridad</div>
+            <div className="panel-cuerpo">
+              <form action={guardarExigirPin} style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                <label className="cheque-marca">
+                  <input type="checkbox" name="exigir_pin" value="1" defaultChecked={!!ctx.mcp.exigir_pin} disabled={!admin && !ctx.esSoporte} />
+                  <span>
+                    <b>Pedir PIN personal</b>
+                    <small>Cada persona firma con su PIN de 4 números al crear un requerimiento, aprobar, generar comprobantes y anular. Por ahora está {ctx.mcp.exigir_pin ? "activado" : "desactivado"}. Al activarlo, quien aún no tenga PIN deberá crearlo al ingresar.</small>
+                  </span>
+                </label>
+                {(admin || ctx.esSoporte) && (
+                  <div>
+                    <BotonConfirmar className="btn" pregunta="¿Guardar la configuración de seguridad?" textoConfirmar="Sí, guardar">Guardar</BotonConfirmar>
+                  </div>
+                )}
+              </form>
             </div>
           </section>
 

@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { CAMPOS_CAPITULO1, CAMPOS_CAPITULO1_LARGOS } from "@/lib/catalogos";
-import { contextoMcp } from "@/lib/contexto";
+import { contextoMcp, tiene } from "@/lib/contexto";
 import { mensajeError, numero, texto, volver } from "@/lib/acciones";
 import { supabaseServidor } from "@/lib/supabase/server";
 
@@ -71,6 +71,18 @@ export async function guardarDiaLimite(fd: FormData) {
   if (error) volver("/configuracion", "error", mensajeError(error));
   revalidatePath("/", "layout");
   volver("/configuracion", "ok", "Fecha límite guardada.");
+}
+
+/** Activa o desactiva el PIN para aprobar y firmar en esta MCP. Solo el administrador. */
+export async function guardarExigirPin(fd: FormData) {
+  const ctx = await contextoMcp();
+  if (!tiene(ctx, "admin") && !ctx.esSoporte) volver("/configuracion", "error", "Solo el administrador puede cambiar la seguridad.");
+  const supabase = await supabaseServidor();
+  const activar = texto(fd, "exigir_pin") === "1";
+  const { error } = await supabase.from("mcps").update({ exigir_pin: activar }).eq("id", ctx.mcp.id);
+  if (error) volver("/configuracion", "error", /exigir_pin|schema cache|does not exist/.test(error.message) ? "Falta la actualización de la base (ACTUALIZAR_BASE.sql). Avise a soporte." : mensajeError(error));
+  revalidatePath("/", "layout");
+  volver("/configuracion", "ok", activar ? "PIN activado: se pedirá para crear, aprobar y anular." : "PIN desactivado.");
 }
 
 const TIPOS_LOGO: Record<string, string> = { "image/png": "png", "image/jpeg": "jpg", "image/webp": "webp" };

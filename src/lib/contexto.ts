@@ -21,6 +21,8 @@ export type Mcp = {
   logo_path?: string | null;
   /** Módulos habilitados por el superadmin (no existe antes de la actualización). */
   modulos?: string[] | null;
+  /** Si la MCP pide el PIN para aprobar y firmar (se activa en Configuración; no existe antes de la actualización). */
+  exigir_pin?: boolean | null;
 };
 
 export type Fuente = {
@@ -101,7 +103,7 @@ export const obtenerContexto = cache(async (): Promise<Contexto> => {
     const { data, error } = await supabaseServicio().from("perfil_seguridad").select("pin_hash, acepto_terminos_en, acepto_version").eq("user_id", userId).maybeSingle();
     if (!error) {
       const terminos = !data?.acepto_terminos_en || data.acepto_version !== VERSION_TERMINOS;
-      const pin = !data?.pin_hash;
+      const pin = !data?.pin_hash && !!mcp?.exigir_pin;
       if (terminos || pin) ingresoPendiente = { terminos, pin };
     }
   } catch {

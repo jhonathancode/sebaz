@@ -1,7 +1,7 @@
 "use client";
 
 import CampoPin from "@/components/CampoPin";
-import { usePrimerNombre } from "@/components/UsuarioContexto";
+import { useExigirPin, usePrimerNombre } from "@/components/UsuarioContexto";
 import { useRef, useState } from "react";
 
 /**
@@ -27,6 +27,7 @@ export default function Motivo({
   pin?: boolean;
 }) {
   const nombre = usePrimerNombre();
+  const pinActivo = useExigirPin();
   const ref = useRef<HTMLDialogElement>(null);
   const [texto, setTexto] = useState("");
   const corto = texto.trim().length < 10;
@@ -61,7 +62,7 @@ export default function Motivo({
               />
             </label>
             <span className="pequeno tenue">{texto.trim().length} / 10 caracteres mínimo</span>
-            {pin && (
+            {pin && pinActivo && (
               <CampoPin name="pin" etiqueta={nombre ? `PIN de ${nombre}` : "Su PIN personal"} required verificar />
             )}
           </div>

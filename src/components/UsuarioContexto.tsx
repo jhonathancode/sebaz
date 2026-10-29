@@ -2,7 +2,7 @@
 
 import { createContext, useContext } from "react";
 
-const Contexto = createContext<string>("");
+const Contexto = createContext<{ nombre: string; exigirPin: boolean }>({ nombre: "", exigirPin: false });
 
 /** Primer nombre de quien está usando el sistema, para saludarlo al pedirle el PIN. */
 export function primerNombre(nombre: string): string {
@@ -11,10 +11,15 @@ export function primerNombre(nombre: string): string {
   return p.charAt(0).toUpperCase() + p.slice(1).toLowerCase();
 }
 
-export function UsuarioProvider({ nombre, children }: { nombre: string; children: React.ReactNode }) {
-  return <Contexto.Provider value={primerNombre(nombre)}>{children}</Contexto.Provider>;
+export function UsuarioProvider({ nombre, exigirPin = false, children }: { nombre: string; exigirPin?: boolean; children: React.ReactNode }) {
+  return <Contexto.Provider value={{ nombre: primerNombre(nombre), exigirPin }}>{children}</Contexto.Provider>;
 }
 
 export function usePrimerNombre(): string {
-  return useContext(Contexto);
+  return useContext(Contexto).nombre;
+}
+
+/** true si la MCP activó el PIN en Configuración. */
+export function useExigirPin(): boolean {
+  return useContext(Contexto).exigirPin;
 }

@@ -95,6 +95,7 @@ export default async function Expedientes({ searchParams }: { searchParams: Para
           abierta={sp.nuevo === "1"}
           error={sp.nuevo === "1" ? sp.error : undefined}
           ancha
+          pin
           pinOpcionalSi={tiene(ctx, "alcalde", "admin") ? 'input[name="tipo"][value="pago_fijo"]:checked' : undefined}
         >
           <CamposRequerimiento fuentes={ctx.fuentes} pagosFijos={pagosFijos} chequeSugerido={chequeSugerido} />

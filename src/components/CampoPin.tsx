@@ -73,9 +73,13 @@ const CampoPin = forwardRef<
         <input
           ref={ref}
           name={name}
-          type="password"
+          type="text"
           inputMode="numeric"
-          autoComplete="off"
+          autoComplete="one-time-code"
+          data-lpignore="true"
+          data-1p-ignore="true"
+          autoCorrect="off"
+          spellCheck={false}
           maxLength={4}
           pattern="\d{4}"
           required={required}

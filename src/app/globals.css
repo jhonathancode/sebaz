@@ -1512,13 +1512,13 @@ form:has(input[name="tipo"][value="pago_fijo"]:checked) .pin-auto { display: blo
 /* PIN con casillas y teclado */
 .pin-campo { display: flex; flex-direction: column; align-items: center; gap: 10px; width: fit-content; max-width: 100%; }
 .pin-etiqueta { font-size: 13px; font-weight: 600; }
-.pin-casillas { position: relative; display: flex; gap: 8px; }
-.pin-casilla { width: 38px; height: 46px; border: 1.5px solid var(--borde-fuerte); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 18px; background: var(--panel); transition: border-color .15s, box-shadow .15s; }
-.pin-casilla.llena { border-color: var(--primario); }
-.pin-casilla.activa { border-color: var(--primario); box-shadow: 0 0 0 3px var(--foco); }
+.pin-casillas { position: relative; display: flex; gap: 18px; padding: 10px 6px; }
+.pin-casilla { width: 18px; height: 18px; border: 2px solid var(--borde-fuerte); border-radius: 50%; display: block; font-size: 0; background: transparent; transition: background .15s, border-color .15s, transform .15s; }
+.pin-casilla.llena { border-color: var(--primario); background: var(--primario); transform: scale(1.1); }
+.pin-casilla.activa { border-color: var(--primario); }
 .pin-real { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: text; border: 0; padding: 0; font-size: 16px; }
-.pin-teclado { display: grid; grid-template-columns: repeat(3, 62px); gap: 8px; }
-.pin-teclado button { height: 44px; border-radius: 12px; border: 1px solid var(--borde-fuerte); background: var(--panel); color: inherit; font-size: 18px; font-weight: 600; cursor: pointer; }
+.pin-teclado { display: grid; grid-template-columns: repeat(3, 66px); gap: 12px 16px; margin-top: 4px; }
+.pin-teclado button { height: 58px; border-radius: 50%; box-shadow: 0 1px 2px rgba(0,0,0,.08); border: 1px solid var(--borde-fuerte); background: var(--panel); color: inherit; font-size: 18px; font-weight: 600; cursor: pointer; }
 .pin-teclado button:hover { border-color: var(--primario); }
 .pin-teclado button:active { transform: scale(.96); }
 .pin-teclado button.aux { font-size: 13px; font-weight: 500; opacity: .8; }
@@ -1531,3 +1531,17 @@ form:has(input[name="tipo"][value="pago_fijo"]:checked) .pin-auto { display: blo
 .pin-visto { width: 30px; height: 30px; border-radius: 50%; background: var(--primario); color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 800; animation: pin-pop .25s ease-out; }
 .pin-cambiar { margin-left: 8px; background: none; border: 0; color: inherit; text-decoration: underline; font-size: 12px; cursor: pointer; }
 @keyframes pin-pop { from { transform: scale(.4); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
+/* Ventana de confirmación con PIN: estilo seguro, centrado */
+.dialogo-seguro { width: min(400px, calc(100vw - 32px)); border-radius: 18px; box-shadow: 0 24px 70px rgba(0,0,0,.4); overflow: hidden; }
+.seguro-cab { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 26px 24px 6px; text-align: center; }
+.seguro-candado { width: 54px; height: 54px; border-radius: 50%; display: flex; align-items: center; justify-content: center; background: var(--primario-fondo); color: var(--primario-texto); border: 1px solid var(--azul-borde); margin-bottom: 4px; }
+.seguro-etq { font-size: 11px; letter-spacing: .14em; text-transform: uppercase; font-weight: 700; color: var(--primario-texto); }
+.seguro-titulo { font-size: 17px; font-weight: 700; line-height: 1.3; }
+.seguro-texto { text-align: center; font-size: 13.5px; color: var(--tenue); padding-top: 6px; padding-bottom: 0; }
+.seguro-pin { align-items: center; padding-top: 10px; }
+.seguro-pin .pin-campo { align-items: center; }
+.seguro-pin .pin-etiqueta { font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--tenue); }
+.seguro-nota { margin: 0; padding: 0 24px 14px; text-align: center; font-size: 12px; color: var(--tenue); }
+.dialogo-seguro .seguro-pie { justify-content: center; background: transparent; padding: 16px 24px 22px; }
+.dialogo-seguro .seguro-pie .btn { min-width: 140px; justify-content: center; }

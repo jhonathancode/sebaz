@@ -35,6 +35,7 @@ export default function BotonConfirmar({
   const campoPin = useRef<HTMLInputElement>(null);
   const [opcional, setOpcional] = useState(false);
   const [pinEscrito, setPinEscrito] = useState("");
+  const [apertura, setApertura] = useState(0);
 
   function abrir() {
     const form = boton.current?.form;
@@ -45,6 +46,7 @@ export default function BotonConfirmar({
     }
     setOpcional(!!pinOpcionalSi && !!form?.querySelector(pinOpcionalSi));
     setPinEscrito("");
+    setApertura((n) => n + 1); // el PIN siempre se muestra limpio
     dialogo.current?.showModal();
   }
 
@@ -67,21 +69,36 @@ export default function BotonConfirmar({
       <button ref={boton} type="button" className={className} onClick={abrir} disabled={disabled}>
         {children}
       </button>
-      <dialog ref={dialogo} className="dialogo" aria-label={pregunta}>
-        <div className="dialogo-cab">{pregunta}</div>
+      <dialog ref={dialogo} className={`dialogo${pin || opcional ? " dialogo-seguro" : ""}`} aria-label={pregunta}>
+        {pin || opcional ? (
+          <div className="seguro-cab">
+            <span className="seguro-candado" aria-hidden="true">
+              <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="4.5" y="10.5" width="15" height="10" rx="2.5" />
+                <path d="M8 10.5V7.5a4 4 0 0 1 8 0v3" />
+                <circle cx="12" cy="15.5" r="1.2" fill="currentColor" />
+              </svg>
+            </span>
+            <span className="seguro-etq">Confirmación de seguridad</span>
+            <span className="seguro-titulo">{pregunta}</span>
+          </div>
+        ) : (
+          <div className="dialogo-cab">{pregunta}</div>
+        )}
         {(detalle || opcional) && (
-          <div className="dialogo-cuerpo">
+          <div className={`dialogo-cuerpo${pin || opcional ? " seguro-texto" : ""}`}>
             <p style={{ margin: 0 }}>
               {opcional ? "Si usted es quien aprueba, escriba su PIN para aprobar este pago fijo en el acto. Sin PIN, solo se registra y se aprueba después." : detalle}
             </p>
           </div>
         )}
         {(pin || opcional) && (
-          <div className="dialogo-cuerpo">
-            <CampoPin ref={campoPin} name="pin" etiqueta={opcional ? "Su PIN (opcional)" : "Su PIN personal"} onEnter={confirmar} onCambio={setPinEscrito} verificar />
+          <div className="dialogo-cuerpo seguro-pin">
+            <CampoPin key={apertura} ref={campoPin} name="pin" etiqueta={opcional ? "Su PIN (opcional)" : "Su PIN personal"} onEnter={confirmar} onCambio={setPinEscrito} verificar />
           </div>
         )}
-        <div className="dialogo-pie">
+        {(pin || opcional) && <p className="seguro-nota">Su PIN es personal y se verifica de forma cifrada. Nunca lo comparta.</p>}
+        <div className={`dialogo-pie${pin || opcional ? " seguro-pie" : ""}`}>
           <button type="button" className="btn" onClick={() => dialogo.current?.close()}>
             No, volver
           </button>

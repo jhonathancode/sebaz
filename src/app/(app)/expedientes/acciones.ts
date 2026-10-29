@@ -65,6 +65,8 @@ export async function crearExpediente(fd: FormData) {
       }
     }
   }
+  // Todo requerimiento se firma con el PIN de quien lo registra
+  await exigirPin(ctx.userId, fd, "/expedientes?nuevo=1");
   const chequePrevisto = (texto(fd, "cheque_previsto") ?? "").replace(/\D/g, "") || null;
   if (chequePrevisto && !/^\d{4,12}$/.test(chequePrevisto)) volver("/expedientes?nuevo=1", "error", "El número de cheque debe tener de 4 a 12 dígitos.");
   const { data, error } = await supabase
@@ -81,8 +83,7 @@ export async function crearExpediente(fd: FormData) {
 
   revalidatePath("/expedientes");
   // Pago fijo de la lista con cheque: si quien registra puede aprobar, todo queda listo de una vez.
-  if (pagoFijo && tiene(ctx, "alcalde", "admin") && texto(fd, "pin")) {
-    await exigirPin(ctx.userId, fd, ruta(data.id));
+  if (pagoFijo && tiene(ctx, "alcalde", "admin")) {
     const { error: eA } = await supabase.from("expedientes").update({ estado: "aprobado" }).eq("id", data.id);
     if (!eA) {
       if (await proveedorDelPagoFijo(supabase, ctx.mcp.id, data.id)) {

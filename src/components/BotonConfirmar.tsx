@@ -2,7 +2,7 @@
 
 import CampoPin from "@/components/CampoPin";
 import { useRef, useState } from "react";
-import { usePrimerNombre } from "@/components/UsuarioContexto";
+import { useExigirPin, usePrimerNombre } from "@/components/UsuarioContexto";
 
 /**
  * Botón que antes de ejecutar la acción pregunta "¿Está seguro?".
@@ -32,10 +32,12 @@ export default function BotonConfirmar({
   pinOpcionalSi?: string;
 }) {
   const nombre = usePrimerNombre();
+  const pinActivo = useExigirPin();
   const boton = useRef<HTMLButtonElement>(null);
   const dialogo = useRef<HTMLDialogElement>(null);
   const campoPin = useRef<HTMLInputElement>(null);
   const [opcional, setOpcional] = useState(false);
+  const pedirPin = (pin && pinActivo) || opcional;
   const [apertura, setApertura] = useState(0);
 
   function abrir() {
@@ -45,13 +47,13 @@ export default function BotonConfirmar({
       form.reportValidity();
       return;
     }
-    setOpcional(!!pinOpcionalSi && !!form?.querySelector(pinOpcionalSi));
+    setOpcional(pinActivo && !!pinOpcionalSi && !!form?.querySelector(pinOpcionalSi));
     setApertura((n) => n + 1); // el PIN siempre se muestra limpio
     dialogo.current?.showModal();
   }
 
   function confirmar() {
-    if ((pin || opcional) && !/^\d{4}$/.test(campoPin.current?.value ?? "")) {
+    if ((pedirPin) && !/^\d{4}$/.test(campoPin.current?.value ?? "")) {
       campoPin.current?.focus();
       campoPin.current?.reportValidity();
       return;
@@ -65,8 +67,8 @@ export default function BotonConfirmar({
       <button ref={boton} type="button" className={className} onClick={abrir} disabled={disabled}>
         {children}
       </button>
-      <dialog ref={dialogo} className={`dialogo${pin || opcional ? " dialogo-seguro" : ""}`} aria-label={pregunta}>
-        {pin || opcional ? (
+      <dialog ref={dialogo} className={`dialogo${pedirPin ? " dialogo-seguro" : ""}`} aria-label={pregunta}>
+        {pedirPin ? (
           <div className="seguro-cab">
             <span className="seguro-candado" aria-hidden="true">
               <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
@@ -82,23 +84,23 @@ export default function BotonConfirmar({
           <div className="dialogo-cab">{pregunta}</div>
         )}
         {(detalle || opcional) && (
-          <div className={`dialogo-cuerpo${pin || opcional ? " seguro-texto" : ""}`}>
+          <div className={`dialogo-cuerpo${pedirPin ? " seguro-texto" : ""}`}>
             <p style={{ margin: 0 }}>
               {opcional ? "Al confirmar con su PIN, este pago fijo quedará registrado y aprobado en el acto." : detalle}
             </p>
           </div>
         )}
-        {(pin || opcional) && (
+        {pedirPin && (
           <div className="dialogo-cuerpo seguro-pin">
             <CampoPin key={apertura} ref={campoPin} name="pin" etiqueta={nombre ? `PIN de ${nombre}` : "Su PIN personal"} onEnter={confirmar} verificar />
           </div>
         )}
-        {(pin || opcional) && <p className="seguro-nota">Su PIN es personal y se verifica de forma cifrada. Nunca lo comparta.</p>}
-        <div className={`dialogo-pie${pin || opcional ? " seguro-pie" : ""}`}>
+        {pedirPin && <p className="seguro-nota">Su PIN es personal y se verifica de forma cifrada. Nunca lo comparta.</p>}
+        <div className={`dialogo-pie${pedirPin ? " seguro-pie" : ""}`}>
           <button type="button" className="btn" onClick={() => dialogo.current?.close()}>
             No, volver
           </button>
-          <button type="button" className={`btn ${peligro ? "peligro" : "primario"}`} onClick={confirmar} autoFocus={!pin}>
+          <button type="button" className={`btn ${peligro ? "peligro" : "primario"}`} onClick={confirmar} autoFocus={!pedirPin}>
             {opcional ? "Sí, aprobar y guardar" : textoConfirmar}
           </button>
         </div>

@@ -1,5 +1,6 @@
 import { randomBytes, scryptSync, timingSafeEqual } from "crypto";
 import { volver } from "./acciones";
+import { obtenerContexto } from "./contexto";
 import { supabaseServicio } from "./supabase/server";
 
 const MAX_INTENTOS = 5;
@@ -32,6 +33,8 @@ export function pinValido(pin: string): string | null {
  * Si la base aún no tiene la actualización o la persona no tiene PIN, no estorba.
  */
 export async function exigirPin(userId: string, fd: FormData, destino: string): Promise<void> {
+  // El PIN es opcional por MCP: si no está activado en Configuración, no se pide
+  if (!(await pinActivado())) return;
   let registro: { pin_hash: string | null; pin_intentos: number; pin_bloqueado_hasta: string | null } | null = null;
   try {
     const { data, error } = await supabaseServicio()
@@ -70,6 +73,7 @@ export async function exigirPin(userId: string, fd: FormData, destino: string): 
 
 /** Comprueba el PIN sin ejecutar ninguna acción (para avisar "PIN correcto" antes de guardar). Cuenta los intentos fallidos igual que exigirPin. */
 export async function comprobarPin(userId: string, pin: string): Promise<{ ok: boolean; mensaje: string }> {
+  if (!(await pinActivado())) return { ok: true, mensaje: "" };
   let registro: { pin_hash: string | null; pin_intentos: number; pin_bloqueado_hasta: string | null } | null = null;
   try {
     const { data, error } = await supabaseServicio()
@@ -101,4 +105,12 @@ export async function comprobarPin(userId: string, pin: string): Promise<{ ok: b
   }
   await servicio.from("perfil_seguridad").update({ pin_intentos: intentos }).eq("user_id", userId);
   return { ok: false, mensaje: `PIN incorrecto. Le quedan ${MAX_INTENTOS - intentos} intento(s).` };
+}
+
+async function pinActivado(): Promise<boolean> {
+  try {
+    return !!(await obtenerContexto()).mcp?.exigir_pin;
+  } catch {
+    return false;
+  }
 }

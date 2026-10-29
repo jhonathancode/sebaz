@@ -109,7 +109,7 @@ export default async function MarcoApp({ children }: { children: React.ReactNode
   const cargo = ctx.esSuperadmin ? "Administrador del sistema" : [...ctx.cargos, ...(ctx.esSoporte ? ["Soporte"] : [])].join(" · ") || "Sin cargo vigente";
 
   return (
-    <UsuarioProvider nombre={ctx.nombre}>
+    <UsuarioProvider nombre={ctx.nombre} exigirPin={!!ctx.mcp?.exigir_pin}>
       <header className="cabecera no-imprimir">
         <div className="marca">
           {items.length > 0 && <BotonMenu />}

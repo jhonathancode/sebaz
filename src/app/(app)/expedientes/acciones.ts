@@ -83,7 +83,7 @@ export async function crearExpediente(fd: FormData) {
 
   revalidatePath("/expedientes");
   // Pago fijo de la lista con cheque: si quien registra puede aprobar, todo queda listo de una vez.
-  if (pagoFijo && tiene(ctx, "alcalde", "admin")) {
+  if (pagoFijo && tiene(ctx, "alcalde", "admin") && ctx.mcp.exigir_pin) {
     const { error: eA } = await supabase.from("expedientes").update({ estado: "aprobado" }).eq("id", data.id);
     if (!eA) {
       if (await proveedorDelPagoFijo(supabase, ctx.mcp.id, data.id)) {

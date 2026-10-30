@@ -37,7 +37,8 @@ import {
 } from "../acciones";
 import CamposProveedor, { type ProveedorConocido } from "@/components/formularios/CamposProveedor";
 import { compraSinAlmacen } from "../../almacen/acciones";
-import { registrarCheque } from "../../comprobantes/acciones";
+import { cambiarEstadoComprobante, editarComprobante, registrarCheque } from "../../comprobantes/acciones";
+import CamposEditarComprobante from "@/components/formularios/CamposEditarComprobante";
 
 type Params = Promise<{ id: string }>;
 
@@ -73,7 +74,7 @@ export default async function Expediente({ params, searchParams }: { params: Par
       supabase.from("cotizaciones").select("*, proveedores(razon_social, num_doc)").eq("expediente_id", id).order("monto"),
       supabase.from("ordenes").select("*, proveedores(razon_social, num_doc)").eq("expediente_id", id).order("creado_en"),
       supabase.from("conformidades").select("*").eq("expediente_id", id).order("creado_en"),
-      supabase.from("comprobantes_pago").select("id, numero, origen, fecha, importe, estado, cheque").eq("expediente_id", id),
+      supabase.from("comprobantes_pago").select("id, numero, origen, fecha, importe, estado, cheque, concepto, partida, funcional, funcion, categoria, deducciones, sustento_tipo, sustento_numero").eq("expediente_id", id),
       supabase
         .from("auditoria")
         .select("en, accion, tabla, despues, user_id")
@@ -146,10 +147,12 @@ export default async function Expediente({ params, searchParams }: { params: Par
             ? [{ id: "almacen", titulo: "Almacén (NEA)", detalle: nea ? `NEA ${num3(nea.numero)}-${nea.anio}` : sinAlmacen ? "No pasa por almacén" : "Pendiente", hecho: !!nea || !!sinAlmacen }]
             : []),
         ]),
-    { id: "comprobante", titulo: "Comprobante de pago", detalle: cp ? codigoCP(cp.numero, cp.origen) : "Pendiente", hecho: !!cp },
+    { id: "comprobante", titulo: "Comprobante de pago", detalle: cp ? codigoCP(cp.numero, cp.origen) : "Pendiente", hecho: !!cp && cp.estado !== "borrador" },
   ];
   const actual = pasos.find((p) => !p.hecho)?.id ?? "comprobante";
   const listos = pasos.filter((p) => p.hecho).length;
+  // Terminado de verdad: comprobante aprobado y con cheque (o ya rendido)
+  const terminado = !!cp && cp.estado !== "borrador" && (!!cp.cheque || cp.estado === "rendido");
   const pedido = sp.paso ?? sp.fase;
   const visto = pasos.some((p) => p.id === pedido) ? pedido! : actual;
 
@@ -316,21 +319,32 @@ export default async function Expediente({ params, searchParams }: { params: Par
       ),
     };
   } else if (cp.estado === "borrador") {
+    const faltas = [!cp.funcion && "la función del gasto", !cp.sustento_numero && "el número de la factura o boleta"].filter(Boolean) as string[];
     sigue = {
-      texto: `El comprobante ${codigoCP(cp.numero, cp.origen)} espera la aprobación del alcalde.`,
-      ayuda: cp.cheque ? `Cheque N° ${cp.cheque}.` : "Mientras tanto, si ya giró el cheque, escriba su número aquí.",
-      accion: (
+      texto: "¿El comprobante de pago está bien?",
+      ayuda: faltas.length ? `Falta anotar ${faltas.join(" y ")}: use «No, corregir».` : "Revise a quién se paga y el monto. Si está bien, apruébelo y falta solo el cheque.",
+      accion: puedeAprobar || puedeRegistrar ? (
         <div className="acciones-fila">
-          {!cp.cheque && puedeRegistrar && <FormCheque cpId={cp.id} expedienteId={id} sugerido={chequeSugerido} />}
-          <Link className="btn contorno" href={`/comprobantes/${cp.id}`}>Abrir comprobante</Link>
+          {puedeAprobar && (
+            <form action={cambiarEstadoComprobante}>
+              <input type="hidden" name="id" value={cp.id} />
+              <input type="hidden" name="accion" value="aprobar" />
+              <BotonConfirmar pin className="btn primario grande" pregunta="¿Aprobar este comprobante de pago?" detalle="Aprobado ya no se edita: solo falta escribir el número de cheque." textoConfirmar="Sí, aprobar">Sí, aprobar</BotonConfirmar>
+            </form>
+          )}
+          {puedeRegistrar && (
+            <VentanaFlotante boton={puedeAprobar ? "No, corregir" : "Corregir"} titulo="Corregir el comprobante de pago" accion={editarComprobante} textoGuardar="Guardar cambios" claseBoton={puedeAprobar ? "btn peligro grande" : "btn contorno grande"} ancha>
+              <CamposEditarComprobante id={cp.id} c={cp} />
+            </VentanaFlotante>
+          )}
         </div>
-      ),
+      ) : undefined,
     };
   } else if (cp.estado === "aprobado" && !cp.cheque) {
     sigue = {
       texto: `Escriba el número del cheque del comprobante ${codigoCP(cp.numero, cp.origen)}.`,
       ayuda: "Sin cheque el gasto no puede entrar en la rendición. El número se escribe una sola vez.",
-      accion: puedeRegistrar ? <FormCheque cpId={cp.id} expedienteId={id} sugerido={chequeSugerido} /> : <Link className="btn primario grande" href={`/comprobantes/${cp.id}`}>Abrir comprobante</Link>,
+      accion: puedeRegistrar ? <FormCheque cpId={cp.id} expedienteId={id} sugerido={chequeSugerido} /> : undefined,
     };
   } else if (cp.estado === "aprobado") {
     sigue = {
@@ -340,7 +354,7 @@ export default async function Expediente({ params, searchParams }: { params: Par
   } else {
     sigue = {
       texto: "Este gasto ya está rendido.",
-      accion: <Link className="btn primario grande" href={`/expedientes/${id}/documentos`}>Ver documentos</Link>,
+      ayuda: "Todos sus documentos se ven arriba. Para imprimirlos use «Imprimir todo el expediente».",
     };
   }
 
@@ -496,7 +510,7 @@ export default async function Expediente({ params, searchParams }: { params: Par
 
       <section className={`avance${anulado ? " anulado" : ""}`} aria-label="Avance del expediente">
         <div className="av-cab">
-          <span className="av-titulo">{anulado ? "Expediente anulado" : listos === pasos.length ? "Expediente completo" : `Paso ${Math.min(listos + 1, pasos.length)} de ${pasos.length}`}</span>
+          <span className="av-titulo">{anulado ? "Expediente anulado" : terminado ? "Expediente completo" : `Paso ${Math.min(listos + 1, pasos.length)} de ${pasos.length}`}</span>
           <span className="av-pct">{Math.round((listos / pasos.length) * 100)} %</span>
         </div>
         <div className="av-barra" aria-hidden="true"><div style={{ width: `${(listos / pasos.length) * 100}%` }} /></div>
@@ -520,7 +534,7 @@ export default async function Expediente({ params, searchParams }: { params: Par
                       {estado === "actual" && <span className="av-ahora">Ahora</span>}
                     </span>
                     <span className="av-nombre">{p.titulo}</span>
-                    <span className="av-det">{p.hecho ? p.detalle : estado === "actual" ? (p.id === "requerimiento" && e.estado === "borrador" ? "Por aprobar" : "En curso") : "Pendiente"}</span>
+                    <span className="av-det">{p.hecho ? p.detalle : estado === "actual" ? ((p.id === "requerimiento" && e.estado === "borrador") || (p.id === "comprobante" && cp?.estado === "borrador") ? "Por aprobar" : "En curso") : "Pendiente"}</span>
                   </span>
                 </Link>
               </li>
@@ -534,7 +548,6 @@ export default async function Expediente({ params, searchParams }: { params: Par
         <div className="panel-cab">
           <span>{viendoBorrador ? `Así quedará: ${borrador!.nombre}` : "Así va su documento"}</span>
           <div className="acciones-fila" style={viendoBorrador ? { display: "none" } : undefined}>
-            <Link className="btn chico contorno" href={`/expedientes/${id}/documentos?doc=${verClave}`}>Ver en grande</Link>
             <BotonPdf nombre={`Expediente ${num3(e.numero)}-${e.anio} ${verClave}`} selector=".vista-previa .hoja" className="btn chico primario" />
             <Link className="btn chico contorno" href={`/expedientes/${id}/documentos?doc=${verClave}&imprimir=1`}>Imprimir</Link>
             {docs.length > 1 && (
@@ -589,9 +602,9 @@ export default async function Expediente({ params, searchParams }: { params: Par
       </section>
 
       <div className="barra-guiada no-imprimir" role="region" aria-label="Confirmar este paso">
-        <div className={`av-sigue${listos === pasos.length && !anulado ? " listo" : ""}`}>
+        <div className={`av-sigue${terminado && !anulado ? " listo" : ""}`}>
           <div className="sigue-texto">
-            <span className="etiqueta">{anulado ? "Anulado" : listos === pasos.length ? "Todo listo" : `Paso ${Math.min(listos + 1, pasos.length)} de ${pasos.length} · ${pasos.find((p) => p.id === actual)?.titulo ?? ""}`}</span>
+            <span className="etiqueta">{anulado ? "Anulado" : terminado ? "Todo listo" : `Paso ${pasos.findIndex((p) => p.id === actual) + 1} de ${pasos.length} · ${pasos.find((p) => p.id === actual)?.titulo ?? ""}`}</span>
             <div className="sigue-titulo">{sigue.texto}</div>
             {sigue.ayuda && <div className="tenue">{sigue.ayuda}</div>}
           </div>
@@ -683,7 +696,7 @@ export default async function Expediente({ params, searchParams }: { params: Par
                 </div>
                 {!o.anulado && (
                   <div className="acciones-fila">
-                    <Link className="btn chico contorno" href={`/expedientes/${id}/documentos?doc=orden`}>Ver e imprimir</Link>
+                    <Link className="btn chico contorno" href={`/expedientes/${id}/documentos?doc=orden&imprimir=1`}>Imprimir</Link>
                     {!conformidad && puedeRegistrar && (
                       <Motivo accion={anularRegistro} boton="Anular" titulo="Anular la orden" ayuda="Motivo" campos={{ expediente_id: id, tabla: "ordenes", registro_id: o.id, fase: "orden" }} />
                     )}
@@ -708,7 +721,7 @@ export default async function Expediente({ params, searchParams }: { params: Par
                 </div>
                 {!c.anulado && (
                   <div className="acciones-fila">
-                    <Link className="btn chico contorno" href={`/expedientes/${id}/documentos?doc=conformidad`}>Ver e imprimir</Link>
+                    <Link className="btn chico contorno" href={`/expedientes/${id}/documentos?doc=conformidad&imprimir=1`}>Imprimir</Link>
                     {!cp && !nea && puedeRegistrar && (
                       <Motivo accion={anularRegistro} boton="Anular" titulo="Anular la conformidad" ayuda="Motivo" campos={{ expediente_id: id, tabla: "conformidades", registro_id: c.id, fase: "conformidad" }} />
                     )}
@@ -749,7 +762,6 @@ export default async function Expediente({ params, searchParams }: { params: Par
                 <div>
                   <b>{codigoCP(c.numero, c.origen)}</b> · {fecha(c.fecha)} · S/ {soles(c.importe)} · Cheque: {c.cheque ?? <span className="falta">pendiente</span>} <Estado valor={c.estado} />
                 </div>
-                <Link className="btn chico contorno" href={`/comprobantes/${c.id}`}>Abrir</Link>
               </div>
             ))}
           </div>
@@ -779,6 +791,12 @@ export default async function Expediente({ params, searchParams }: { params: Par
                   />
                 </VentanaFlotante>
                 <span className="tenue pequeno">Mientras no esté aprobado, puede cambiar montos y datos.</span>
+              </div>
+            )}
+            {cp && cp.estado === "aprobado" && !cp.cheque && puedeAprobar && !anulado && (
+              <div>
+                <Motivo accion={cambiarEstadoComprobante} boton="Devolver el comprobante para corregir" titulo="Devolver el comprobante a borrador" ayuda="¿Por qué se devuelve?" campos={{ id: cp.id, accion: "devolver" }} peligro={false} />
+                <span className="tenue pequeno">Vuelve a borrador; después se aprueba otra vez.</span>
               </div>
             )}
             {e.estado === "aprobado" && puedeAprobar && !orden && !cp && (

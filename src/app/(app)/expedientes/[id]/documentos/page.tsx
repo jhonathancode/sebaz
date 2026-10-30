@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import BotonPdf from "@/components/BotonPdf";
 import BotonImprimir, { ImprimirAlAbrir } from "@/components/BotonImprimir";
 import Estado from "@/components/Estado";
@@ -22,6 +22,8 @@ export default async function Documentos({
 }) {
   const { id } = await params;
   const { doc = "todo", imprimir } = await searchParams;
+  // Una sola vista: esta ruta queda solo para imprimir; para ver se usa la página del expediente
+  if (imprimir !== "1") redirect(`/expedientes/${id}${doc === "todo" ? "" : `?ver=${doc}`}`);
   const ctx = await contextoMcp();
   const supabase = await supabaseServidor();
   const [d, { data: tesorero }] = await Promise.all([

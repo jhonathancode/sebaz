@@ -1,6 +1,6 @@
 import Link from "next/link";
 import BotonConfirmar from "@/components/BotonConfirmar";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import Avisos from "@/components/Avisos";
 import BotonPdf from "@/components/BotonPdf";
 import BotonImprimir from "@/components/BotonImprimir";
@@ -10,8 +10,7 @@ import FormatoComprobante from "@/components/formatos/FormatoComprobante";
 import Estado from "@/components/Estado";
 import { MarcaAnuladaPagina } from "@/components/MarcaAnulado";
 import Motivo from "@/components/Motivo";
-import SelectFuncion from "@/components/SelectFuncion";
-import { CLASIFICADORES, SUSTENTOS } from "@/lib/catalogos";
+import CamposEditarComprobante from "@/components/formularios/CamposEditarComprobante";
 import { contextoMcp, tiene } from "@/lib/contexto";
 import { cargarCierres, estadoGestion } from "@/lib/gestion";
 import { codigoCP, fecha, fechaHora, hoyISO } from "@/lib/formato";
@@ -21,6 +20,13 @@ import { cambiarEstadoComprobante, editarComprobante, registrarCheque } from "..
 
 type P = Promise<{ id: string }>;
 type B = Promise<{ ok?: string; error?: string }>;
+
+const cola = (sp: { ok?: string; error?: string }) => {
+  const q = new URLSearchParams();
+  if (sp.ok) q.set("ok", sp.ok);
+  if (sp.error) q.set("error", sp.error);
+  return q.toString() ? `&${q.toString()}` : "";
+};
 
 export default async function Comprobante({ params, searchParams }: { params: P; searchParams: B }) {
   const { id } = await params;
@@ -36,6 +42,8 @@ export default async function Comprobante({ params, searchParams }: { params: P;
     siguienteCheque(supabase, ctx.mcp.id),
   ]);
   if (!c) notFound();
+  // El comprobante de un expediente se trabaja en la vista única del expediente
+  if (c.expediente_id) redirect(`/expedientes/${c.expediente_id}?paso=comprobante&ver=comprobante${cola(sp)}`);
 
   const exp = c.expedientes as { numero: number; anio: number } | null;
   const borrador = c.estado === "borrador";
@@ -56,37 +64,7 @@ export default async function Comprobante({ params, searchParams }: { params: P;
   ];
   const actual = pasos.findIndex((p) => !p.hecho);
 
-  const camposEditar = (
-    <>
-      <input type="hidden" name="id" value={id} />
-      <div className="rejilla-2">
-        <label className="campo">Fecha<input type="date" name="fecha" defaultValue={c.fecha} /></label>
-        <label className="campo">
-          Documento que entregó el proveedor
-          <select name="sustento_tipo" defaultValue={c.sustento_tipo ?? ""}>
-            <option value="">—</option>
-            {SUSTENTOS.map((x) => (
-              <option key={x.codigo} value={x.codigo}>{x.nombre}</option>
-            ))}
-          </select>
-        </label>
-        <label className="campo">N° del documento<input name="sustento_numero" defaultValue={c.sustento_numero ?? ""} placeholder="Ej.: F001-45" /></label>
-        <label className="campo">Deducciones S/<input name="deducciones" defaultValue={c.deducciones} inputMode="decimal" /></label>
-        <SelectFuncion valor={c.funcion && c.categoria ? `${c.funcion}|${c.categoria}` : ""} />
-        <label className="campo">
-          Partida
-          <select name="partida" defaultValue={c.partida ?? ""}>
-            <option value="">—</option>
-            {CLASIFICADORES.map((x) => (
-              <option key={x}>{x}</option>
-            ))}
-          </select>
-        </label>
-      </div>
-      <label className="campo">Concepto<textarea name="concepto" defaultValue={c.concepto} /></label>
-      <label className="campo">Funcional<input name="funcional" defaultValue={c.funcional ?? ""} /></label>
-    </>
-  );
+  const camposEditar = <CamposEditarComprobante id={id} c={c} />;
 
   return (
     <>

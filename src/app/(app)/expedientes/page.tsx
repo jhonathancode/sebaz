@@ -190,13 +190,19 @@ export default async function Expedientes({ searchParams }: { searchParams: Para
                       <span key={p} className="doc-par">
                         {i > 0 && <i className={`doc-sep${listo ? " ok" : ""}`} aria-hidden="true" />}
                         {listo ? (
-                          <Link className="doc-paso" href={`/expedientes/${e.id}/documentos?doc=${d.clave}`} title={`Ver ${d.corto.toLowerCase()}`}>
+                          <Link className="doc-paso" href={`/expedientes/${e.id}?paso=${p}&ver=${d.clave}`} title={`Ver ${d.corto.toLowerCase()}`}>
                             <span className="ic" aria-hidden="true">✓</span>{d.corto}
                           </Link>
                         ) : (
-                          <span className={`doc-paso pendiente${siguiente ? " siguiente" : ""}`} title={siguiente ? "Es el que sigue" : "Aún no se genera"}>
-                            <span className="ic" aria-hidden="true" />{d.corto}
-                          </span>
+                          siguiente ? (
+                            <Link className="doc-paso pendiente siguiente" href={`/expedientes/${e.id}`} title="Es el que sigue: abrir para continuar">
+                              <span className="ic" aria-hidden="true" />{d.corto}
+                            </Link>
+                          ) : (
+                            <span className="doc-paso pendiente" title="Aún no se genera">
+                              <span className="ic" aria-hidden="true" />{d.corto}
+                            </span>
+                          )
                         )}
                       </span>
                     );
@@ -209,7 +215,6 @@ export default async function Expedientes({ searchParams }: { searchParams: Para
               </div>
               <div className="f-acc">
                 <Link className="btn chico primario" href={`/expedientes/${e.id}`}>Abrir</Link>
-                <Link className="btn chico contorno" href={`/expedientes/${e.id}/documentos`}>Documentos</Link>
               </div>
             </div>
           );

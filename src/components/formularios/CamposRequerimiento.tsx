@@ -8,6 +8,7 @@ import SelectorPagoFijo from "./SelectorPagoFijo";
 import SugerenciaConcepto from "./SugerenciaConcepto";
 import PlantillasRecientes from "./PlantillasRecientes";
 import CampoConcepto from "./CampoConcepto";
+import ChipsConcepto from "./ChipsConcepto";
 import CompletarTodo from "./CompletarTodo";
 import type { ProveedorConocido } from "./CamposProveedor";
 import type { ItemHistorial, Plantilla } from "@/lib/atajos";
@@ -97,6 +98,7 @@ export default function CamposRequerimiento({ fuentes, valores, pagosFijos, cheq
         <label className="campo">
           <CampoConcepto defaultValue={valores?.descripcion ?? ""} />
         </label>
+        {!valores && <ChipsConcepto />}
         <SugerenciaConcepto tambienItem={false} />
       </fieldset>
 

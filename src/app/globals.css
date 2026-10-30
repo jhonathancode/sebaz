@@ -1623,3 +1623,6 @@ html.pdf-captura .escala-a4-interior { transform: none !important; }
 .av-paso.pendiente .av-enlace { opacity: .75; }
 .escala-a4-interior .hoja:has(.formato th:nth-child(8)) .formato th,
 .escala-a4-interior .hoja:has(.formato th:nth-child(8)) .formato td { font-size: 11.5px; padding: 7px 6px; }
+
+.chips-concepto { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; }
+.chips-concepto .f-chip { cursor: pointer; }

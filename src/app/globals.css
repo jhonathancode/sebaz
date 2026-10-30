@@ -1640,10 +1640,6 @@ fieldset.pregunta > legend { display: inline-flex; align-items: center; gap: 10p
   --h: 212; background: hsl(var(--h) 90% 56% / .13); border-color: hsl(var(--h) 80% 56% / .42); color: inherit; font-weight: 600;
   transition: background .15s, transform .15s, box-shadow .15s;
 }
-.plantillas .f-chip:nth-child(5n+2), .chips-concepto .f-chip:nth-child(5n+2) { --h: 170; }
-.plantillas .f-chip:nth-child(5n+3), .chips-concepto .f-chip:nth-child(5n+3) { --h: 262; }
-.plantillas .f-chip:nth-child(5n+4), .chips-concepto .f-chip:nth-child(5n+4) { --h: 32; }
-.plantillas .f-chip:nth-child(5n+5), .chips-concepto .f-chip:nth-child(5n+5) { --h: 336; }
 .plantillas .f-chip:hover, .chips-concepto .f-chip:hover { background: hsl(var(--h) 90% 56% / .30); transform: translateY(-1px); box-shadow: 0 6px 14px -8px hsl(var(--h) 90% 50%); color: inherit; }
 .plantillas-et { color: var(--primario-texto); }
 label.opcion:has(input:checked) { background: linear-gradient(135deg, var(--primario-fondo), transparent 85%); box-shadow: inset 0 0 0 1px var(--primario), 0 6px 16px -10px var(--primario); }

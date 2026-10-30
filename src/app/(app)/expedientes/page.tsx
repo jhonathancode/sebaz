@@ -105,6 +105,7 @@ export default async function Expedientes({ searchParams }: { searchParams: Para
           textoGuardar="Guardar requerimiento"
          
           abierta={sp.nuevo === "1"}
+          eventoAbrir="sebaz:abrir-nuevo-requerimiento"
           error={sp.nuevo === "1" ? sp.error : undefined}
           ancha
           pin

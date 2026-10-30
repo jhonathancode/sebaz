@@ -49,7 +49,7 @@ export default async function Expedientes({ searchParams }: { searchParams: Para
     .order("numero", { ascending: false });
   if (q) consulta = consulta.ilike("descripcion", `%${q}%`);
   if (tipo) consulta = consulta.eq("tipo", tipo);
-  const [{ data: lista }, pagosFijos, chequeSugerido, cierres, atajos] = await Promise.all([consulta, cargarCatalogoPagosFijos(supabase, ctx.mcp.id), siguienteCheque(supabase, ctx.mcp.id), cargarCierres(supabase, ctx.mcp.id), cargarAtajos(supabase, ctx.mcp.id)]);
+  const [{ data: lista }, pagosFijos, chequeSugerido, cierres, atajos, { data: provData }] = await Promise.all([consulta, cargarCatalogoPagosFijos(supabase, ctx.mcp.id), siguienteCheque(supabase, ctx.mcp.id), cargarCierres(supabase, ctx.mcp.id), cargarAtajos(supabase, ctx.mcp.id), supabase.from("proveedores").select("num_doc, razon_social, direccion, telefono").eq("mcp_id", ctx.mcp.id).order("razon_social")]);
 
   const todos = (lista ?? []).map((e) => ({
     ...e,
@@ -99,7 +99,7 @@ export default async function Expedientes({ searchParams }: { searchParams: Para
           pin
           pinOpcionalSi={tiene(ctx, "alcalde", "admin") ? 'input[name="tipo"][value="pago_fijo"]:checked' : undefined}
         >
-          <CamposRequerimiento fuentes={ctx.fuentes} pagosFijos={pagosFijos} chequeSugerido={chequeSugerido} plantillas={atajos.plantillas} historial={atajos.historial} fuenteFrecuente={atajos.fuenteFrecuente} />
+          <CamposRequerimiento fuentes={ctx.fuentes} pagosFijos={pagosFijos} chequeSugerido={chequeSugerido} plantillas={atajos.plantillas} historial={atajos.historial} fuenteFrecuente={atajos.fuenteFrecuente} proveedores={provData ?? []} />
         </VentanaFlotante>
       </div>
       <Avisos ok={sp.ok} error={sp.error} />

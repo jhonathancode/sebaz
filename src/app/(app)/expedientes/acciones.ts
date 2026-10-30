@@ -8,6 +8,7 @@ import { MESES, periodoActual } from "@/lib/formato";
 import { cargarCatalogoPagosFijos, estadoPagosFijos, mesPendiente, pasarAlMes, siguienteCheque } from "@/lib/pagosFijos";
 import { exigirPin } from "@/lib/pin";
 import { comprobanteAutomatico } from "@/lib/comprobanteAuto";
+import { completarTodo } from "@/lib/completarTodo";
 import { leerCheque } from "../comprobantes/acciones";
 
 /** "Función|Categoría" del selector → columnas separadas. */
@@ -73,11 +74,17 @@ export async function crearExpediente(fd: FormData) {
   }
   // Todo requerimiento se firma con el PIN de quien lo registra
   await exigirPin(ctx.userId, fd, "/expedientes?nuevo=1");
+  // Proveedor escrito en el mismo requerimiento (solo compras y servicios): queda elegido sin cotizar
+  const conProveedor = cabecera.tipo !== "pago_fijo" && !!texto(fd, "num_doc");
+  const proveedorId = conProveedor ? await proveedorPorDocumento(ctx.mcp.id, fd, "/expedientes?nuevo=1") : null;
+  const montoTotal = items.reduce((s, it) => s + it.cantidad * it.precio_unitario, 0);
+  if (conProveedor && montoTotal <= 0) volver("/expedientes?nuevo=1", "error", "Con proveedor, escriba el precio de cada cosa: el monto debe ser mayor que cero.");
+  const completar = conProveedor && texto(fd, "completar_todo") === "1";
   const chequePrevisto = (texto(fd, "cheque_previsto") ?? "").replace(/\D/g, "") || null;
   if (chequePrevisto && !/^\d{4,12}$/.test(chequePrevisto)) volver("/expedientes?nuevo=1", "error", "El número de cheque debe tener de 4 a 12 dígitos.");
   const { data, error } = await supabase
     .from("expedientes")
-    .insert({ mcp_id: ctx.mcp.id, ...cabecera, ...(pagoFijo ? { pago_fijo_id: pagoFijo, mes_pagado: mesPagado } : {}), ...(chequePrevisto ? { cheque_previsto: chequePrevisto } : {}) })
+    .insert({ mcp_id: ctx.mcp.id, ...cabecera, ...(pagoFijo ? { pago_fijo_id: pagoFijo, mes_pagado: mesPagado } : {}), ...(chequePrevisto ? { cheque_previsto: chequePrevisto } : {}), ...(conProveedor ? { completar_todo: completar, con_conformidad: texto(fd, "con_conformidad") === "1", sustento_tipo: texto(fd, "sustento_tipo"), sustento_numero: texto(fd, "sustento_numero") } : {}) })
     .select("id")
     .single();
   if (error || !data) volver("/expedientes?nuevo=1", "error", mensajeError(error));
@@ -87,7 +94,21 @@ export async function crearExpediente(fd: FormData) {
     .insert(items.map((it) => ({ ...it, mcp_id: ctx.mcp.id, expediente_id: data.id })));
   if (e2) volver(ruta(data.id), "error", "Se creó el expediente pero no sus ítems: " + mensajeError(e2));
 
+  if (proveedorId) {
+    const { error: eC } = await supabase.from("cotizaciones").insert({ mcp_id: ctx.mcp.id, expediente_id: data.id, proveedor_id: proveedorId, monto: montoTotal, elegida: true });
+    if (eC) volver(ruta(data.id), "error", "Se creó el requerimiento pero no se pudo registrar el proveedor: " + mensajeError(eC));
+    await supabase.from("expedientes").update({ fase: "cotizacion" }).eq("id", data.id).eq("fase", "requerimiento");
+  }
   revalidatePath("/expedientes");
+  // Compra o servicio con «completar todo»: si quien registra puede aprobar, se aprueba y se completa de una vez.
+  if (completar && tiene(ctx, "alcalde", "admin") && ctx.mcp.exigir_pin) {
+    const { error: eA } = await supabase.from("expedientes").update({ estado: "aprobado" }).eq("id", data.id);
+    if (!eA) {
+      const hecho = await completarTodo(supabase, ctx.mcp.id, ctx.mcp.nombre, data.id, await siguienteCheque(supabase, ctx.mcp.id));
+      revalidatePath("/comprobantes");
+      volver(ruta(data.id), "ok", `Requerimiento aprobado. ${hecho ?? "Siga con la orden."}`);
+    }
+  }
   // Pago fijo de la lista con cheque: si quien registra puede aprobar, todo queda listo de una vez.
   if (pagoFijo && tiene(ctx, "alcalde", "admin") && ctx.mcp.exigir_pin) {
     const { error: eA } = await supabase.from("expedientes").update({ estado: "aprobado" }).eq("id", data.id);
@@ -201,6 +222,11 @@ export async function cambiarEstadoExpediente(fd: FormData) {
   if (accion === "aprobar") {
     // Pago fijo de la lista: el comprobante de pago se genera solo, con el cheque siguiente.
     const ctx = await contextoMcp();
+    const hecho = await completarTodo(supabase, ctx.mcp.id, ctx.mcp.nombre, id, await siguienteCheque(supabase, ctx.mcp.id));
+    if (hecho) {
+      revalidatePath("/comprobantes");
+      volver(ruta(id), "ok", `Requerimiento aprobado. ${hecho}`);
+    }
     if (await proveedorDelPagoFijo(supabase, ctx.mcp.id, id)) volver(ruta(id, "orden"), "ok", "Pago fijo aprobado. Siga con la orden de servicio, la conformidad y el comprobante de pago.");
     const usado = await comprobanteAutomatico(supabase, ctx.mcp.id, id, await siguienteCheque(supabase, ctx.mcp.id), true);
     if (usado !== null) {

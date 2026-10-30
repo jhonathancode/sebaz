@@ -2,6 +2,7 @@
 
 import CampoPin from "@/components/CampoPin";
 import { useRef, useState } from "react";
+import { useFormStatus } from "react-dom";
 import { useExigirPin, usePrimerNombre } from "@/components/UsuarioContexto";
 
 /**
@@ -33,6 +34,7 @@ export default function BotonConfirmar({
 }) {
   const nombre = usePrimerNombre();
   const pinActivo = useExigirPin();
+  const { pending } = useFormStatus();
   const boton = useRef<HTMLButtonElement>(null);
   const dialogo = useRef<HTMLDialogElement>(null);
   const campoPin = useRef<HTMLInputElement>(null);
@@ -64,8 +66,8 @@ export default function BotonConfirmar({
 
   return (
     <>
-      <button ref={boton} type="button" className={className} onClick={abrir} disabled={disabled}>
-        {children}
+      <button ref={boton} type="button" className={className} onClick={abrir} disabled={disabled || pending} aria-busy={pending}>
+        {pending ? "Procesando…" : children}
       </button>
       <dialog ref={dialogo} className={`dialogo${pedirPin ? " dialogo-seguro" : ""}`} aria-label={pregunta}>
         {pedirPin ? (

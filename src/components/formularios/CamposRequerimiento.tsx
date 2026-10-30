@@ -30,6 +30,9 @@ const TIPOS = [
   { valor: "pago_fijo", titulo: "Pago fijo", texto: "Dietas del alcalde y regidores, personal contratado, asesores. No lleva cotizaciones." },
 ];
 
+/** Orden en pantalla: ingresos propios, luego la distrital (Perené) y la provincial (Chanchamayo). */
+const ORDEN_FUENTES: Record<Fuente["tipo"], number> = { propios: 0, distrito: 1, provincia: 2 };
+
 /** Nombre corto y claro de cada fuente de dinero. */
 export function nombreFuente(f: Fuente) {
   if (f.tipo === "propios") return "Ingresos propios";
@@ -72,7 +75,7 @@ export default function CamposRequerimiento({ fuentes, valores, pagosFijos, cheq
       <fieldset className="pregunta">
         <legend>2. ¿Con qué dinero se paga?</legend>
         <div className="opciones compacta">
-          {fuentes.map((f) => (
+          {[...fuentes].sort((a, b) => ORDEN_FUENTES[a.tipo] - ORDEN_FUENTES[b.tipo]).map((f) => (
             <label key={f.id} className="opcion" title={detalleFuente(f)}>
               <input type="radio" name="fuente_id" value={f.id} defaultChecked={f.id === fuente} required />
               <span className="opcion-titulo">{nombreFuente(f)}</span>

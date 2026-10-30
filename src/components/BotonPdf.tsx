@@ -23,6 +23,9 @@ export default function BotonPdf({
     const hojas = Array.from(document.querySelectorAll<HTMLElement>(selector));
     if (hojas.length === 0) return;
     setCargando(true);
+    // Para el PDF las hojas se capturan a tamaño real, sin la reducción de la vista previa
+    document.documentElement.classList.add("pdf-captura");
+    await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
     try {
       const [{ default: html2canvas }, { jsPDF }] = await Promise.all([import("html2canvas-pro"), import("jspdf")]);
       const pdf = new jsPDF({ unit: "mm", format: "a4", orientation: "portrait" });
@@ -51,6 +54,7 @@ export default function BotonPdf({
       }
       pdf.save(`${nombre.replace(/[^\w\- ]+/g, "").trim() || "documento"}.pdf`);
     } finally {
+      document.documentElement.classList.remove("pdf-captura");
       setCargando(false);
     }
   }

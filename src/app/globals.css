@@ -1576,3 +1576,31 @@ form:has(input[name="tipo"][value="pago_fijo"]:checked) .solo-compra { display: 
 .barra-guiada .av-sigue { margin: 0; border-radius: 16px; background: var(--panel); border: 2px solid var(--primario); }
 .barra-guiada .av-sigue.listo { border-color: var(--primario); }
 .barra-guiada .sigue-titulo { font-size: 16px; }
+
+/* Hojas A4 verticales y completas en la vista previa */
+.escala-a4-medida { width: 100%; }
+.escala-a4 { margin: 0 auto; }
+.escala-a4-interior { transform-origin: top left; display: flex; flex-direction: column; gap: 28px; }
+.vista-previa .mesa { max-height: none; overflow: visible; padding: 28px 12px; }
+.escala-a4-interior .hoja-borrador { display: block; }
+.escala-a4-interior .hoja, .escala-a4-interior .hoja-borrador > .hoja {
+  width: 794px !important; min-width: 794px !important; max-width: 794px !important; min-height: 1123px; box-sizing: border-box;
+  padding: 64px 64px 56px; overflow: visible; border: none; border-radius: 2px; box-shadow: 0 2px 14px rgba(0, 0, 0, .22);
+  display: flex; flex-direction: column;
+}
+.escala-a4-interior .hoja > :last-child { margin-top: auto !important; padding-top: 48px; }
+.escala-a4-interior .formato { margin-top: 22px; }
+.escala-a4-interior .formato th, .escala-a4-interior .formato td { border-color: #cfd7dc; padding: 9px 12px; font-size: 14px; line-height: 1.45; }
+.escala-a4-interior .formato th { background: #f4f6f8; color: #33414b; }
+/* Más limpio: no se muestran las filas de datos que quedaron vacías (en el PDF sí salen) */
+html:not(.pdf-captura) .escala-a4-interior .formato tr:has(> td:empty) { display: none; }
+html.pdf-captura .escala-a4-interior { transform: none !important; }
+
+/* Barra «¿Está bien?»: pregunta grande, respuesta clara */
+.barra-guiada .av-sigue { padding: 16px 20px; gap: 14px 24px; }
+.barra-guiada .etiqueta { color: var(--primario-texto); font-weight: 700; letter-spacing: .06em; }
+.barra-guiada .sigue-titulo { font-size: 20px; font-weight: 700; line-height: 1.25; }
+.barra-guiada .sigue-texto .tenue { font-size: 13px; }
+.barra-guiada .sigue-accion { gap: 10px; }
+.barra-guiada .sigue-accion .btn.grande { min-height: 48px; padding: 0 24px; font-size: 16px; font-weight: 600; }
+.barra-guiada .acciones-fila { flex-direction: row-reverse; justify-content: flex-start; }

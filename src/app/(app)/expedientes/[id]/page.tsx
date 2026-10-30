@@ -1,6 +1,7 @@
 import Link from "next/link";
 import BotonConfirmar from "@/components/BotonConfirmar";
 import BotonPdf from "@/components/BotonPdf";
+import EscalaA4 from "@/components/EscalaA4";
 import { notFound } from "next/navigation";
 import AutoDocumento from "@/components/AutoDocumento";
 import Avisos from "@/components/Avisos";
@@ -163,16 +164,16 @@ export default async function Expediente({ params, searchParams }: { params: Par
   } else if (e.estado === "borrador") {
     sigue = puedeAprobar
       ? {
-          texto: "Revise el requerimiento de arriba. ¿Está bien?",
-          ayuda: e.motivo_devolucion ? `Fue devuelto antes por: ${e.motivo_devolucion}` : "Si está bien, apruébelo: el siguiente documento aparecerá listo para revisar.",
+          texto: "¿El requerimiento está bien?",
+          ayuda: e.motivo_devolucion ? `Fue devuelto antes por: ${e.motivo_devolucion}` : "Revíselo arriba. Si lo aprueba, el siguiente documento aparece listo.",
           accion: (
             <div className="acciones-fila">
-              {puedeRegistrar && <Link className="btn contorno grande" href={`/expedientes/${id}?editar=1`} scroll={false}>No, corregir</Link>}
               <form action={cambiarEstadoExpediente}>
                 <input type="hidden" name="id" value={id} />
                 <input type="hidden" name="accion" value="aprobar" />
-                <BotonConfirmar pin className="btn primario grande" pregunta="¿Aprobar este requerimiento?" detalle="Después de aprobarlo ya no se puede cambiar el monto, salvo que se devuelva a borrador." textoConfirmar="Sí, aprobar">Sí, está bien: aprobar</BotonConfirmar>
+                <BotonConfirmar pin className="btn primario grande" pregunta="¿Aprobar este requerimiento?" detalle="Después de aprobarlo ya no se puede cambiar el monto, salvo que se devuelva a borrador." textoConfirmar="Sí, aprobar">Sí, aprobar</BotonConfirmar>
               </form>
+              {puedeRegistrar && <Link className="btn peligro grande" href={`/expedientes/${id}?editar=1`} scroll={false}>No, corregir</Link>}
             </div>
           ),
         }
@@ -215,17 +216,17 @@ export default async function Expediente({ params, searchParams }: { params: Par
         };
   } else if (!fijo && !orden) {
     sigue = {
-      texto: `Revise la ${nombreOrden} de arriba. ¿Está bien?`,
-      ayuda: `A nombre de ${prov(elegida?.proveedores)?.razon_social} por S/ ${soles(elegida?.monto)}. Si está bien, se emite y sigue la conformidad.`,
+      texto: `¿La ${nombreOrden} está bien?`,
+      ayuda: `A nombre de ${prov(elegida?.proveedores)?.razon_social} por S/ ${soles(elegida?.monto)}. Al emitirla sigue la conformidad.`,
       accion: puedeRegistrar && (
         <div className="acciones-fila">
         <form action={emitirOrden}>
           <input type="hidden" name="expediente_id" value={id} />
           <input type="hidden" name="fecha" value={hoyISO()} />
           <input type="hidden" name="concepto" value={e.descripcion} />
-          <BotonConfirmar className="btn primario grande" pregunta={`¿Emitir la ${nombreOrden}?`} detalle={`A ${prov(elegida?.proveedores)?.razon_social ?? ""} por S/ ${soles(elegida?.monto)}.`} textoConfirmar="Sí, emitir">Sí, está bien: emitir orden</BotonConfirmar>
+          <BotonConfirmar className="btn primario grande" pregunta={`¿Emitir la ${nombreOrden}?`} detalle={`A ${prov(elegida?.proveedores)?.razon_social ?? ""} por S/ ${soles(elegida?.monto)}.`} textoConfirmar="Sí, emitir">Sí, emitir orden</BotonConfirmar>
         </form>
-        <VentanaFlotante boton="No, cambiar datos" titulo={`Emitir ${nombreOrden}`} accion={emitirOrden} textoGuardar="Emitir orden" claseBoton="btn contorno grande">
+        <VentanaFlotante boton="No, cambiar datos" titulo={`Emitir ${nombreOrden}`} accion={emitirOrden} textoGuardar="Emitir orden" claseBoton="btn peligro grande">
           <input type="hidden" name="expediente_id" value={id} />
           <p style={{ margin: 0 }}>Proveedor: <b>{prov(elegida?.proveedores)?.razon_social}</b> · Monto: <b>S/ {soles(elegida?.monto)}</b></p>
           <div className="rejilla-2">
@@ -246,17 +247,17 @@ export default async function Expediente({ params, searchParams }: { params: Par
     };
   } else if (!fijo && !conformidad) {
     sigue = {
-      texto: "Revise el memorando de conformidad de arriba. ¿Todo se recibió conforme?",
-      ayuda: "Es el memorando que dice que lo recibido está bien. Si todavía no llega, déjelo para después.",
+      texto: "¿Todo se recibió conforme?",
+      ayuda: "Es el memorando que confirma lo recibido. Si aún no llega, déjelo para después.",
       accion: puedeRegistrar && (
         <div className="acciones-fila">
         <form action={emitirConformidad}>
           <input type="hidden" name="expediente_id" value={id} />
           <input type="hidden" name="fecha" value={hoyISO()} />
           <input type="hidden" name="texto" value={textoConformidad} />
-          <BotonConfirmar className="btn primario grande" pregunta="¿Emitir el memorando de conformidad?" detalle="Confirma que lo recibido está conforme." textoConfirmar="Sí, emitir">Sí, conforme: emitir memorando</BotonConfirmar>
+          <BotonConfirmar className="btn primario grande" pregunta="¿Emitir el memorando de conformidad?" detalle="Confirma que lo recibido está conforme." textoConfirmar="Sí, emitir">Sí, emitir memorando</BotonConfirmar>
         </form>
-        <VentanaFlotante boton="No, cambiar texto" titulo="Memorando de conformidad" accion={emitirConformidad} textoGuardar="Emitir memorando" claseBoton="btn contorno grande">
+        <VentanaFlotante boton="No, cambiar texto" titulo="Memorando de conformidad" accion={emitirConformidad} textoGuardar="Emitir memorando" claseBoton="btn peligro grande">
           <input type="hidden" name="expediente_id" value={id} />
           <label className="campo">Fecha<input type="date" name="fecha" defaultValue={hoyISO()} required /></label>
           <label className="campo">
@@ -577,21 +578,20 @@ export default async function Expediente({ params, searchParams }: { params: Par
           </div>
         )}
         <div className="mesa">
-          {viendoBorrador ? (
-            <div className="hoja-borrador">{borrador!.nodo}</div>
-          ) : (
-            <DocumentosExpediente d={datosDoc} mcp={ctx.mcp} clave={verClave} tesorero={nombreTesorero} cargo={cargoTesorero} />
-          )}
+          <EscalaA4>
+            {viendoBorrador ? (
+              <div className="hoja-borrador">{borrador!.nodo}</div>
+            ) : (
+              <DocumentosExpediente d={datosDoc} mcp={ctx.mcp} clave={verClave} tesorero={nombreTesorero} cargo={cargoTesorero} />
+            )}
+          </EscalaA4>
         </div>
       </section>
 
       <div className="barra-guiada" role="region" aria-label="Confirmar este paso">
         <div className={`av-sigue${listos === pasos.length && !anulado ? " listo" : ""}`}>
-          <span className="av-sigue-icono" aria-hidden="true">
-            {anulado ? "!" : listos === pasos.length ? "✓" : "→"}
-          </span>
           <div className="sigue-texto">
-            <span className="etiqueta">{anulado ? "Anulado" : listos === pasos.length ? "Todo listo" : "Lo que sigue"}</span>
+            <span className="etiqueta">{anulado ? "Anulado" : listos === pasos.length ? "Todo listo" : `Paso ${Math.min(listos + 1, pasos.length)} de ${pasos.length} · ${pasos.find((p) => p.id === actual)?.titulo ?? ""}`}</span>
             <div className="sigue-titulo">{sigue.texto}</div>
             {sigue.ayuda && <div className="tenue">{sigue.ayuda}</div>}
           </div>

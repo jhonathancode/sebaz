@@ -130,7 +130,7 @@ export default async function Expedientes({ searchParams }: { searchParams: Para
             proveedores={provData ?? []}
             chequeSugerido={chequeSugerido}
           >
-            <CamposRequerimiento modo="asistente" fuentes={ctx.fuentes} pagosFijos={pagosFijos} chequeSugerido={chequeSugerido} plantillas={atajos.plantillas} historial={atajos.historial} fuenteFrecuente={atajos.fuenteFrecuente} proveedores={provData ?? []} />
+            <CamposRequerimiento modo="asistente" fuentes={ctx.fuentes} pagosFijos={pagosFijos} chequeSugerido={chequeSugerido} historial={atajos.historial} fuenteFrecuente={atajos.fuenteFrecuente} proveedores={provData ?? []} />
           </AsistenteRequerimiento>
         ) : (
         <VentanaFlotante
@@ -147,7 +147,7 @@ export default async function Expedientes({ searchParams }: { searchParams: Para
           pin
           pinOpcionalSi={tiene(ctx, "alcalde", "admin") ? 'input[name="tipo"][value="pago_fijo"]:checked' : undefined}
         >
-          <CamposRequerimiento fuentes={ctx.fuentes} pagosFijos={pagosFijos} chequeSugerido={chequeSugerido} plantillas={atajos.plantillas} historial={atajos.historial} fuenteFrecuente={atajos.fuenteFrecuente} proveedores={provData ?? []} />
+          <CamposRequerimiento fuentes={ctx.fuentes} pagosFijos={pagosFijos} chequeSugerido={chequeSugerido} historial={atajos.historial} fuenteFrecuente={atajos.fuenteFrecuente} proveedores={provData ?? []} />
         </VentanaFlotante>
         )}
       </div>

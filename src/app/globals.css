@@ -1671,3 +1671,54 @@ label.opcion:has(input:checked) { background: linear-gradient(135deg, var(--prim
 .asist-botones .btn.primario { background: linear-gradient(135deg, var(--primario), var(--primario-hover)); box-shadow: 0 6px 16px -6px var(--primario); }
 .asist-salir { background: var(--rojo-fondo); border-top-color: var(--rojo); }
 .asist-salir .etiqueta { color: var(--rojo); }
+
+/* ------------------------------------------------ ventana premium: tarjetas, selector segmentado y mosaico */
+dialog.asistente .vf-cuerpo, .vf-cuerpo:has(fieldset.pregunta) { background: var(--panel-2); padding: 20px 26px 22px; gap: 0; }
+.vf-cuerpo fieldset.pregunta, .vf-cuerpo details.pregunta {
+  background: var(--panel); border: 1px solid var(--borde); border-radius: 18px; padding: 16px 22px 20px; margin: 0 0 14px;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, .05);
+}
+.vf-cuerpo fieldset.pregunta > legend { text-transform: none; letter-spacing: 0; font-size: 15px; font-weight: 700; margin: 0 0 14px; padding: 0; color: var(--texto); }
+.vf-cuerpo > fieldset.pregunta:first-of-type, .vf-cuerpo > input[type="hidden"] + fieldset.pregunta { border-top: 1px solid var(--borde); }
+.vf-cuerpo fieldset.pregunta > legend .legend-nota { font-size: 13px; font-weight: 500; color: var(--tenue); }
+.vf-cuerpo fieldset.pregunta > legend::before { background: var(--primario-fondo); color: var(--primario-texto); box-shadow: none; }
+.vf-cuerpo details.pregunta > summary { font-weight: 700; }
+
+/* Tipo de gasto: selector segmentado con iconos */
+.opciones.opciones-tipo { display: flex; gap: 4px; padding: 4px; background: var(--panel-2); border: 1px solid var(--linea); border-radius: 14px; margin: 0; }
+.opciones.opciones-tipo label.opcion { flex: 1; flex-direction: row; align-items: center; justify-content: center; gap: 9px; min-height: 46px; padding: 0 12px; border: 0; border-radius: 11px; background: transparent; color: var(--tenue); box-shadow: none; }
+.opciones.opciones-tipo label.opcion input { position: absolute; opacity: 0; pointer-events: none; }
+.opciones.opciones-tipo label.opcion .opcion-titulo { font-size: 14.5px; font-weight: 600; }
+.opciones.opciones-tipo label.opcion:hover { background: rgba(31, 95, 209, .06); border: 0; }
+.opciones.opciones-tipo label.opcion:has(input:checked) { background: var(--panel); color: var(--primario-texto); box-shadow: 0 2px 8px rgba(15, 23, 42, .16); border: 0; }
+.opciones.opciones-tipo label.opcion:has(input:checked) .opcion-titulo { font-weight: 800; }
+
+/* Dinero: opciones compactas con su explicación */
+.opciones.opciones-dinero { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; margin: 0; }
+.opciones.opciones-dinero label.opcion { position: relative; flex-direction: column; align-items: flex-start; justify-content: center; gap: 2px; min-height: 64px; padding: 12px 14px; border-radius: 14px; }
+.opciones.opciones-dinero label.opcion input { position: absolute; opacity: 0; pointer-events: none; }
+.opciones.opciones-dinero label.opcion .opcion-titulo { font-size: 13.5px; font-weight: 700; }
+.opciones.opciones-dinero label.opcion .opcion-texto { display: block; font-size: 12px; margin: 0; }
+.opciones.opciones-dinero label.opcion.definir { border-style: dashed; }
+.opciones.opciones-dinero label.opcion:has(input:checked) { border: 2px solid var(--primario); background: var(--primario-fondo); box-shadow: 0 6px 16px -10px var(--primario); padding: 11px 13px; }
+.opciones.opciones-dinero label.opcion:has(input:checked) .opcion-titulo { color: var(--primario-texto); font-weight: 800; }
+.opciones.opciones-dinero label.opcion:has(input:checked)::after { content: "✓"; position: absolute; right: 11px; top: 9px; color: var(--primario); font-weight: 800; font-size: 14px; }
+@media (max-width: 900px) { .opciones.opciones-dinero { grid-template-columns: repeat(2, minmax(0, 1fr)); } .opciones.opciones-tipo { flex-direction: column; } }
+
+/* Concepto: campo grande y mosaico de sugerencias */
+.campo-concepto { width: 100%; box-sizing: border-box; height: 56px; padding: 0 16px; border: 1.5px solid var(--borde-fuerte); border-radius: 14px; font-size: 17px; font-weight: 600; background: var(--panel); }
+.campo-concepto:focus { outline: none; border-color: var(--primario); box-shadow: 0 0 0 4px rgba(31, 95, 209, .14); }
+.mosaico { margin-top: 16px; }
+.mosaico-et { display: block; font-size: 12px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--tenue); margin-bottom: 10px; }
+.mosaico-rejilla { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+.mosaico-tarjeta { position: relative; display: flex; align-items: center; gap: 12px; min-height: 68px; padding: 0 14px; border: 1.5px solid var(--borde); background: var(--panel); border-radius: 14px; text-align: left; cursor: pointer; color: var(--texto); font: inherit; transition: transform .15s, box-shadow .15s, border-color .15s; }
+.mosaico-tarjeta:hover { border-color: var(--primario-claro); transform: translateY(-1px); box-shadow: 0 10px 20px -12px rgba(31, 95, 209, .55); }
+.mosaico-icono { flex: none; width: 40px; height: 40px; border-radius: 11px; background: var(--primario-fondo); color: var(--primario); display: inline-flex; align-items: center; justify-content: center; }
+.mosaico-texto { font-size: 13.5px; font-weight: 600; line-height: 1.25; }
+.mosaico-tarjeta.elegida { border: 2px solid var(--primario); background: var(--primario-fondo); box-shadow: 0 8px 18px -10px var(--primario); padding: 0 13px; }
+.mosaico-tarjeta.elegida .mosaico-texto { font-weight: 800; color: var(--primario-texto); }
+.mosaico-ok { position: absolute; right: 10px; top: 10px; color: var(--primario); }
+.mosaico-mas { min-height: 68px; border: 1.5px dashed var(--primario-claro); background: transparent; border-radius: 14px; color: var(--primario-texto); font: inherit; font-weight: 700; font-size: 13.5px; cursor: pointer; }
+.mosaico-mas:hover { background: var(--primario-fondo); }
+@media (max-width: 900px) { .mosaico-rejilla { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+dialog.asistente .vf-cab h2 { font-size: 19px; font-weight: 800; letter-spacing: -.01em; }

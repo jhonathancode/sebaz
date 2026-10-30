@@ -6,12 +6,11 @@ import ReinicioPorTipo from "./ReinicioPorTipo";
 import ItemsRequerimiento from "./ItemsRequerimiento";
 import SelectorPagoFijo from "./SelectorPagoFijo";
 import SugerenciaConcepto from "./SugerenciaConcepto";
-import PlantillasRecientes from "./PlantillasRecientes";
 import CampoConcepto from "./CampoConcepto";
 import ChipsConcepto from "./ChipsConcepto";
 import CompletarTodo from "./CompletarTodo";
 import type { ProveedorConocido } from "./CamposProveedor";
-import type { ItemHistorial, Plantilla } from "@/lib/atajos";
+import type { ItemHistorial } from "@/lib/atajos";
 import type { PagoFijoCatalogo } from "@/lib/pagosFijos";
 import { periodoActual } from "@/lib/formato";
 
@@ -28,9 +27,9 @@ export type ValoresRequerimiento = {
 };
 
 const TIPOS = [
-  { valor: "compra", titulo: "Compra de bienes", texto: "Útiles, materiales, herramientas. Lleva cotizaciones, orden de compra y entra al almacén (NEA)." },
-  { valor: "servicio", titulo: "Servicio externo", texto: "Un trabajo por un tiempo: alquiler, mantenimiento, asesoría. Lleva cotizaciones y orden de servicio." },
-  { valor: "pago_fijo", titulo: "Pago fijo", texto: "Dietas del alcalde y regidores, personal contratado, asesores. No lleva cotizaciones." },
+  { valor: "compra", trazo: "M6 7h12l1 13H5zM9 7a3 3 0 0 1 6 0", titulo: "Compra de bienes", texto: "Útiles, materiales, herramientas. Lleva cotizaciones, orden de compra y entra al almacén (NEA)." },
+  { valor: "servicio", trazo: "M14.7 6.3a4 4 0 0 0-5.4 5.1L3 17.7 6.3 21l6.3-6.3a4 4 0 0 0 5.1-5.4l-2.6 2.6-2.4-.6-.6-2.4z", titulo: "Servicio externo", texto: "Un trabajo por un tiempo: alquiler, mantenimiento, asesoría. Lleva cotizaciones y orden de servicio." },
+  { valor: "pago_fijo", trazo: "M4 12a8 8 0 0 1 14-5l2-2v6h-6l2.2-2.2A5.5 5.5 0 1 0 17.5 14", titulo: "Pago fijo", texto: "Dietas del alcalde y regidores, personal contratado, asesores. No lleva cotizaciones." },
 ];
 
 /** Orden en pantalla: ingresos propios, luego la distrital (Perené) y la provincial (Chanchamayo). */
@@ -49,7 +48,7 @@ function detalleFuente(f: Fuente) {
 }
 
 /** Formulario del requerimiento, en preguntas simples. */
-export default function CamposRequerimiento({ fuentes, valores, pagosFijos, chequeSugerido, plantillas, historial, fuenteFrecuente, proveedores, modo }: { modo?: "asistente"; proveedores?: ProveedorConocido[]; fuentes: Fuente[]; valores?: ValoresRequerimiento; pagosFijos?: PagoFijoCatalogo[]; chequeSugerido?: string; plantillas?: Plantilla[]; historial?: ItemHistorial[]; fuenteFrecuente?: string | null }) {
+export default function CamposRequerimiento({ fuentes, valores, pagosFijos, chequeSugerido, historial, fuenteFrecuente, proveedores, modo }: { modo?: "asistente"; proveedores?: ProveedorConocido[]; fuentes: Fuente[]; valores?: ValoresRequerimiento; pagosFijos?: PagoFijoCatalogo[]; chequeSugerido?: string; historial?: ItemHistorial[]; fuenteFrecuente?: string | null }) {
   const tipo = valores?.tipo ?? "compra";
   // La fuente que más se usó; si no hay historial, la transferencia distrital
   const fuentePorDefecto = (fuenteFrecuente && fuentes.some((f) => f.id === fuenteFrecuente) ? fuenteFrecuente : undefined) ?? fuentes.find((f) => f.tipo === "distrito")?.id ?? fuentes[0]?.id;
@@ -59,14 +58,14 @@ export default function CamposRequerimiento({ fuentes, valores, pagosFijos, cheq
 
   return (
     <>
-      {!valores && plantillas && <PlantillasRecientes plantillas={plantillas} />}
-      {!valores && <ReinicioPorTipo fuenteInicial={fuentePorDefecto} clasificadorInicial="2.3 Bienes y servicios" />}
+            {!valores && <ReinicioPorTipo fuenteInicial={fuentePorDefecto} clasificadorInicial="2.3 Bienes y servicios" />}
       <fieldset className="pregunta">
         <legend>¿Qué tipo de gasto es?</legend>
-        <div className="opciones compacta">
+        <div className="opciones compacta opciones-tipo">
           {TIPOS.map((t) => (
             <label key={t.valor} className="opcion" title={t.texto}>
               <input type="radio" name="tipo" value={t.valor} defaultChecked={t.valor === tipo} required />
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d={t.trazo} /></svg>
               <span className="opcion-titulo">{t.titulo}</span>
               <span className="opcion-texto">{t.texto}</span>
             </label>
@@ -77,7 +76,7 @@ export default function CamposRequerimiento({ fuentes, valores, pagosFijos, cheq
 
       <fieldset className="pregunta">
         <legend>¿Con qué dinero se paga?</legend>
-        <div className="opciones compacta">
+        <div className="opciones compacta opciones-dinero">
           {[...fuentes].sort((a, b) => ORDEN_FUENTES[a.tipo] - ORDEN_FUENTES[b.tipo]).map((f) => (
             <label key={f.id} className="opcion" title={detalleFuente(f)}>
               <input type="radio" name="fuente_id" value={f.id} defaultChecked={f.id === fuente} required />
@@ -85,10 +84,10 @@ export default function CamposRequerimiento({ fuentes, valores, pagosFijos, cheq
               <span className="opcion-texto">{detalleFuente(f)}</span>
             </label>
           ))}
-          <label className="opcion">
+          <label className="opcion definir">
             <input type="radio" name="fuente_id" value="" defaultChecked={fuente === ""} />
             <span className="opcion-titulo">Definir después</span>
-            <span className="opcion-texto">Aún no se sabe. Antes de generar el comprobante de pago se le preguntará.</span>
+            <span className="opcion-texto">Se pregunta antes del pago</span>
           </label>
         </div>
         {!hayPropios && <p className="pequeno tenue" style={{ margin: "6px 0 0" }}>La opción «Ingresos propios» aún no está activa en su MCP. Avise a soporte.</p>}

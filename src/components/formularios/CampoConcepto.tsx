@@ -23,5 +23,5 @@ export default function CampoConcepto({ defaultValue = "" }: { defaultValue?: st
     return () => el.removeEventListener("change", normalizar);
   }, []);
 
-  return <input ref={ref} name="descripcion" defaultValue={defaultValue} placeholder="SE REQUIERE la compra de útiles de oficina para la tesorería" />;
+  return <input ref={ref} className="campo-concepto" name="descripcion" defaultValue={defaultValue} placeholder="SE REQUIERE la compra de útiles de oficina para la tesorería" />;
 }

@@ -93,16 +93,16 @@ export default function CamposRequerimiento({ fuentes, valores, pagosFijos, cheq
       </fieldset>
 
       <fieldset className="pregunta">
-        <legend>3. Detalle: ¿qué se necesita y cuánto cuesta? <span className="legend-nota">(cosa por cosa)</span></legend>
-        <ItemsRequerimiento inicial={valores?.items} historial={historial} />
-      </fieldset>
-
-      <fieldset className="pregunta">
-        <legend>4. ¿Qué se requiere? <span className="legend-nota">(el concepto empieza con «Se requiere…»; si lo deja vacío se arma solo)</span></legend>
+        <legend>3. ¿Qué se requiere? <span className="legend-nota">(el concepto empieza con «Se requiere…»; si lo deja vacío se arma solo)</span></legend>
         <label className="campo">
           <CampoConcepto defaultValue={valores?.descripcion ?? ""} />
         </label>
         <SugerenciaConcepto tambienItem={false} />
+      </fieldset>
+
+      <fieldset className="pregunta">
+        <legend>4. Detalle: ¿qué se necesita y cuánto cuesta? <span className="legend-nota">(cosa por cosa: cantidad, unidad y precio)</span></legend>
+        <ItemsRequerimiento inicial={valores?.items} historial={historial} />
       </fieldset>
 
       {!valores && (

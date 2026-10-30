@@ -4,6 +4,8 @@ import { notFound } from "next/navigation";
 import Avisos from "@/components/Avisos";
 import BotonPdf from "@/components/BotonPdf";
 import BotonImprimir from "@/components/BotonImprimir";
+import EscalaA4 from "@/components/EscalaA4";
+import VentanaFlotante from "@/components/VentanaFlotante";
 import FormatoComprobante from "@/components/formatos/FormatoComprobante";
 import Estado from "@/components/Estado";
 import { MarcaAnuladaPagina } from "@/components/MarcaAnulado";
@@ -42,6 +44,49 @@ export default async function Comprobante({ params, searchParams }: { params: P;
   const puedeRegistrar = tiene(ctx, "admin", "tesorero", "contador", "alcalde") && !bloqueadoGestion;
   const puedeAprobar = tiene(ctx, "alcalde", "admin") && !bloqueadoGestion;
   const editable = borrador && puedeRegistrar;
+  const anulado = c.estado === "anulado";
+  const rendido = c.estado === "rendido";
+  const listo = !!c.cheque && (c.estado === "aprobado" || rendido);
+  // Datos que conviene completar antes de aprobar
+  const faltas = [!c.funcion && "la función del gasto", !c.sustento_numero && "el número de la factura o boleta"].filter(Boolean) as string[];
+  const pasos = [
+    { titulo: "Revisar y aprobar", detalle: borrador ? "Ahora" : "Aprobado", hecho: !borrador && !anulado },
+    { titulo: "Anotar el cheque", detalle: c.cheque ? `N° ${c.cheque}` : "Pendiente", hecho: !!c.cheque && !anulado },
+    { titulo: "Listo para la rendición", detalle: listo ? "Listo" : "Pendiente", hecho: listo },
+  ];
+  const actual = pasos.findIndex((p) => !p.hecho);
+
+  const camposEditar = (
+    <>
+      <input type="hidden" name="id" value={id} />
+      <div className="rejilla-2">
+        <label className="campo">Fecha<input type="date" name="fecha" defaultValue={c.fecha} /></label>
+        <label className="campo">
+          Documento que entregó el proveedor
+          <select name="sustento_tipo" defaultValue={c.sustento_tipo ?? ""}>
+            <option value="">—</option>
+            {SUSTENTOS.map((x) => (
+              <option key={x.codigo} value={x.codigo}>{x.nombre}</option>
+            ))}
+          </select>
+        </label>
+        <label className="campo">N° del documento<input name="sustento_numero" defaultValue={c.sustento_numero ?? ""} placeholder="Ej.: F001-45" /></label>
+        <label className="campo">Deducciones S/<input name="deducciones" defaultValue={c.deducciones} inputMode="decimal" /></label>
+        <SelectFuncion valor={c.funcion && c.categoria ? `${c.funcion}|${c.categoria}` : ""} />
+        <label className="campo">
+          Partida
+          <select name="partida" defaultValue={c.partida ?? ""}>
+            <option value="">—</option>
+            {CLASIFICADORES.map((x) => (
+              <option key={x}>{x}</option>
+            ))}
+          </select>
+        </label>
+      </div>
+      <label className="campo">Concepto<textarea name="concepto" defaultValue={c.concepto} /></label>
+      <label className="campo">Funcional<input name="funcional" defaultValue={c.funcional ?? ""} /></label>
+    </>
+  );
 
   return (
     <>
@@ -50,19 +95,6 @@ export default async function Comprobante({ params, searchParams }: { params: P;
         <Estado valor={c.estado} />
         {exp && c.expediente_id && <Link href={`/expedientes/${c.expediente_id}`}>Expediente {String(exp.numero).padStart(3, "0")}-{exp.anio}</Link>}
         <span className="espacio" />
-        {borrador && puedeAprobar && (
-          <form action={cambiarEstadoComprobante}>
-            <input type="hidden" name="id" value={id} />
-            <input type="hidden" name="accion" value="aprobar" />
-            <BotonConfirmar pin pregunta="¿Aprobar este comprobante de pago?" detalle="Aprobado ya no se edita: solo falta escribir el número de cheque." textoConfirmar="Sí, aprobar">Aprobar</BotonConfirmar>
-          </form>
-        )}
-        {c.estado === "aprobado" && puedeAprobar && !c.cheque && (
-          <Motivo accion={cambiarEstadoComprobante} boton="Devolver" ayuda="¿Por qué se devuelve?" campos={{ id, accion: "devolver" }} peligro={false} />
-        )}
-        {(borrador || c.estado === "aprobado") && puedeRegistrar && (
-          <Motivo accion={cambiarEstadoComprobante} boton="Anular" ayuda="Motivo de la anulación" campos={{ id, accion: "anular" }} />
-        )}
         <BotonPdf nombre="Comprobante de pago" />
         <BotonImprimir />
         <Link className="btn" href="/comprobantes">Cerrar</Link>
@@ -72,81 +104,120 @@ export default async function Comprobante({ params, searchParams }: { params: P;
         {c.motivo_devolucion && borrador && <div className="aviso error">Devuelto: {c.motivo_devolucion}</div>}
         {gestion?.estado === "bloqueado" && <div className="aviso error"><strong>Gestión anterior: bloqueado.</strong> Es de antes del cambio de tesorería y desde el {fecha(gestion.desde)} ya no se puede editar ni anular. Sí se puede imprimir.</div>}
         {gestion?.estado === "gracia" && <div className="aviso alerta"><strong>Gestión anterior: plazo de gracia.</strong> Puede corregirlo hasta el {fecha(new Date(Date.parse(gestion.desde) - 86400000).toISOString().slice(0, 10))}; desde el {fecha(gestion.desde)} queda bloqueado para siempre.</div>}
-        {c.estado === "anulado" && <div className="aviso error">Anulado: {c.anulado_motivo} · {fechaHora(c.anulado_en)}</div>}
+        {anulado && <div className="aviso error">Anulado: {c.anulado_motivo} · {fechaHora(c.anulado_en)}</div>}
       </div>
 
-      <div className="columnas">
-        <div className="principal">
-          {c.estado === "anulado" && <MarcaAnuladaPagina />}
-          <FormatoComprobante c={{ ...c, hecho_por: (c.perfiles as { nombre: string } | null)?.nombre }} mcp={ctx.mcp} anulado={c.estado === "anulado" ? { motivo: c.anulado_motivo, en: c.anulado_en } : null} />
+      {!anulado && (
+        <section className="avance no-imprimir" aria-label="Avance del comprobante">
+          <ol className="av-pasos" style={{ gridTemplateColumns: `repeat(${pasos.length}, minmax(0, 1fr))` }}>
+            {pasos.map((p, n) => {
+              const estado = p.hecho ? "hecho" : n === actual ? "actual" : "pendiente";
+              return (
+                <li key={p.titulo} className={`av-paso ${estado}`}>
+                  <span className="av-enlace">
+                    <span className="av-icono" aria-hidden="true">{p.hecho ? "✓" : n + 1}</span>
+                    <span className="av-texto">
+                      <span className="av-nombre">{p.titulo}</span>
+                      <span className="av-det">{p.hecho ? p.detalle : estado === "actual" ? "Ahora" : "Pendiente"}</span>
+                    </span>
+                  </span>
+                </li>
+              );
+            })}
+          </ol>
+        </section>
+      )}
+
+      {anulado && <MarcaAnuladaPagina />}
+      <div className="mesa">
+        <EscalaA4>
+          <FormatoComprobante c={{ ...c, hecho_por: (c.perfiles as { nombre: string } | null)?.nombre }} mcp={ctx.mcp} anulado={anulado ? { motivo: c.anulado_motivo, en: c.anulado_en } : null} />
+        </EscalaA4>
+      </div>
+
+      {!anulado && (
+        <div className="barra-guiada no-imprimir" role="region" aria-label="Confirmar este paso">
+          <div className={`av-sigue${listo ? " listo" : ""}`}>
+            <div className="sigue-texto">
+              {borrador && puedeAprobar ? (
+                <>
+                  <span className="etiqueta">Paso 1 de 3 · Revisar y aprobar</span>
+                  <div className="sigue-titulo">¿El comprobante está bien?</div>
+                  <div className="tenue">
+                    Revise a quién se paga y el monto. {faltas.length > 0 ? <span className="falta">Falta anotar {faltas.join(" y ")}: use «No, corregir».</span> : "Si está bien, apruébelo y falta solo el cheque."}
+                  </div>
+                </>
+              ) : borrador ? (
+                <>
+                  <span className="etiqueta">Paso 1 de 3 · Revisar y aprobar</span>
+                  <div className="sigue-titulo">Falta la aprobación del alcalde</div>
+                  <div className="tenue">{faltas.length > 0 ? <span className="falta">Antes, anote {faltas.join(" y ")}: use «Corregir».</span> : "Avísele: cuando lo apruebe, anote el cheque."}</div>
+                </>
+              ) : c.estado === "aprobado" && !c.cheque ? (
+                <>
+                  <span className="etiqueta">Paso 2 de 3 · Anotar el cheque</span>
+                  <div className="sigue-titulo">Escriba el número del cheque</div>
+                  <div className="tenue">Se anota una sola vez. Sin cheque, el gasto no entra en la rendición.</div>
+                </>
+              ) : (
+                <>
+                  <span className="etiqueta">Todo listo</span>
+                  <div className="sigue-titulo">{rendido ? "Este gasto ya está en una rendición." : `Cheque N° ${c.cheque}. Ya puede entrar en la rendición del mes.`}</div>
+                </>
+              )}
+            </div>
+            <div className="sigue-accion">
+              {borrador && (
+                <div className="acciones-fila">
+                  {puedeAprobar && (
+                    <form action={cambiarEstadoComprobante}>
+                      <input type="hidden" name="id" value={id} />
+                      <input type="hidden" name="accion" value="aprobar" />
+                      <BotonConfirmar pin className="btn primario grande" pregunta="¿Aprobar este comprobante de pago?" detalle="Aprobado ya no se edita: solo falta escribir el número de cheque." textoConfirmar="Sí, aprobar">Sí, aprobar</BotonConfirmar>
+                    </form>
+                  )}
+                  {editable && (
+                    <VentanaFlotante boton={puedeAprobar ? "No, corregir" : "Corregir"} titulo="Corregir el comprobante" accion={editarComprobante} textoGuardar="Guardar cambios" claseBoton={puedeAprobar ? "btn peligro grande" : "btn contorno grande"} ancha>
+                      {camposEditar}
+                    </VentanaFlotante>
+                  )}
+                </div>
+              )}
+              {c.estado === "aprobado" && !c.cheque && puedeRegistrar && (
+                <form action={registrarCheque} className="cheque-en-linea">
+                  <input type="hidden" name="id" value={id} />
+                  <label className="campo">
+                    N° de cheque
+                    <input name="cheque" required inputMode="numeric" defaultValue={chequeSugerido} aria-label="Número de cheque" />
+                  </label>
+                  <BotonConfirmar className="btn primario grande" pregunta="¿Guardar este número de cheque?" detalle="El cheque se escribe una sola vez y ya no se puede cambiar." textoConfirmar="Sí, guardar cheque">Guardar cheque</BotonConfirmar>
+                </form>
+              )}
+              {listo && !rendido && <Link className="btn primario grande" href="/rendicion">Ir a la rendición</Link>}
+            </div>
+          </div>
         </div>
+      )}
 
-        <aside className="lateral no-imprimir">
-          {c.estado === "aprobado" && !c.cheque && puedeRegistrar && (
-            <form action={registrarCheque} className="panel">
-              <div className="panel-cab">Registrar cheque al girar</div>
-              <div className="panel-cuerpo">
-                <input type="hidden" name="id" value={id} />
-                <label className="campo">N° de cheque (siguiente de la chequera)<input name="cheque" required inputMode="numeric" defaultValue={chequeSugerido} /></label>
-                <BotonConfirmar pregunta="¿Guardar este número de cheque?" detalle="El cheque se escribe una sola vez y ya no se puede cambiar." textoConfirmar="Sí, guardar cheque">Guardar cheque</BotonConfirmar>
-                <span className="pequeno tenue">El cheque se escribe una sola vez. Sin cheque, el comprobante no entra en la rendición.</span>
+      {!anulado && !rendido && ((c.estado === "aprobado" && puedeAprobar && !c.cheque) || ((borrador || c.estado === "aprobado") && puedeRegistrar)) && (
+        <section className="panel no-imprimir">
+          <div className="panel-cab">¿Se equivocó?</div>
+          <div className="panel-cuerpo otras">
+            {c.estado === "aprobado" && puedeAprobar && !c.cheque && (
+              <div>
+                <Motivo accion={cambiarEstadoComprobante} boton="Devolver para corregir" ayuda="¿Por qué se devuelve?" campos={{ id, accion: "devolver" }} peligro={false} />
+                <span className="tenue pequeno">Vuelve a borrador; después se aprueba otra vez.</span>
               </div>
-            </form>
-          )}
-          {editable && (
-            <form action={editarComprobante} className="panel">
-              <div className="panel-cab">Editar (solo en borrador)</div>
-              <div className="panel-cuerpo">
-                <input type="hidden" name="id" value={id} />
-                <label className="campo">Fecha<input type="date" name="fecha" defaultValue={c.fecha} /></label>
-                <label className="campo">Concepto<textarea name="concepto" defaultValue={c.concepto} /></label>
-                <label className="campo">
-                  Partida
-                  <select name="partida" defaultValue={c.partida ?? ""}>
-                    <option value="">—</option>
-                    {CLASIFICADORES.map((x) => (
-                      <option key={x}>{x}</option>
-                    ))}
-                  </select>
-                </label>
-                <label className="campo">Funcional<input name="funcional" defaultValue={c.funcional ?? ""} /></label>
-                <SelectFuncion valor={c.funcion && c.categoria ? `${c.funcion}|${c.categoria}` : ""} />
-                <label className="campo">Deducciones S/<input name="deducciones" defaultValue={c.deducciones} inputMode="decimal" /></label>
-                <label className="campo">
-                  Sustento
-                  <select name="sustento_tipo" defaultValue={c.sustento_tipo ?? ""}>
-                    <option value="">—</option>
-                    {SUSTENTOS.map((s) => (
-                      <option key={s.codigo} value={s.codigo}>{s.nombre}</option>
-                    ))}
-                  </select>
-                </label>
-                <label className="campo">N° del sustento<input name="sustento_numero" defaultValue={c.sustento_numero ?? ""} /></label>
-                <BotonConfirmar className="btn" pregunta="¿Guardar los cambios del comprobante?" textoConfirmar="Sí, guardar">Guardar cambios</BotonConfirmar>
+            )}
+            {(borrador || c.estado === "aprobado") && puedeRegistrar && (
+              <div>
+                <Motivo accion={cambiarEstadoComprobante} boton="Anular comprobante" ayuda="Motivo de la anulación" campos={{ id, accion: "anular" }} />
+                <span className="tenue pequeno">No se borra: queda anulado con su motivo.</span>
               </div>
-            </form>
-          )}
-          <section className="panel">
-            <div className="panel-cab">Datos</div>
-            <div className="panel-cuerpo pequeno">
-              <div>Fuente: {(c.fuentes as { municipalidad: string } | null)?.municipalidad}</div>
-              <div>Función: {c.funcion ?? <span className="falta">sin asignar</span>}</div>
-              <div>Sustento: {c.sustento_tipo ?? "—"} {c.sustento_numero ?? ""}</div>
-            </div>
-          </section>
-          <section className="panel">
-            <div className="panel-cab">Reglas</div>
-            <div className="panel-cuerpo">
-              <ul className="lista-reglas">
-                <li>Se edita solo en borrador.</li>
-                <li>Lo aprueba el alcalde o el administrador.</li>
-                <li>Aprobado, solo falta el cheque; después queda fijo.</li>
-                <li>Para corregir, se anula con motivo.</li>
-              </ul>
-            </div>
-          </section>
-        </aside>
-      </div>
+            )}
+          </div>
+        </section>
+      )}
     </>
   );
 }

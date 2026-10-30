@@ -588,7 +588,7 @@ export default async function Expediente({ params, searchParams }: { params: Par
         </div>
       </section>
 
-      <div className="barra-guiada" role="region" aria-label="Confirmar este paso">
+      <div className="barra-guiada no-imprimir" role="region" aria-label="Confirmar este paso">
         <div className={`av-sigue${listos === pasos.length && !anulado ? " listo" : ""}`}>
           <div className="sigue-texto">
             <span className="etiqueta">{anulado ? "Anulado" : listos === pasos.length ? "Todo listo" : `Paso ${Math.min(listos + 1, pasos.length)} de ${pasos.length} · ${pasos.find((p) => p.id === actual)?.titulo ?? ""}`}</span>

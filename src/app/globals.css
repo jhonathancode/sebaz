@@ -1593,7 +1593,7 @@ form:has(input[name="tipo"][value="pago_fijo"]:checked) .solo-compra { display: 
 .escala-a4-interior .formato th, .escala-a4-interior .formato td { border-color: #cfd7dc; padding: 9px 12px; font-size: 14px; line-height: 1.45; }
 .escala-a4-interior .formato th { background: #f4f6f8; color: #33414b; }
 /* Más limpio: no se muestran las filas de datos que quedaron vacías (en el PDF sí salen) */
-html:not(.pdf-captura) .escala-a4-interior .formato tr:has(> td:empty) { display: none; }
+html:not(.pdf-captura) .escala-a4-interior .datos-cabecera tr:has(> td:empty) { display: none; }
 html.pdf-captura .escala-a4-interior { transform: none !important; }
 
 /* Barra «¿Está bien?»: pregunta grande, respuesta clara */
@@ -1604,3 +1604,22 @@ html.pdf-captura .escala-a4-interior { transform: none !important; }
 .barra-guiada .sigue-accion { gap: 10px; }
 .barra-guiada .sigue-accion .btn.grande { min-height: 48px; padding: 0 24px; font-size: 16px; font-weight: 600; }
 .barra-guiada .acciones-fila { flex-direction: row-reverse; justify-content: flex-start; }
+
+/* Comprobante: formato ancho, más compacto dentro de la hoja A4 */
+.escala-a4-interior .hoja:has(.formato th:nth-child(8)) { padding: 36px 28px; }
+.cheque-en-linea { display: flex; gap: 10px; align-items: flex-end; flex-wrap: wrap; }
+.cheque-en-linea .campo { margin: 0; }
+.cheque-en-linea input { min-height: 48px; font-size: 20px; font-weight: 600; letter-spacing: .08em; width: 220px; }
+.av-enlace { display: flex; align-items: center; gap: 12px; padding: 12px 14px; }
+@media print {
+  .escala-a4-medida, .escala-a4 { width: auto !important; height: auto !important; }
+  .escala-a4-interior { transform: none !important; width: auto !important; }
+  .escala-a4-interior .hoja, .escala-a4-interior .hoja-borrador > .hoja { width: auto !important; min-width: 0 !important; max-width: none !important; min-height: 0; padding: 20px; box-shadow: none; display: block; }
+  .barra-guiada { display: none !important; }
+}
+.av-paso .av-enlace { height: 100%; border-radius: 12px; border: 1px solid var(--borde); background: var(--panel); }
+.av-paso.hecho .av-enlace { background: var(--primario-fondo); border-color: var(--primario-claro); }
+.av-paso.actual .av-enlace { border: 2px solid var(--primario); padding: 11px 13px; box-shadow: 0 4px 14px -6px var(--primario); }
+.av-paso.pendiente .av-enlace { opacity: .75; }
+.escala-a4-interior .hoja:has(.formato th:nth-child(8)) .formato th,
+.escala-a4-interior .hoja:has(.formato th:nth-child(8)) .formato td { font-size: 11.5px; padding: 7px 6px; }

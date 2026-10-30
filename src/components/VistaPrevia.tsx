@@ -41,7 +41,7 @@ export default function VistaPrevia({
         </div>
         <div className="vf-cuerpo" style={{ padding: 0 }}>
           <div className="aviso info" style={{ margin: 12 }}>
-            {aviso ?? "Así quedará el documento. Revíselo: si algo está mal, presione «Corregir». El número se asigna al emitir."}
+            {aviso ?? "Así quedará el documento. Revíselo: si algo está mal, presione «Corregir». El número es el correlativo que le toca y se asigna solo al emitir."}
           </div>
           <div className="mesa">{children}</div>
         </div>

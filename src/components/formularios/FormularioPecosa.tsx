@@ -18,10 +18,13 @@ export default function FormularioPecosa({
   mcp,
   accion,
   bienes,
+  proximo,
 }: {
   mcp: Mcp;
   accion: (fd: FormData) => Promise<void>;
   bienes: BienConStock[];
+  /** Número que le toca (correlativo automático), para la vista previa. */
+  proximo?: number | null;
 }) {
   const form = useRef<HTMLFormElement>(null);
   const [filas, setFilas] = useState<Fila[]>([{ bien: "", cantidad: "1" }]);
@@ -42,7 +45,7 @@ export default function FormularioPecosa({
     const fd = new FormData(f);
     const may = (k: string) => String(fd.get(k) ?? "").toLocaleUpperCase("es-PE").trim();
     setVista({
-      numero: null,
+      numero: proximo ?? null,
       anio: Number(String(fd.get("fecha")).slice(0, 4)),
       fecha: String(fd.get("fecha")),
       area_solicitante: may("area_solicitante"),

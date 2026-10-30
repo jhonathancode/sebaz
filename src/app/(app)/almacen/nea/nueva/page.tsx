@@ -3,6 +3,7 @@ import Avisos, { type ParamsAviso } from "@/components/Avisos";
 import FormularioNea from "@/components/formularios/FormularioNea";
 import { contextoMcp } from "@/lib/contexto";
 import { num3 } from "@/lib/formato";
+import { CORRELATIVO, proximoNumero } from "@/lib/numeracion";
 import { supabaseServidor } from "@/lib/supabase/server";
 import { emitirNea } from "../../acciones";
 
@@ -56,7 +57,7 @@ export default async function NuevaNea({ searchParams }: { searchParams: ParamsA
       </p>
       <Avisos ok={sp.ok} error={sp.error} />
       {aviso && <div className="aviso alerta">{aviso}</div>}
-      <FormularioNea mcp={ctx.mcp} accion={emitirNea} expedienteId={expedienteId} inicial={inicial} orden={orden} expediente={expediente} />
+      <FormularioNea proximo={await proximoNumero(supabase, ctx.mcp.id, CORRELATIVO.nea, new Date().getFullYear())} mcp={ctx.mcp} accion={emitirNea} expedienteId={expedienteId} inicial={inicial} orden={orden} expediente={expediente} />
     </>
   );
 }

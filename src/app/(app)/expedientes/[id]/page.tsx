@@ -16,6 +16,7 @@ import { cargarExpediente } from "@/lib/documentos";
 import { cargarCierres, estadoGestion } from "@/lib/gestion";
 import { siguienteCheque } from "@/lib/pagosFijos";
 import { conceptoSinSeRequiere } from "@/lib/requerimiento";
+import { CORRELATIVO, proximoNumero } from "@/lib/numeracion";
 import SelectFuncion from "@/components/SelectFuncion";
 import { SUSTENTOS } from "@/lib/catalogos";
 import { contextoMcp, tiene } from "@/lib/contexto";
@@ -374,6 +375,14 @@ export default async function Expediente({ params, searchParams }: { params: Par
   const hoy = hoyISO();
   const anioHoy = Number(hoy.slice(0, 4));
   let borrador: { nombre: string; nodo: React.ReactNode } | null = null;
+  // Correlativo automático: la vista previa muestra el número que le toca al documento
+  const tipoCorrelativo =
+    actual === "orden" ? (e.tipo === "compra" ? CORRELATIVO.ordenCompra : CORRELATIVO.ordenServicio)
+    : actual === "conformidad" ? CORRELATIVO.memorando
+    : actual === "almacen" ? CORRELATIVO.nea
+    : actual === "comprobante" ? CORRELATIVO.comprobante
+    : null;
+  const numeroPrevio = !anulado && aprobado && tipoCorrelativo ? await proximoNumero(supabase, ctx.mcp.id, tipoCorrelativo, anioHoy) : null;
   if (!anulado && aprobado) {
     if (actual === "orden" && elegida) {
       borrador = {
@@ -381,7 +390,7 @@ export default async function Expediente({ params, searchParams }: { params: Par
         nodo: (
           <Orden
             mcp={ctx.mcp}
-            d={{ ...datosDoc, orden: { numero: null, anio: anioHoy, fecha: hoy, plazo: elegida.plazo, concepto: conceptoSinSeRequiere(e.descripcion), tipo: e.tipo === "compra" ? "compra" : "servicio", tipo_proceso: "Adjudicación directa", monto: elegida.monto, proveedores: elegida.proveedores } } as unknown as DatosExpediente}
+            d={{ ...datosDoc, orden: { numero: numeroPrevio, anio: anioHoy, fecha: hoy, plazo: elegida.plazo, concepto: conceptoSinSeRequiere(e.descripcion), tipo: e.tipo === "compra" ? "compra" : "servicio", tipo_proceso: "Adjudicación directa", monto: elegida.monto, proveedores: elegida.proveedores } } as unknown as DatosExpediente}
           />
         ),
       };
@@ -393,7 +402,7 @@ export default async function Expediente({ params, searchParams }: { params: Par
             mcp={ctx.mcp}
             tesorero={nombreTesorero}
             cargo={cargoTesorero}
-            d={{ ...datosDoc, conformidad: { memorando_numero: null, anio: anioHoy, fecha: hoy, texto: textoConformidad } } as unknown as DatosExpediente}
+            d={{ ...datosDoc, conformidad: { memorando_numero: numeroPrevio, anio: anioHoy, fecha: hoy, texto: textoConformidad } } as unknown as DatosExpediente}
           />
         ),
       };
@@ -404,7 +413,7 @@ export default async function Expediente({ params, searchParams }: { params: Par
           <FormatoNea
             mcp={ctx.mcp}
             n={{
-              numero: null,
+              numero: numeroPrevio,
               anio: anioHoy,
               fecha: hoy,
               origen: "compra",
@@ -425,7 +434,7 @@ export default async function Expediente({ params, searchParams }: { params: Par
           <FormatoComprobante
             mcp={ctx.mcp}
             c={{
-              numero: null,
+              numero: numeroPrevio,
               fecha: hoy,
               beneficiario: fijo ? pagoFijo?.beneficiario ?? "(se escribe al generar)" : prov(orden?.proveedores)?.razon_social ?? "",
               beneficiario_doc: fijo ? pagoFijo?.beneficiario_doc ?? null : prov(orden?.proveedores)?.num_doc ?? null,
@@ -588,7 +597,7 @@ export default async function Expediente({ params, searchParams }: { params: Par
         </nav>
         {viendoBorrador && (
           <div className="aviso info" style={{ margin: "12px 14px 0" }}>
-            Borrador: así quedará el documento de este paso. El número se pone al emitirlo con el botón de «Lo que sigue».
+            Así quedará el documento. El número es el correlativo que le toca: se asigna solo al emitirlo.
           </div>
         )}
         <div className="mesa">

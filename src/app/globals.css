@@ -1655,3 +1655,8 @@ label.opcion:has(input:checked) { background: linear-gradient(135deg, var(--prim
 .kpis .kpi:nth-child(1) { border-top-color: var(--primario); }
 .kpis .kpi:nth-child(2) { border-top-color: #e0a526; }
 .av-paso.hecho .av-enlace, .av-paso.hecho a { background: linear-gradient(135deg, var(--primario-fondo), transparent 90%); }
+
+/* Documento anulado en el avance del expediente */
+.av-paso.anulado .av-enlace, .av-paso.anulado a { background: var(--rojo-fondo); border-color: var(--rojo-borde); }
+.av-paso.anulado .av-icono { background: var(--rojo); border-color: var(--rojo); color: #fff; }
+.av-paso.anulado .av-det { color: var(--rojo); font-weight: 700; }

@@ -163,14 +163,17 @@ export default async function Expediente({ params, searchParams }: { params: Par
   } else if (e.estado === "borrador") {
     sigue = puedeAprobar
       ? {
-          texto: "Revise el requerimiento y apruébelo.",
-          ayuda: e.motivo_devolucion ? `Fue devuelto antes por: ${e.motivo_devolucion}` : "Después de aprobarlo se podrá seguir con el gasto.",
+          texto: "Revise el requerimiento de arriba. ¿Está bien?",
+          ayuda: e.motivo_devolucion ? `Fue devuelto antes por: ${e.motivo_devolucion}` : "Si está bien, apruébelo: el siguiente documento aparecerá listo para revisar.",
           accion: (
-            <form action={cambiarEstadoExpediente}>
-              <input type="hidden" name="id" value={id} />
-              <input type="hidden" name="accion" value="aprobar" />
-              <BotonConfirmar pin className="btn primario grande" pregunta="¿Aprobar este requerimiento?" detalle="Después de aprobarlo ya no se puede cambiar el monto, salvo que se devuelva a borrador." textoConfirmar="Sí, aprobar">Aprobar requerimiento</BotonConfirmar>
-            </form>
+            <div className="acciones-fila">
+              {puedeRegistrar && <Link className="btn contorno grande" href={`/expedientes/${id}?editar=1`} scroll={false}>No, corregir</Link>}
+              <form action={cambiarEstadoExpediente}>
+                <input type="hidden" name="id" value={id} />
+                <input type="hidden" name="accion" value="aprobar" />
+                <BotonConfirmar pin className="btn primario grande" pregunta="¿Aprobar este requerimiento?" detalle="Después de aprobarlo ya no se puede cambiar el monto, salvo que se devuelva a borrador." textoConfirmar="Sí, aprobar">Sí, está bien: aprobar</BotonConfirmar>
+              </form>
+            </div>
           ),
         }
       : {
@@ -212,10 +215,17 @@ export default async function Expediente({ params, searchParams }: { params: Par
         };
   } else if (!fijo && !orden) {
     sigue = {
-      texto: `Emita la ${nombreOrden} a ${prov(elegida?.proveedores)?.razon_social} por S/ ${soles(elegida?.monto)}.`,
-      ayuda: "La orden se imprime, se firma y se entrega al proveedor.",
+      texto: `Revise la ${nombreOrden} de arriba. ¿Está bien?`,
+      ayuda: `A nombre de ${prov(elegida?.proveedores)?.razon_social} por S/ ${soles(elegida?.monto)}. Si está bien, se emite y sigue la conformidad.`,
       accion: puedeRegistrar && (
-        <VentanaFlotante boton={`Emitir ${nombreOrden}`} titulo={`Emitir ${nombreOrden}`} accion={emitirOrden} textoGuardar="Emitir orden" claseBoton="btn primario grande">
+        <div className="acciones-fila">
+        <form action={emitirOrden}>
+          <input type="hidden" name="expediente_id" value={id} />
+          <input type="hidden" name="fecha" value={hoyISO()} />
+          <input type="hidden" name="concepto" value={e.descripcion} />
+          <BotonConfirmar className="btn primario grande" pregunta={`¿Emitir la ${nombreOrden}?`} detalle={`A ${prov(elegida?.proveedores)?.razon_social ?? ""} por S/ ${soles(elegida?.monto)}.`} textoConfirmar="Sí, emitir">Sí, está bien: emitir orden</BotonConfirmar>
+        </form>
+        <VentanaFlotante boton="No, cambiar datos" titulo={`Emitir ${nombreOrden}`} accion={emitirOrden} textoGuardar="Emitir orden" claseBoton="btn contorno grande">
           <input type="hidden" name="expediente_id" value={id} />
           <p style={{ margin: 0 }}>Proveedor: <b>{prov(elegida?.proveedores)?.razon_social}</b> · Monto: <b>S/ {soles(elegida?.monto)}</b></p>
           <div className="rejilla-2">
@@ -231,14 +241,22 @@ export default async function Expediente({ params, searchParams }: { params: Par
           </label>
           <input type="hidden" name="texto_conformidad" value={`Mediante la presente se le comunica la CONFORMIDAD por ${e.descripcion.toLowerCase()}, a cargo de ${prov(elegida?.proveedores)?.razon_social ?? ""}, a favor de la ${ctx.mcp.nombre}.`} />
         </VentanaFlotante>
+        </div>
       ),
     };
   } else if (!fijo && !conformidad) {
     sigue = {
-      texto: "Cuando el proveedor entregue, registre la conformidad.",
-      ayuda: "Es el memorando del alcalde que dice que lo recibido está bien.",
+      texto: "Revise el memorando de conformidad de arriba. ¿Todo se recibió conforme?",
+      ayuda: "Es el memorando que dice que lo recibido está bien. Si todavía no llega, déjelo para después.",
       accion: puedeRegistrar && (
-        <VentanaFlotante boton="Registrar conformidad" titulo="Memorando de conformidad" accion={emitirConformidad} textoGuardar="Emitir memorando" claseBoton="btn primario grande">
+        <div className="acciones-fila">
+        <form action={emitirConformidad}>
+          <input type="hidden" name="expediente_id" value={id} />
+          <input type="hidden" name="fecha" value={hoyISO()} />
+          <input type="hidden" name="texto" value={textoConformidad} />
+          <BotonConfirmar className="btn primario grande" pregunta="¿Emitir el memorando de conformidad?" detalle="Confirma que lo recibido está conforme." textoConfirmar="Sí, emitir">Sí, conforme: emitir memorando</BotonConfirmar>
+        </form>
+        <VentanaFlotante boton="No, cambiar texto" titulo="Memorando de conformidad" accion={emitirConformidad} textoGuardar="Emitir memorando" claseBoton="btn contorno grande">
           <input type="hidden" name="expediente_id" value={id} />
           <label className="campo">Fecha<input type="date" name="fecha" defaultValue={hoyISO()} required /></label>
           <label className="campo">
@@ -249,6 +267,7 @@ export default async function Expediente({ params, searchParams }: { params: Par
             />
           </label>
         </VentanaFlotante>
+        </div>
       ),
     };
   } else if (conAlmacen && !nea && !sinAlmacen && !cp) {
@@ -500,7 +519,7 @@ export default async function Expediente({ params, searchParams }: { params: Par
                       {estado === "actual" && <span className="av-ahora">Ahora</span>}
                     </span>
                     <span className="av-nombre">{p.titulo}</span>
-                    <span className="av-det">{p.hecho ? p.detalle : estado === "actual" ? "En curso" : "Pendiente"}</span>
+                    <span className="av-det">{p.hecho ? p.detalle : estado === "actual" ? (p.id === "requerimiento" && e.estado === "borrador" ? "Por aprobar" : "En curso") : "Pendiente"}</span>
                   </span>
                 </Link>
               </li>
@@ -508,6 +527,65 @@ export default async function Expediente({ params, searchParams }: { params: Par
           })}
         </ol>
 
+      </section>
+
+      <section className="panel vista-previa">
+        <div className="panel-cab">
+          <span>{viendoBorrador ? `Así quedará: ${borrador!.nombre}` : "Así va su documento"}</span>
+          <div className="acciones-fila" style={viendoBorrador ? { display: "none" } : undefined}>
+            <Link className="btn chico contorno" href={`/expedientes/${id}/documentos?doc=${verClave}`}>Ver en grande</Link>
+            <BotonPdf nombre={`Expediente ${num3(e.numero)}-${e.anio} ${verClave}`} selector=".vista-previa .hoja" className="btn chico primario" />
+            <Link className="btn chico contorno" href={`/expedientes/${id}/documentos?doc=${verClave}&imprimir=1`}>Imprimir</Link>
+            {docs.length > 1 && (
+              <Link className="btn chico contorno" href={`/expedientes/${id}/documentos?doc=todo&imprimir=1`}>Imprimir todo el expediente</Link>
+            )}
+          </div>
+        </div>
+        <nav className="doc-nav vista-pestanas" role="tablist" aria-label="Documentos del expediente">
+          {docs.map((x, i) => (
+            <span key={x.clave} className="doc-par">
+              {i > 0 && <i className="doc-sep ok" aria-hidden="true" />}
+              <Link
+                role="tab"
+                aria-selected={x.clave === verClave}
+                scroll={false}
+                className={`doc-tab${x.clave === verClave ? " activo" : ""}`}
+                href={`/expedientes/${id}?ver=${x.clave}${sp.paso ? `&paso=${sp.paso}` : ""}`}
+              >
+                <span className="ic" aria-hidden="true">✓</span>{x.nombre}
+              </Link>
+            </span>
+          ))}
+          {borrador && (
+            <span className="doc-par">
+              <i className="doc-sep" aria-hidden="true" />
+              <Link
+                role="tab"
+                aria-selected={viendoBorrador}
+                scroll={false}
+                className={`doc-tab pendiente siguiente${viendoBorrador ? " activo" : ""}`}
+                href={`/expedientes/${id}?ver=borrador${sp.paso ? `&paso=${sp.paso}` : ""}`}
+              >
+                <span className="ic" aria-hidden="true" />{borrador.nombre} · por emitir
+              </Link>
+            </span>
+          )}
+        </nav>
+        {viendoBorrador && (
+          <div className="aviso info" style={{ margin: "12px 14px 0" }}>
+            Borrador: así quedará el documento de este paso. El número se pone al emitirlo con el botón de «Lo que sigue».
+          </div>
+        )}
+        <div className="mesa">
+          {viendoBorrador ? (
+            <div className="hoja-borrador">{borrador!.nodo}</div>
+          ) : (
+            <DocumentosExpediente d={datosDoc} mcp={ctx.mcp} clave={verClave} tesorero={nombreTesorero} cargo={cargoTesorero} />
+          )}
+        </div>
+      </section>
+
+      <div className="barra-guiada" role="region" aria-label="Confirmar este paso">
         <div className={`av-sigue${listos === pasos.length && !anulado ? " listo" : ""}`}>
           <span className="av-sigue-icono" aria-hidden="true">
             {anulado ? "!" : listos === pasos.length ? "✓" : "→"}
@@ -519,7 +597,7 @@ export default async function Expediente({ params, searchParams }: { params: Par
           </div>
           {sigue.accion && <div className="sigue-accion">{sigue.accion}</div>}
         </div>
-      </section>
+      </div>
 
       {/* Contenido del paso que se está viendo */}
       {visto === "requerimiento" && (
@@ -677,62 +755,6 @@ export default async function Expediente({ params, searchParams }: { params: Par
           </div>
         </section>
       )}
-
-      <section className="panel vista-previa">
-        <div className="panel-cab">
-          <span>{viendoBorrador ? `Así quedará: ${borrador!.nombre}` : "Así va su documento"}</span>
-          <div className="acciones-fila" style={viendoBorrador ? { display: "none" } : undefined}>
-            <Link className="btn chico contorno" href={`/expedientes/${id}/documentos?doc=${verClave}`}>Ver en grande</Link>
-            <BotonPdf nombre={`Expediente ${num3(e.numero)}-${e.anio} ${verClave}`} selector=".vista-previa .hoja" className="btn chico primario" />
-            <Link className="btn chico contorno" href={`/expedientes/${id}/documentos?doc=${verClave}&imprimir=1`}>Imprimir</Link>
-            {docs.length > 1 && (
-              <Link className="btn chico contorno" href={`/expedientes/${id}/documentos?doc=todo&imprimir=1`}>Imprimir todo el expediente</Link>
-            )}
-          </div>
-        </div>
-        <nav className="doc-nav vista-pestanas" role="tablist" aria-label="Documentos del expediente">
-          {docs.map((x, i) => (
-            <span key={x.clave} className="doc-par">
-              {i > 0 && <i className="doc-sep ok" aria-hidden="true" />}
-              <Link
-                role="tab"
-                aria-selected={x.clave === verClave}
-                scroll={false}
-                className={`doc-tab${x.clave === verClave ? " activo" : ""}`}
-                href={`/expedientes/${id}?ver=${x.clave}${sp.paso ? `&paso=${sp.paso}` : ""}`}
-              >
-                <span className="ic" aria-hidden="true">✓</span>{x.nombre}
-              </Link>
-            </span>
-          ))}
-          {borrador && (
-            <span className="doc-par">
-              <i className="doc-sep" aria-hidden="true" />
-              <Link
-                role="tab"
-                aria-selected={viendoBorrador}
-                scroll={false}
-                className={`doc-tab pendiente siguiente${viendoBorrador ? " activo" : ""}`}
-                href={`/expedientes/${id}?ver=borrador${sp.paso ? `&paso=${sp.paso}` : ""}`}
-              >
-                <span className="ic" aria-hidden="true" />{borrador.nombre} · por emitir
-              </Link>
-            </span>
-          )}
-        </nav>
-        {viendoBorrador && (
-          <div className="aviso info" style={{ margin: "12px 14px 0" }}>
-            Borrador: así quedará el documento de este paso. El número se pone al emitirlo con el botón de «Lo que sigue».
-          </div>
-        )}
-        <div className="mesa">
-          {viendoBorrador ? (
-            <div className="hoja-borrador">{borrador!.nodo}</div>
-          ) : (
-            <DocumentosExpediente d={datosDoc} mcp={ctx.mcp} clave={verClave} tesorero={nombreTesorero} cargo={cargoTesorero} />
-          )}
-        </div>
-      </section>
 
       <div>
         <section className="panel">

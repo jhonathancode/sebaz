@@ -788,6 +788,7 @@ export default async function Expediente({ params, searchParams }: { params: Par
                   <input type="hidden" name="id" value={id} />
                   <CamposRequerimiento
                     fuentes={ctx.fuentes}
+                    chequeSugerido={chequeSugerido}
                     valores={{
                       fecha: e.fecha,
                       tipo: e.tipo,
@@ -796,6 +797,7 @@ export default async function Expediente({ params, searchParams }: { params: Par
                       meta: e.meta,
                       clasificador: e.clasificador,
                       descripcion: e.descripcion,
+                      cheque_previsto: e.cheque_previsto ?? null,
                       items: lista.map((i) => ({ cantidad: Number(i.cantidad), unidad: i.unidad, descripcion: i.descripcion, precio_unitario: Number(i.precio_unitario) })),
                     }}
                   />

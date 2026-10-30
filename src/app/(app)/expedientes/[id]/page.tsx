@@ -63,35 +63,69 @@ export default async function Expediente({ params, searchParams }: { params: Par
   const ctx = await contextoMcp();
   const supabase = await supabaseServidor();
 
-  const { data: e } = await supabase
-    .from("expedientes")
-    .select("*, fuentes(id, tipo, municipalidad, monto_mensual, formato, activo, mcp_id), perfiles!expedientes_creado_por_fkey(nombre)")
-    .eq("id", id)
-    .single();
+  // Todo lo que no depende de lo demás se pide a la vez (antes eran consultas una tras otra)
+  const anioNum = Number(hoyISO().slice(0, 4));
+  const [
+    { data: e },
+    { data: items },
+    { data: cotizaciones },
+    { data: ordenes },
+    { data: conformidades },
+    { data: cps },
+    { data: historial },
+    { data: neas },
+    cierres,
+    datosDoc,
+    { data: tesoreroDoc },
+    chequeSugerido,
+    { data: provData },
+    numOrdenCompra,
+    numOrdenServicio,
+    numMemorando,
+    numNea,
+    numComprobante,
+  ] = await Promise.all([
+    supabase
+      .from("expedientes")
+      .select("*, fuentes(id, tipo, municipalidad, monto_mensual, formato, activo, mcp_id), perfiles!expedientes_creado_por_fkey(nombre)")
+      .eq("id", id)
+      .single(),
+    supabase.from("expediente_items").select("*").eq("expediente_id", id).eq("anulado", false).order("item"),
+    supabase.from("cotizaciones").select("*, proveedores(razon_social, num_doc)").eq("expediente_id", id).order("monto"),
+    supabase.from("ordenes").select("*, proveedores(razon_social, num_doc)").eq("expediente_id", id).order("creado_en"),
+    supabase.from("conformidades").select("*").eq("expediente_id", id).order("creado_en"),
+    supabase.from("comprobantes_pago").select("id, numero, origen, fecha, importe, estado, cheque, concepto, partida, funcional, funcion, categoria, deducciones, sustento_tipo, sustento_numero").eq("expediente_id", id),
+    supabase
+      .from("auditoria")
+      .select("en, accion, tabla, despues, user_id")
+      .or(`registro_id.eq.${id},despues->>expediente_id.eq.${id}`)
+      .order("en", { ascending: false })
+      .limit(30),
+    supabase.from("notas_entrada").select("id, numero, anio, fecha, anulado, anulado_motivo").eq("expediente_id", id).order("creado_en"),
+    cargarCierres(supabase, ctx.mcp.id),
+    cargarExpediente(supabase, id),
+    supabase.from("miembros").select("cargo, perfiles(nombre)").eq("mcp_id", ctx.mcp.id).eq("rol", "tesorero").eq("activo", true).maybeSingle(),
+    siguienteCheque(supabase, ctx.mcp.id),
+    supabase.from("proveedores").select("num_doc, razon_social, direccion, telefono").eq("mcp_id", ctx.mcp.id).order("razon_social"),
+    proximoNumero(supabase, ctx.mcp.id, CORRELATIVO.ordenCompra, anioNum),
+    proximoNumero(supabase, ctx.mcp.id, CORRELATIVO.ordenServicio, anioNum),
+    proximoNumero(supabase, ctx.mcp.id, CORRELATIVO.memorando, anioNum),
+    proximoNumero(supabase, ctx.mcp.id, CORRELATIVO.nea, anioNum),
+    proximoNumero(supabase, ctx.mcp.id, CORRELATIVO.comprobante, anioNum),
+  ]);
   if (!e) notFound();
 
-  const [{ data: items }, { data: cotizaciones }, { data: ordenes }, { data: conformidades }, { data: cps }, { data: historial }, { data: neas }] =
-    await Promise.all([
-      supabase.from("expediente_items").select("*").eq("expediente_id", id).eq("anulado", false).order("item"),
-      supabase.from("cotizaciones").select("*, proveedores(razon_social, num_doc)").eq("expediente_id", id).order("monto"),
-      supabase.from("ordenes").select("*, proveedores(razon_social, num_doc)").eq("expediente_id", id).order("creado_en"),
-      supabase.from("conformidades").select("*").eq("expediente_id", id).order("creado_en"),
-      supabase.from("comprobantes_pago").select("id, numero, origen, fecha, importe, estado, cheque, concepto, partida, funcional, funcion, categoria, deducciones, sustento_tipo, sustento_numero").eq("expediente_id", id),
-      supabase
-        .from("auditoria")
-        .select("en, accion, tabla, despues, user_id")
-        .or(`registro_id.eq.${id},despues->>expediente_id.eq.${id}`)
-        .order("en", { ascending: false })
-        .limit(30),
-      supabase.from("notas_entrada").select("id, numero, anio, fecha, anulado, anulado_motivo").eq("expediente_id", id).order("creado_en"),
-    ]);
-
-  const usuarios = new Map<string, string>();
+  // Lo que depende del expediente: nombres del historial y el beneficiario del pago fijo, también a la vez
+  const pagoFijoId = (e as { pago_fijo_id?: string | null }).pago_fijo_id ?? null;
   const ids = [...new Set((historial ?? []).map((h) => h.user_id).filter(Boolean))];
-  if (ids.length) {
-    const { data: ps } = await supabase.from("perfiles").select("id, nombre").in("id", ids);
-    (ps ?? []).forEach((p) => usuarios.set(p.id, p.nombre));
-  }
+  const [{ data: pagoFijo }, { data: perfilesHist }] = await Promise.all([
+    pagoFijoId
+      ? supabase.from("pagos_fijos").select("beneficiario, beneficiario_doc").eq("id", pagoFijoId).maybeSingle()
+      : Promise.resolve({ data: null as { beneficiario: string | null; beneficiario_doc: string | null } | null }),
+    ids.length ? supabase.from("perfiles").select("id, nombre").in("id", ids) : Promise.resolve({ data: [] as { id: string; nombre: string }[] }),
+  ]);
+  const usuarios = new Map<string, string>();
+  (perfilesHist ?? []).forEach((p) => usuarios.set(p.id, p.nombre));
 
   const lista = items ?? [];
   const total = lista.reduce((s, i) => s + Number(i.total), 0);
@@ -109,24 +143,13 @@ export default async function Expediente({ params, searchParams }: { params: Par
   const anulado = e.estado === "anulado";
   const aprobado = e.estado === "aprobado" || e.estado === "rendido";
   // Gestión anterior (antes de un cambio de tesorería): 30 días de gracia y luego bloqueado
-  const gestion = estadoGestion(e.fecha, await cargarCierres(supabase, ctx.mcp.id), hoyISO());
+  const gestion = estadoGestion(e.fecha, cierres, hoyISO());
   const bloqueadoGestion = gestion?.estado === "bloqueado";
   const puedeRegistrar = tiene(ctx, "admin", "tesorero", "contador", "alcalde") && !anulado && !bloqueadoGestion;
   const puedeAprobar = tiene(ctx, "alcalde", "admin") && !bloqueadoGestion;
   const nombreOrden = e.tipo === "compra" ? "orden de compra" : "orden de servicio";
   const fuente = e.fuentes as Parameters<typeof nombreFuente>[0] | null;
 
-  // Datos de los formatos (vista previa antes de emitir y vista del documento)
-  const pagoFijoId = (e as { pago_fijo_id?: string | null }).pago_fijo_id ?? null;
-  const [datosDoc, { data: tesoreroDoc }, { data: pagoFijo }, chequeSugerido] = await Promise.all([
-    cargarExpediente(supabase, id),
-    supabase.from("miembros").select("cargo, perfiles(nombre)").eq("mcp_id", ctx.mcp.id).eq("rol", "tesorero").eq("activo", true).maybeSingle(),
-    pagoFijoId
-      ? supabase.from("pagos_fijos").select("beneficiario, beneficiario_doc").eq("id", pagoFijoId).maybeSingle()
-      : Promise.resolve({ data: null as { beneficiario: string | null; beneficiario_doc: string | null } | null }),
-    siguienteCheque(supabase, ctx.mcp.id),
-  ]);
-  const { data: provData } = await supabase.from("proveedores").select("num_doc, razon_social, direccion, telefono").eq("mcp_id", ctx.mcp.id).order("razon_social");
   const proveedores: ProveedorConocido[] = provData ?? [];
   const nombreTesorero = (tesoreroDoc?.perfiles as unknown as { nombre: string } | null)?.nombre ?? "";
   const cargoTesorero = tesoreroDoc?.cargo ?? "Tesorero(a)";
@@ -382,7 +405,14 @@ export default async function Expediente({ params, searchParams }: { params: Par
     : actual === "almacen" ? CORRELATIVO.nea
     : actual === "comprobante" ? CORRELATIVO.comprobante
     : null;
-  const numeroPrevio = !anulado && aprobado && tipoCorrelativo ? await proximoNumero(supabase, ctx.mcp.id, tipoCorrelativo, anioHoy) : null;
+  const numerosPrevios: Record<string, number | null> = {
+    [CORRELATIVO.ordenCompra]: numOrdenCompra,
+    [CORRELATIVO.ordenServicio]: numOrdenServicio,
+    [CORRELATIVO.memorando]: numMemorando,
+    [CORRELATIVO.nea]: numNea,
+    [CORRELATIVO.comprobante]: numComprobante,
+  };
+  const numeroPrevio = !anulado && aprobado && tipoCorrelativo ? numerosPrevios[tipoCorrelativo] ?? null : null;
   if (!anulado && aprobado) {
     if (actual === "orden" && elegida) {
       borrador = {

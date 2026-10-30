@@ -20,3 +20,13 @@ export function conceptoSeRequiere(texto: string): string {
 export function conceptoSinSeRequiere(texto: string): string {
   return texto.replace(/^SE REQUIERE\s+(?:(?:EL|LA|LOS|LAS|UN|UNA)\s+)?/i, "").replace(/^SE REQUIERE\s*/i, "") || texto;
 }
+
+/** Concepto automático cuando no se escribió: «SE REQUIERE…» con la primera cosa del detalle y cuántas más hay. */
+export function resumenConcepto(tipo: string, items: { descripcion: string }[]): string {
+  if (!items.length) return "";
+  const mas = items.length - 1;
+  const cola = mas > 0 ? ` Y ${mas} ${mas === 1 ? "ÍTEM MÁS" : "ÍTEMS MÁS"}` : "";
+  const base = items[0].descripcion.toLocaleUpperCase("es-PE");
+  const cuerpo = tipo === "compra" ? `LA COMPRA DE ${base}` : tipo === "servicio" ? `EL SERVICIO DE ${base}` : base;
+  return conceptoSeRequiere(cuerpo + cola);
+}

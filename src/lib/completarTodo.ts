@@ -9,13 +9,22 @@ const hoyLima = () => new Date().toLocaleDateString("en-CA", { timeZone: "Americ
  * conforme, el memorando de conformidad y el comprobante de pago (aprobado con la misma
  * aprobación). Devuelve un texto con lo que se hizo, o null si no correspondía.
  */
-export async function completarTodo(supabase: Cliente, mcpId: string, mcpNombre: string, expedienteId: string, chequeSiguiente: string): Promise<string | null> {
+export type OpcionesCompletar = {
+  /** Se ejecuta después de la conformidad y antes del comprobante (por ejemplo, la entrada al almacén). Devuelve un error o null. */
+  antesComprobante?: () => Promise<string | null>;
+  /** Función del gasto del comprobante («Función|Categoría»). */
+  funcionCategoria?: string | null;
+};
+
+export async function completarTodo(supabase: Cliente, mcpId: string, mcpNombre: string, expedienteId: string, chequeSiguiente: string, opciones: OpcionesCompletar = {}): Promise<string | null> {
   const { data: e } = await supabase
     .from("expedientes")
-    .select("id, tipo, estado, descripcion, fuente_id, clasificador, cheque_previsto, sin_almacen_motivo, completar_todo, con_conformidad, sustento_tipo, sustento_numero, expediente_items(total, anulado)")
+    .select("id, tipo, estado, descripcion, fuente_id, clasificador, cheque_previsto, sin_almacen_motivo, flujo_completo, completar_todo, con_conformidad, sustento_tipo, sustento_numero, expediente_items(total, anulado)")
     .eq("id", expedienteId)
     .single();
-  if (!e || !e.completar_todo || e.estado !== "aprobado" || (e.tipo !== "compra" && e.tipo !== "servicio")) return null;
+  if (!e || !e.completar_todo || e.estado !== "aprobado") return null;
+  const completoFijo = e.tipo === "pago_fijo" && !!e.flujo_completo;
+  if (e.tipo !== "compra" && e.tipo !== "servicio" && !completoFijo) return null;
   const { data: cot } = await supabase
     .from("cotizaciones")
     .select("proveedor_id, monto, proveedores(razon_social, num_doc)")
@@ -27,6 +36,7 @@ export async function completarTodo(supabase: Cliente, mcpId: string, mcpNombre:
   const prov = cot.proveedores as unknown as { razon_social: string; num_doc: string } | null;
   const fecha = hoyLima();
   const tipoOrden = e.tipo === "compra" ? "compra" : "servicio";
+  const [funcion, categoria] = (opciones.funcionCategoria ?? "").split("|");
 
   const { data: ordenYa } = await supabase.from("ordenes").select("id").eq("expediente_id", e.id).eq("anulado", false).maybeSingle();
   if (!ordenYa) {
@@ -42,6 +52,10 @@ export async function completarTodo(supabase: Cliente, mcpId: string, mcpNombre:
     const { error } = await supabase.from("conformidades").insert({ mcp_id: mcpId, expediente_id: e.id, fecha, texto });
     if (error) return `Orden de ${tipoOrden} emitida, pero no se pudo emitir la conformidad.`;
     await supabase.from("expedientes").update({ fase: "conformidad" }).eq("id", e.id);
+  }
+  if (opciones.antesComprobante) {
+    const falla = await opciones.antesComprobante();
+    if (falla) return `Orden y conformidad emitidas, pero ${falla}`;
   }
   if (!e.fuente_id || Number(cot.monto) <= 0) return `Orden y conformidad emitidas. Falta definir con qué dinero se paga para generar el comprobante.`;
 
@@ -70,6 +84,7 @@ export async function completarTodo(supabase: Cliente, mcpId: string, mcpNombre:
       sustento_tipo: e.sustento_tipo,
       sustento_numero: e.sustento_numero,
       cheque,
+      ...(funcion && categoria ? { funcion, categoria } : {}),
     })
     .select("id")
     .single();

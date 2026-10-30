@@ -4,6 +4,7 @@ type Cliente = Awaited<ReturnType<typeof supabaseServidor>>;
 
 /** Tipos de correlativo del sistema (los mismos que usa la base al emitir). */
 export const CORRELATIVO = {
+  expediente: "expedientes",
   ordenCompra: "orden_compra",
   ordenServicio: "orden_servicio",
   memorando: "memorando",

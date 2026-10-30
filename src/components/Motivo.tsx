@@ -4,6 +4,24 @@ import CampoPin from "@/components/CampoPin";
 import { useExigirPin, usePrimerNombre } from "@/components/UsuarioContexto";
 import { useRef, useState } from "react";
 
+const MOTIVOS_ANULAR = [
+  "Error en la descripción del requerimiento",
+  "Error en el monto o en los precios",
+  "Se registró dos veces (duplicado)",
+  "Proveedor equivocado",
+  "Mes o periodo equivocado",
+  "Fuente de dinero equivocada",
+  "El gasto ya no se realizará",
+  "Datos del comprobante o del sustento incorrectos",
+];
+const MOTIVOS_DEVOLVER = [
+  "Falta corregir el monto o los precios",
+  "Falta corregir la descripción",
+  "Falta el sustento (factura o boleta)",
+  "Datos del proveedor incorrectos",
+  "Mes o periodo equivocado",
+];
+
 /**
  * Botón que abre una ventana para escribir el motivo antes de ejecutar la
  * acción (anular, devolver, reabrir). El motivo queda en el historial.
@@ -17,6 +35,7 @@ export default function Motivo({
   titulo,
   pin = false,
   chico = false,
+  motivos,
 }: {
   accion: (fd: FormData) => Promise<void>;
   boton: string;
@@ -28,12 +47,15 @@ export default function Motivo({
   pin?: boolean;
   /** Botón pequeño (para filas de listas). */
   chico?: boolean;
+  /** Motivos frecuentes para elegir de una lista (si no se indican, según sea anular o devolver). */
+  motivos?: string[];
 }) {
   const nombre = usePrimerNombre();
   const pinActivo = useExigirPin();
   const ref = useRef<HTMLDialogElement>(null);
   const [texto, setTexto] = useState("");
   const corto = texto.trim().length < 10;
+  const lista = motivos ?? (peligro ? MOTIVOS_ANULAR : /devolver/i.test(boton) ? MOTIVOS_DEVOLVER : []);
 
   return (
     <>
@@ -52,13 +74,27 @@ export default function Motivo({
                 No se borra: queda registrado como anulado, con su motivo, quién lo hizo y cuándo.
               </p>
             )}
+            {lista.length > 0 && ayuda.length > 30 && (
+              <p className="pequeno tenue" style={{ margin: 0 }}>{ayuda}</p>
+            )}
+            {lista.length > 0 && (
+              <label className="campo">
+                Elija un motivo frecuente
+                <select value={lista.includes(texto) ? texto : ""} onChange={(e) => e.target.value && setTexto(e.target.value)}>
+                  <option value="">— Elegir de la lista —</option>
+                  {lista.map((m) => (
+                    <option key={m} value={m}>{m}</option>
+                  ))}
+                </select>
+              </label>
+            )}
             <label className="campo">
-              {ayuda}
+              {lista.length > 0 ? "O escriba el motivo (puede completar el elegido)" : ayuda}
               <textarea
                 name="motivo"
                 required
                 minLength={10}
-                autoFocus
+                autoFocus={lista.length === 0}
                 value={texto}
                 onChange={(e) => setTexto(e.target.value)}
                 placeholder="Escriba el motivo (mínimo 10 caracteres)"

@@ -1570,3 +1570,9 @@ form:has(input[name="tipo"][value="pago_fijo"]:checked) .pin-auto { display: blo
 
 /* «Completar todo» solo existe para compras y servicios */
 form:has(input[name="tipo"][value="pago_fijo"]:checked) .solo-compra { display: none; }
+
+/* Asistente por documentos: la pregunta «¿está bien?» queda fija al pie mientras se revisa el documento */
+.barra-guiada { position: sticky; bottom: 10px; z-index: 6; margin: 14px 0; border-radius: 16px; box-shadow: 0 8px 28px rgba(0, 0, 0, .22); }
+.barra-guiada .av-sigue { margin: 0; border-radius: 16px; background: var(--panel); border: 2px solid var(--primario); }
+.barra-guiada .av-sigue.listo { border-color: var(--primario); }
+.barra-guiada .sigue-titulo { font-size: 16px; }

@@ -127,9 +127,11 @@ export async function crearExpediente(fd: FormData) {
   volver(
     ruta(data.id),
     "ok",
-    pagoFijo
-      ? "Pago fijo registrado. Cuando el alcalde lo apruebe (en «Por aprobar»), su comprobante de pago se genera y aprueba solo, con el cheque anotado."
-      : "Requerimiento registrado. Envíelo al alcalde para su aprobación.",
+    tiene(ctx, "alcalde", "admin")
+      ? "Requerimiento registrado. Revíselo abajo y, si está bien, apruébelo para seguir con el siguiente documento."
+      : pagoFijo
+        ? "Pago fijo registrado. Avise al alcalde: al aprobarlo, su comprobante de pago se genera y aprueba solo, con el cheque anotado."
+        : "Requerimiento registrado. Avise al alcalde para que lo apruebe y siga con el siguiente documento.",
   );
 }
 
@@ -235,7 +237,7 @@ export async function cambiarEstadoExpediente(fd: FormData) {
     }
   }
   const msj = { aprobar: "Requerimiento aprobado.", devolver: "Devuelto a borrador.", anular: "Expediente anulado." };
-  volver(ruta(id, accion === "aprobar" ? "cotizacion" : undefined), "ok", msj[accion as keyof typeof msj] ?? "Listo.");
+  volver(ruta(id), "ok", accion === "aprobar" ? "Requerimiento aprobado. Ahora revise el siguiente documento." : msj[accion as keyof typeof msj] ?? "Listo.");
 }
 
 /**
@@ -373,7 +375,7 @@ export async function elegirCotizacion(fd: FormData) {
   if (e1) volver(destino, "error", mensajeError(e1));
   const { error } = await supabase.from("cotizaciones").update({ elegida: true }).eq("id", cot);
   if (error) volver(destino, "error", mensajeError(error));
-  volver(destino, "ok", "Proveedor elegido. Ya puede emitir la orden.");
+  volver(ruta(id), "ok", "Proveedor elegido. Revise la orden y confírmela.");
 }
 
 export async function anularRegistro(fd: FormData) {
@@ -398,6 +400,7 @@ export async function emitirOrden(fd: FormData) {
   const supabase = await supabaseServidor();
   const id = texto(fd, "expediente_id")!;
   const destino = ruta(id, "orden");
+  const siguiente = ruta(id);
   const { data: exp } = await supabase.from("expedientes").select("tipo, estado, descripcion").eq("id", id).single();
   if (!exp || exp.estado !== "aprobado") volver(destino, "error", "El requerimiento debe estar aprobado por el alcalde.");
   const { data: elegida } = await supabase
@@ -432,7 +435,7 @@ export async function emitirOrden(fd: FormData) {
     await supabase.from("expedientes").update({ fase: "conformidad" }).eq("id", id);
     volver(ruta(id), "ok", `Orden de ${exp.tipo === "compra" ? "compra" : "servicio"} y memorando de conformidad emitidos.`);
   }
-  volver(destino, "ok", `Orden de ${exp.tipo === "compra" ? "compra" : "servicio"} emitida.`);
+  volver(siguiente, "ok", `Orden de ${exp.tipo === "compra" ? "compra" : "servicio"} emitida. Ahora revise la conformidad.`);
 }
 
 export async function emitirConformidad(fd: FormData) {
@@ -450,7 +453,7 @@ export async function emitirConformidad(fd: FormData) {
   });
   if (error) volver(destino, "error", mensajeError(error));
   await supabase.from("expedientes").update({ fase: "conformidad" }).eq("id", id);
-  volver(destino, "ok", "Memorando de conformidad emitido.");
+  volver(ruta(id), "ok", "Memorando de conformidad emitido. Ahora revise el siguiente documento.");
 }
 
 export async function generarComprobante(fd: FormData) {

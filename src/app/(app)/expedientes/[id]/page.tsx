@@ -15,6 +15,7 @@ import { FormatoNea } from "@/components/formatos/FormatosAlmacen";
 import { cargarExpediente } from "@/lib/documentos";
 import { cargarCierres, estadoGestion } from "@/lib/gestion";
 import { siguienteCheque } from "@/lib/pagosFijos";
+import { conceptoSinSeRequiere } from "@/lib/requerimiento";
 import SelectFuncion from "@/components/SelectFuncion";
 import { SUSTENTOS } from "@/lib/catalogos";
 import { contextoMcp, tiene } from "@/lib/contexto";
@@ -129,7 +130,7 @@ export default async function Expediente({ params, searchParams }: { params: Par
   const nombreTesorero = (tesoreroDoc?.perfiles as unknown as { nombre: string } | null)?.nombre ?? "";
   const cargoTesorero = tesoreroDoc?.cargo ?? "Tesorero(a)";
 
-  const textoConformidad = `Mediante la presente se le comunica la CONFORMIDAD por ${e.descripcion.toLowerCase()}, a cargo de ${prov(orden?.proveedores)?.razon_social ?? ""}, a favor de la ${ctx.mcp.nombre}.`;
+  const textoConformidad = `Mediante la presente se le comunica la CONFORMIDAD por ${conceptoSinSeRequiere(e.descripcion).toLowerCase()}, a cargo de ${prov(orden?.proveedores)?.razon_social ?? ""}, a favor de la ${ctx.mcp.nombre}.`;
 
   // ------------------------------------------------------------------ pasos
   type Paso = { id: string; titulo: string; detalle: string; hecho: boolean };
@@ -226,7 +227,7 @@ export default async function Expediente({ params, searchParams }: { params: Par
         <form action={emitirOrden}>
           <input type="hidden" name="expediente_id" value={id} />
           <input type="hidden" name="fecha" value={hoyISO()} />
-          <input type="hidden" name="concepto" value={e.descripcion} />
+          <input type="hidden" name="concepto" value={conceptoSinSeRequiere(e.descripcion)} />
           <BotonConfirmar className="btn primario grande" pregunta={`¿Emitir la ${nombreOrden}?`} detalle={`A ${prov(elegida?.proveedores)?.razon_social ?? ""} por S/ ${soles(elegida?.monto)}.`} textoConfirmar="Sí, emitir">Sí, emitir orden</BotonConfirmar>
         </form>
         <VentanaFlotante boton="No, cambiar datos" titulo={`Emitir ${nombreOrden}`} accion={emitirOrden} textoGuardar="Emitir orden" claseBoton="btn peligro grande">
@@ -236,14 +237,14 @@ export default async function Expediente({ params, searchParams }: { params: Par
             <label className="campo">Fecha de la orden<input type="date" name="fecha" defaultValue={hoyISO()} required /></label>
             <label className="campo">Plazo para entregar<input name="plazo" placeholder="Ej.: 3 días, 1 mes" /></label>
           </div>
-          <label className="campo">Concepto<input name="concepto" defaultValue={e.descripcion} /></label>
+          <label className="campo">Concepto<input name="concepto" defaultValue={conceptoSinSeRequiere(e.descripcion)} /></label>
           <label className="opcion-linea">
             <input type="checkbox" name="con_conformidad" value="1" />
             <span>
               <b>{e.tipo === "compra" ? "Los bienes ya llegaron conformes" : "El servicio ya se prestó conforme"}:</b> emitir también el memorando de conformidad (un paso menos).
             </span>
           </label>
-          <input type="hidden" name="texto_conformidad" value={`Mediante la presente se le comunica la CONFORMIDAD por ${e.descripcion.toLowerCase()}, a cargo de ${prov(elegida?.proveedores)?.razon_social ?? ""}, a favor de la ${ctx.mcp.nombre}.`} />
+          <input type="hidden" name="texto_conformidad" value={`Mediante la presente se le comunica la CONFORMIDAD por ${conceptoSinSeRequiere(e.descripcion).toLowerCase()}, a cargo de ${prov(elegida?.proveedores)?.razon_social ?? ""}, a favor de la ${ctx.mcp.nombre}.`} />
         </VentanaFlotante>
         </div>
       ),
@@ -380,7 +381,7 @@ export default async function Expediente({ params, searchParams }: { params: Par
         nodo: (
           <Orden
             mcp={ctx.mcp}
-            d={{ ...datosDoc, orden: { numero: null, anio: anioHoy, fecha: hoy, plazo: elegida.plazo, concepto: e.descripcion, tipo: e.tipo === "compra" ? "compra" : "servicio", tipo_proceso: "Adjudicación directa", monto: elegida.monto, proveedores: elegida.proveedores } } as unknown as DatosExpediente}
+            d={{ ...datosDoc, orden: { numero: null, anio: anioHoy, fecha: hoy, plazo: elegida.plazo, concepto: conceptoSinSeRequiere(e.descripcion), tipo: e.tipo === "compra" ? "compra" : "servicio", tipo_proceso: "Adjudicación directa", monto: elegida.monto, proveedores: elegida.proveedores } } as unknown as DatosExpediente}
           />
         ),
       };
@@ -428,7 +429,7 @@ export default async function Expediente({ params, searchParams }: { params: Par
               fecha: hoy,
               beneficiario: fijo ? pagoFijo?.beneficiario ?? "(se escribe al generar)" : prov(orden?.proveedores)?.razon_social ?? "",
               beneficiario_doc: fijo ? pagoFijo?.beneficiario_doc ?? null : prov(orden?.proveedores)?.num_doc ?? null,
-              concepto: fijo ? e.descripcion : orden?.concepto ?? e.descripcion,
+              concepto: fijo ? conceptoSinSeRequiere(e.descripcion) : orden?.concepto ?? conceptoSinSeRequiere(e.descripcion),
               importe: Number(fijo ? total : orden?.monto ?? 0),
               deducciones: 0,
               partida: e.clasificador,

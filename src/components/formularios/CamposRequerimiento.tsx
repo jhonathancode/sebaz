@@ -7,6 +7,7 @@ import ItemsRequerimiento from "./ItemsRequerimiento";
 import SelectorPagoFijo from "./SelectorPagoFijo";
 import SugerenciaConcepto from "./SugerenciaConcepto";
 import PlantillasRecientes from "./PlantillasRecientes";
+import CampoConcepto from "./CampoConcepto";
 import CompletarTodo from "./CompletarTodo";
 import type { ProveedorConocido } from "./CamposProveedor";
 import type { ItemHistorial, Plantilla } from "@/lib/atajos";
@@ -97,9 +98,9 @@ export default function CamposRequerimiento({ fuentes, valores, pagosFijos, cheq
       </fieldset>
 
       <fieldset className="pregunta">
-        <legend>4. Resumen del gasto <span className="legend-nota">(opcional: si lo deja vacío se arma solo con lo anterior)</span></legend>
+        <legend>4. ¿Qué se requiere? <span className="legend-nota">(el concepto empieza con «Se requiere…»; si lo deja vacío se arma solo)</span></legend>
         <label className="campo">
-          <input name="descripcion" defaultValue={valores?.descripcion ?? ""} placeholder="Se completa solo con la primera cosa del detalle" />
+          <CampoConcepto defaultValue={valores?.descripcion ?? ""} />
         </label>
         <SugerenciaConcepto tambienItem={false} />
       </fieldset>

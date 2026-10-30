@@ -1,4 +1,5 @@
 import type { supabaseServidor } from "./supabase/server";
+import { conceptoSinSeRequiere } from "./requerimiento";
 
 type Cliente = Awaited<ReturnType<typeof supabaseServidor>>;
 const hoyLima = () => new Date().toLocaleDateString("en-CA", { timeZone: "America/Lima" });
@@ -29,7 +30,7 @@ export async function completarTodo(supabase: Cliente, mcpId: string, mcpNombre:
 
   const { data: ordenYa } = await supabase.from("ordenes").select("id").eq("expediente_id", e.id).eq("anulado", false).maybeSingle();
   if (!ordenYa) {
-    const { error } = await supabase.from("ordenes").insert({ mcp_id: mcpId, expediente_id: e.id, tipo: tipoOrden, fecha, proveedor_id: cot.proveedor_id, concepto: e.descripcion, monto: cot.monto });
+    const { error } = await supabase.from("ordenes").insert({ mcp_id: mcpId, expediente_id: e.id, tipo: tipoOrden, fecha, proveedor_id: cot.proveedor_id, concepto: conceptoSinSeRequiere(e.descripcion), monto: cot.monto });
     if (error) return null;
     await supabase.from("expedientes").update({ fase: "orden" }).eq("id", e.id);
   }
@@ -37,7 +38,7 @@ export async function completarTodo(supabase: Cliente, mcpId: string, mcpNombre:
 
   const { data: confYa } = await supabase.from("conformidades").select("id").eq("expediente_id", e.id).eq("anulado", false).maybeSingle();
   if (!confYa) {
-    const texto = `Mediante la presente se le comunica la CONFORMIDAD por ${e.descripcion.toLowerCase()}, a cargo de ${prov?.razon_social ?? ""}, a favor de la ${mcpNombre}.`;
+    const texto = `Mediante la presente se le comunica la CONFORMIDAD por ${conceptoSinSeRequiere(e.descripcion).toLowerCase()}, a cargo de ${prov?.razon_social ?? ""}, a favor de la ${mcpNombre}.`;
     const { error } = await supabase.from("conformidades").insert({ mcp_id: mcpId, expediente_id: e.id, fecha, texto });
     if (error) return `Orden de ${tipoOrden} emitida, pero no se pudo emitir la conformidad.`;
     await supabase.from("expedientes").update({ fase: "conformidad" }).eq("id", e.id);
@@ -63,7 +64,7 @@ export async function completarTodo(supabase: Cliente, mcpId: string, mcpNombre:
       fuente_id: e.fuente_id,
       beneficiario: prov?.razon_social ?? "",
       beneficiario_doc: prov?.num_doc ?? null,
-      concepto: e.descripcion,
+      concepto: conceptoSinSeRequiere(e.descripcion),
       importe: Number(cot.monto),
       partida: e.clasificador,
       sustento_tipo: e.sustento_tipo,

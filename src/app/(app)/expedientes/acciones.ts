@@ -9,6 +9,7 @@ import { cargarCatalogoPagosFijos, estadoPagosFijos, mesPendiente, pasarAlMes, s
 import { exigirPin } from "@/lib/pin";
 import { comprobanteAutomatico } from "@/lib/comprobanteAuto";
 import { completarTodo } from "@/lib/completarTodo";
+import { conceptoSeRequiere, conceptoSinSeRequiere } from "@/lib/requerimiento";
 import { leerCheque } from "../comprobantes/acciones";
 
 /** "Función|Categoría" del selector → columnas separadas. */
@@ -34,17 +35,21 @@ function leerItems(fd: FormData, volverA: string) {
   return items;
 }
 
-/** Resumen automático cuando no se escribió: la primera cosa del detalle y cuántas más hay. */
-function resumenAuto(items: { descripcion: string }[]) {
+/** Concepto automático cuando no se escribió: «SE REQUIERE…» con la primera cosa del detalle y cuántas más hay. */
+function resumenAuto(tipo: string, items: { descripcion: string }[]) {
   const mas = items.length - 1;
-  return `${items[0].descripcion}${mas > 0 ? ` Y ${mas} ${mas === 1 ? "ÍTEM MÁS" : "ÍTEMS MÁS"}` : ""}`.toUpperCase();
+  const cola = mas > 0 ? ` Y ${mas} ${mas === 1 ? "ÍTEM MÁS" : "ÍTEMS MÁS"}` : "";
+  const base = items[0].descripcion.toUpperCase();
+  const cuerpo = tipo === "compra" ? `LA COMPRA DE ${base}` : tipo === "servicio" ? `EL SERVICIO DE ${base}` : base;
+  return conceptoSeRequiere(cuerpo + cola);
 }
 
 function leerCabecera(fd: FormData, items: { descripcion: string }[]) {
+  const tipo = texto(fd, "tipo") ?? "compra";
   return {
     fecha: texto(fd, "fecha"),
-    tipo: texto(fd, "tipo") ?? "compra",
-    descripcion: texto(fd, "descripcion") ?? resumenAuto(items),
+    tipo,
+    descripcion: conceptoSeRequiere(texto(fd, "descripcion") ?? "") || resumenAuto(tipo, items),
     area_usuaria: texto(fd, "area_usuaria"),
     fuente_id: texto(fd, "fuente_id"),
     meta: texto(fd, "meta"),
@@ -417,7 +422,7 @@ export async function emitirOrden(fd: FormData) {
     tipo: exp.tipo === "compra" ? "compra" : "servicio",
     fecha: texto(fd, "fecha"),
     proveedor_id: elegida.proveedor_id,
-    concepto: texto(fd, "concepto") ?? exp.descripcion,
+    concepto: texto(fd, "concepto") ?? conceptoSinSeRequiere(exp.descripcion),
     plazo: texto(fd, "plazo"),
     monto: elegida.monto,
   });
@@ -479,7 +484,7 @@ export async function generarComprobante(fd: FormData) {
     beneficiario = texto(fd, "beneficiario");
     beneficiarioDoc = (texto(fd, "beneficiario_doc") ?? "").replace(/\D/g, "") || null;
     if (!beneficiario) volver(destino, "error", "Escriba a quién se paga.");
-    concepto = exp.descripcion;
+    concepto = conceptoSinSeRequiere(exp.descripcion);
     importe = (exp.expediente_items as { total: number; anulado: boolean }[])
       .filter((i) => !i.anulado)
       .reduce((s, i) => s + Number(i.total), 0);

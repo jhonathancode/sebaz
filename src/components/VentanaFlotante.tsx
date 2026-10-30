@@ -20,6 +20,7 @@ export default function VentanaFlotante({
   error,
   pin = false,
   pinOpcionalSi,
+  eventoAbrir,
 }: {
   boton: string;
   titulo: string;
@@ -38,6 +39,8 @@ export default function VentanaFlotante({
   pin?: boolean;
   /** Selector: si algo del formulario lo cumple, al final se ofrece aprobar con el PIN (opcional). */
   pinOpcionalSi?: string;
+  /** Nombre de un evento de la ventana que la abre (por ejemplo, desde el menú lateral). */
+  eventoAbrir?: string;
 }) {
   const ref = useRef<HTMLDialogElement>(null);
 
@@ -45,12 +48,33 @@ export default function VentanaFlotante({
     if (abierta && ref.current && !ref.current.open) ref.current.showModal();
   }, [abierta]);
 
+  useEffect(() => {
+    if (!eventoAbrir) return;
+    const abrir = () => {
+      if (ref.current && !ref.current.open) ref.current.showModal();
+    };
+    window.addEventListener(eventoAbrir, abrir);
+    return () => window.removeEventListener(eventoAbrir, abrir);
+  }, [eventoAbrir]);
+
   return (
     <>
       <button type="button" className={`${claseBoton} no-imprimir`} onClick={() => ref.current?.showModal()}>
         {boton}
       </button>
-      <dialog ref={ref} className={`ventana-flotante${ancha ? " ancha" : ""}`} aria-label={titulo}>
+      <dialog
+        ref={ref}
+        className={`ventana-flotante${ancha ? " ancha" : ""}`}
+        aria-label={titulo}
+        onClose={() => {
+          const u = new URL(window.location.href);
+          if (u.searchParams.has("nuevo") || u.searchParams.has("error")) {
+            u.searchParams.delete("nuevo");
+            u.searchParams.delete("error");
+            window.history.replaceState(window.history.state, "", u.pathname + (u.search || ""));
+          }
+        }}
+      >
         <form action={accion} className="vf-marco">
           <div className="vf-cab">
             <h2>{titulo}</h2>

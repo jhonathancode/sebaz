@@ -1671,3 +1671,35 @@ label.opcion:has(input:checked) { background: linear-gradient(135deg, var(--prim
 .asist-botones .btn.primario { background: linear-gradient(135deg, var(--primario), var(--primario-hover)); box-shadow: 0 6px 16px -6px var(--primario); }
 .asist-salir { background: var(--rojo-fondo); border-top-color: var(--rojo); }
 .asist-salir .etiqueta { color: var(--rojo); }
+
+/* Hoja viva: formulario compacto a la izquierda y el documento a la derecha, cada uno con su propio desplazamiento */
+dialog.ventana-flotante.ancha.asistente-ancho { width: min(1240px, calc(100vw - 24px)); }
+dialog.asistente-ancho .vf-marco { height: min(780px, calc(100vh - 34px)); }
+.asist-cuerpo-form { overflow: hidden !important; padding: 0 !important; display: flex; flex-direction: column; }
+.asist-cuerpo-form > .aviso { margin: 12px 20px 0; }
+.asist-dos { display: grid; grid-template-columns: minmax(0, 540px) minmax(0, 1fr); flex: 1; min-height: 0; }
+.asist-izq { padding: 14px 24px 18px 24px; min-width: 0; overflow-y: auto; }
+.asist-der { background: var(--mesa, #e6ecf5); border-left: 1px solid var(--borde); padding: 14px 18px 18px; min-width: 0; overflow-y: auto; }
+.asist-viva { display: flex; align-items: center; gap: 8px; font-size: 12.5px; font-weight: 700; color: var(--primario-texto); margin-bottom: 10px; }
+.asist-punto { width: 8px; height: 8px; border-radius: 50%; background: var(--primario); display: inline-block; animation: latido 1.6s ease-in-out infinite; }
+@keyframes latido { 50% { opacity: .35; } }
+@media (prefers-reduced-motion: reduce) { .asist-punto { animation: none; } }
+.asist-hoja { min-width: 0; }
+.asist-total { display: flex; align-items: baseline; gap: 12px; flex: 1 1 260px; }
+.asist-total span { font-size: 13px; font-weight: 600; color: var(--tenue); }
+.asist-total b { font-size: 30px; font-weight: 800; color: var(--primario-texto); }
+@media (max-width: 1000px) { .asist-dos { grid-template-columns: 1fr; overflow-y: auto; } .asist-der { border-left: 0; border-top: 1px solid var(--borde); overflow: visible; } .asist-izq { overflow: visible; } }
+
+/* Formulario compacto: tipo de gasto y dinero como pastillas */
+.asist-izq fieldset.pregunta { padding: 10px 0 14px; border: 0; border-bottom: 1px solid var(--linea); border-radius: 0; }
+.asist-izq .opciones.compacta { display: flex; flex-wrap: wrap; gap: 8px; }
+.asist-izq .opciones.compacta label.opcion { flex: 0 0 auto; height: 42px; padding: 0 16px 0 38px; border-radius: 999px; display: flex; align-items: center; min-width: 0; }
+.asist-izq .opciones.compacta label.opcion input { left: 14px; }
+
+/* Dentro del formulario compacto: títulos en una línea y la fila de detalle cabe en la columna */
+.asist-izq fieldset.pregunta > legend { display: flex; width: 100%; flex-wrap: wrap; align-items: center; row-gap: 2px; }
+.asist-izq fieldset.pregunta > legend .legend-nota { flex-basis: 100%; margin-left: 36px; font-size: 12px; font-weight: 500; text-transform: none; letter-spacing: 0; }
+.asist-izq .item-fila { display: grid; grid-template-columns: 26px minmax(0, 1fr) 64px 100px 88px; gap: 8px; align-items: end; padding: 10px; }
+.asist-izq .item-fila .item-desc { grid-column: auto; }
+.asist-izq .item-fila .item-total { grid-column: 2 / -1; flex-direction: row; justify-content: flex-end; align-items: baseline; gap: 10px; padding: 0; text-align: right; }
+.asist-izq .item-quitar { position: static; }

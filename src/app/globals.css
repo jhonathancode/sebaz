@@ -1545,3 +1545,25 @@ form:has(input[name="tipo"][value="pago_fijo"]:checked) .pin-auto { display: blo
 .seguro-nota { margin: 0; padding: 0 24px 14px; text-align: center; font-size: 12px; color: var(--tenue); }
 .dialogo-seguro .seguro-pie { justify-content: center; background: transparent; padding: 16px 24px 22px; }
 .dialogo-seguro .seguro-pie .btn { min-width: 140px; justify-content: center; }
+
+/* ------------------------------------------------ requerimiento rápido */
+.plantillas { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; padding-bottom: 12px; margin-bottom: 4px; border-bottom: 1px solid var(--borde); }
+.plantillas-et { font-size: 12px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: var(--tenue); }
+.plantillas-lista { display: flex; flex-wrap: wrap; gap: 6px; }
+.plantillas .f-chip { cursor: pointer; max-width: 100%; }
+/* Tarjetas compactas: solo el título (el texto explicativo queda como ayuda al pasar el cursor) */
+.opciones.compacta { grid-template-columns: repeat(auto-fit, minmax(min(100%, 150px), 1fr)); gap: 8px; }
+.opciones.compacta label.opcion { padding: 9px 12px 9px 38px; min-height: 0; justify-content: center; border-radius: 12px; }
+.opciones.compacta label.opcion input { top: 50%; transform: translateY(-50%); }
+.opciones.compacta .opcion-texto { display: none; }
+.opciones.compacta .opcion-titulo { font-size: 13px; }
+
+/* Modo oscuro: el escudo de la MCP conserva sus colores sobre una placa clara, no se funde con el fondo */
+:root[data-theme="dark"] .lm-escudo:has(img),
+:root[data-theme="dark"] .login-logo-mcp { background: #f4f5f7; padding: 4px; }
+:root[data-theme="dark"] .lm-escudo img,
+:root[data-theme="dark"] .login-logo-mcp { filter: none; opacity: 1; mix-blend-mode: normal; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .lm-escudo:has(img),
+  :root:not([data-theme="light"]) .login-logo-mcp { background: #f4f5f7; padding: 4px; }
+}

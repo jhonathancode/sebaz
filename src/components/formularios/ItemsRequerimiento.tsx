@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { sugerirItem, UNIDADES } from "@/lib/items";
+import type { ItemHistorial } from "@/lib/atajos";
 
 type Fila = { cantidad: string; unidad: string; descripcion: string; precio: string };
 
@@ -47,7 +48,7 @@ function Unidad({ nombre, valor, onChange }: { nombre: string; valor: string; on
  * Lo que se necesita, fila por fila, con el total calculado mientras se escribe.
  * Los nombres de los campos (cant_1, und_1, desc_1, precio_1...) los lee el servidor.
  */
-export default function ItemsRequerimiento({ inicial }: { inicial?: { cantidad: number; unidad: string; descripcion: string; precio_unitario: number }[] }) {
+export default function ItemsRequerimiento({ inicial, historial }: { inicial?: { cantidad: number; unidad: string; descripcion: string; precio_unitario: number }[]; historial?: ItemHistorial[] }) {
   const [filas, setFilas] = useState<Fila[]>(
     inicial && inicial.length
       ? inicial.map((i) => ({ cantidad: String(i.cantidad), unidad: i.unidad, descripcion: i.descripcion, precio: String(i.precio_unitario) }))
@@ -73,10 +74,37 @@ export default function ItemsRequerimiento({ inicial }: { inicial?: { cantidad: 
 
   const cambiar = (i: number, campo: keyof Fila, valor: string) =>
     setFilas((f) => f.map((x, j) => (j === i ? { ...x, [campo]: valor } : x)));
+  // Si lo escrito es una cosa ya comprada antes, se trae su última unidad y precio (solo si el precio está vacío)
+  const alEscribir = (i: number, valor: string) =>
+    setFilas((f) =>
+      f.map((x, j) => {
+        if (j !== i) return x;
+        const previo = historial?.find((h) => h.descripcion.toUpperCase() === valor.trim().toUpperCase());
+        return previo && x.precio === "" ? { ...x, descripcion: valor, unidad: previo.unidad, precio: String(previo.precio) } : { ...x, descripcion: valor };
+      }),
+    );
+  // Enter en el precio pasa a la siguiente cosa (crea la fila si era la última y ya está llena)
+  const alTeclear = (e: React.KeyboardEvent<HTMLInputElement>, i: number) => {
+    if (e.key !== "Enter") return;
+    e.preventDefault();
+    const bloque = e.currentTarget.closest(".items");
+    if (i === filas.length - 1) {
+      if (!filas[i].descripcion.trim()) return;
+      setFilas((x) => [...x, nuevaFila()]);
+    }
+    setTimeout(() => bloque?.querySelector<HTMLInputElement>(`input[name="desc_${i + 2}"]`)?.focus(), 30);
+  };
   const total = filas.reduce((s, f) => s + num(f.cantidad) * num(f.precio), 0);
 
   return (
     <div className="items">
+      {historial && historial.length > 0 && (
+        <datalist id="historial-items">
+          {historial.map((h) => (
+            <option key={h.descripcion} value={h.descripcion} />
+          ))}
+        </datalist>
+      )}
       {filas.map((f, i) => {
         const sug = sugerirItem(f.descripcion);
         return (
@@ -85,7 +113,7 @@ export default function ItemsRequerimiento({ inicial }: { inicial?: { cantidad: 
               <span className="item-num" aria-hidden="true">{i + 1}</span>
               <label className="campo item-desc">
                 Qué se necesita
-                <input name={`desc_${i + 1}`} value={f.descripcion} onChange={(e) => cambiar(i, "descripcion", e.target.value)} placeholder="Ej.: Papel bond A4, lapiceros azules, servicio de tesorería" required={i === 0} />
+                <input name={`desc_${i + 1}`} value={f.descripcion} list="historial-items" autoComplete="off" autoFocus={i === 0 && !inicial} onChange={(e) => alEscribir(i, e.target.value)} onKeyDown={(e) => e.key === "Enter" && e.preventDefault()} placeholder="Ej.: Papel bond A4, lapiceros azules, servicio de tesorería" required={i === 0} />
               </label>
               <label className="campo">
                 Cantidad
@@ -94,7 +122,7 @@ export default function ItemsRequerimiento({ inicial }: { inicial?: { cantidad: 
               <Unidad nombre={`und_${i + 1}`} valor={f.unidad} onChange={(v) => cambiar(i, "unidad", v)} />
               <label className="campo">
                 Precio por unidad S/
-                <input name={`precio_${i + 1}`} value={f.precio} onChange={(e) => cambiar(i, "precio", e.target.value)} inputMode="decimal" placeholder="0.00" />
+                <input name={`precio_${i + 1}`} value={f.precio} onKeyDown={(e) => alTeclear(e, i)} onChange={(e) => cambiar(i, "precio", e.target.value)} inputMode="decimal" placeholder="0.00" />
               </label>
               <div className="item-total">
                 <span className="etiqueta">Subtotal</span>

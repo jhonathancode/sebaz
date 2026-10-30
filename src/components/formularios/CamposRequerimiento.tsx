@@ -6,6 +6,8 @@ import ReinicioPorTipo from "./ReinicioPorTipo";
 import ItemsRequerimiento from "./ItemsRequerimiento";
 import SelectorPagoFijo from "./SelectorPagoFijo";
 import SugerenciaConcepto from "./SugerenciaConcepto";
+import PlantillasRecientes from "./PlantillasRecientes";
+import type { ItemHistorial, Plantilla } from "@/lib/atajos";
 import type { PagoFijoCatalogo } from "@/lib/pagosFijos";
 import { periodoActual } from "@/lib/formato";
 
@@ -39,21 +41,23 @@ function detalleFuente(f: Fuente) {
 }
 
 /** Formulario del requerimiento, en preguntas simples. */
-export default function CamposRequerimiento({ fuentes, valores, pagosFijos, chequeSugerido }: { fuentes: Fuente[]; valores?: ValoresRequerimiento; pagosFijos?: PagoFijoCatalogo[]; chequeSugerido?: string }) {
+export default function CamposRequerimiento({ fuentes, valores, pagosFijos, chequeSugerido, plantillas, historial, fuenteFrecuente }: { fuentes: Fuente[]; valores?: ValoresRequerimiento; pagosFijos?: PagoFijoCatalogo[]; chequeSugerido?: string; plantillas?: Plantilla[]; historial?: ItemHistorial[]; fuenteFrecuente?: string | null }) {
   const tipo = valores?.tipo ?? "compra";
-  const fuentePorDefecto = fuentes.find((f) => f.tipo === "distrito")?.id ?? fuentes[0]?.id;
+  // La fuente que más se usó; si no hay historial, la transferencia distrital
+  const fuentePorDefecto = (fuenteFrecuente && fuentes.some((f) => f.id === fuenteFrecuente) ? fuenteFrecuente : undefined) ?? fuentes.find((f) => f.tipo === "distrito")?.id ?? fuentes[0]?.id;
   // Al corregir un requerimiento que aún no tiene dinero definido, queda marcada «Definir después».
   const fuente = valores ? valores.fuente_id ?? "" : fuentePorDefecto;
   const hayPropios = fuentes.some((f) => f.tipo === "propios");
 
   return (
     <>
+      {!valores && plantillas && <PlantillasRecientes plantillas={plantillas} />}
       {!valores && <ReinicioPorTipo fuenteInicial={fuentePorDefecto} clasificadorInicial="2.3 Bienes y servicios" />}
       <fieldset className="pregunta">
         <legend>1. ¿Qué tipo de gasto es?</legend>
-        <div className="opciones">
+        <div className="opciones compacta">
           {TIPOS.map((t) => (
-            <label key={t.valor} className="opcion">
+            <label key={t.valor} className="opcion" title={t.texto}>
               <input type="radio" name="tipo" value={t.valor} defaultChecked={t.valor === tipo} required />
               <span className="opcion-titulo">{t.titulo}</span>
               <span className="opcion-texto">{t.texto}</span>
@@ -65,9 +69,9 @@ export default function CamposRequerimiento({ fuentes, valores, pagosFijos, cheq
 
       <fieldset className="pregunta">
         <legend>2. ¿Con qué dinero se paga?</legend>
-        <div className="opciones">
+        <div className="opciones compacta">
           {fuentes.map((f) => (
-            <label key={f.id} className="opcion">
+            <label key={f.id} className="opcion" title={detalleFuente(f)}>
               <input type="radio" name="fuente_id" value={f.id} defaultChecked={f.id === fuente} required />
               <span className="opcion-titulo">{nombreFuente(f)}</span>
               <span className="opcion-texto">{detalleFuente(f)}</span>
@@ -83,20 +87,16 @@ export default function CamposRequerimiento({ fuentes, valores, pagosFijos, cheq
       </fieldset>
 
       <fieldset className="pregunta">
-        <legend>3. ¿Para qué es? <span className="legend-nota">(en general)</span></legend>
-        <label className="campo">
-          Resumen del gasto, en una línea
-          <input name="descripcion" required defaultValue={valores?.descripcion ?? ""} placeholder="Ej.: Compra de útiles de oficina para la tesorería" />
-        </label>
-        <p className="pequeno tenue" style={{ margin: "6px 0 0" }}>
-          Aquí va el motivo en general. El detalle de cada cosa (papel bond, lapiceros...) se escribe en el paso 4.
-        </p>
-        <SugerenciaConcepto tambienItem={false} />
+        <legend>3. Detalle: ¿qué se necesita y cuánto cuesta? <span className="legend-nota">(cosa por cosa)</span></legend>
+        <ItemsRequerimiento inicial={valores?.items} historial={historial} />
       </fieldset>
 
       <fieldset className="pregunta">
-        <legend>4. Detalle: ¿qué se necesita y cuánto cuesta? <span className="legend-nota">(cosa por cosa)</span></legend>
-        <ItemsRequerimiento inicial={valores?.items} />
+        <legend>4. Resumen del gasto <span className="legend-nota">(opcional: si lo deja vacío se arma solo con lo anterior)</span></legend>
+        <label className="campo">
+          <input name="descripcion" defaultValue={valores?.descripcion ?? ""} placeholder="Se completa solo con la primera cosa del detalle" />
+        </label>
+        <SugerenciaConcepto tambienItem={false} />
       </fieldset>
 
       {!valores && (

@@ -33,11 +33,17 @@ function leerItems(fd: FormData, volverA: string) {
   return items;
 }
 
-function leerCabecera(fd: FormData) {
+/** Resumen automático cuando no se escribió: la primera cosa del detalle y cuántas más hay. */
+function resumenAuto(items: { descripcion: string }[]) {
+  const mas = items.length - 1;
+  return `${items[0].descripcion}${mas > 0 ? ` Y ${mas} ${mas === 1 ? "ÍTEM MÁS" : "ÍTEMS MÁS"}` : ""}`.toUpperCase();
+}
+
+function leerCabecera(fd: FormData, items: { descripcion: string }[]) {
   return {
     fecha: texto(fd, "fecha"),
     tipo: texto(fd, "tipo") ?? "compra",
-    descripcion: texto(fd, "descripcion"),
+    descripcion: texto(fd, "descripcion") ?? resumenAuto(items),
     area_usuaria: texto(fd, "area_usuaria"),
     fuente_id: texto(fd, "fuente_id"),
     meta: texto(fd, "meta"),
@@ -49,7 +55,7 @@ export async function crearExpediente(fd: FormData) {
   const ctx = await contextoMcp();
   const supabase = await supabaseServidor();
   const items = leerItems(fd, "/expedientes?nuevo=1");
-  const cabecera = leerCabecera(fd);
+  const cabecera = leerCabecera(fd, items);
   // Pago fijo de la lista: qué pago y de qué mes (para no pagarlo dos veces)
   const pagoFijo = cabecera.tipo === "pago_fijo" ? texto(fd, "pago_fijo_id") : null;
   const mesPagado = pagoFijo ? texto(fd, "mes_pagado") : null;
@@ -113,7 +119,7 @@ export async function editarRequerimiento(fd: FormData) {
   const id = texto(fd, "id")!;
   const destino = `/expedientes/${id}?editar=1`;
   const items = leerItems(fd, destino);
-  const { error } = await supabase.from("expedientes").update(leerCabecera(fd)).eq("id", id);
+  const { error } = await supabase.from("expedientes").update(leerCabecera(fd, items)).eq("id", id);
   if (error) volver(destino, "error", mensajeError(error));
   const { error: e1 } = await supabase.from("expediente_items").update({ anulado: true }).eq("expediente_id", id).eq("anulado", false);
   if (e1) volver(destino, "error", mensajeError(e1));

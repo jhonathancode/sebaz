@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { conceptoSinSeRequiere } from "@/lib/requerimiento";
 import { MESES, soles } from "@/lib/formato";
 import { mesPendiente, pasarAlMes, type PagoFijoCatalogo } from "@/lib/pagosFijos";
 
@@ -55,7 +56,7 @@ export default function SelectorPagoFijo({ pagos, periodo }: { pagos: PagoFijoCa
     if (p.fuente_id) form.querySelector<HTMLInputElement>(`input[name="fuente_id"][value="${p.fuente_id}"]`)?.click();
     if (p.clasificador) escribir(form.querySelector<HTMLSelectElement>('select[name="clasificador"]'), p.clasificador);
     window.dispatchEvent(
-      new CustomEvent("sebaz:llenar-items", { detail: [{ cantidad: "1", unidad: p.unidad || "MES", descripcion: texto, precio: String(p.monto) }] }),
+      new CustomEvent("sebaz:llenar-items", { detail: [{ cantidad: "1", unidad: p.unidad || "MES", descripcion: conceptoSinSeRequiere(texto), precio: String(p.monto) }] }),
     );
   }
 

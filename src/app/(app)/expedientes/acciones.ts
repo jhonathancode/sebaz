@@ -147,7 +147,10 @@ export async function editarRequerimiento(fd: FormData) {
   const id = texto(fd, "id")!;
   const destino = `/expedientes/${id}?editar=1`;
   const items = leerItems(fd, destino);
-  const { error } = await supabase.from("expedientes").update(leerCabecera(fd, items)).eq("id", id);
+  // Cheque previsto: se puede anotar, cambiar o quitar (desmarcado = sin cheque previsto)
+  const chequePrevisto = (texto(fd, "cheque_previsto") ?? "").replace(/\D/g, "") || null;
+  if (chequePrevisto && !/^\d{4,12}$/.test(chequePrevisto)) volver(destino, "error", "El número de cheque debe tener de 4 a 12 dígitos.");
+  const { error } = await supabase.from("expedientes").update({ ...leerCabecera(fd, items), cheque_previsto: chequePrevisto }).eq("id", id);
   if (error) volver(destino, "error", mensajeError(error));
   const { error: e1 } = await supabase.from("expediente_items").update({ anulado: true }).eq("expediente_id", id).eq("anulado", false);
   if (e1) volver(destino, "error", mensajeError(e1));
@@ -552,7 +555,7 @@ export async function copiarPagosFijos() {
       const texto = `${p.concepto} - ${mesTexto}`;
       const { data: nuevo, error } = await supabase
         .from("expedientes")
-        .insert({ mcp_id: ctx.mcp.id, tipo: "pago_fijo", descripcion: texto, fuente_id: p.fuente_id, clasificador: p.clasificador, pago_fijo_id: p.id, mes_pagado: periodo })
+        .insert({ mcp_id: ctx.mcp.id, tipo: "pago_fijo", descripcion: conceptoSeRequiere(texto), fuente_id: p.fuente_id, clasificador: p.clasificador, pago_fijo_id: p.id, mes_pagado: periodo })
         .select("id")
         .single();
       if (error || !nuevo) volver("/inicio", "error", `Se registraron ${hechos}. Falló «${p.concepto}»: ${mensajeError(error)}`);
@@ -583,7 +586,7 @@ export async function copiarPagosFijos() {
       .insert({
         mcp_id: ctx.mcp.id,
         tipo: "pago_fijo",
-        descripcion: pasarAlMes(p.descripcion, anterior, periodo),
+        descripcion: conceptoSeRequiere(pasarAlMes(p.descripcion, anterior, periodo)),
         area_usuaria: p.area_usuaria,
         fuente_id: p.fuente_id,
         meta: p.meta,
@@ -598,7 +601,7 @@ export async function copiarPagosFijos() {
           item: n + 1,
           cantidad: it.cantidad,
           unidad: it.unidad,
-          descripcion: pasarAlMes(it.descripcion, anterior, periodo),
+          descripcion: conceptoSinSeRequiere(pasarAlMes(it.descripcion, anterior, periodo)),
           precio_unitario: it.precio_unitario,
           mcp_id: ctx.mcp.id,
           expediente_id: nuevo.id,

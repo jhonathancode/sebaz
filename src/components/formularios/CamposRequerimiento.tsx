@@ -23,6 +23,7 @@ export type ValoresRequerimiento = {
   meta: string | null;
   clasificador: string | null;
   descripcion: string;
+  cheque_previsto?: string | null;
   items: { cantidad: number; unidad: string; descripcion: string; precio_unitario: number }[];
 };
 
@@ -107,12 +108,10 @@ export default function CamposRequerimiento({ fuentes, valores, pagosFijos, cheq
         <ItemsRequerimiento inicial={valores?.items} historial={historial} />
       </fieldset>
 
-      {!valores && (
-        <fieldset className="pregunta">
-          <legend>5. Cheque <span className="legend-nota">(opcional)</span></legend>
-          <CampoCheque sugerido={chequeSugerido} />
-        </fieldset>
-      )}
+      <fieldset className="pregunta">
+        <legend>5. Cheque <span className="legend-nota">(opcional)</span></legend>
+        <CampoCheque sugerido={chequeSugerido} inicial={valores?.cheque_previsto ?? ""} />
+      </fieldset>
 
       {!valores && proveedores && <CompletarTodo proveedores={proveedores} />}
 

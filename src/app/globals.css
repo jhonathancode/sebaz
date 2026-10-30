@@ -1567,3 +1567,6 @@ form:has(input[name="tipo"][value="pago_fijo"]:checked) .pin-auto { display: blo
   :root:not([data-theme="light"]) .lm-escudo:has(img),
   :root:not([data-theme="light"]) .login-logo-mcp { background: #f4f5f7; padding: 4px; }
 }
+
+/* «Completar todo» solo existe para compras y servicios */
+form:has(input[name="tipo"][value="pago_fijo"]:checked) .solo-compra { display: none; }

@@ -9,7 +9,7 @@ export type ProveedorConocido = { num_doc: string; razon_social: string; direcci
  * RUC/DNI y razón social del proveedor. Si ya se usó antes, al escribir el RUC
  * o elegir el nombre se llenan solos sus datos.
  */
-export default function CamposProveedor({ proveedores, prefijo = "prov" }: { proveedores: ProveedorConocido[]; prefijo?: string }) {
+export default function CamposProveedor({ proveedores, prefijo = "prov", opcional = false }: { proveedores: ProveedorConocido[]; prefijo?: string; opcional?: boolean }) {
   const caja = useRef<HTMLDivElement>(null);
   const [conocido, setConocido] = useState<ProveedorConocido | null>(null);
   const [doc, setDoc] = useState("");
@@ -44,7 +44,7 @@ export default function CamposProveedor({ proveedores, prefijo = "prov" }: { pro
         RUC o DNI del proveedor
         <input
           name="num_doc"
-          required
+          required={!opcional}
           inputMode="numeric"
           maxLength={11}
           list={`${prefijo}-docs`}
@@ -65,7 +65,7 @@ export default function CamposProveedor({ proveedores, prefijo = "prov" }: { pro
           name="razon_social"
           list={`${prefijo}-nombres`}
           value={razon}
-          required={!conocido}
+          required={!opcional && !conocido}
           placeholder="Escriba o elija de la lista"
           onChange={(e) => {
             setRazon(e.target.value);

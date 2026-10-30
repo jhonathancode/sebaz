@@ -7,6 +7,8 @@ import ItemsRequerimiento from "./ItemsRequerimiento";
 import SelectorPagoFijo from "./SelectorPagoFijo";
 import SugerenciaConcepto from "./SugerenciaConcepto";
 import PlantillasRecientes from "./PlantillasRecientes";
+import CompletarTodo from "./CompletarTodo";
+import type { ProveedorConocido } from "./CamposProveedor";
 import type { ItemHistorial, Plantilla } from "@/lib/atajos";
 import type { PagoFijoCatalogo } from "@/lib/pagosFijos";
 import { periodoActual } from "@/lib/formato";
@@ -41,7 +43,7 @@ function detalleFuente(f: Fuente) {
 }
 
 /** Formulario del requerimiento, en preguntas simples. */
-export default function CamposRequerimiento({ fuentes, valores, pagosFijos, chequeSugerido, plantillas, historial, fuenteFrecuente }: { fuentes: Fuente[]; valores?: ValoresRequerimiento; pagosFijos?: PagoFijoCatalogo[]; chequeSugerido?: string; plantillas?: Plantilla[]; historial?: ItemHistorial[]; fuenteFrecuente?: string | null }) {
+export default function CamposRequerimiento({ fuentes, valores, pagosFijos, chequeSugerido, plantillas, historial, fuenteFrecuente, proveedores }: { proveedores?: ProveedorConocido[]; fuentes: Fuente[]; valores?: ValoresRequerimiento; pagosFijos?: PagoFijoCatalogo[]; chequeSugerido?: string; plantillas?: Plantilla[]; historial?: ItemHistorial[]; fuenteFrecuente?: string | null }) {
   const tipo = valores?.tipo ?? "compra";
   // La fuente que más se usó; si no hay historial, la transferencia distrital
   const fuentePorDefecto = (fuenteFrecuente && fuentes.some((f) => f.id === fuenteFrecuente) ? fuenteFrecuente : undefined) ?? fuentes.find((f) => f.tipo === "distrito")?.id ?? fuentes[0]?.id;
@@ -105,6 +107,8 @@ export default function CamposRequerimiento({ fuentes, valores, pagosFijos, cheq
           <CampoCheque sugerido={chequeSugerido} />
         </fieldset>
       )}
+
+      {!valores && proveedores && <CompletarTodo proveedores={proveedores} />}
 
       <details className="pregunta mas-datos">
         <summary>Datos para el formato (fecha, área, meta, específica del gasto)</summary>

@@ -19,6 +19,7 @@ export default function FormularioNea({
   inicial,
   orden,
   expediente,
+  proximo,
 }: {
   mcp: Mcp;
   accion: (fd: FormData) => Promise<void>;
@@ -26,6 +27,8 @@ export default function FormularioNea({
   inicial?: { proveedor?: string; documento_ref?: string; items?: { descripcion: string; unidad: string; cantidad: number; precio_unitario: number }[] };
   orden?: string;
   expediente?: string;
+  /** Número que le toca (correlativo automático), para la vista previa. */
+  proximo?: number | null;
 }) {
   const form = useRef<HTMLFormElement>(null);
   const [origen, setOrigen] = useState<DatosNea["origen"]>("compra");
@@ -48,7 +51,7 @@ export default function FormularioNea({
     if (!f.checkValidity()) return f.reportValidity();
     const fd = new FormData(f);
     setVista({
-      numero: null,
+      numero: proximo ?? null,
       anio: Number(String(fd.get("fecha")).slice(0, 4)),
       fecha: String(fd.get("fecha")),
       origen,

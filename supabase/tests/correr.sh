@@ -38,4 +38,5 @@ psql -v ON_ERROR_STOP=1 -q -d prueba_mcp -f migrations/20261024170000_pago_fijo_
 psql -v ON_ERROR_STOP=1 -q -d prueba_mcp -f migrations/20261024180000_pago_fijo_expediente_completo.sql
 psql -v ON_ERROR_STOP=1 -q -d prueba_mcp -f migrations/20261024190000_exigir_pin.sql
 psql -v ON_ERROR_STOP=1 -q -d prueba_mcp -f migrations/20261030170000_completar_todo.sql
+psql -v ON_ERROR_STOP=1 -q -d prueba_mcp -f migrations/20261030180000_proximo_numero.sql
 psql -v ON_ERROR_STOP=1 -q -d prueba_mcp -f ACTUALIZAR_BASE.sql 2>&1 | grep -v NOTICE | grep -E "actualizada|ERROR"

@@ -252,10 +252,13 @@ export async function cambiarEstadoExpediente(fd: FormData) {
 export async function anularExpedienteTotal(fd: FormData) {
   const ctx = await contextoMcp();
   const id = texto(fd, "id")!;
-  await exigirPin(ctx.userId, fd, ruta(id));
+  // Desde la lista se vuelve a la lista (mismos filtros); desde el expediente, al expediente
+  const aLista = texto(fd, "volver_a");
+  const destino = aLista && /^\/expedientes(\?[\w=&%.\-+]*)?$/.test(aLista) ? aLista : ruta(id);
+  await exigirPin(ctx.userId, fd, destino);
   const supabase = await supabaseServidor();
   const { data, error } = await supabase.rpc("anular_expediente_total", { p_expediente: id, p_motivo: texto(fd, "motivo") });
-  if (error) volver(ruta(id), "error", mensajeError(error));
+  if (error) volver(destino, "error", mensajeError(error));
   const [cps, neas, cheques] = String(data ?? "0|0|").split("|");
   const partes = [
     Number(cps) ? `${cps} comprobante(s) de pago` : "",
@@ -265,7 +268,7 @@ export async function anularExpedienteTotal(fd: FormData) {
   revalidatePath("/comprobantes");
   revalidatePath("/almacen");
   volver(
-    ruta(id),
+    destino,
     "ok",
     `Expediente anulado${partes.length ? ` junto con ${partes.join(" y ")}` : ""}.${cheques ? ` El cheque N° ${cheques} quedó sin uso: archívelo o anótelo como anulado.` : ""}`,
   );

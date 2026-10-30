@@ -62,7 +62,7 @@ export default function CamposRequerimiento({ fuentes, valores, pagosFijos, cheq
       {!valores && plantillas && <PlantillasRecientes plantillas={plantillas} />}
       {!valores && <ReinicioPorTipo fuenteInicial={fuentePorDefecto} clasificadorInicial="2.3 Bienes y servicios" />}
       <fieldset className="pregunta">
-        <legend>1. ¿Qué tipo de gasto es?</legend>
+        <legend>¿Qué tipo de gasto es?</legend>
         <div className="opciones compacta">
           {TIPOS.map((t) => (
             <label key={t.valor} className="opcion" title={t.texto}>
@@ -76,7 +76,7 @@ export default function CamposRequerimiento({ fuentes, valores, pagosFijos, cheq
       </fieldset>
 
       <fieldset className="pregunta">
-        <legend>2. ¿Con qué dinero se paga?</legend>
+        <legend>¿Con qué dinero se paga?</legend>
         <div className="opciones compacta">
           {[...fuentes].sort((a, b) => ORDEN_FUENTES[a.tipo] - ORDEN_FUENTES[b.tipo]).map((f) => (
             <label key={f.id} className="opcion" title={detalleFuente(f)}>
@@ -95,7 +95,7 @@ export default function CamposRequerimiento({ fuentes, valores, pagosFijos, cheq
       </fieldset>
 
       <fieldset className="pregunta">
-        <legend>3. ¿Qué se requiere? <span className="legend-nota">(el concepto empieza con «Se requiere…»; si lo deja vacío se arma solo)</span></legend>
+        <legend>¿Qué se requiere? <span className="legend-nota">(el concepto empieza con «Se requiere…»; si lo deja vacío se arma solo)</span></legend>
         <label className="campo">
           <CampoConcepto defaultValue={valores?.descripcion ?? ""} />
         </label>
@@ -104,12 +104,12 @@ export default function CamposRequerimiento({ fuentes, valores, pagosFijos, cheq
       </fieldset>
 
       <fieldset className="pregunta">
-        <legend>4. Detalle: ¿qué se necesita y cuánto cuesta? <span className="legend-nota">(cosa por cosa: cantidad, unidad y precio)</span></legend>
+        <legend>Detalle: ¿qué se necesita y cuánto cuesta? <span className="legend-nota">(cosa por cosa: cantidad, unidad y precio)</span></legend>
         <ItemsRequerimiento inicial={valores?.items} historial={historial} />
       </fieldset>
 
       <fieldset className="pregunta">
-        <legend>5. Cheque <span className="legend-nota">(opcional)</span></legend>
+        <legend>Cheque <span className="legend-nota">(opcional)</span></legend>
         <CampoCheque sugerido={chequeSugerido} inicial={valores?.cheque_previsto ?? ""} />
       </fieldset>
 

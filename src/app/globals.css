@@ -1626,3 +1626,32 @@ html.pdf-captura .escala-a4-interior { transform: none !important; }
 
 .chips-concepto { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; }
 .chips-concepto .f-chip { cursor: pointer; }
+
+/* ------------------------------------------------ más vida: color y acentos */
+.vf-cuerpo { counter-reset: paso; }
+fieldset.pregunta > legend { display: inline-flex; align-items: center; gap: 10px; }
+.vf-cuerpo fieldset.pregunta > legend::before {
+  counter-increment: paso; content: counter(paso);
+  display: inline-grid; place-items: center; flex: none; width: 26px; height: 26px; border-radius: 50%;
+  background: linear-gradient(135deg, var(--primario), var(--primario-hover)); color: #fff; font-size: 13px; font-weight: 800;
+  box-shadow: 0 3px 10px -3px var(--primario);
+}
+.plantillas .f-chip, .chips-concepto .f-chip {
+  --h: 212; background: hsl(var(--h) 90% 56% / .13); border-color: hsl(var(--h) 80% 56% / .42); color: inherit; font-weight: 600;
+  transition: background .15s, transform .15s, box-shadow .15s;
+}
+.plantillas .f-chip:nth-child(5n+2), .chips-concepto .f-chip:nth-child(5n+2) { --h: 170; }
+.plantillas .f-chip:nth-child(5n+3), .chips-concepto .f-chip:nth-child(5n+3) { --h: 262; }
+.plantillas .f-chip:nth-child(5n+4), .chips-concepto .f-chip:nth-child(5n+4) { --h: 32; }
+.plantillas .f-chip:nth-child(5n+5), .chips-concepto .f-chip:nth-child(5n+5) { --h: 336; }
+.plantillas .f-chip:hover, .chips-concepto .f-chip:hover { background: hsl(var(--h) 90% 56% / .30); transform: translateY(-1px); box-shadow: 0 6px 14px -8px hsl(var(--h) 90% 50%); color: inherit; }
+.plantillas-et { color: var(--primario-texto); }
+label.opcion:has(input:checked) { background: linear-gradient(135deg, var(--primario-fondo), transparent 85%); box-shadow: inset 0 0 0 1px var(--primario), 0 6px 16px -10px var(--primario); }
+.items-total { background: linear-gradient(135deg, var(--primario-fondo), transparent 90%); }
+.barra-guiada .av-sigue { background: linear-gradient(100deg, var(--primario-fondo) 0%, var(--panel) 65%); border-left: 6px solid var(--primario); }
+.barra-guiada .btn.primario { background: linear-gradient(135deg, var(--primario), var(--primario-hover)); box-shadow: 0 6px 16px -6px var(--primario); }
+.barra-guiada .btn.primario:hover { transform: translateY(-1px); }
+.kpis .kpi { border-top: 3px solid var(--primario-claro); }
+.kpis .kpi:nth-child(1) { border-top-color: var(--primario); }
+.kpis .kpi:nth-child(2) { border-top-color: #e0a526; }
+.av-paso.hecho .av-enlace, .av-paso.hecho a { background: linear-gradient(135deg, var(--primario-fondo), transparent 90%); }

@@ -5,6 +5,7 @@ import FormatoComprobante from "@/components/formatos/FormatoComprobante";
 import type { Mcp } from "@/lib/contexto";
 import type { cargarExpediente, Proveedor } from "@/lib/documentos";
 import { fecha, num3, soles } from "@/lib/formato";
+import { conceptoSinSeRequiere } from "@/lib/requerimiento";
 
 export type DatosExpediente = Awaited<ReturnType<typeof cargarExpediente>>;
 type Datos = DatosExpediente;
@@ -51,7 +52,8 @@ export function Requerimiento({ d, mcp }: { d: Datos; mcp: Mcp }) {
       <Encabezado mcp={mcp} titulo={`CUADRO DE REQUERIMIENTO N° ${num3(e.numero)}-${e.anio}-MCP-${sufijo(mcp)}`} numero={`Fecha: ${fecha(e.fecha)}`} />
       <table className="formato datos-cabecera">
         <tbody>
-          <tr><th style={{ width: 220 }}>Unidad orgánica</th><td>{e.area_usuaria ?? ""}</td></tr>
+          <tr><th style={{ width: 220 }}>Concepto</th><td>{e.descripcion}</td></tr>
+          <tr><th>Unidad orgánica</th><td>{e.area_usuaria ?? ""}</td></tr>
           <tr><th>Proyecto / actividad</th><td>{e.meta ?? ""}</td></tr>
           <tr><th>Específica del gasto</th><td>{e.clasificador ?? ""}</td></tr>
         </tbody>
@@ -78,7 +80,7 @@ function Cotizaciones({ d, mcp }: { d: Datos; mcp: Mcp }) {
     <div className="hoja">
       {d.anulado && <MarcaAnulado {...d.anulado} />}
       <Encabezado mcp={mcp} titulo="CUADRO COMPARATIVO DE COTIZACIONES" numero={`Requerimiento N° ${num3(e.numero)}-${e.anio}`} />
-      <p style={{ margin: "12px 0 0" }}>Objeto: {e.descripcion}</p>
+      <p style={{ margin: "12px 0 0" }}>Objeto: {conceptoSinSeRequiere(e.descripcion)}</p>
       <table className="formato">
         <thead>
           <tr><th>N°</th><th>Proveedor</th><th>RUC / DNI</th><th>Plazo</th><th className="num">Monto S/</th><th>Resultado</th></tr>

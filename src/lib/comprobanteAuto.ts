@@ -1,4 +1,5 @@
 import type { supabaseServidor } from "./supabase/server";
+import { conceptoSinSeRequiere } from "./requerimiento";
 
 type Cliente = Awaited<ReturnType<typeof supabaseServidor>>;
 
@@ -44,7 +45,7 @@ export async function comprobanteAutomatico(
     fuente_id: e.fuente_id,
     beneficiario: pf.beneficiario,
     beneficiario_doc: pf.beneficiario_doc,
-    concepto: e.descripcion,
+    concepto: conceptoSinSeRequiere(e.descripcion),
     importe,
     partida: e.clasificador,
     sustento_tipo: "REC",

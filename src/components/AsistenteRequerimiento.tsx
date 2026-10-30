@@ -25,7 +25,7 @@ type PagoFijoInfo = { id: string; beneficiario: string | null; beneficiario_doc:
 type Paso = "form" | "req" | "prov" | "orden" | "conf" | "alm" | "comp";
 
 const TITULO: Record<Paso, string> = {
-  form: "Requerimiento",
+  form: "Datos del requerimiento",
   req: "Requerimiento",
   prov: "Proveedor",
   orden: "Orden",
@@ -149,13 +149,13 @@ export default function AsistenteRequerimiento({
   const pasos: Paso[] =
     L.tipo === "pago_fijo"
       ? !pf
-        ? ["form"]
+        ? ["form", "req"]
         : pf.completo
-          ? ["form", "orden", "conf", "comp"]
-          : ["form", "comp"]
+          ? ["form", "req", "orden", "conf", "comp"]
+          : ["form", "req", "comp"]
       : L.tipo === "compra"
-        ? ["form", "prov", "orden", "conf", "alm", "comp"]
-        : ["form", "prov", "orden", "conf", "comp"];
+        ? ["form", "req", "prov", "orden", "conf", "alm", "comp"]
+        : ["form", "req", "prov", "orden", "conf", "comp"];
   const indice = Math.max(0, pasos.indexOf(paso));
   const ultimo = paso === pasos[pasos.length - 1];
 
@@ -272,7 +272,7 @@ export default function AsistenteRequerimiento({
       </button>
       <dialog
         ref={ref}
-        className="ventana-flotante ancha asistente asistente-ancho"
+        className="ventana-flotante ancha asistente"
         aria-label="Nuevo requerimiento"
         onCancel={(e) => {
           e.preventDefault();
@@ -294,7 +294,7 @@ export default function AsistenteRequerimiento({
             <div style={{ width: `${((indice + 1) / pasos.length) * 100}%` }} />
           </div>
 
-          <div className={`vf-cuerpo${paso === "form" ? " asist-cuerpo-form" : ""}`} ref={cuerpo}>
+          <div className="vf-cuerpo" ref={cuerpo}>
             {(errorServidor || aviso) && (
               <div className="aviso error" role="alert">
                 {errorServidor ? <><strong>No se pudo registrar.</strong> {errorServidor}</> : aviso}
@@ -302,22 +302,11 @@ export default function AsistenteRequerimiento({
             )}
 
             {/* Paso 1: datos (siempre en pantalla para que sus valores viajen al guardar) */}
-            <div key={ciclo} className="asist-dos" style={{ display: paso === "form" ? undefined : "none" }}>
-              <div className="asist-izq">{children}</div>
-              <aside className="asist-der" aria-label="Así quedará el requerimiento">
-                <div className="asist-viva">
-                  <span className="asist-punto" aria-hidden="true" />
-                  Así quedará · se actualiza mientras escribe
-                </div>
-                {paso === "form" && (
-                  <div className="asist-hoja">
-                    <EscalaA4>
-                      <Requerimiento d={dBase} mcp={mcp} />
-                    </EscalaA4>
-                  </div>
-                )}
-              </aside>
+            <div key={ciclo} style={{ display: paso === "form" ? undefined : "none" }}>
+              {children}
             </div>
+
+            {paso === "req" && hoja(<Requerimiento d={dBase} mcp={mcp} />)}
 
             {/* Proveedor */}
             <div style={{ display: paso === "prov" ? undefined : "none" }} key={`p${ciclo}`}>
@@ -446,18 +435,11 @@ export default function AsistenteRequerimiento({
             </div>
           ) : (
             <div className="vf-pie asist-pie">
-              {paso === "form" ? (
-                <div className="asist-total">
-                  <span>Total del requerimiento</span>
-                  <b>S/ {soles(L.total)}</b>
-                </div>
-              ) : (
-                <div className="asist-pregunta">
-                  <span className="etiqueta">Paso {indice + 1} de {pasos.length} · {TITULO[paso]}</span>
-                  <b>{pregunta[paso].t}</b>
-                  <span className="tenue">{pregunta[paso].a}</span>
-                </div>
-              )}
+              <div className="asist-pregunta">
+                <span className="etiqueta">Paso {indice + 1} de {pasos.length} · {TITULO[paso]}</span>
+                <b>{pregunta[paso].t}</b>
+                <span className="tenue">{pregunta[paso].a}</span>
+              </div>
               <div className="asist-botones">
                 {paso === "form" ? (
                   <button type="button" className="btn" onClick={pedirSalir}>Cancelar</button>
@@ -475,7 +457,7 @@ export default function AsistenteRequerimiento({
                   </BotonConfirmar>
                 ) : (
                   <button type="button" className="btn primario grande" onClick={siguiente}>
-                    {paso === "form" ? "Revisar y aprobar →" : paso === "prov" || paso === "alm" ? "Continuar" : "Sí, está bien"}
+                    {paso === "form" ? "Revisar requerimiento" : paso === "prov" || paso === "alm" ? "Continuar" : "Sí, está bien"}
                   </button>
                 )}
               </div>

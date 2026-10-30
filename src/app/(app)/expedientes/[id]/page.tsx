@@ -12,7 +12,7 @@ import VentanaFlotante from "@/components/VentanaFlotante";
 import DocumentosExpediente, { Memorando, Orden, type DatosExpediente } from "@/components/formatos/DocumentosExpediente";
 import FormatoComprobante from "@/components/formatos/FormatoComprobante";
 import { FormatoNea } from "@/components/formatos/FormatosAlmacen";
-import { cargarExpediente } from "@/lib/documentos";
+import { cargarExpediente, listaDocumentos } from "@/lib/documentos";
 import { cargarCierres, estadoGestion } from "@/lib/gestion";
 import { siguienteCheque } from "@/lib/pagosFijos";
 import { conceptoSinSeRequiere } from "@/lib/requerimiento";
@@ -157,7 +157,7 @@ export default async function Expediente({ params, searchParams }: { params: Par
   const textoConformidad = `Mediante la presente se le comunica la CONFORMIDAD por ${conceptoSinSeRequiere(e.descripcion).toLowerCase()}, a cargo de ${prov(orden?.proveedores)?.razon_social ?? ""}, a favor de la ${ctx.mcp.nombre}.`;
 
   // ------------------------------------------------------------------ pasos
-  type Paso = { id: string; titulo: string; detalle: string; hecho: boolean };
+  type Paso = { id: string; titulo: string; detalle: string; hecho: boolean; existio?: boolean };
   const pasos: Paso[] = [
     { id: "requerimiento", titulo: "Requerimiento", detalle: aprobado ? "Aprobado" : e.estado === "borrador" ? "Falta aprobar" : "", hecho: aprobado },
     ...(fijo
@@ -174,6 +174,16 @@ export default async function Expediente({ params, searchParams }: { params: Par
         ]),
     { id: "comprobante", titulo: "Comprobante de pago", detalle: cp ? codigoCP(cp.numero, cp.origen) : "Pendiente", hecho: !!cp && cp.estado !== "borrador" },
   ];
+  // En un expediente anulado, cada documento que existió se muestra como anulado (no como pendiente)
+  const existieron: Record<string, boolean> = {
+    requerimiento: true,
+    cotizacion: (cotizaciones ?? []).length > 0,
+    orden: (ordenes ?? []).length > 0,
+    conformidad: (conformidades ?? []).length > 0,
+    almacen: (neas ?? []).length > 0,
+    comprobante: (cps ?? []).length > 0,
+  };
+  pasos.forEach((p) => (p.existio = !!existieron[p.id]));
   const actual = pasos.find((p) => !p.hecho)?.id ?? "comprobante";
   const listos = pasos.filter((p) => p.hecho).length;
   // Terminado de verdad: comprobante aprobado y con cheque (o ya rendido)
@@ -383,7 +393,7 @@ export default async function Expediente({ params, searchParams }: { params: Par
     };
   }
 
-  const docs = [
+  const docsBase = [
     { clave: "requerimiento", nombre: "Requerimiento", listo: true },
     ...(fijo
       ? []
@@ -394,6 +404,8 @@ export default async function Expediente({ params, searchParams }: { params: Par
         ]),
     { clave: "comprobante", nombre: "Comprobante de pago", listo: !!cp },
   ].filter((d) => d.listo);
+  // Expediente anulado: todos sus documentos siguen disponibles, con el sello ANULADO
+  const docs = anulado ? listaDocumentos(datosDoc).filter((x) => x.listo).map((x) => ({ clave: x.clave as string, nombre: x.nombre, listo: true })) : docsBase;
   // Borrador del documento de la fase actual: se ve abajo antes de emitirlo.
   const hoy = hoyISO();
   const anioHoy = Number(hoy.slice(0, 4));
@@ -551,18 +563,20 @@ export default async function Expediente({ params, searchParams }: { params: Par
       <section className={`avance${anulado ? " anulado" : ""}`} aria-label="Avance del expediente">
         <div className="av-cab">
           <span className="av-titulo">{anulado ? "Expediente anulado" : terminado ? "Expediente completo" : `Paso ${Math.min(listos + 1, pasos.length)} de ${pasos.length}`}</span>
-          <span className="av-pct">{Math.round((listos / pasos.length) * 100)} %</span>
+          <span className="av-pct">{anulado ? "" : `${Math.round((listos / pasos.length) * 100)} %`}</span>
         </div>
         <div className="av-barra" aria-hidden="true"><div style={{ width: `${(listos / pasos.length) * 100}%` }} /></div>
 
         <ol className="av-pasos" style={{ gridTemplateColumns: `repeat(${pasos.length}, minmax(0, 1fr))` }}>
           {pasos.map((p, n) => {
-            const estado = p.hecho ? "hecho" : p.id === actual && !anulado ? "actual" : "pendiente";
+            const estado = anulado ? (p.existio ? "anulado" : "pendiente") : p.hecho ? "hecho" : p.id === actual ? "actual" : "pendiente";
             return (
               <li key={p.id} className={`av-paso ${estado}${p.id === visto ? " visto" : ""}`}>
                 <Link href={`/expedientes/${id}?paso=${p.id}${DOC_DE_PASO[p.id] ? `&ver=${DOC_DE_PASO[p.id]}` : ""}`} scroll={false} aria-current={p.id === visto ? "step" : undefined}>
                   <span className="av-icono" aria-hidden="true">
-                    {p.hecho ? (
+                    {estado === "anulado" ? (
+                      <span style={{ fontWeight: 800, fontSize: 18 }}>✕</span>
+                    ) : p.hecho ? (
                       <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round"><path d="m5 12.5 4.5 4.5L19 7.5" /></svg>
                     ) : (
                       <IconoPaso id={p.id} />
@@ -574,7 +588,7 @@ export default async function Expediente({ params, searchParams }: { params: Par
                       {estado === "actual" && <span className="av-ahora">Ahora</span>}
                     </span>
                     <span className="av-nombre">{p.titulo}</span>
-                    <span className="av-det">{p.hecho ? p.detalle : estado === "actual" ? ((p.id === "requerimiento" && e.estado === "borrador") || (p.id === "comprobante" && cp?.estado === "borrador") ? "Por aprobar" : "En curso") : "Pendiente"}</span>
+                    <span className="av-det">{estado === "anulado" ? "Anulado" : p.hecho ? p.detalle : estado === "actual" ? ((p.id === "requerimiento" && e.estado === "borrador") || (p.id === "comprobante" && cp?.estado === "borrador") ? "Por aprobar" : "En curso") : "Pendiente"}</span>
                   </span>
                 </Link>
               </li>

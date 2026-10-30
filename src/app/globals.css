@@ -1656,3 +1656,18 @@ label.opcion:has(input:checked) { background: linear-gradient(135deg, var(--prim
 .av-paso.anulado .av-enlace, .av-paso.anulado a { background: var(--rojo-fondo); border-color: var(--rojo-borde); }
 .av-paso.anulado .av-icono { background: var(--rojo); border-color: var(--rojo); color: #fff; }
 .av-paso.anulado .av-det { color: var(--rojo); font-weight: 700; }
+/* Asistente «todo o nada»: pie con la pregunta y la respuesta */
+.asistente .vf-cab { gap: 14px; }
+.asist-progreso { margin-left: auto; margin-right: 8px; font-size: 12px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; color: var(--primario-texto); }
+.asist-barra { height: 4px; background: var(--linea); }
+.asist-barra > div { height: 100%; background: linear-gradient(90deg, var(--primario), var(--primario-hover)); transition: width .25s ease; }
+.asist-mesa { border-radius: 12px; padding: 18px 10px; }
+.asist-pie { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px 20px; padding: 14px 20px; background: linear-gradient(100deg, var(--primario-fondo) 0%, var(--panel) 70%); border-top: 3px solid var(--primario); }
+.asist-pregunta { display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1 1 300px; }
+.asist-pregunta b { font-size: 19px; line-height: 1.25; }
+.asist-pregunta .etiqueta { color: var(--primario-texto); font-weight: 700; letter-spacing: .06em; }
+.asist-botones { display: flex; gap: 10px; flex-wrap: wrap; justify-content: flex-end; }
+.asist-botones .btn.grande { min-height: 46px; font-weight: 600; }
+.asist-botones .btn.primario { background: linear-gradient(135deg, var(--primario), var(--primario-hover)); box-shadow: 0 6px 16px -6px var(--primario); }
+.asist-salir { background: var(--rojo-fondo); border-top-color: var(--rojo); }
+.asist-salir .etiqueta { color: var(--rojo); }

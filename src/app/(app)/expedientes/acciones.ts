@@ -4,12 +4,12 @@ import { revalidatePath } from "next/cache";
 import { contextoMcp, tiene } from "@/lib/contexto";
 import { mensajeError, numero, texto, volver } from "@/lib/acciones";
 import { supabaseServidor } from "@/lib/supabase/server";
-import { MESES, periodoActual } from "@/lib/formato";
+import { MESES, num3, periodoActual } from "@/lib/formato";
 import { cargarCatalogoPagosFijos, estadoPagosFijos, mesPendiente, pasarAlMes, siguienteCheque } from "@/lib/pagosFijos";
-import { exigirPin } from "@/lib/pin";
+import { exigirPin, verificarPin } from "@/lib/pin";
 import { comprobanteAutomatico } from "@/lib/comprobanteAuto";
 import { completarTodo } from "@/lib/completarTodo";
-import { conceptoSeRequiere, conceptoSinSeRequiere } from "@/lib/requerimiento";
+import { conceptoSeRequiere, conceptoSinSeRequiere, resumenConcepto } from "@/lib/requerimiento";
 import { leerCheque } from "../comprobantes/acciones";
 
 /** "Función|Categoría" del selector → columnas separadas. */
@@ -20,29 +20,29 @@ function funcionCategoria(fd: FormData) {
 
 const ruta = (id: string, fase?: string) => `/expedientes/${id}${fase ? `?fase=${fase}` : ""}`;
 
-/** Lee las filas de ítems del formulario (las vacías se ignoran). */
-function leerItems(fd: FormData, volverA: string) {
+/** Lee las filas de ítems del formulario (las vacías se ignoran). Devuelve un error en vez de redirigir. */
+function itemsDeFormulario(fd: FormData): { items: { item: number; cantidad: number; unidad: string; descripcion: string; precio_unitario: number }[]; error?: string } {
   const items: { item: number; cantidad: number; unidad: string; descripcion: string; precio_unitario: number }[] = [];
   for (let i = 1; i <= 30; i++) {
     const descripcion = texto(fd, `desc_${i}`);
     if (!descripcion) continue;
     const cantidad = numero(fd, `cant_${i}`) ?? 0;
     const precio = numero(fd, `precio_${i}`) ?? 0;
-    if (cantidad <= 0) volver(volverA, "error", `Ítem ${i}: la cantidad debe ser mayor que cero.`);
+    if (cantidad <= 0) return { items, error: `Ítem ${i}: la cantidad debe ser mayor que cero.` };
     items.push({ item: items.length + 1, cantidad, unidad: texto(fd, `und_${i}`) ?? "UND", descripcion, precio_unitario: precio });
   }
-  if (items.length === 0) volver(volverA, "error", "Agregue al menos un ítem al requerimiento.");
-  return items;
+  if (items.length === 0) return { items, error: "Agregue al menos un ítem al requerimiento." };
+  return { items };
 }
 
-/** Concepto automático cuando no se escribió: «SE REQUIERE…» con la primera cosa del detalle y cuántas más hay. */
-function resumenAuto(tipo: string, items: { descripcion: string }[]) {
-  const mas = items.length - 1;
-  const cola = mas > 0 ? ` Y ${mas} ${mas === 1 ? "ÍTEM MÁS" : "ÍTEMS MÁS"}` : "";
-  const base = items[0].descripcion.toUpperCase();
-  const cuerpo = tipo === "compra" ? `LA COMPRA DE ${base}` : tipo === "servicio" ? `EL SERVICIO DE ${base}` : base;
-  return conceptoSeRequiere(cuerpo + cola);
+/** Lee las filas de ítems del formulario (las vacías se ignoran). */
+function leerItems(fd: FormData, volverA: string) {
+  const r = itemsDeFormulario(fd);
+  if (r.error) volver(volverA, "error", r.error);
+  return r.items;
 }
+
+const resumenAuto = resumenConcepto;
 
 function leerCabecera(fd: FormData, items: { descripcion: string }[]) {
   const tipo = texto(fd, "tipo") ?? "compra";
@@ -138,6 +138,142 @@ export async function crearExpediente(fd: FormData) {
         ? "Pago fijo registrado. Avise al alcalde: al aprobarlo, su comprobante de pago se genera y aprueba solo, con el cheque anotado."
         : "Requerimiento registrado. Avise al alcalde para que lo apruebe y siga con el siguiente documento.",
   );
+}
+
+/**
+ * Registro «todo o nada» (alcalde o administrador): requerimiento, aprobación y todos sus documentos
+ * (orden, conformidad, almacén y comprobante de pago) en un solo paso. Hasta que se confirma no se guarda
+ * nada ni se gasta ningún número. Si algo falla a mitad, lo registrado se anula completo y se avisa.
+ * Devuelve un error (sin redirigir) para que la ventana no pierda lo escrito.
+ */
+export async function registrarExpedienteCompleto(fd: FormData): Promise<{ error: string } | undefined> {
+  const ctx = await contextoMcp();
+  if (!tiene(ctx, "alcalde", "admin")) return { error: "Solo el alcalde o el administrador pueden registrar y aprobar de una vez." };
+  const supabase = await supabaseServidor();
+
+  const leidos = itemsDeFormulario(fd);
+  if (leidos.error) return { error: leidos.error };
+  const items = leidos.items;
+  const cab = leerCabecera(fd, items);
+  const tipo = cab.tipo;
+  const hasta = texto(fd, "hasta") === "orden" ? "orden" : "todo";
+  const total = Math.round(items.reduce((t, it) => t + it.cantidad * it.precio_unitario, 0) * 100) / 100;
+  const hoy = new Date().toLocaleDateString("en-CA", { timeZone: "America/Lima" });
+
+  // Pago fijo de la lista: solo el mes que sigue, en orden
+  const pagoFijo = tipo === "pago_fijo" ? texto(fd, "pago_fijo_id") : null;
+  const mesPagado = pagoFijo ? texto(fd, "mes_pagado") : null;
+  if (pagoFijo && mesPagado) {
+    const catalogo = await cargarCatalogoPagosFijos(supabase, ctx.mcp.id, false);
+    const elegido = catalogo.find((p) => p.id === pagoFijo);
+    if (elegido) {
+      const pendiente = mesPendiente(elegido.pagados, periodoActual());
+      if (mesPagado !== pendiente) {
+        const [a, m] = pendiente.split("-").map(Number);
+        return { error: `No se puede pagar ese mes todavía: está pendiente el mes de ${MESES[m - 1].toUpperCase()} ${a}. Pague primero ese.` };
+      }
+    }
+  }
+  if (tipo !== "pago_fijo" && total <= 0) return { error: "Escriba el precio de cada cosa: el monto del requerimiento debe ser mayor que cero." };
+  if (hasta === "todo" && !cab.fuente_id && (tipo !== "pago_fijo" || pagoFijo)) return { error: "Elija con qué dinero se paga: sin eso no se puede generar el comprobante de pago." };
+  const chequePrevisto = (texto(fd, "cheque_previsto") ?? "").replace(/\D/g, "") || null;
+  if (chequePrevisto && !/^\d{4,12}$/.test(chequePrevisto)) return { error: "El número de cheque debe tener de 4 a 12 dígitos." };
+  const almacen = tipo === "compra" ? (texto(fd, "almacen") === "sin" ? "sin" : "nea") : null;
+  const sinAlmacenMotivo = almacen === "sin" ? texto(fd, "sin_almacen_motivo") : null;
+  if (hasta === "todo" && almacen === "sin" && (sinAlmacenMotivo ?? "").length < 10) return { error: "Explique en al menos 10 letras por qué estos bienes no pasan por almacén." };
+
+  // Todo está validado: el PIN y, recién entonces, se escribe en la base
+  const pinMsg = await verificarPin(ctx.userId, fd);
+  if (pinMsg) return { error: pinMsg };
+  let proveedorId: string | null = null;
+  if (tipo !== "pago_fijo") {
+    const pr = await resolverProveedor(ctx.mcp.id, fd);
+    if ("error" in pr) return { error: pr.error };
+    proveedorId = pr.id;
+  }
+
+  const { data: nuevo, error: eExp } = await supabase
+    .from("expedientes")
+    .insert({
+      mcp_id: ctx.mcp.id,
+      ...cab,
+      ...(pagoFijo ? { pago_fijo_id: pagoFijo, mes_pagado: mesPagado } : {}),
+      ...(chequePrevisto ? { cheque_previsto: chequePrevisto } : {}),
+      completar_todo: true,
+      con_conformidad: hasta === "todo",
+      sustento_tipo: texto(fd, "sustento_tipo"),
+      sustento_numero: texto(fd, "sustento_numero"),
+      ...(sinAlmacenMotivo ? { sin_almacen_motivo: sinAlmacenMotivo } : {}),
+    })
+    .select("id, numero, anio")
+    .single();
+  if (eExp || !nuevo) return { error: mensajeError(eExp) };
+  const id = nuevo.id as string;
+
+  // De aquí en adelante, si algo falla se anula lo registrado: todo o nada
+  const fallo = async (mensaje: string) => {
+    await supabase.rpc("anular_expediente_total", { p_expediente: id, p_motivo: `Registro incompleto: ${mensaje}`.slice(0, 200) });
+    revalidatePath("/expedientes");
+    return { error: `${mensaje} El expediente ${num3(nuevo.numero)}-${nuevo.anio} quedó anulado y no se generó ningún otro documento.` };
+  };
+
+  const { error: eItems } = await supabase.from("expediente_items").insert(items.map((it) => ({ ...it, mcp_id: ctx.mcp.id, expediente_id: id })));
+  if (eItems) return fallo(`No se pudo guardar el detalle: ${mensajeError(eItems)}`);
+  const { error: eAprob } = await supabase.from("expedientes").update({ estado: "aprobado" }).eq("id", id);
+  if (eAprob) return fallo(`No se pudo aprobar el requerimiento: ${mensajeError(eAprob)}`);
+
+  const { data: fila } = await supabase.from("expedientes").select("flujo_completo").eq("id", id).single();
+  const completoFijo = tipo === "pago_fijo" && !!fila?.flujo_completo;
+  const chequeSiguiente = await siguienteCheque(supabase, ctx.mcp.id);
+  let aviso = "Requerimiento aprobado.";
+
+  if (tipo === "pago_fijo" && !pagoFijo) {
+    aviso = "Requerimiento aprobado. Siga con los documentos de este gasto.";
+  } else if (tipo === "pago_fijo" && !completoFijo) {
+    const usado = await comprobanteAutomatico(supabase, ctx.mcp.id, id, chequePrevisto ?? chequeSiguiente, true);
+    if (usado === null) return fallo("No se pudo generar el comprobante de pago del pago fijo.");
+    aviso = `Pago fijo registrado, con su comprobante de pago aprobado${usado ? ` (cheque N° ${usado})` : ""}.`;
+  } else {
+    if (tipo === "pago_fijo") {
+      if (!(await proveedorDelPagoFijo(supabase, ctx.mcp.id, id))) return fallo("El pago fijo no tiene un DNI o RUC válido del beneficiario.");
+    } else {
+      const { error: eCot } = await supabase.from("cotizaciones").insert({ mcp_id: ctx.mcp.id, expediente_id: id, proveedor_id: proveedorId, monto: total, elegida: true });
+      if (eCot) return fallo(`No se pudo registrar el proveedor: ${mensajeError(eCot)}`);
+      await supabase.from("expedientes").update({ fase: "cotizacion" }).eq("id", id).eq("fase", "requerimiento");
+    }
+    const entrarAlmacen =
+      almacen === "nea" && hasta === "todo"
+        ? async () => {
+            const { data: prov } = proveedorId ? await supabase.from("proveedores").select("razon_social").eq("id", proveedorId).maybeSingle() : { data: null };
+            const { error } = await supabase.rpc("emitir_nea", {
+              p_mcp: ctx.mcp.id,
+              p_fecha: hoy,
+              p_origen: "compra",
+              p_expediente: id,
+              p_proveedor: prov?.razon_social ?? null,
+              p_documento_ref: texto(fd, "sustento_numero"),
+              p_observacion: null,
+              p_items: items.map((it) => ({ descripcion: it.descripcion, unidad: it.unidad, cantidad: it.cantidad, precio_unitario: it.precio_unitario })),
+            });
+            return error ? `no se pudo registrar la entrada al almacén (${mensajeError(error)})` : null;
+          }
+        : undefined;
+    const resultado = await completarTodo(supabase, ctx.mcp.id, ctx.mcp.nombre, id, chequeSiguiente, { antesComprobante: entrarAlmacen, funcionCategoria: texto(fd, "categoria_funcion") });
+    if (hasta === "todo") {
+      const { data: cps } = await supabase.from("comprobantes_pago").select("id").eq("expediente_id", id).eq("estado", "aprobado").limit(1);
+      if (!cps || cps.length === 0) return fallo(resultado ?? "No se pudo generar el comprobante de pago.");
+      aviso = "Todo registrado: requerimiento, orden, conformidad" + (almacen === "nea" ? ", almacén" : "") + " y comprobante de pago aprobado.";
+    } else {
+      const { data: ord } = await supabase.from("ordenes").select("id").eq("expediente_id", id).eq("anulado", false).limit(1);
+      if (!ord || ord.length === 0) return fallo(resultado ?? "No se pudo emitir la orden.");
+      aviso = "Requerimiento aprobado y orden emitida. Cuando llegue lo comprado, registre la conformidad.";
+    }
+  }
+
+  revalidatePath("/expedientes");
+  revalidatePath("/comprobantes");
+  revalidatePath("/almacen");
+  volver(ruta(id), "ok", aviso);
 }
 
 /** Corrige un requerimiento en borrador: los ítems anteriores quedan anulados en el historial. */
@@ -322,23 +458,30 @@ export async function elegirProveedorDelPago(fd: FormData) {
   volver(ruta(id, "cotizacion"), "error", "No se pudo: el pago fijo no tiene un DNI o RUC válido del beneficiario. Regístrelo con «Un solo proveedor».");
 }
 
-/** Busca el proveedor por documento; si no existe, lo registra. */
-async function proveedorPorDocumento(mcpId: string, fd: FormData, volverA: string): Promise<string> {
+/** Busca el proveedor por documento; si no existe, lo registra. Devuelve un error en vez de redirigir. */
+async function resolverProveedor(mcpId: string, fd: FormData): Promise<{ id: string } | { error: string }> {
   const supabase = await supabaseServidor();
   const doc = (texto(fd, "num_doc") ?? "").replace(/\D/g, "");
   const tipo = doc.length === 8 ? "DNI" : "RUC";
-  if (doc.length !== 8 && doc.length !== 11) volver(volverA, "error", "El RUC debe tener 11 dígitos (o el DNI 8).");
+  if (doc.length !== 8 && doc.length !== 11) return { error: "El RUC debe tener 11 dígitos (o el DNI 8)." };
   const { data: existe } = await supabase.from("proveedores").select("id").eq("mcp_id", mcpId).eq("num_doc", doc).maybeSingle();
-  if (existe) return existe.id;
+  if (existe) return { id: existe.id };
   const razon = texto(fd, "razon_social");
-  if (!razon) volver(volverA, "error", "Proveedor nuevo: escriba la razón social.");
+  if (!razon) return { error: "Proveedor nuevo: escriba la razón social." };
   const { data, error } = await supabase
     .from("proveedores")
     .insert({ mcp_id: mcpId, tipo_doc: tipo, num_doc: doc, razon_social: razon, direccion: texto(fd, "direccion"), telefono: texto(fd, "telefono") })
     .select("id")
     .single();
-  if (error || !data) volver(volverA, "error", mensajeError(error));
-  return data.id;
+  if (error || !data) return { error: mensajeError(error) };
+  return { id: data.id };
+}
+
+/** Busca el proveedor por documento; si no existe, lo registra. */
+async function proveedorPorDocumento(mcpId: string, fd: FormData, volverA: string): Promise<string> {
+  const r = await resolverProveedor(mcpId, fd);
+  if ("error" in r) volver(volverA, "error", r.error);
+  return r.id;
 }
 
 export async function agregarCotizacion(fd: FormData) {

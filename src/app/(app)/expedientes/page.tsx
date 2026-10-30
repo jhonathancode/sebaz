@@ -10,7 +10,9 @@ import { fecha, hoyISO, nombrePeriodo, num3, periodoActual, rangoPeriodo, soles 
 import { supabaseServidor } from "@/lib/supabase/server";
 import { cargarCatalogoPagosFijos, siguienteCheque } from "@/lib/pagosFijos";
 import { cargarAtajos } from "@/lib/atajos";
-import { anularExpedienteTotal, crearExpediente } from "./acciones";
+import { anularExpedienteTotal, crearExpediente, registrarExpedienteCompleto } from "./acciones";
+import AsistenteRequerimiento from "@/components/AsistenteRequerimiento";
+import { CORRELATIVO, proximoNumero } from "@/lib/numeracion";
 
 const ORDEN_FASES = ["requerimiento", "cotizacion", "orden", "conformidad", "comprobante"];
 /** Documento que corresponde a cada fase (para abrirlo directo desde la lista). */
@@ -50,7 +52,22 @@ export default async function Expedientes({ searchParams }: { searchParams: Para
     .order("numero", { ascending: false });
   if (q) consulta = consulta.ilike("descripcion", `%${q}%`);
   if (tipo) consulta = consulta.eq("tipo", tipo);
-  const [{ data: lista }, pagosFijos, chequeSugerido, cierres, atajos, { data: provData }] = await Promise.all([consulta, cargarCatalogoPagosFijos(supabase, ctx.mcp.id), siguienteCheque(supabase, ctx.mcp.id), cargarCierres(supabase, ctx.mcp.id), cargarAtajos(supabase, ctx.mcp.id), supabase.from("proveedores").select("num_doc, razon_social, direccion, telefono").eq("mcp_id", ctx.mcp.id).order("razon_social")]);
+  const anioNum = Number(hoyISO().slice(0, 4));
+  const [{ data: lista }, pagosFijos, chequeSugerido, cierres, atajos, { data: provData }, { data: tesoreroMiembro }, nExp, nOrdC, nOrdS, nMemo, nNea, nCp] = await Promise.all([
+    consulta,
+    cargarCatalogoPagosFijos(supabase, ctx.mcp.id),
+    siguienteCheque(supabase, ctx.mcp.id),
+    cargarCierres(supabase, ctx.mcp.id),
+    cargarAtajos(supabase, ctx.mcp.id),
+    supabase.from("proveedores").select("num_doc, razon_social, direccion, telefono").eq("mcp_id", ctx.mcp.id).order("razon_social"),
+    supabase.from("miembros").select("cargo, perfiles(nombre)").eq("mcp_id", ctx.mcp.id).eq("rol", "tesorero").eq("activo", true).maybeSingle(),
+    proximoNumero(supabase, ctx.mcp.id, CORRELATIVO.expediente, anioNum),
+    proximoNumero(supabase, ctx.mcp.id, CORRELATIVO.ordenCompra, anioNum),
+    proximoNumero(supabase, ctx.mcp.id, CORRELATIVO.ordenServicio, anioNum),
+    proximoNumero(supabase, ctx.mcp.id, CORRELATIVO.memorando, anioNum),
+    proximoNumero(supabase, ctx.mcp.id, CORRELATIVO.nea, anioNum),
+    proximoNumero(supabase, ctx.mcp.id, CORRELATIVO.comprobante, anioNum),
+  ]);
 
   const todos = (lista ?? []).map((e) => ({
     ...e,
@@ -97,6 +114,25 @@ export default async function Expedientes({ searchParams }: { searchParams: Para
         <span className="espacio" />
         <Link className="btn contorno" href={`/comprobantes?mes=${periodo}`}>Comprobantes de pago</Link>
         <a className="btn contorno" href={`/exportar/expedientes?mes=${periodo}&estado=${estado}&tipo=${tipo}&q=${encodeURIComponent(q)}`}>Descargar Excel</a>
+        {tiene(ctx, "alcalde", "admin") ? (
+          <AsistenteRequerimiento
+            boton="+ Nuevo requerimiento"
+            claseBoton="btn primario grande"
+            abierta={sp.nuevo === "1"}
+            error={sp.nuevo === "1" ? sp.error : undefined}
+            eventoAbrir="sebaz:abrir-nuevo-requerimiento"
+            accion={registrarExpedienteCompleto}
+            mcp={ctx.mcp}
+            proximos={{ expediente: nExp, ordenCompra: nOrdC, ordenServicio: nOrdS, memorando: nMemo, nea: nNea, comprobante: nCp }}
+            tesorero={(tesoreroMiembro?.perfiles as unknown as { nombre: string } | null)?.nombre ?? ""}
+            cargo={tesoreroMiembro?.cargo ?? "Tesorero(a)"}
+            hechoPor={ctx.nombre}
+            proveedores={provData ?? []}
+            chequeSugerido={chequeSugerido}
+          >
+            <CamposRequerimiento modo="asistente" fuentes={ctx.fuentes} pagosFijos={pagosFijos} chequeSugerido={chequeSugerido} plantillas={atajos.plantillas} historial={atajos.historial} fuenteFrecuente={atajos.fuenteFrecuente} proveedores={provData ?? []} />
+          </AsistenteRequerimiento>
+        ) : (
         <VentanaFlotante
           boton="+ Nuevo requerimiento"
           claseBoton="btn primario grande"
@@ -113,6 +149,7 @@ export default async function Expedientes({ searchParams }: { searchParams: Para
         >
           <CamposRequerimiento fuentes={ctx.fuentes} pagosFijos={pagosFijos} chequeSugerido={chequeSugerido} plantillas={atajos.plantillas} historial={atajos.historial} fuenteFrecuente={atajos.fuenteFrecuente} proveedores={provData ?? []} />
         </VentanaFlotante>
+        )}
       </div>
       <Avisos ok={sp.ok} error={sp.error} />
 

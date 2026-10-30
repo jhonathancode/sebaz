@@ -49,7 +49,7 @@ function detalleFuente(f: Fuente) {
 }
 
 /** Formulario del requerimiento, en preguntas simples. */
-export default function CamposRequerimiento({ fuentes, valores, pagosFijos, chequeSugerido, plantillas, historial, fuenteFrecuente, proveedores }: { proveedores?: ProveedorConocido[]; fuentes: Fuente[]; valores?: ValoresRequerimiento; pagosFijos?: PagoFijoCatalogo[]; chequeSugerido?: string; plantillas?: Plantilla[]; historial?: ItemHistorial[]; fuenteFrecuente?: string | null }) {
+export default function CamposRequerimiento({ fuentes, valores, pagosFijos, chequeSugerido, plantillas, historial, fuenteFrecuente, proveedores, modo }: { modo?: "asistente"; proveedores?: ProveedorConocido[]; fuentes: Fuente[]; valores?: ValoresRequerimiento; pagosFijos?: PagoFijoCatalogo[]; chequeSugerido?: string; plantillas?: Plantilla[]; historial?: ItemHistorial[]; fuenteFrecuente?: string | null }) {
   const tipo = valores?.tipo ?? "compra";
   // La fuente que más se usó; si no hay historial, la transferencia distrital
   const fuentePorDefecto = (fuenteFrecuente && fuentes.some((f) => f.id === fuenteFrecuente) ? fuenteFrecuente : undefined) ?? fuentes.find((f) => f.tipo === "distrito")?.id ?? fuentes[0]?.id;
@@ -108,12 +108,14 @@ export default function CamposRequerimiento({ fuentes, valores, pagosFijos, cheq
         <ItemsRequerimiento inicial={valores?.items} historial={historial} />
       </fieldset>
 
-      <fieldset className="pregunta">
-        <legend>Cheque <span className="legend-nota">(opcional)</span></legend>
-        <CampoCheque sugerido={chequeSugerido} inicial={valores?.cheque_previsto ?? ""} />
-      </fieldset>
+      {modo !== "asistente" && (
+        <fieldset className="pregunta">
+          <legend>Cheque <span className="legend-nota">(opcional)</span></legend>
+          <CampoCheque sugerido={chequeSugerido} inicial={valores?.cheque_previsto ?? ""} />
+        </fieldset>
+      )}
 
-      {!valores && proveedores && <CompletarTodo proveedores={proveedores} />}
+      {!valores && proveedores && modo !== "asistente" && <CompletarTodo proveedores={proveedores} />}
 
       <details className="pregunta mas-datos">
         <summary>Datos para el formato (fecha, área, meta, específica del gasto)</summary>

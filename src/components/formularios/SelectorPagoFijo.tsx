@@ -37,6 +37,7 @@ export default function SelectorPagoFijo({ pagos, periodo }: { pagos: PagoFijoCa
     const soltar = () => {
       setElegido(null);
       setAviso(null);
+      window.dispatchEvent(new CustomEvent("sebaz:pago-fijo", { detail: null }));
     };
     window.addEventListener("sebaz:reiniciar", soltar);
     return () => window.removeEventListener("sebaz:reiniciar", soltar);
@@ -45,6 +46,7 @@ export default function SelectorPagoFijo({ pagos, periodo }: { pagos: PagoFijoCa
   function elegir(p: PagoFijoCatalogo, mes: string) {
     setAviso(null);
     setElegido({ id: p.id, mes });
+    window.dispatchEvent(new CustomEvent("sebaz:pago-fijo", { detail: { id: p.id, beneficiario: p.beneficiario, beneficiario_doc: p.beneficiario_doc, completo: p.expediente_completo } }));
     const form = caja.current?.closest("form");
     if (!form) return;
     const [a, m] = mes.split("-").map(Number);
@@ -90,6 +92,7 @@ export default function SelectorPagoFijo({ pagos, periodo }: { pagos: PagoFijoCa
   function cambiarPago() {
     setElegido(null);
     setAviso(null);
+    window.dispatchEvent(new CustomEvent("sebaz:pago-fijo", { detail: null }));
     const form = caja.current?.closest("form");
     escribir(form?.querySelector<HTMLInputElement>('input[name="descripcion"]') ?? null, "");
     window.dispatchEvent(new CustomEvent("sebaz:limpiar-items"));

@@ -316,7 +316,7 @@ export default async function Expediente({ params, searchParams }: { params: Par
       accion: puedeRegistrar && (
         <div className="acciones-fila">
           <Link className="btn primario grande" href={`/almacen/nea/nueva?expediente=${id}`}>Ingresar al almacén (NEA)</Link>
-          <Motivo accion={compraSinAlmacen} boton="No pasa por almacén" titulo="Estos bienes no pasan por almacén" ayuda="¿Por qué? Ej.: combustible consumido en el traslado, refrigerio de la faena" campos={{ id }} peligro={false} />
+          <Motivo accion={compraSinAlmacen} boton="No pasa por almacén" motivos={["Combustible consumido en el traslado", "Refrigerio consumido en la faena", "Consumo inmediato: no se almacena"]} titulo="Estos bienes no pasan por almacén" ayuda="¿Por qué? Ej.: combustible consumido en el traslado, refrigerio de la faena" campos={{ id }} peligro={false} />
         </div>
       ),
     };

@@ -49,7 +49,7 @@ export function Requerimiento({ d, mcp }: { d: Datos; mcp: Mcp }) {
     <div className="hoja">
       {d.anulado && <MarcaAnulado {...d.anulado} />}
       <Encabezado mcp={mcp} titulo={`CUADRO DE REQUERIMIENTO N° ${num3(e.numero)}-${e.anio}-MCP-${sufijo(mcp)}`} numero={`Fecha: ${fecha(e.fecha)}`} />
-      <table className="formato">
+      <table className="formato datos-cabecera">
         <tbody>
           <tr><th style={{ width: 220 }}>Unidad orgánica</th><td>{e.area_usuaria ?? ""}</td></tr>
           <tr><th>Proyecto / actividad</th><td>{e.meta ?? ""}</td></tr>

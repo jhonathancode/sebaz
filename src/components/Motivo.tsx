@@ -16,6 +16,7 @@ export default function Motivo({
   peligro = true,
   titulo,
   pin = false,
+  chico = false,
 }: {
   accion: (fd: FormData) => Promise<void>;
   boton: string;
@@ -25,6 +26,8 @@ export default function Motivo({
   titulo?: string;
   /** Pide también el PIN personal. */
   pin?: boolean;
+  /** Botón pequeño (para filas de listas). */
+  chico?: boolean;
 }) {
   const nombre = usePrimerNombre();
   const pinActivo = useExigirPin();
@@ -34,7 +37,7 @@ export default function Motivo({
 
   return (
     <>
-      <button type="button" className={`btn no-imprimir${peligro ? " peligro" : ""}`} onClick={() => ref.current?.showModal()}>
+      <button type="button" className={`btn no-imprimir${chico ? " chico" : ""}${peligro ? " peligro" : ""}`} onClick={() => ref.current?.showModal()}>
         {boton}
       </button>
       <dialog ref={ref} className="dialogo" aria-label={titulo ?? boton} onClose={() => setTexto("")}>

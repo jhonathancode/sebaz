@@ -3,13 +3,14 @@ import Avisos, { type ParamsAviso } from "@/components/Avisos";
 import Estado from "@/components/Estado";
 import CamposRequerimiento from "@/components/formularios/CamposRequerimiento";
 import VentanaFlotante from "@/components/VentanaFlotante";
+import Motivo from "@/components/Motivo";
 import { contextoMcp, tiene } from "@/lib/contexto";
 import { cargarCierres, estadoGestion } from "@/lib/gestion";
 import { fecha, hoyISO, nombrePeriodo, num3, periodoActual, rangoPeriodo, soles } from "@/lib/formato";
 import { supabaseServidor } from "@/lib/supabase/server";
 import { cargarCatalogoPagosFijos, siguienteCheque } from "@/lib/pagosFijos";
 import { cargarAtajos } from "@/lib/atajos";
-import { crearExpediente } from "./acciones";
+import { anularExpedienteTotal, crearExpediente } from "./acciones";
 
 const ORDEN_FASES = ["requerimiento", "cotizacion", "orden", "conformidad", "comprobante"];
 /** Documento que corresponde a cada fase (para abrirlo directo desde la lista). */
@@ -63,6 +64,16 @@ export default async function Expedientes({ searchParams }: { searchParams: Para
   const porAprobar = todos.filter((e) => e.estado === "borrador");
   const enProceso = todos.filter((e) => e.estado === "aprobado");
   const rendidos = todos.filter((e) => e.estado === "rendido");
+
+  // Anular desde la lista: mismas reglas que dentro del expediente
+  const puedeRegistrar = tiene(ctx, "admin", "tesorero", "contador", "alcalde");
+  const puedeAprobar = tiene(ctx, "alcalde", "admin");
+  const puedeAnular = (e: { estado: string; fase: string; fecha: string }) =>
+    puedeRegistrar &&
+    e.estado !== "anulado" &&
+    e.estado !== "rendido" &&
+    (e.fase !== "comprobante" || puedeAprobar) &&
+    estadoGestion(e.fecha, cierres, hoyISO())?.estado !== "bloqueado";
 
   const enlace = (cambios: Record<string, string>) => {
     const p = new URLSearchParams({ mes: periodo, estado, tipo, q, ...cambios });
@@ -215,6 +226,17 @@ export default async function Expedientes({ searchParams }: { searchParams: Para
               </div>
               <div className="f-acc">
                 <Link className="btn chico primario" href={`/expedientes/${e.id}`}>Abrir</Link>
+                {puedeAnular(e) && (
+                  <Motivo
+                    chico
+                    pin
+                    accion={anularExpedienteTotal}
+                    boton="Anular"
+                    titulo={`Anular el expediente ${num3(e.numero)}-${e.anio}`}
+                    ayuda="Motivo de la anulación (mínimo 10 letras). Si ya tiene comprobante de pago o NEA, también se anulan. No se borra nada."
+                    campos={{ id: e.id, volver_a: enlace({}) }}
+                  />
+                )}
               </div>
             </div>
           );

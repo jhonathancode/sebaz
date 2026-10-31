@@ -1776,3 +1776,33 @@ dialog.asistente .vf-cab h2 { font-size: 19px; font-weight: 800; letter-spacing:
 .vf-cuerpo .sugerencia { border: 1px solid var(--primario-claro); border-radius: 12px; padding: 10px 14px; background: var(--primario-fondo); }
 .vf-cuerpo .item-bloque > .sugerencia { margin: 8px 0 0 0; }
 .vf-cuerpo .sugerencia .btn.chico { border-radius: 10px; min-height: 34px; font-weight: 700; }
+
+/* ------------------------------------------------ diálogos (confirmar, anular, PIN): mismo acabado */
+.dialogo { border: 0; border-radius: 22px; width: min(480px, calc(100vw - 32px)); max-height: calc(100vh - 24px); overflow-y: auto; box-shadow: 0 32px 90px rgba(15, 23, 42, .5); }
+.dialogo::backdrop { background: rgba(15, 23, 42, .5); backdrop-filter: blur(3px); }
+.dialogo-cab { padding: 24px 28px 4px; border: 0; background: transparent; font-size: 19px; font-weight: 800; letter-spacing: -.01em; }
+.dialogo-cuerpo { padding: 8px 28px 18px; gap: 12px; font-size: 14.5px; line-height: 1.5; color: var(--tenue); }
+.dialogo-pie { padding: 16px 28px 22px; gap: 10px; border-top: 1px solid var(--linea); background: var(--panel-2); position: sticky; bottom: 0; }
+.dialogo-pie .btn { min-height: 46px; border-radius: 12px; padding: 0 22px; font-weight: 700; }
+.dialogo-pie .btn.primario { background: linear-gradient(135deg, var(--primario), var(--primario-hover)); box-shadow: 0 8px 20px -8px var(--primario); }
+.dialogo-pie .btn.peligro:not(:disabled) { background: var(--rojo); border-color: var(--rojo); color: #fff; box-shadow: 0 8px 20px -10px var(--rojo); }
+.dialogo-pie .btn.peligro:disabled { opacity: .55; }
+.motivo-nota { margin: 0; padding: 12px 14px; border-radius: 12px; background: var(--panel-2); border: 1px solid var(--linea); font-size: 13px; color: var(--tenue); }
+.dialogo .campo { font-size: 12.5px; font-weight: 600; color: var(--tenue); gap: 6px; }
+.dialogo .campo input:not([type="checkbox"]):not([type="radio"]):not([type="hidden"]), .dialogo .campo select, .dialogo .campo textarea {
+  min-height: 44px; border-radius: 12px; border: 1.5px solid var(--borde); background: var(--panel); color: var(--texto); font-size: 14.5px; padding: 0 12px; transition: border-color .15s, box-shadow .15s;
+}
+.dialogo .campo textarea { padding: 10px 12px; min-height: 84px; }
+.dialogo .campo input:focus, .dialogo .campo select:focus, .dialogo .campo textarea:focus { outline: none; border-color: var(--primario); box-shadow: 0 0 0 4px rgba(31, 95, 209, .14); }
+/* Anular con PIN: teclado compacto para que quepa */
+.dialogo:not(.dialogo-seguro) .pin-teclado { grid-template-columns: repeat(3, 54px); gap: 8px 12px; }
+.dialogo:not(.dialogo-seguro) .pin-teclado button { height: 46px; }
+.dialogo:not(.dialogo-seguro) .pin-casillas { padding: 4px 6px; }
+/* PIN: teclado y puntos más finos */
+.dialogo-seguro { border-radius: 22px; }
+.seguro-candado { width: 58px; height: 58px; background: linear-gradient(135deg, var(--primario-fondo), var(--panel)); border: 1px solid var(--primario-claro); }
+.pin-casillas { gap: 20px; }
+.pin-casilla { width: 16px; height: 16px; }
+.pin-teclado button { background: var(--panel-2); border: 1px solid var(--linea); box-shadow: none; font-weight: 700; transition: background .12s, border-color .12s, transform .08s; }
+.pin-teclado button:hover { background: var(--primario-fondo); border-color: var(--primario-claro); }
+.dialogo:not(.dialogo-seguro) .pin-campo { margin: 0 auto; }

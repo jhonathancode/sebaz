@@ -11,6 +11,7 @@ export const CORRELATIVO = {
   comprobante: "comprobantes_pago",
   nea: "notas_entrada",
   pecosa: "pecosas",
+  declaracionJurada: "declaraciones_juradas",
 } as const;
 
 /** De dónde se lee el último número de cada tipo si la función de la base no responde. */

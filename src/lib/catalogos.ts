@@ -60,6 +60,9 @@ export const SUSTENTOS: { codigo: string; nombre: string }[] = [
   { codigo: "TICKET", nombre: "Ticket" },
 ];
 
+/** Sustentos de caja chica: primero la declaración jurada y luego solo los comprobantes permitidos por SUNAT. */
+export const SUSTENTOS_CAJA: { codigo: string; nombre: string }[] = SUSTENTOS.filter((s) => ["DJ", "BVE", "BV", "FAC", "RH", "TICKET"].includes(s.codigo));
+
 export const RUBROS_INGRESO: { codigo: string; nombre: string }[] = [
   { codigo: "servicio", nombre: "Prestación de servicios" },
   { codigo: "tasa", nombre: "Tasa o derecho" },

@@ -30,7 +30,7 @@ export default async function DeclaracionJurada({ params }: { params: Promise<{ 
       </div>
       <div className="hoja">
         <div style={{ textAlign: "center", fontWeight: 600 }}>{ctx.mcp.nombre.toUpperCase()}</div>
-        <div style={{ textAlign: "center", fontWeight: 600, fontSize: 16, marginTop: 6 }}>DECLARACIÓN JURADA DE GASTOS</div>
+        <div style={{ textAlign: "center", fontWeight: 600, fontSize: 16, marginTop: 6 }}>DECLARACIÓN JURADA DE GASTOS{g.sustento_numero ? ` N° ${g.sustento_numero}` : ""}</div>
         <table className="formato" style={{ marginTop: 16 }}>
           <tbody>
             <tr><th style={{ width: 200 }}>Nombres y apellidos</th><td>{g.razon_social}</td></tr>

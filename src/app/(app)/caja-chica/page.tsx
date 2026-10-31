@@ -1,15 +1,17 @@
 import Link from "next/link";
 import Avisos, { type ParamsAviso } from "@/components/Avisos";
 import BotonConfirmar from "@/components/BotonConfirmar";
+import NumeroSustento from "@/components/formularios/NumeroSustento";
 import BotonPdf from "@/components/BotonPdf";
 import Estado from "@/components/Estado";
 import Motivo from "@/components/Motivo";
 import VentanaFlotante from "@/components/VentanaFlotante";
-import { SUSTENTOS } from "@/lib/catalogos";
+import { SUSTENTOS, SUSTENTOS_CAJA } from "@/lib/catalogos";
 import { contextoMcp, tiene } from "@/lib/contexto";
 import { codigoCP, fecha, hoyISO, nombrePeriodo, periodoActual, soles } from "@/lib/formato";
 
 const MES_CORTO = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Set", "Oct", "Nov", "Dic"];
+import { CORRELATIVO, proximoNumero } from "@/lib/numeracion";
 import { supabaseServidor } from "@/lib/supabase/server";
 import { abrirCaja, agregarGasto, anularGasto, cambiarCheque, editarGasto, liquidarCaja } from "./acciones";
 
@@ -91,6 +93,7 @@ export default async function CajaChica({ searchParams }: { searchParams: Params
     porTipo.set(g.sustento_tipo, { n: t.n + 1, total: t.total + Number(g.monto) });
   });
 
+  const proxDj = await proximoNumero(supabase, ctx.mcp.id, CORRELATIVO.declaracionJurada, Number(periodo.slice(0, 4)));
   const { data: responsables } = await supabase
     .from("miembros")
     .select("user_id, rol, perfiles(nombre)")
@@ -133,17 +136,17 @@ export default async function CajaChica({ searchParams }: { searchParams: Params
         <label className="campo">
           Sustento
           <select name="sustento_tipo" defaultValue="DJ">
-            {SUSTENTOS.map((x) => (
+            {SUSTENTOS_CAJA.map((x) => (
               <option key={x.codigo} value={x.codigo}>{x.nombre}</option>
             ))}
           </select>
         </label>
-        <label className="campo">N° del documento (no para DJ)<input name="sustento_numero" placeholder="B001-3516" /></label>
+        <NumeroSustento automatico={`${String(proxDj ?? "").padStart(3, "0") || "—"}-${periodo.slice(0, 4)}`} />
         <label className="campo">Razón social o comisionado<input name="razon_social" required /></label>
         <label className="campo ancho">Concepto<input name="concepto" required placeholder="Salida a Perené: verificación de documentos para la rendición" /></label>
         <label className="campo">Monto S/<input name="monto" required inputMode="decimal" /></label>
       </div>
-      <p className="pequeno tenue" style={{ margin: 0 }}>Saldo disponible del fondo: S/ {soles(saldo)}. Con declaración jurada, el formato se imprime desde la lista.</p>
+      <p className="pequeno tenue" style={{ margin: 0 }}>Saldo disponible del fondo: S/ {soles(saldo)}. Con declaración jurada, el formato se imprime desde el «DJ» de la lista.</p>
     </VentanaFlotante>
   );
 
@@ -378,12 +381,12 @@ export default async function CajaChica({ searchParams }: { searchParams: Params
                                   <label className="campo">
                                     Sustento
                                     <select name="sustento_tipo" defaultValue={g.sustento_tipo}>
-                                      {SUSTENTOS.map((x) => (
+                                      {(SUSTENTOS_CAJA.some((x) => x.codigo === g.sustento_tipo) ? SUSTENTOS_CAJA : [...SUSTENTOS_CAJA, ...SUSTENTOS.filter((x) => x.codigo === g.sustento_tipo)]).map((x) => (
                                         <option key={x.codigo} value={x.codigo}>{x.nombre}</option>
                                       ))}
                                     </select>
                                   </label>
-                                  <label className="campo">N° del documento (no para DJ)<input name="sustento_numero" defaultValue={g.sustento_numero ?? ""} /></label>
+                                  <NumeroSustento automatico={g.sustento_tipo === "DJ" && g.sustento_numero ? g.sustento_numero : `${String(proxDj ?? "").padStart(3, "0") || "—"}-${periodo.slice(0, 4)}`} defaultValue={g.sustento_tipo === "DJ" ? "" : g.sustento_numero ?? ""} />
                                   <label className="campo">Razón social o comisionado<input name="razon_social" required defaultValue={g.razon_social} /></label>
                                   <label className="campo ancho">Concepto<input name="concepto" required defaultValue={g.concepto} /></label>
                                   <label className="campo">Monto S/<input name="monto" required inputMode="decimal" defaultValue={Number(g.monto).toFixed(2)} /></label>

@@ -343,9 +343,9 @@ export default function AsistenteRequerimiento({
             <div style={{ display: paso === "alm" ? undefined : "none" }} key={`a${ciclo}`}>
               <fieldset className="pregunta">
                 <legend>Almacén</legend>
-                <div className="opciones compacta">
-                  <label className="opcion"><input type="radio" name="almacen" value="nea" defaultChecked /><span className="opcion-titulo">Sí, entran al almacén (NEA)</span></label>
-                  <label className="opcion"><input type="radio" name="almacen" value="sin" /><span className="opcion-titulo">No pasan por almacén</span></label>
+                <div className="opciones compacta opciones-dinero opciones-dos">
+                  <label className="opcion"><input type="radio" name="almacen" value="nea" defaultChecked /><span className="opcion-titulo">Sí, entran al almacén (NEA)</span><span className="opcion-texto">Quedan en stock y se entregan con PECOSA</span></label>
+                  <label className="opcion definir"><input type="radio" name="almacen" value="sin" /><span className="opcion-titulo">No pasan por almacén</span><span className="opcion-texto">Se consumen de inmediato (ej.: combustible)</span></label>
                 </div>
                 {L.g("almacen") === "sin" && (
                   <label className="campo" style={{ marginTop: 10 }}>

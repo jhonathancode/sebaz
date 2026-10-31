@@ -1722,3 +1722,57 @@ dialog.asistente .vf-cuerpo, .vf-cuerpo:has(fieldset.pregunta) { background: var
 .mosaico-mas:hover { background: var(--primario-fondo); }
 @media (max-width: 900px) { .mosaico-rejilla { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 dialog.asistente .vf-cab h2 { font-size: 19px; font-weight: 800; letter-spacing: -.01em; }
+
+/* ------------------------------------------------ mismo acabado en todo el formulario */
+.vf-cuerpo label.campo, .vf-cuerpo .campo { font-size: 12.5px; font-weight: 600; color: var(--tenue); gap: 6px; }
+.vf-cuerpo .campo input:not([type="checkbox"]):not([type="radio"]):not([type="hidden"]), .vf-cuerpo .campo select, .vf-cuerpo .campo textarea,
+.vf-cuerpo .item-fila input:not([type="hidden"]), .vf-cuerpo .item-fila select {
+  min-height: 44px; border-radius: 12px; border: 1.5px solid var(--borde); background: var(--panel); color: var(--texto); font-size: 14.5px; padding: 0 12px;
+  transition: border-color .15s, box-shadow .15s;
+}
+.vf-cuerpo .campo textarea { padding: 10px 12px; }
+.vf-cuerpo .campo input:focus, .vf-cuerpo .campo select:focus, .vf-cuerpo .campo textarea:focus,
+.vf-cuerpo .item-fila input:focus, .vf-cuerpo .item-fila select:focus { outline: none; border-color: var(--primario); box-shadow: 0 0 0 4px rgba(31, 95, 209, .14); }
+
+/* Detalle: cada cosa en una fila suave */
+.vf-cuerpo .item-fila { background: var(--panel-2); border: 1px solid var(--linea); border-radius: 14px; padding: 14px 16px; gap: 10px 12px; }
+.vf-cuerpo .item-num { background: var(--panel); border: 1px solid var(--borde); }
+.vf-cuerpo .item-total { font-size: 15px; font-weight: 800; color: var(--primario-texto); }
+.vf-cuerpo .item-total .etiqueta { color: var(--tenue); font-weight: 700; }
+.vf-cuerpo .items-pie { margin-top: 12px; align-items: stretch; }
+.vf-cuerpo .items-pie .btn.contorno { min-height: 46px; border: 1.5px dashed var(--primario-claro); background: transparent; border-radius: 12px; color: var(--primario-texto); font-weight: 700; padding: 0 18px; }
+.vf-cuerpo .items-pie .btn.contorno:hover { background: var(--primario-fondo); }
+.vf-cuerpo .items-total { border-radius: 14px; padding: 12px 20px; align-items: center; background: linear-gradient(135deg, var(--primario-fondo), transparent 95%); border: 1px solid var(--linea); }
+.vf-cuerpo .items-total b { font-size: 26px; font-weight: 800; color: var(--primario-texto); }
+
+/* Datos para el formato: tarjeta plegable */
+.vf-cuerpo details.mas-datos > summary { display: flex; align-items: center; gap: 10px; font-size: 14.5px; font-weight: 700; color: var(--texto); text-transform: none; letter-spacing: 0; }
+.vf-cuerpo details.mas-datos > summary::before { display: inline-grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; background: var(--primario-fondo); color: var(--primario-texto); font-weight: 800; }
+.vf-cuerpo details.mas-datos .rejilla { margin-top: 14px !important; }
+
+/* Pago fijo: lista de tarjetas */
+.vf-cuerpo .selector-pf { margin: 14px 0 0; padding: 0; border: 0; background: transparent; }
+.vf-cuerpo .pf-cab { margin-bottom: 12px; }
+.vf-cuerpo .pf-titulo { font-size: 15px; font-weight: 800; }
+.vf-cuerpo .pf-anio select, .vf-cuerpo .pfx-buscar { border-radius: 10px; border: 1.5px solid var(--borde); min-height: 38px; }
+.vf-cuerpo .pfx-lista { border: 0; background: transparent; gap: 10px; max-height: none; border-radius: 0; }
+.vf-cuerpo .pfx-fila, .vf-cuerpo .pfx-fila:first-child { border: 1.5px solid var(--borde); border-radius: 14px; background: var(--panel); }
+.vf-cuerpo .pfx-fila:hover { border-color: var(--primario-claro); box-shadow: 0 10px 20px -14px rgba(31, 95, 209, .6); }
+.vf-cuerpo .pfx-fila.elegido { border: 2px solid var(--primario); background: var(--primario-fondo); box-shadow: none; }
+.vf-cuerpo .pfx-linea { padding: 12px 16px; gap: 10px 14px; }
+.vf-cuerpo .pfx-concepto { font-size: 14.5px; }
+.vf-cuerpo .pfx-monto { font-size: 16px; font-weight: 800; color: var(--primario-texto); }
+.vf-cuerpo .pfx-linea .btn { min-height: 38px; border-radius: 10px; font-weight: 700; }
+.vf-cuerpo .pfx-abrir { width: 36px; height: 36px; border-radius: 10px; border: 1.5px solid var(--borde); }
+.vf-cuerpo .pfx-elegido { border-radius: 14px; }
+
+/* Almacén: dos opciones */
+.opciones.opciones-dinero.opciones-dos { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+
+/* Pie de las ventanas con formulario */
+.vf-pie { padding: 14px 24px; background: var(--panel); border-top: 1px solid var(--linea); gap: 10px; }
+.vf-pie .btn { min-height: 46px; border-radius: 12px; padding: 0 22px; font-weight: 700; }
+.vf-pie .btn.primario { background: linear-gradient(135deg, var(--primario), var(--primario-hover)); box-shadow: 0 8px 20px -8px var(--primario); }
+.vf-cuerpo .sugerencia { border: 1px solid var(--primario-claro); border-radius: 12px; padding: 10px 14px; background: var(--primario-fondo); }
+.vf-cuerpo .item-bloque > .sugerencia { margin: 8px 0 0 0; }
+.vf-cuerpo .sugerencia .btn.chico { border-radius: 10px; min-height: 34px; font-weight: 700; }

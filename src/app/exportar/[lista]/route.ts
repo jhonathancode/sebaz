@@ -162,21 +162,16 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ list
         const nums = rec.map((r) => Number(r.numero));
         return { per, n: rec.length, ingreso: rec.reduce((t, r) => t + Number(r.monto), 0), del: nums.length ? Math.min(...nums) : null, al: nums.length ? Math.max(...nums) : null };
       });
-      const total = meses.reduce((t, m) => t + m.ingreso, 0);
       const cod = (n: number | null) => (n === null ? "" : String(n).padStart(4, "0"));
-      const filas = meses.map((m, i) => {
-        const previo = i > 0 ? meses[i - 1].ingreso : 0;
-        const variacion = i > 0 && previo > 0 && m.n ? Math.round(((m.ingreso - previo) / previo) * 1000) / 10 : null;
-        return [nombrePeriodo(m.per).toUpperCase(), m.n, cod(m.del), cod(m.al), m.ingreso, total ? Math.round((m.ingreso / total) * 1000) / 10 : 0, variacion === null ? "" : `${variacion >= 0 ? "+" : ""}${variacion} %`];
-      });
+      const filas = meses.map((m) => [nombrePeriodo(m.per).toUpperCase(), m.n, cod(m.del), cod(m.al), m.ingreso]);
       hoja = {
         titulo: `INGRESOS PROPIOS ${anio} · RESUMEN POR MES`,
         columnas: [
           { titulo: "MES", ancho: 22 }, { titulo: "RECIBOS", ancho: 10 }, { titulo: "DEL RECIBO N°", ancho: 14 }, { titulo: "AL RECIBO N°", ancho: 14 },
-          { titulo: "RECAUDADO", ancho: 16, tipo: "monto" }, { titulo: "% DEL AÑO", ancho: 11 }, { titulo: "FRENTE AL MES ANTERIOR", ancho: 24 },
+          { titulo: "RECAUDADO", ancho: 16, tipo: "monto" },
         ],
         filas,
-        totales: ["TOTAL", filas.reduce((t, f) => t + Number(f[1]), 0), null, null, suma(filas, 4), null, null],
+        totales: ["TOTAL", filas.reduce((t, f) => t + Number(f[1]), 0), null, null, suma(filas, 4)],
       };
       break;
     }

@@ -1945,3 +1945,5 @@ html.pdf-captura .cc-excel .cc-dj { color: #000; font-weight: 400; text-decorati
 .pag { min-width: 38px; height: 38px; padding: 0 12px; display: inline-grid; place-items: center; border: 1.5px solid var(--borde); border-radius: 11px; background: var(--panel); color: var(--texto); font-weight: 700; text-decoration: none; }
 .pag:hover { border-color: var(--primario-claro); background: var(--primario-fondo); }
 .pag.activa { background: linear-gradient(135deg, var(--primario), var(--primario-hover)); border-color: var(--primario); color: #fff; box-shadow: 0 8px 16px -10px var(--primario); }
+.campo-concepto-ing { grid-column: 1 / -1; display: flex; flex-direction: column; gap: 4px; }
+.campo-concepto-ing .chips-concepto { margin-top: 6px; }

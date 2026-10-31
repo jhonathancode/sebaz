@@ -40,4 +40,5 @@ psql -v ON_ERROR_STOP=1 -q -d prueba_mcp -f migrations/20261024190000_exigir_pin
 psql -v ON_ERROR_STOP=1 -q -d prueba_mcp -f migrations/20261030170000_completar_todo.sql
 psql -v ON_ERROR_STOP=1 -q -d prueba_mcp -f migrations/20261030180000_proximo_numero.sql
 psql -v ON_ERROR_STOP=1 -q -d prueba_mcp -f migrations/20261030190000_anular_toda_la_documentacion.sql
+psql -v ON_ERROR_STOP=1 -q -d prueba_mcp -f migrations/20261030200000_proximo_numero_permisos.sql
 psql -v ON_ERROR_STOP=1 -q -d prueba_mcp -f ACTUALIZAR_BASE.sql 2>&1 | grep -v NOTICE | grep -E "actualizada|ERROR"

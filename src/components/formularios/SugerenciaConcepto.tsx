@@ -61,7 +61,7 @@ export default function SugerenciaConcepto({ campo = "descripcion", tambienItem 
       {sug && (
         <>
           <span className="s-et">Sugerencia</span>
-          <span className="s-txt">{sug}</span>
+          <span className="s-txt">{campo === "descripcion" ? conceptoSeRequiere(sug) : sug}</span>
           <button type="button" className="btn chico primario" onClick={usar}>Usar</button>
         </>
       )}

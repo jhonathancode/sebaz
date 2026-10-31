@@ -48,7 +48,9 @@ function mesYAnio(texto: string, anioActual: number): { mes: number; anio: numbe
 export function sugerirConcepto(texto: string, anioActual = new Date().getFullYear(), tipo?: string): string | null {
   const t = sinTildes(texto.trim());
   if (t.length < 6) return null;
-  const regla = REGLAS.find((r) => r.claves.test(t));
+  // Las reglas de pagos y servicios (tesorería, asesorías, limpieza pública…) no se aplican a una compra de bienes:
+  // «útiles de aseo y limpieza» es una compra, no el servicio de limpieza.
+  const regla = tipo === "compra" ? undefined : REGLAS.find((r) => r.claves.test(t));
   const periodo = mesYAnio(texto, anioActual);
   if (!regla) return sugerirGeneral(texto, t, tipo);
   const base = regla.dieta ? `PAGO DE ${regla.nombre}` : `PAGO DEL ${regla.nombre}`;

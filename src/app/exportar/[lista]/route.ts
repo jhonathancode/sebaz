@@ -104,7 +104,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ list
       break;
     }
     case "caja-chica": {
-      const { data: cajas } = await supabase.from("cajas_chicas").select("id, monto_fondo").eq("mcp_id", mcpId).eq("periodo", mes).neq("estado", "anulada");
+      const { data: cajas } = await supabase.from("cajas_chicas").select("id, monto_fondo, numero_cheque").eq("mcp_id", mcpId).eq("periodo", mes).neq("estado", "anulada");
       const caja = (cajas ?? [])[0];
       const { data } = caja
         ? await supabase.from("caja_chica_gastos").select("fecha, concepto, sustento_tipo, sustento_numero, razon_social, monto, anulado").eq("caja_id", caja.id).order("fecha")
@@ -113,15 +113,15 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ list
       const filas = (data ?? [])
         .filter((g) => !g.anulado)
         .filter((g) => !q || `${g.concepto} ${g.razon_social}`.toUpperCase().includes(q.toUpperCase()))
-        .map((g, i) => [i + 1, fechaPe(g.fecha), g.sustento_tipo, g.sustento_numero ?? "SN", g.razon_social.toUpperCase(), g.concepto.toUpperCase(), Number(g.monto)]);
+        .map((g, i) => [i + 1, fechaPe(g.fecha), (caja?.numero_cheque ?? "").toUpperCase(), g.sustento_tipo, g.sustento_numero ?? "SN", g.razon_social.toUpperCase(), g.concepto.toUpperCase(), Number(g.monto)]);
       hoja = {
         titulo: `CAJA CHICA MES DE ${nombrePeriodo(mes).toUpperCase()}${caja ? ` · FONDO S/ ${Number(caja.monto_fondo).toFixed(2)}` : ""}`,
         columnas: [
-          { titulo: "N°", ancho: 6 }, { titulo: "FECHA", ancho: 12 }, { titulo: "CP", ancho: 8 }, { titulo: "N° CP", ancho: 14 },
+          { titulo: "N°", ancho: 6 }, { titulo: "FECHA", ancho: 12 }, { titulo: "CHEQUE", ancho: 14 }, { titulo: "CP", ancho: 8 }, { titulo: "N° CP", ancho: 14 },
           { titulo: "RAZON SOCIAL", ancho: 38 }, { titulo: "CONCEPTO", ancho: 70 }, { titulo: "MONTO", ancho: 14, tipo: "monto" },
         ],
         filas,
-        totales: ["TOTAL", null, null, null, null, null, suma(filas, 6)],
+        totales: ["TOTAL", null, null, null, null, null, null, suma(filas, 7)],
       };
       break;
     }
@@ -145,7 +145,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ list
           { titulo: "Concepto", ancho: 46 }, { titulo: "Función", ancho: 26 }, { titulo: "Importe S/", ancho: 14, tipo: "monto" },
         ],
         filas,
-        totales: ["TOTAL", null, null, null, null, null, suma(filas, 6)],
+        totales: ["TOTAL", null, null, null, null, null, null, suma(filas, 7)],
       };
       break;
     }
@@ -178,7 +178,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ list
           columnas: [{ titulo: "N°", ancho: 14 }, { titulo: "Fecha", ancho: 12 }, { titulo: "Tipo", ancho: 12 }, { titulo: "Proveedor / procedencia", ancho: 36 },
             { titulo: "Documento", ancho: 22 }, { titulo: "Estado", ancho: 10 }, { titulo: "Valor S/", ancho: 14, tipo: "monto" }],
           filas,
-          totales: ["TOTAL", null, null, null, null, null, suma(filas, 6)],
+          totales: ["TOTAL", null, null, null, null, null, null, suma(filas, 7)],
         };
       } else {
         const { data } = await supabase.from("pecosas").select("numero, anio, fecha, area_solicitante, solicitante, finalidad, anulado, pecosa_items(total)")
@@ -190,7 +190,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ list
           columnas: [{ titulo: "N°", ancho: 16 }, { titulo: "Fecha", ancho: 12 }, { titulo: "Área", ancho: 26 }, { titulo: "Recibió", ancho: 30 },
             { titulo: "Para qué", ancho: 34 }, { titulo: "Estado", ancho: 10 }, { titulo: "Valor S/", ancho: 14, tipo: "monto" }],
           filas,
-          totales: ["TOTAL", null, null, null, null, null, suma(filas, 6)],
+          totales: ["TOTAL", null, null, null, null, null, null, suma(filas, 7)],
         };
       }
       break;

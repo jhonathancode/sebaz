@@ -10,7 +10,7 @@ import { codigoCP, fecha, hoyISO, nombrePeriodo, periodoActual, soles } from "@/
 
 const MES_CORTO = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Set", "Oct", "Nov", "Dic"];
 import { supabaseServidor } from "@/lib/supabase/server";
-import { abrirCaja, agregarGasto, anularGasto, liquidarCaja } from "./acciones";
+import { abrirCaja, agregarGasto, anularGasto, cambiarCheque, liquidarCaja } from "./acciones";
 
 const NOMBRE_SUSTENTO = Object.fromEntries(SUSTENTOS.map((s) => [s.codigo, s.nombre]));
 
@@ -237,6 +237,7 @@ export default async function CajaChica({ searchParams }: { searchParams: Params
               <input type="hidden" name="fuente_id" value={fuenteId} />
               <div className="rejilla-2">
                 <label className="campo">Monto del fondo S/<input name="monto_fondo" required inputMode="decimal" placeholder="2000.00" /></label>
+                <label className="campo">N° de cheque<input name="numero_cheque" placeholder="Ej. 00012345" style={{ textTransform: "uppercase" }} /></label>
                 <label className="campo">
                   Responsable del fondo
                   <select name="responsable_id" required>
@@ -289,17 +290,27 @@ export default async function CajaChica({ searchParams }: { searchParams: Params
             </div>
           </div>
 
+          {puede && caja.estado === "abierta" && (
+            <div style={{ margin: "0 0 8px", display: "flex", justifyContent: "flex-end" }}>
+              <VentanaFlotante boton={caja.numero_cheque ? `Cheque: ${caja.numero_cheque} · cambiar` : "Poner N° de cheque"} titulo="Número de cheque de la caja chica" accion={cambiarCheque} textoGuardar="Guardar" claseBoton="btn chico contorno">
+                <input type="hidden" name="periodo" value={periodo} />
+                <input type="hidden" name="fuente_id" value={fuenteId} />
+                <input type="hidden" name="caja_id" value={caja.id} />
+                <label className="campo">N° de cheque<input name="numero_cheque" defaultValue={caja.numero_cheque ?? ""} style={{ textTransform: "uppercase" }} /></label>
+              </VentanaFlotante>
+            </div>
+          )}
           <div className="cc-excel-marco">
             <table className="cc-excel">
               <caption>Caja chica mes de {nombrePeriodo(periodo)}</caption>
               <thead>
                 <tr>
-                  <th>N°</th><th>Fecha</th><th>CP</th><th>N° CP</th><th>Razón social</th><th>Concepto</th><th>Monto</th><th className="cc-acc-th"><span className="sr-solo">Acciones</span></th>
+                  <th>N°</th><th>Fecha</th><th>Cheque</th><th>CP</th><th>N° CP</th><th>Razón social</th><th>Concepto</th><th>Monto</th><th className="cc-acc-th"><span className="sr-solo">Acciones</span></th>
                 </tr>
               </thead>
               <tbody>
                 {(gastos ?? []).length === 0 && (
-                  <tr><td colSpan={8} className="cc-vacio">Aún no hay gastos. Registre el primero con «+ Registrar gasto».</td></tr>
+                  <tr><td colSpan={9} className="cc-vacio">Aún no hay gastos. Registre el primero con «+ Registrar gasto».</td></tr>
                 )}
                 {(() => {
                   let n = 0;
@@ -309,6 +320,7 @@ export default async function CajaChica({ searchParams }: { searchParams: Params
                       <tr key={g.id} className={g.anulado ? "anulada" : undefined}>
                         <td className="c">{g.anulado ? "—" : n}</td>
                         <td className="c">{fecha(g.fecha)}</td>
+                        <td className="c">{caja.numero_cheque ?? "—"}</td>
                         <td className="c">{g.sustento_tipo}</td>
                         <td className="c">{g.sustento_numero ?? "SN"}</td>
                         <td>{g.razon_social}</td>
@@ -332,9 +344,9 @@ export default async function CajaChica({ searchParams }: { searchParams: Params
               </tbody>
               {(gastos ?? []).length > 0 && (
                 <tfoot>
-                  <tr><td colSpan={6} className="m">Total gastado</td><td className="m">S/ {soles(gastado)}</td><td className="acc"></td></tr>
-                  <tr><td colSpan={6} className="m">Fondo</td><td className="m">S/ {soles(fondo)}</td><td className="acc"></td></tr>
-                  <tr><td colSpan={6} className="m">{cuadra ? "Saldo (cuadra)" : saldo < 0 ? "Se pasó del fondo" : "Falta gastar"}</td><td className="m">S/ {soles(Math.abs(saldo))}</td><td className="acc"></td></tr>
+                  <tr><td colSpan={7} className="m">Total gastado</td><td className="m">S/ {soles(gastado)}</td><td className="acc"></td></tr>
+                  <tr><td colSpan={7} className="m">Fondo</td><td className="m">S/ {soles(fondo)}</td><td className="acc"></td></tr>
+                  <tr><td colSpan={7} className="m">{cuadra ? "Saldo (cuadra)" : saldo < 0 ? "Se pasó del fondo" : "Falta gastar"}</td><td className="m">S/ {soles(Math.abs(saldo))}</td><td className="acc"></td></tr>
                 </tfoot>
               )}
             </table>

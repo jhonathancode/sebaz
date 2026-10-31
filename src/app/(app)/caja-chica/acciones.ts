@@ -20,6 +20,7 @@ export async function abrirCaja(fd: FormData) {
     fuente_id: fuente,
     monto_fondo: monto,
     responsable_id: texto(fd, "responsable_id"),
+    numero_cheque: texto(fd, "numero_cheque")?.toUpperCase() ?? null,
   });
   if (error) volver(ruta(periodo, fuente), "error", mensajeError(error));
   volver(ruta(periodo, fuente), "ok", "Fondo de caja chica abierto.");
@@ -72,4 +73,14 @@ export async function liquidarCaja(fd: FormData) {
   if (error) volver(ruta(periodo, fuente), "error", mensajeError(error));
   revalidatePath("/comprobantes");
   volver(`/comprobantes/${data}`, "ok", "Caja chica liquidada. Se generó su comprobante de pago en borrador.");
+}
+
+export async function cambiarCheque(fd: FormData) {
+  const supabase = await supabaseServidor();
+  const periodo = texto(fd, "periodo")!;
+  const fuente = texto(fd, "fuente_id")!;
+  const cheque = texto(fd, "numero_cheque")?.toUpperCase() ?? null;
+  const { error } = await supabase.from("cajas_chicas").update({ numero_cheque: cheque }).eq("id", texto(fd, "caja_id") ?? "");
+  if (error) volver(ruta(periodo, fuente), "error", mensajeError(error));
+  volver(ruta(periodo, fuente), "ok", "Número de cheque guardado.");
 }

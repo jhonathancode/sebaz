@@ -1670,5 +1670,9 @@ revoke execute on function proximo_numero(uuid, text, int) from public, anon;
 grant execute on function proximo_numero(uuid, text, int) to authenticated;
 notify pgrst, 'reload schema';
 
+-- Número de cheque con el que se abrió la caja chica (se repite en todos sus gastos)
+alter table cajas_chicas add column if not exists numero_cheque text;
+notify pgrst, 'reload schema';
+
 commit;
 select 'Base de datos actualizada' as resultado;

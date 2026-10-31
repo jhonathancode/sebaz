@@ -1985,3 +1985,7 @@ html.pdf-captura .cc-excel .cc-dj { color: #000; font-weight: 400; text-decorati
 .lateral-menu ul.lm-sub { margin: 2px 0 6px 26px; padding-left: 8px; border-left: 2px solid var(--linea); }
 .lateral-menu ul.lm-sub a { margin: 1px 6px; padding: 7px 10px; font-size: 13.5px; font-weight: 600; }
 .lateral-menu ul.lm-sub a.activo { box-shadow: none; }
+
+/* Fila recién subida */
+.cc-excel tr.recien td { background: var(--primario-fondo); box-shadow: inset 0 0 0 1px var(--primario-claro); }
+.cc-nuevo { display: block; margin-top: 4px; font-size: 11.5px; font-weight: 800; letter-spacing: .02em; color: var(--primario-texto); text-transform: none; }

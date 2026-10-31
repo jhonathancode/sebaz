@@ -26,7 +26,7 @@ export async function subirEstadoCuenta(fd: FormData) {
   const ruta = `${ctx.mcp.id}/estados-cuenta/${periodo}-${Date.now()}.${ext}`;
   const { error: eSubida } = await supabase.storage.from("sustentos").upload(ruta, archivo, { contentType: archivo.type });
   if (eSubida) volver(destino, "error", mensajeError(eSubida));
-  const { error } = await supabase.from("estados_cuenta").insert({
+  const { data: nuevo, error } = await supabase.from("estados_cuenta").insert({
     mcp_id: ctx.mcp.id,
     periodo,
     banco: ctx.mcp.banco_nombre ?? "Banco de la Nación",
@@ -36,13 +36,15 @@ export async function subirEstadoCuenta(fd: FormData) {
     archivo_tipo: archivo.type,
     archivo_tamano: archivo.size,
     nota: texto(fd, "nota"),
-  });
+  }).select("id").single();
   if (error) {
     await supabase.storage.from("sustentos").remove([ruta]);
     volver(destino, "error", /estados_cuenta/i.test(error.message) ? "Falta la actualización de la base (ACTUALIZAR_BASE.sql). Avise a soporte." : mensajeError(error));
   }
   revalidatePath(RUTA);
-  volver(destino, "ok", "Estado de cuenta guardado.");
+  const [a, m] = periodo.split("-").map(Number);
+  const MES = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "setiembre", "octubre", "noviembre", "diciembre"][m - 1];
+  volver(`${destino}&nuevo=${nuevo?.id ?? ""}`, "ok", `Listo: el estado de cuenta de ${MES} ${a} se subió correctamente (archivo «${archivo.name}»). Está resaltado en la lista; puede abrirlo con «Ver».`);
 }
 
 /** Un estado de cuenta subido por error no se borra: se anula con motivo y queda en el historial. */

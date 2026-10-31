@@ -50,7 +50,7 @@ export async function subirEstadoCuenta(fd: FormData) {
   revalidatePath(RUTA);
   const [a, m] = periodo.split("-").map(Number);
   const MES = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "setiembre", "octubre", "noviembre", "diciembre"][m - 1];
-  volver(`${destino}&mes=${periodo}`, "ok", `Listo: ${archivos.length === 1 ? "se subió 1 hoja" : `se subieron ${archivos.length} hojas`} del estado de cuenta de ${MES} ${a}. Ya aparece en su mes de la lista.`);
+  volver(`${RUTA}/conciliar?mes=${periodo}`, "ok", `Listo: ${archivos.length === 1 ? "se subió 1 hoja" : `se subieron ${archivos.length} hojas`} del estado de cuenta de ${MES} ${a}. Ahora cópielo a la derecha.`);
 }
 
 /** Un estado de cuenta subido por error no se borra: se anula con motivo y queda en el historial. */
@@ -59,8 +59,9 @@ export async function anularEstadoCuenta(fd: FormData) {
   if (!tiene(ctx, "admin", "tesorero", "contador", "alcalde")) volver(RUTA, "error", "No tiene permiso para anular.");
   const supabase = await supabaseServidor();
   const anio = texto(fd, "anio") ?? "";
+  const mes = texto(fd, "mes");
   const { error } = await supabase.from("estados_cuenta").update({ anulado: true, anulado_motivo: texto(fd, "motivo") }).eq("id", texto(fd, "id") ?? "");
-  const destino = `${RUTA}?anio=${anio}`;
+  const destino = mes ? `${RUTA}/conciliar?mes=${mes}` : `${RUTA}?anio=${anio}`;
   if (error) volver(destino, "error", mensajeError(error));
   revalidatePath(RUTA);
   volver(destino, "ok", "Estado de cuenta anulado. Queda en el historial.");

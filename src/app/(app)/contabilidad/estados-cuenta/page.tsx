@@ -1,6 +1,7 @@
 import Link from "next/link";
 import Avisos, { type ParamsAviso } from "@/components/Avisos";
 import Motivo from "@/components/Motivo";
+import VisorArchivo from "@/components/VisorArchivo";
 import VentanaFlotante from "@/components/VentanaFlotante";
 import CampoArchivoEstado from "@/components/formularios/CampoArchivoEstado";
 import { contextoMcp, tiene } from "@/lib/contexto";
@@ -32,6 +33,10 @@ export default async function EstadosCuenta({ searchParams }: { searchParams: Pa
     ? await supabase.storage.from("sustentos").createSignedUrls(filas.map((f) => f.archivo_path), 900)
     : { data: [] as { path: string | null; signedUrl: string }[] };
   const url = new Map((firmadas.data ?? []).map((u) => [u.path, u.signedUrl]));
+  const firmadasDescarga = filas.length
+    ? await supabase.storage.from("sustentos").createSignedUrls(filas.map((f) => f.archivo_path), 900, { download: true })
+    : { data: [] as { path: string | null; signedUrl: string }[] };
+  const urlDescarga = new Map((firmadasDescarga.data ?? []).map((u) => [u.path, u.signedUrl]));
   const vigentes = filas.filter((f) => !f.anulado);
   const porMes = new Map<string, number>();
   vigentes.forEach((f) => porMes.set(f.periodo, (porMes.get(f.periodo) ?? 0) + 1));
@@ -138,7 +143,15 @@ export default async function EstadosCuenta({ searchParams }: { searchParams: Pa
                           {h.anulado && <span className="cc-anulado-motivo"> · ANULADA: {h.anulado_motivo}</span>}
                         </span>
                         <span className="cc-hoja-acc">
-                          {url.get(h.archivo_path) && !h.anulado && <a className="btn chico contorno" href={url.get(h.archivo_path) ?? undefined} target="_blank" rel="noreferrer">Ver</a>}
+                          {url.get(h.archivo_path) && !h.anulado && (
+                            <VisorArchivo
+                              url={url.get(h.archivo_path)!}
+                              descarga={urlDescarga.get(h.archivo_path) ?? url.get(h.archivo_path)!}
+                              nombre={h.archivo_nombre}
+                              tipo={h.archivo_tipo}
+                              titulo={`Estado de cuenta · ${nombrePeriodo(h.periodo)}`}
+                            />
+                          )}
                           {puede && !h.anulado && <Motivo chico accion={anularEstadoCuenta} boton="Anular" ayuda="Motivo" campos={{ id: h.id, anio }} />}
                         </span>
                       </div>

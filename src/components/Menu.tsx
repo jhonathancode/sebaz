@@ -181,7 +181,7 @@ export function BotonMenu({ dentro = false }: { dentro?: boolean }) {
 
 export type DatosMcpMenu = { nombre: string; ruc: string | null; logo: string | null } | null;
 
-export default function Menu({ items, abajo = [], nuevo = true, mcp, panel }: { items: ItemMenu[]; abajo?: ItemMenu[]; nuevo?: boolean; mcp: DatosMcpMenu; panel?: string }) {
+export default function Menu({ items, abajo = [], mcp, panel }: { items: ItemMenu[]; abajo?: ItemMenu[]; nuevo?: boolean; mcp: DatosMcpMenu; panel?: string }) {
   const ruta = usePathname();
   // Se marca la opción que más se parece a la ruta (así «Clientes» no queda marcado en «Pagos»).
   const actual = [...items, ...abajo]
@@ -233,25 +233,6 @@ export default function Menu({ items, abajo = [], nuevo = true, mcp, panel }: { 
           </div>
         )}
 
-        {nuevo && (
-          <Link
-            href="/expedientes?nuevo=1"
-            className="lm-nuevo"
-            onClick={(ev) => {
-              // Ya en Expedientes la dirección no cambia y la ventana no se abría: se abre directo
-              if (ruta === "/expedientes") {
-                ev.preventDefault();
-                cerrar();
-                window.dispatchEvent(new Event("sebaz:abrir-nuevo-requerimiento"));
-              }
-            }}
-          >
-            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="square" aria-hidden="true">
-              <path d="M12 5v14M5 12h14" />
-            </svg>
-            Nuevo requerimiento
-          </Link>
-        )}
 
         <div className="lm-titulo">{mcp ? "Trabajo diario" : "Administración"}</div>
         <ul>

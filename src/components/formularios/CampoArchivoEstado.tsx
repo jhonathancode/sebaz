@@ -22,27 +22,26 @@ export default function CampoArchivoEstado() {
 
   async function alElegir() {
     const el = entrada.current;
-    const f = el?.files?.[0];
-    if (!el || !f) return setInfo(null);
-    setInfo("Preparando el archivo…");
+    const elegidos = Array.from(el?.files ?? []);
+    if (!el || elegidos.length === 0) return setInfo(null);
+    setInfo("Preparando los archivos…");
     try {
-      const listo = await reducirFoto(f);
-      if (listo !== f) {
-        const dt = new DataTransfer();
-        dt.items.add(listo);
-        el.files = dt.files;
-      }
-      setInfo(`${listo.name} · ${(listo.size / 1024 / 1024).toFixed(1)} MB${listo !== f ? " (foto reducida para subirla)" : ""}`);
+      const listos = await Promise.all(elegidos.map(reducirFoto));
+      const dt = new DataTransfer();
+      listos.forEach((f) => dt.items.add(f));
+      el.files = dt.files;
+      const peso = listos.reduce((t, f) => t + f.size, 0);
+      setInfo(`${listos.length} archivo(s) · ${(peso / 1024 / 1024).toFixed(1)} MB en total${peso > 4 * 1024 * 1024 ? ": pesa más de 4 MB, súbalos en dos veces" : ""}`);
     } catch {
-      setInfo(`${f.name} · ${(f.size / 1024 / 1024).toFixed(1)} MB`);
+      setInfo(`${elegidos.length} archivo(s) elegidos`);
     }
   }
 
   return (
     <label className="campo ancho">
-      Foto o PDF del estado de cuenta
-      <input ref={entrada} type="file" name="archivo" required accept="application/pdf,image/jpeg,image/png,image/webp" onChange={alElegir} />
-      <span className="pequeno tenue">{info ?? "PDF o foto (JPG, PNG, WEBP). Máximo 4 MB; las fotos grandes se reducen solas."}</span>
+      Hojas del estado de cuenta (foto o PDF)
+      <input ref={entrada} type="file" name="archivo" required multiple accept="application/pdf,image/jpeg,image/png,image/webp" onChange={alElegir} />
+      <span className="pequeno tenue">{info ?? "Puede elegir varias hojas a la vez. PDF o foto (JPG, PNG, WEBP); máximo 4 MB en total. Las fotos grandes se reducen solas."}</span>
     </label>
   );
 }

@@ -1989,3 +1989,13 @@ html.pdf-captura .cc-excel .cc-dj { color: #000; font-weight: 400; text-decorati
 /* Fila recién subida */
 .cc-excel tr.recien td { background: var(--primario-fondo); box-shadow: inset 0 0 0 1px var(--primario-claro); }
 .cc-nuevo { display: block; margin-top: 4px; font-size: 11.5px; font-weight: 800; letter-spacing: .02em; color: var(--primario-texto); text-transform: none; }
+
+/* Estados de cuenta agrupados por mes */
+.cc-subido { display: inline-block; padding: 3px 12px; border-radius: 99px; background: var(--primario-fondo); color: var(--primario-texto); font-weight: 800; text-transform: none; }
+.cc-pendiente { display: inline-block; padding: 3px 12px; border-radius: 99px; border: 1.5px dashed var(--borde-fuerte); color: var(--tenue); font-weight: 700; text-transform: none; }
+.cc-hoja { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 5px 0; }
+.cc-hoja + .cc-hoja { border-top: 1px dashed var(--linea); }
+.cc-hoja.anulada { opacity: .75; text-decoration: line-through; }
+.cc-hoja.anulada .cc-anulado-motivo { text-decoration: none; }
+.cc-hoja-acc { display: inline-flex; gap: 4px; flex: none; }
+.cc-excel tr.sin-subir td { color: var(--tenue); }

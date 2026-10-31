@@ -36,6 +36,38 @@ export default async function EstadosCuenta({ searchParams }: { searchParams: Pa
   const porMes = new Map<string, number>();
   vigentes.forEach((f) => porMes.set(f.periodo, (porMes.get(f.periodo) ?? 0) + 1));
 
+  const hojasDe = (per: string) => filas.filter((f) => f.periodo === per).sort((a, b) => a.creado_en.localeCompare(b.creado_en));
+  const meses = MES_CORTO.map((corto, i) => {
+    const per = `${anio}-${String(i + 1).padStart(2, "0")}`;
+    const todas = hojasDe(per);
+    const vig = todas.filter((h) => !h.anulado);
+    return { per, corto, todas, vig, futuro: per > hoy };
+  });
+  const mesesSubidos = meses.filter((m) => m.vig.length > 0).length;
+  const mesesPasados = meses.filter((m) => !m.futuro).length;
+  const formSubir = (per: string, boton: string, clase: string, fijo: boolean) => (
+    <VentanaFlotante boton={boton} titulo={fijo ? `Subir hojas de ${nombrePeriodo(per)}` : "Subir estado de cuenta del banco"} accion={subirEstadoCuenta} textoGuardar="Guardar" claseBoton={clase}>
+      <div className="rejilla">
+        {fijo ? (
+          <input type="hidden" name="periodo" value={per} />
+        ) : (
+          <label className="campo">
+            Mes del estado de cuenta
+            <input type="month" name="periodo" defaultValue={per} required />
+          </label>
+        )}
+        <label className="campo ancho">
+          Nota (opcional)
+          <input name="nota" placeholder="Ej.: movimientos del 1 al 31" />
+        </label>
+        <CampoArchivoEstado />
+      </div>
+      <p className="pequeno tenue" style={{ margin: 0 }}>
+        Es el estado de cuenta que saca del {ctx.mcp.banco_nombre}. Si tiene varias hojas, elíjalas juntas: quedan agrupadas en el mismo mes. Nada se borra: si se sube algo por error, se anula con motivo.
+      </p>
+    </VentanaFlotante>
+  );
+
   return (
     <>
       <div className="cab-vista">
@@ -44,24 +76,7 @@ export default async function EstadosCuenta({ searchParams }: { searchParams: Pa
           <div className="sub">{ctx.mcp.banco_nombre}{ctx.mcp.banco_cuenta ? ` · cuenta ${ctx.mcp.banco_cuenta}` : ""}</div>
         </div>
         <span className="espacio" />
-        {puede && (
-          <VentanaFlotante boton="+ Subir estado de cuenta" titulo="Subir estado de cuenta del banco" accion={subirEstadoCuenta} textoGuardar="Guardar" claseBoton="btn primario grande">
-            <div className="rejilla">
-              <label className="campo">
-                Mes del estado de cuenta
-                <input type="month" name="periodo" defaultValue={hoy} required />
-              </label>
-              <label className="campo ancho">
-                Nota (opcional)
-                <input name="nota" placeholder="Ej.: movimientos del 1 al 31, hoja 1 de 2" />
-              </label>
-              <CampoArchivoEstado />
-            </div>
-            <p className="pequeno tenue" style={{ margin: 0 }}>
-              Es el estado de cuenta que saca del {ctx.mcp.banco_nombre}. Si tiene varias hojas o fotos, súbalas una por una con el mismo mes. Nada se borra: si se sube algo por error, se anula con motivo.
-            </p>
-          </VentanaFlotante>
-        )}
+        {puede && formSubir(hoy, "+ Subir estado de cuenta", "btn primario grande", false)}
       </div>
       <Avisos ok={sp.ok} error={sp.error} />
       {error && <div className="aviso error">Los estados de cuenta aún no están activos: falta la actualización de la base de datos (ACTUALIZAR_BASE.sql). Avise a soporte.</div>}
@@ -88,35 +103,62 @@ export default async function EstadosCuenta({ searchParams }: { searchParams: Pa
         </div>
       </section>
 
+      <p className="pequeno tenue" style={{ margin: "0 0 8px" }}>
+        {mesesSubidos} de {mesesPasados} meses con estado de cuenta subido en {anio}.
+      </p>
       <div className="cc-excel-marco">
         <table className="cc-excel">
           <caption>Estados de cuenta {anio}</caption>
           <thead>
-            <tr><th>Mes</th><th>Archivo</th><th>Nota</th><th>Subido</th><th className="cc-acc-th"><span className="sr-solo">Acciones</span></th></tr>
+            <tr><th>Mes</th><th>Estado</th><th>Hojas</th><th>Subido</th><th className="cc-acc-th"><span className="sr-solo">Acciones</span></th></tr>
           </thead>
           <tbody>
-            {filas.length === 0 && <tr><td colSpan={5} className="cc-vacio">Aún no hay estados de cuenta de {anio}. Suba el primero con «+ Subir estado de cuenta».</td></tr>}
-            {filas.map((f) => (
-              <tr key={f.id} id={`mes-${f.periodo}`} className={f.anulado ? "anulada" : f.id === sp.nuevo ? "recien" : undefined}>
-                <td><b>{nombrePeriodo(f.periodo)}</b>{f.id === sp.nuevo && <span className="cc-nuevo">✓ Recién subido</span>}</td>
-                <td>
-                  {f.archivo_tipo === "application/pdf" ? "PDF" : "FOTO"} · {f.archivo_nombre}
-                  <span className="tenue pequeno" style={{ display: "block", textTransform: "none" }}>{kb(f.archivo_tamano)}</span>
-                  {f.anulado && <span className="cc-anulado-motivo">ANULADO: {f.anulado_motivo}</span>}
-                </td>
-                <td style={{ textTransform: "none" }}>{f.nota ?? "—"}</td>
-                <td className="c" style={{ textTransform: "none" }}>
-                  {fechaHora(f.creado_en)}
-                  <span className="tenue pequeno" style={{ display: "block" }}>{(f.perfiles as unknown as { nombre: string } | null)?.nombre}</span>
-                </td>
-                <td className="acc">
-                  <div className="acciones-fila">
-                    {url.get(f.archivo_path) && <a className="btn chico contorno" href={url.get(f.archivo_path) ?? undefined} target="_blank" rel="noreferrer">Ver</a>}
-                    {puede && !f.anulado && <Motivo chico accion={anularEstadoCuenta} boton="Anular" ayuda="Motivo" campos={{ id: f.id, anio }} />}
-                  </div>
-                </td>
-              </tr>
-            ))}
+            {meses.map((m) => {
+              const primera = m.vig[0];
+              const ultima = m.vig[m.vig.length - 1];
+              return (
+                <tr key={m.per} id={`mes-${m.per}`} className={m.vig.length === 0 && m.todas.length === 0 ? "sin-subir" : undefined}>
+                  <td><b>{nombrePeriodo(m.per)}</b></td>
+                  <td className="c">
+                    {m.vig.length > 0 ? (
+                      <span className="cc-subido">✓ Subido</span>
+                    ) : m.futuro ? (
+                      <span className="tenue" style={{ textTransform: "none" }}>—</span>
+                    ) : (
+                      <span className="cc-pendiente">Pendiente</span>
+                    )}
+                  </td>
+                  <td style={{ textTransform: "none" }}>
+                    {m.todas.length === 0 && <span className="tenue">{m.futuro ? "" : "Aún no se subió"}</span>}
+                    {m.todas.map((h, i) => (
+                      <div key={h.id} className={`cc-hoja${h.anulado ? " anulada" : ""}`}>
+                        <span>
+                          <b>Hoja {m.todas.slice(0, i + 1).filter((x) => !x.anulado).length || "·"}</b> · {h.archivo_tipo === "application/pdf" ? "PDF" : "Foto"} · {h.archivo_nombre} <span className="tenue">({kb(h.archivo_tamano)})</span>
+                          {h.nota && <span className="tenue"> · {h.nota}</span>}
+                          {h.anulado && <span className="cc-anulado-motivo"> · ANULADA: {h.anulado_motivo}</span>}
+                        </span>
+                        <span className="cc-hoja-acc">
+                          {url.get(h.archivo_path) && !h.anulado && <a className="btn chico contorno" href={url.get(h.archivo_path) ?? undefined} target="_blank" rel="noreferrer">Ver</a>}
+                          {puede && !h.anulado && <Motivo chico accion={anularEstadoCuenta} boton="Anular" ayuda="Motivo" campos={{ id: h.id, anio }} />}
+                        </span>
+                      </div>
+                    ))}
+                  </td>
+                  <td className="c" style={{ textTransform: "none" }}>
+                    {primera ? (
+                      <>
+                        {fechaHora(primera.creado_en)}
+                        {ultima && ultima.id !== primera.id && <span className="tenue pequeno" style={{ display: "block" }}>última hoja: {fechaHora(ultima.creado_en)}</span>}
+                        <span className="tenue pequeno" style={{ display: "block" }}>{(primera.perfiles as unknown as { nombre: string } | null)?.nombre}</span>
+                      </>
+                    ) : (
+                      "—"
+                    )}
+                  </td>
+                  <td className="acc">{puede && !m.futuro && formSubir(m.per, m.vig.length ? "+ Hoja" : "Subir", "btn chico contorno", true)}</td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>

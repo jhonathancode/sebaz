@@ -2145,3 +2145,17 @@ a.ini-kpi:hover { border-color: var(--primario-claro); }
 .ec-copia.ok { color: var(--primario-texto); border: 0; background: var(--primario-fondo); }
 .ec-copia.mal { color: var(--rojo); border-color: var(--rojo); }
 @media (max-width: 720px) { .ec-mes { grid-template-columns: minmax(0, 1fr); } }
+
+/* Contabilidad: ingresos y gastos mes a mes */
+.ct-barras { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: 8px; align-items: end; }
+.ct-par { display: flex; flex-direction: column; align-items: center; gap: 6px; text-decoration: none; color: var(--tenue); }
+.ct-col { width: 100%; height: 120px; display: flex; align-items: flex-end; justify-content: center; gap: 4px; padding: 0 4px; border-radius: 12px; background: color-mix(in srgb, var(--primario) 6%, transparent); }
+.ct-col > span { flex: 1; max-width: 22px; border-radius: 8px 8px 0 0; min-height: 2px; }
+.ct-col .ing { background: linear-gradient(180deg, var(--primario-hover), var(--primario)); }
+.ct-col .gas { background: color-mix(in srgb, var(--primario) 32%, var(--panel)); }
+.ct-mes { font-size: 11.5px; font-weight: 700; }
+.ct-par.sel .ct-mes { color: var(--primario); }
+.ct-par.sel .ct-col { box-shadow: inset 0 0 0 2px var(--primario); }
+.ct-leyenda { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin: 0 2px 0 6px; }
+.ct-leyenda.ing { background: var(--primario); }
+.ct-leyenda.gas { background: color-mix(in srgb, var(--primario) 32%, var(--panel)); }

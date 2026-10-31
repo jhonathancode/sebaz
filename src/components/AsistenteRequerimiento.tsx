@@ -5,13 +5,14 @@ import BotonConfirmar from "@/components/BotonConfirmar";
 import EscalaA4 from "@/components/EscalaA4";
 import SelectFuncion from "@/components/SelectFuncion";
 import CamposProveedor, { type ProveedorConocido } from "@/components/formularios/CamposProveedor";
+import { detalleFuente, nombreFuente, ORDEN_FUENTES } from "@/components/formularios/CamposRequerimiento";
 import { Memorando, Orden, Requerimiento, type DatosExpediente } from "@/components/formatos/DocumentosExpediente";
 import FormatoComprobante from "@/components/formatos/FormatoComprobante";
 import { FormatoNea } from "@/components/formatos/FormatosAlmacen";
 import { SUSTENTOS } from "@/lib/catalogos";
 import { num3, soles } from "@/lib/formato";
 import { conceptoSeRequiere, conceptoSinSeRequiere, resumenConcepto } from "@/lib/requerimiento";
-import type { Mcp } from "@/lib/contexto";
+import type { Mcp, Fuente } from "@/lib/contexto";
 
 export type Proximos = {
   expediente: number | null;
@@ -75,6 +76,7 @@ export default function AsistenteRequerimiento({
   hechoPor,
   proveedores,
   chequeSugerido,
+  fuentes,
   children,
 }: {
   boton: string;
@@ -90,6 +92,7 @@ export default function AsistenteRequerimiento({
   hechoPor: string;
   proveedores: ProveedorConocido[];
   chequeSugerido: string;
+  fuentes: Fuente[];
   children: React.ReactNode;
 }) {
   const ref = useRef<HTMLDialogElement>(null);
@@ -203,6 +206,7 @@ export default function AsistenteRequerimiento({
     }
     if (p === "alm" && L.g("almacen") === "sin" && L.g("sin_almacen_motivo").trim().length < 10) return "Explique en al menos 10 letras por qué no pasan por almacén.";
     if (p === "comp") {
+      if (!L.g("fuente_id") && (L.tipo !== "pago_fijo" || pf) && !L.g("fuente_final")) return "Elija con qué dinero se paga antes de emitir el comprobante.";
       const ch = L.g("cheque_previsto").trim();
       if (ch && !/^\d{4,12}$/.test(ch)) return "El número de cheque debe tener de 4 a 12 dígitos.";
     }
@@ -377,6 +381,19 @@ export default function AsistenteRequerimiento({
 
             {/* Comprobante */}
             <div style={{ display: paso === "comp" ? undefined : "none" }} key={`c${ciclo}`}>
+              {!L.g("fuente_id") && (L.tipo !== "pago_fijo" || pf) && (
+                <fieldset className="pregunta">
+                  <legend>¿Con qué dinero se paga? <span className="legend-nota">(lo dejó para después; hace falta para emitir el comprobante)</span></legend>
+                  <div className="opciones compacta">
+                    {[...fuentes].sort((a, b) => ORDEN_FUENTES[a.tipo] - ORDEN_FUENTES[b.tipo]).map((f) => (
+                      <label key={f.id} className="opcion" title={detalleFuente(f)}>
+                        <input type="radio" name="fuente_final" value={f.id} />
+                        <span className="opcion-titulo">{nombreFuente(f)}</span>
+                      </label>
+                    ))}
+                  </div>
+                </fieldset>
+              )}
               <fieldset className="pregunta">
                 <legend>Comprobante de pago</legend>
                 <div className="rejilla-2">

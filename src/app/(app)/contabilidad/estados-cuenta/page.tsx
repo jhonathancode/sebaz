@@ -97,8 +97,8 @@ export default async function EstadosCuenta({ searchParams }: { searchParams: Pa
           <tbody>
             {filas.length === 0 && <tr><td colSpan={5} className="cc-vacio">Aún no hay estados de cuenta de {anio}. Suba el primero con «+ Subir estado de cuenta».</td></tr>}
             {filas.map((f) => (
-              <tr key={f.id} id={`mes-${f.periodo}`} className={f.anulado ? "anulada" : undefined}>
-                <td><b>{nombrePeriodo(f.periodo)}</b></td>
+              <tr key={f.id} id={`mes-${f.periodo}`} className={f.anulado ? "anulada" : f.id === sp.nuevo ? "recien" : undefined}>
+                <td><b>{nombrePeriodo(f.periodo)}</b>{f.id === sp.nuevo && <span className="cc-nuevo">✓ Recién subido</span>}</td>
                 <td>
                   {f.archivo_tipo === "application/pdf" ? "PDF" : "FOTO"} · {f.archivo_nombre}
                   <span className="tenue pequeno" style={{ display: "block", textTransform: "none" }}>{kb(f.archivo_tamano)}</span>

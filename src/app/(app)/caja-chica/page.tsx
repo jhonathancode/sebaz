@@ -237,7 +237,7 @@ export default async function CajaChica({ searchParams }: { searchParams: Params
               <input type="hidden" name="fuente_id" value={fuenteId} />
               <div className="rejilla-2">
                 <label className="campo">Monto del fondo S/<input name="monto_fondo" required inputMode="decimal" placeholder="2000.00" /></label>
-                <label className="campo">N° de cheque<input name="numero_cheque" placeholder="Ej. 00012345" style={{ textTransform: "uppercase" }} /></label>
+                <label className="campo">N° de cheque<input name="numero_cheque" required autoFocus placeholder="Ej. 00012345" style={{ textTransform: "uppercase" }} /></label>
                 <label className="campo">
                   Responsable del fondo
                   <select name="responsable_id" required>

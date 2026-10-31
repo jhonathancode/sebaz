@@ -38,6 +38,7 @@ export default async function Relacion({ params }: { params: Promise<{ id: strin
           <tbody>
             <tr><th style={{ width: 200 }}>Responsable del fondo</th><td>{(caja.perfiles as { nombre: string } | null)?.nombre}</td></tr>
             <tr><th>Fondo asignado</th><td>S/ {soles(caja.monto_fondo)}</td></tr>
+            <tr><th>Cheque</th><td>{caja.numero_cheque ?? "—"}</td></tr>
           </tbody>
         </table>
         <table className="formato">

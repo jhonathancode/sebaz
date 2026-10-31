@@ -63,32 +63,40 @@ export default async function Ingresos({ searchParams }: { searchParams: ParamsA
     etiqueta = `día ${fecha(sp.dia)}`;
   }
 
-  const propios = ctx.fuentes.find((f) => f.tipo === "propios");
-  const [{ data: delAnio }, { data: ultimo }, { data: pagosAnio }] = await Promise.all([
+  const [{ data: delAnio }, { data: ultimo }] = await Promise.all([
     supabase.from("ingresos").select("*").eq("mcp_id", ctx.mcp.id).gte("fecha", `${anio}-01-01`).lte("fecha", `${anio}-12-31`).order("numero", { ascending: false }),
     supabase.from("ingresos").select("numero, anio").eq("mcp_id", ctx.mcp.id).order("anio", { ascending: false }).order("numero", { ascending: false }).limit(1).maybeSingle(),
-    propios
-      ? supabase.from("comprobantes_pago").select("fecha, importe").eq("mcp_id", ctx.mcp.id).eq("fuente_id", propios.id).neq("estado", "anulado").gte("fecha", `${anio}-01-01`).lte("fecha", `${anio}-12-31`)
-      : Promise.resolve({ data: [] as { fecha: string; importe: number }[] }),
   ]);
 
-  // Resumen de cada mes del año: lo cobrado, lo pagado con ingresos propios y lo que queda en caja
-  const resumen = MES_CORTO.map((_, i) => {
+  // Resumen de cada mes del año: lo recaudado, de qué recibo a qué recibo, cuánto pesa en el año y cómo va frente al mes anterior
+  const base = MES_CORTO.map((_, i) => {
     const per = `${anio}-${DOS(i + 1)}`;
     const rec = (delAnio ?? []).filter((r) => r.fecha.startsWith(per) && r.estado !== "anulado");
-    const ingreso = rec.reduce((t, r) => t + Number(r.monto), 0);
-    const gasto = (pagosAnio ?? []).filter((c) => c.fecha.startsWith(per)).reduce((t, c) => t + Number(c.importe), 0);
-    return { per, n: rec.length, ingreso, gasto };
+    const nums = rec.map((r) => Number(r.numero));
+    return {
+      per,
+      n: rec.length,
+      ingreso: rec.reduce((t, r) => t + Number(r.monto), 0),
+      del: nums.length ? Math.min(...nums) : null,
+      al: nums.length ? Math.max(...nums) : null,
+    };
   });
-  let acumulado = 0;
-  const filasResumen = resumen.map((r) => {
-    acumulado += r.ingreso - r.gasto;
-    return { ...r, saldo: r.ingreso - r.gasto, caja: acumulado };
+  const totalAnio = base.reduce((t, r) => t + r.ingreso, 0);
+  const nAnio = base.reduce((t, r) => t + r.n, 0);
+  const resumen = base.map((r, i) => {
+    const previo = i > 0 ? base[i - 1].ingreso : 0;
+    return {
+      ...r,
+      parte: totalAnio ? (r.ingreso / totalAnio) * 100 : 0,
+      variacion: i > 0 && previo > 0 && r.n ? ((r.ingreso - previo) / previo) * 100 : null,
+    };
   });
-  const totalAnio = resumen.reduce((t, r) => t + r.ingreso, 0);
-  const gastoAnio = resumen.reduce((t, r) => t + r.gasto, 0);
-  const nAnio = resumen.reduce((t, r) => t + r.n, 0);
-  const cajaMes = filasResumen.find((r) => r.per === periodo)?.caja ?? 0;
+  const mesesConIngreso = resumen.filter((r) => r.n > 0);
+  const promedioMes = mesesConIngreso.length ? totalAnio / mesesConIngreso.length : 0;
+  const mejor = mesesConIngreso.reduce<(typeof resumen)[number] | null>((m, r) => (!m || r.ingreso > m.ingreso ? r : m), null);
+  const maxMes = Math.max(1, ...resumen.map((r) => r.ingreso));
+  const rMes = resumen.find((r) => r.per === periodo);
+  const codRec = (n: number | null) => (n === null ? "—" : String(n).padStart(4, "0"));
   const enlace = (c: Record<string, string>) => `/ingresos?${new URLSearchParams(c).toString()}`;
 
   const delMes = (delAnio ?? []).filter((f) => f.fecha >= desde && f.fecha <= hasta);
@@ -198,14 +206,14 @@ export default async function Ingresos({ searchParams }: { searchParams: ParamsA
               <span className="detalle">{nAnio} recibo(s) vigentes</span>
             </div>
             <div className="tarjeta">
-              <span className="etiqueta">Gastado con ingresos propios</span>
-              <span className="valor">S/ {soles(gastoAnio)}</span>
-              <span className="detalle">Comprobantes de pago no anulados</span>
+              <span className="etiqueta">Promedio por mes</span>
+              <span className="valor">S/ {soles(promedioMes)}</span>
+              <span className="detalle">{mesesConIngreso.length ? `En ${mesesConIngreso.length} mes(es) con ingresos` : "Aún sin ingresos"}</span>
             </div>
             <div className="tarjeta">
-              <span className="etiqueta">En caja de ingresos</span>
-              <span className="valor">S/ {soles(totalAnio - gastoAnio)}</span>
-              <span className="detalle">Recaudado menos gastado en {anio}</span>
+              <span className="etiqueta">Mejor mes</span>
+              <span className="valor">{mejor ? nombrePeriodo(mejor.per).split(" ")[0] : "—"}</span>
+              <span className="detalle">{mejor ? `S/ ${soles(mejor.ingreso)} · ${mejor.n} recibo(s)` : "Aún sin ingresos"}</span>
             </div>
             <div className="tarjeta">
               <span className="etiqueta">Siguiente recibo</span>
@@ -213,22 +221,57 @@ export default async function Ingresos({ searchParams }: { searchParams: ParamsA
               <span className="detalle">{ultimo ? `Último emitido: ${String(ultimo.numero).padStart(4, "0")}-${ultimo.anio}` : "Aún no hay recibos"}</span>
             </div>
           </div>
+
+          <section className="ing-grafico" aria-label="Cómo van los ingresos por mes">
+            <div className="ing-grafico-tit">Cómo van mes a mes</div>
+            <div className="ing-barras">
+              {resumen.map((r, i) => (
+                <Link key={r.per} href={enlace({ vista: "mes", mes: r.per })} className={`ing-barra${r.n ? "" : " vacia"}${r.per === hoyPeriodo ? " hoy" : ""}`} title={`${nombrePeriodo(r.per)} · S/ ${soles(r.ingreso)}`}>
+                  <span className="ing-monto">{r.n ? soles(r.ingreso) : ""}</span>
+                  <span className="ing-columna"><span style={{ height: `${r.n ? Math.max(6, (r.ingreso / maxMes) * 100) : 0}%` }} /></span>
+                  <span className="ing-mes">{MES_CORTO[i]}</span>
+                </Link>
+              ))}
+            </div>
+          </section>
+
+          <div className="ing-meses">
+            {resumen.map((r, i) => (
+              <Link key={r.per} href={enlace({ vista: "mes", mes: r.per })} className={`ing-mes-tarjeta${r.n ? "" : " vacia"}${r.per === hoyPeriodo ? " hoy" : ""}`}>
+                <span className="ing-mt-nombre">{nombrePeriodo(r.per).split(" ")[0]}</span>
+                <span className="ing-mt-monto">{r.n ? `S/ ${soles(r.ingreso)}` : "Sin recibos"}</span>
+                <span className="ing-mt-det">{r.n ? `Recibo ${codRec(r.del)} al ${codRec(r.al)} · ${r.n}` : "—"}</span>
+                <span className="ing-mt-pista" aria-hidden="true"><span style={{ width: `${r.parte}%` }} /></span>
+                <span className="ing-mt-pie">
+                  <span>{r.n ? `${r.parte.toFixed(0)} % del año` : ""}</span>
+                  {r.variacion !== null && (
+                    <span className={`ing-var ${r.variacion >= 0 ? "sube" : "baja"}`}>
+                      {r.variacion >= 0 ? "▲" : "▼"} {Math.abs(r.variacion).toFixed(0)} %
+                    </span>
+                  )}
+                </span>
+                <span className="sr-solo">{MES_CORTO[i]}</span>
+              </Link>
+            ))}
+          </div>
+
           <div className="cc-excel-marco">
             <table className="cc-excel">
               <caption>Ingresos propios {anio} · resumen por mes</caption>
               <thead>
-                <tr><th>Mes</th><th>Recibos</th><th>Recaudado</th><th>Gastado</th><th>Saldo del mes</th><th>En caja (acumulado)</th><th className="cc-acc-th"><span className="sr-solo">Ver</span></th></tr>
+                <tr><th>Mes</th><th>Recibos</th><th>Del recibo N°</th><th>Al recibo N°</th><th>Recaudado</th><th>% del año</th><th>Frente al mes anterior</th><th className="cc-acc-th"><span className="sr-solo">Ver</span></th></tr>
               </thead>
               <tbody>
-                {filasResumen.map((r, i) => (
-                  <tr key={r.per} className={!r.n && !r.gasto ? "anulada" : undefined}>
+                {resumen.map((r) => (
+                  <tr key={r.per} className={!r.n ? "anulada" : undefined}>
                     <td><b>{nombrePeriodo(r.per)}</b></td>
                     <td className="c">{r.n || "—"}</td>
+                    <td className="c">{codRec(r.del)}</td>
+                    <td className="c">{codRec(r.al)}</td>
                     <td className="m">{r.n ? `S/ ${soles(r.ingreso)}` : "—"}</td>
-                    <td className="m">{r.gasto ? `S/ ${soles(r.gasto)}` : "—"}</td>
-                    <td className="m">{r.n || r.gasto ? `S/ ${soles(r.saldo)}` : "—"}</td>
-                    <td className="m"><b>S/ {soles(r.caja)}</b></td>
-                    <td className="acc"><Link className="btn chico contorno" href={enlace({ vista: "mes", mes: r.per })}>{MES_CORTO[i]} · Ver</Link></td>
+                    <td className="c">{r.n ? `${r.parte.toFixed(1)} %` : "—"}</td>
+                    <td className="c">{r.variacion === null ? "—" : `${r.variacion >= 0 ? "+" : "−"}${Math.abs(r.variacion).toFixed(1)} %`}</td>
+                    <td className="acc"><Link className="btn chico contorno" href={enlace({ vista: "mes", mes: r.per })}>Ver</Link></td>
                   </tr>
                 ))}
               </tbody>
@@ -236,16 +279,16 @@ export default async function Ingresos({ searchParams }: { searchParams: ParamsA
                 <tr>
                   <td className="m">Total {anio}</td>
                   <td className="c">{nAnio}</td>
+                  <td className="c">{codRec(mesesConIngreso.length ? Math.min(...mesesConIngreso.map((r) => r.del ?? Infinity)) : null)}</td>
+                  <td className="c">{codRec(mesesConIngreso.length ? Math.max(...mesesConIngreso.map((r) => r.al ?? 0)) : null)}</td>
                   <td className="m">S/ {soles(totalAnio)}</td>
-                  <td className="m">S/ {soles(gastoAnio)}</td>
-                  <td className="m">S/ {soles(totalAnio - gastoAnio)}</td>
-                  <td className="m">S/ {soles(totalAnio - gastoAnio)}</td>
+                  <td className="c">{totalAnio ? "100 %" : "—"}</td>
+                  <td></td>
                   <td className="acc"></td>
                 </tr>
               </tfoot>
             </table>
           </div>
-          <p className="pequeno tenue">El saldo en caja se cuenta desde enero de {anio}: recaudado menos lo pagado con ingresos propios.</p>
         </>
       ) : (
         <>
@@ -261,9 +304,9 @@ export default async function Ingresos({ searchParams }: { searchParams: ParamsA
           <span className="detalle">{anulados ? `${anulados} anulado(s) con motivo` : "Ninguno anulado"}</span>
         </div>
         <div className="tarjeta">
-          <span className="etiqueta">En caja de ingresos</span>
-          <span className="valor">S/ {soles(cajaMes)}</span>
-          <span className="detalle">Acumulado hasta fin de {nombrePeriodo(periodo)}</span>
+          <span className="etiqueta">Recibos del mes</span>
+          <span className="valor">{rMes?.n ? `${codRec(rMes.del)} al ${codRec(rMes.al)}` : "—"}</span>
+          <span className="detalle">{rMes?.n ? `${rMes.parte.toFixed(0)} % de lo recaudado en ${anio}` : "Sin recibos este mes"}</span>
         </div>
         <div className="tarjeta">
           <span className="etiqueta">Siguiente recibo</span>
@@ -312,7 +355,7 @@ export default async function Ingresos({ searchParams }: { searchParams: ParamsA
                   <tr><td colSpan={9} className="cc-vacio">{delMes.length ? "Ningún recibo coincide con el filtro." : "No hay recibos este mes."}</td></tr>
                 )}
                 {filas.map((r) => (
-                  <tr key={r.id} className={r.estado === "anulado" ? "anulado" : undefined}>
+                  <tr key={r.id} className={r.estado === "anulado" ? "anulado sin-pdf" : undefined}>
                     <td className="c"><b>{String(r.numero).padStart(4, "0")}</b></td>
                     <td className="c">{fecha(r.fecha)}</td>
                     <td>{RUBRO[r.rubro]}</td>

@@ -347,7 +347,7 @@ export default async function CajaChica({ searchParams }: { searchParams: Params
                   return (gastos ?? []).map((g) => {
                     if (!g.anulado) n += 1;
                     return (
-                      <tr key={g.id} className={g.anulado ? "anulada" : undefined}>
+                      <tr key={g.id} className={g.anulado ? "anulada sin-pdf" : undefined}>
                         <td className="c">{g.anulado ? "—" : n}</td>
                         <td className="c">{fecha(g.fecha)}</td>
                         <td className="c">{caja.numero_cheque ?? "—"}</td>

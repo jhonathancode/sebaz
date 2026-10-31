@@ -1801,5 +1801,9 @@ end $$;
 alter table caja_chica_gastos enable trigger user;
 notify pgrst, 'reload schema';
 
+-- DNI, RUC u otro documento de quien recibe el pago en un gasto de caja chica
+alter table caja_chica_gastos add column if not exists razon_doc text;
+notify pgrst, 'reload schema';
+
 commit;
 select 'Base de datos actualizada' as resultado;

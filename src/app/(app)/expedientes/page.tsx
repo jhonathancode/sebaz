@@ -92,6 +92,12 @@ export default async function Expedientes({ searchParams }: { searchParams: Para
     (e.fase !== "comprobante" || puedeAprobar) &&
     estadoGestion(e.fecha, cierres, hoyISO())?.estado !== "bloqueado";
 
+  // De 20 en 20: los últimos primero y luego con números para ir hacia atrás
+  const POR_PAGINA = 20;
+  const totalPaginas = Math.max(1, Math.ceil(filas.length / POR_PAGINA));
+  const pagina = Math.min(totalPaginas, Math.max(1, Math.floor(Number(sp.pag)) || 1));
+  const visibles = filas.slice((pagina - 1) * POR_PAGINA, pagina * POR_PAGINA);
+  const numeros = Array.from({ length: totalPaginas }, (_, i) => i + 1).filter((n) => n === 1 || n === totalPaginas || Math.abs(n - pagina) <= 2);
   const enlace = (cambios: Record<string, string>) => {
     const p = new URLSearchParams({ mes: periodo, estado, tipo, q, ...cambios });
     [...p.keys()].forEach((k) => !p.get(k) && p.delete(k));
@@ -207,7 +213,7 @@ export default async function Expedientes({ searchParams }: { searchParams: Para
             {todos.length === 0 ? "No hay expedientes en este mes. Empiece con «+ Nuevo requerimiento»." : "Ningún expediente con ese filtro."}
           </div>
         )}
-        {filas.map((e) => {
+        {visibles.map((e) => {
           const pasos =
             e.tipo !== "pago_fijo"
               ? ORDEN_FASES
@@ -282,9 +288,23 @@ export default async function Expedientes({ searchParams }: { searchParams: Para
         })}
         {filas.length > 0 && (
           <div className="pie-filas">
-            <span>{filas.length} expediente(s){estado || tipo || q ? " con este filtro" : ""}</span>
+            <span>
+              Mostrando {(pagina - 1) * POR_PAGINA + 1}–{Math.min(filas.length, pagina * POR_PAGINA)} de {filas.length} expediente(s){estado || tipo || q ? " con este filtro" : ""}
+            </span>
             <span>Total vigente S/ {soles(totalLista)}</span>
           </div>
+        )}
+        {totalPaginas > 1 && (
+          <nav className="paginas" aria-label="Páginas de expedientes">
+            {pagina > 1 && <Link className="pag" href={enlace({ pag: String(pagina - 1) })}>‹ Anterior</Link>}
+            {numeros.map((n, i) => (
+              <span key={n} className="pag-grupo">
+                {i > 0 && n - numeros[i - 1] > 1 && <span className="pag-puntos">…</span>}
+                <Link className={`pag${n === pagina ? " activa" : ""}`} href={enlace({ pag: String(n) })} aria-current={n === pagina ? "page" : undefined}>{n}</Link>
+              </span>
+            ))}
+            {pagina < totalPaginas && <Link className="pag" href={enlace({ pag: String(pagina + 1) })}>Siguiente ›</Link>}
+          </nav>
         )}
       </div>
       <p className="pequeno tenue" style={{ margin: 0 }}>Nada se elimina: los expedientes se anulan con motivo y quedan en el historial.</p>

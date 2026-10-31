@@ -23,7 +23,11 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ list
   const supabase = await supabaseServidor();
   const mcpId = ctx.mcp.id;
   const mes = sp.get("mes") || periodoActual();
-  const { desde, hasta } = rangoPeriodo(mes);
+  const rangoMes = rangoPeriodo(mes);
+  const esFecha = (v: string | null) => !!v && /^\d{4}-\d{2}-\d{2}$/.test(v);
+  // Si se pide un tramo (quincena, semana, día) se usa ese; si no, el mes completo
+  const desde = esFecha(sp.get("desde")) ? sp.get("desde")! : rangoMes.desde;
+  const hasta = esFecha(sp.get("hasta")) ? sp.get("hasta")! : rangoMes.hasta;
   // Sin comas ni paréntesis: así el texto no altera los filtros de la consulta.
   const q = (sp.get("q") ?? "").replace(/[,()%*\\]/g, " ").trim();
   const estado = sp.get("estado") || "";
@@ -122,6 +126,59 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ list
         ],
         filas,
         totales: ["TOTAL", null, null, null, null, null, null, suma(filas, 7)],
+      };
+      break;
+    }
+    case "caja-chica-anio": {
+      const anio = mes.slice(0, 4);
+      const fuenteId = sp.get("fuente") || "";
+      let cq = supabase.from("cajas_chicas").select("id, periodo, numero, numero_cheque, monto_fondo, estado").eq("mcp_id", mcpId).gte("periodo", `${anio}-01`).lte("periodo", `${anio}-12`).neq("estado", "anulada").order("periodo").order("numero");
+      if (fuenteId) cq = cq.eq("fuente_id", fuenteId);
+      const { data: cajas } = await cq;
+      const ids = (cajas ?? []).map((c) => c.id);
+      const { data: gs } = ids.length ? await supabase.from("caja_chica_gastos").select("caja_id, monto").in("caja_id", ids).eq("anulado", false) : { data: [] as { caja_id: string; monto: number }[] };
+      const filas = (cajas ?? []).map((c) => {
+        const mios = (gs ?? []).filter((g) => g.caja_id === c.id);
+        const gastado = mios.reduce((t, g) => t + Number(g.monto), 0);
+        return [nombrePeriodo(c.periodo).toUpperCase(), c.numero ?? 1, c.numero_cheque ?? "", Number(c.monto_fondo), gastado, Number(c.monto_fondo) - gastado, mios.length, c.estado === "abierta" ? "ABIERTA" : "LIQUIDADA"];
+      });
+      hoja = {
+        titulo: `CAJA CHICA ${anio} · CUADRO POR MES`,
+        columnas: [
+          { titulo: "MES", ancho: 22 }, { titulo: "CAJA", ancho: 8 }, { titulo: "CHEQUE", ancho: 16 }, { titulo: "FONDO", ancho: 14, tipo: "monto" },
+          { titulo: "GASTADO", ancho: 14, tipo: "monto" }, { titulo: "SALDO", ancho: 14, tipo: "monto" }, { titulo: "GASTOS", ancho: 9 }, { titulo: "ESTADO", ancho: 12 },
+        ],
+        filas,
+        totales: ["TOTAL", null, null, suma(filas, 3), suma(filas, 4), suma(filas, 5), filas.reduce((t, f) => t + Number(f[6]), 0), null],
+      };
+      break;
+    }
+    case "ingresos-anio": {
+      const anio = mes.slice(0, 4);
+      const propios = ctx.fuentes.find((f) => f.tipo === "propios");
+      const [{ data: ing }, { data: pagos }] = await Promise.all([
+        supabase.from("ingresos").select("fecha, monto").eq("mcp_id", mcpId).eq("estado", "emitido").gte("fecha", `${anio}-01-01`).lte("fecha", `${anio}-12-31`),
+        propios
+          ? supabase.from("comprobantes_pago").select("fecha, importe").eq("mcp_id", mcpId).eq("fuente_id", propios.id).neq("estado", "anulado").gte("fecha", `${anio}-01-01`).lte("fecha", `${anio}-12-31`)
+          : Promise.resolve({ data: [] as { fecha: string; importe: number }[] }),
+      ]);
+      let caja = 0;
+      const filas = Array.from({ length: 12 }, (_, i) => {
+        const per = `${anio}-${String(i + 1).padStart(2, "0")}`;
+        const rec = (ing ?? []).filter((r) => r.fecha.startsWith(per));
+        const ingreso = rec.reduce((t, r) => t + Number(r.monto), 0);
+        const gasto = (pagos ?? []).filter((c) => c.fecha.startsWith(per)).reduce((t, c) => t + Number(c.importe), 0);
+        caja += ingreso - gasto;
+        return [nombrePeriodo(per).toUpperCase(), rec.length, ingreso, gasto, ingreso - gasto, caja];
+      });
+      hoja = {
+        titulo: `INGRESOS PROPIOS ${anio} · RESUMEN POR MES`,
+        columnas: [
+          { titulo: "MES", ancho: 22 }, { titulo: "RECIBOS", ancho: 10 }, { titulo: "RECAUDADO", ancho: 16, tipo: "monto" },
+          { titulo: "GASTADO", ancho: 16, tipo: "monto" }, { titulo: "SALDO DEL MES", ancho: 16, tipo: "monto" }, { titulo: "EN CAJA (ACUMULADO)", ancho: 20, tipo: "monto" },
+        ],
+        filas,
+        totales: ["TOTAL", filas.reduce((t, f) => t + Number(f[1]), 0), suma(filas, 2), suma(filas, 3), suma(filas, 4), suma(filas, 4)],
       };
       break;
     }

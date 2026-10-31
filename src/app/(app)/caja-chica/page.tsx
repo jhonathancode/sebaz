@@ -1,6 +1,7 @@
 import Link from "next/link";
 import Avisos, { type ParamsAviso } from "@/components/Avisos";
 import BotonConfirmar from "@/components/BotonConfirmar";
+import BotonPdf from "@/components/BotonPdf";
 import Estado from "@/components/Estado";
 import Motivo from "@/components/Motivo";
 import VentanaFlotante from "@/components/VentanaFlotante";
@@ -154,7 +155,10 @@ export default async function CajaChica({ searchParams }: { searchParams: Params
           <div className="sub">Fondo de {nombrePeriodo(periodo)}{fuenteNombre ? ` · pagado con ${fuenteNombre}` : ""}</div>
         </div>
         <span className="espacio" />
-        {vista === "mes" && caja && <a className="btn contorno" href={`/exportar/caja-chica?mes=${periodo}`}>Descargar Excel</a>}
+        {vista === "mes" && caja && <a className="btn contorno" href={`/exportar/caja-chica?mes=${periodo}&caja=${caja.id}`}>Descargar Excel</a>}
+        {vista === "mes" && caja && <BotonPdf nombre={`Caja chica ${periodo}${(cajasMes ?? []).length > 1 ? ` caja ${caja.numero}` : ""}`} selector=".cc-excel-marco" texto="Descargar PDF" className="btn contorno" horizontal />}
+        {vista === "anio" && <a className="btn contorno" href={`/exportar/caja-chica-anio?mes=${periodo}&fuente=${fuenteId ?? ""}`}>Descargar Excel</a>}
+        {vista === "anio" && <BotonPdf nombre={`Caja chica ${anio}`} selector=".cc-excel-marco" texto="Descargar PDF" className="btn contorno" horizontal />}
         {vista === "mes" && caja && <Link className="btn contorno" href={`/caja-chica/${caja.id}/requerimiento`}>Requerimiento</Link>}
         {vista === "mes" && caja && <Link className="btn contorno" href={`/caja-chica/${caja.id}/relacion`}>Relación de gastos</Link>}
         {vista === "mes" && formGasto}
@@ -213,8 +217,9 @@ export default async function CajaChica({ searchParams }: { searchParams: Params
             Cuadro de caja chica · {anio}
             <span className="tenue pequeno">{fuenteNombre}</span>
           </div>
-          <div className="tabla-marco" style={{ border: "none", borderRadius: 0 }}>
-            <table className="tabla">
+          <div className="cc-excel-marco" style={{ border: "none", borderRadius: 0 }}>
+            <table className="cc-excel">
+              <caption>Caja chica {anio} · cuadro por mes</caption>
               <thead>
                 <tr><th>Mes</th><th className="num">Fondo S/</th><th className="num">Gastado S/</th><th className="num">Falta gastar S/</th><th className="num">Gastos</th><th>Estado</th><th></th></tr>
               </thead>

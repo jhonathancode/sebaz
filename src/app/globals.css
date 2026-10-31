@@ -1858,3 +1858,16 @@ dialog.asistente .vf-cab h2 { font-size: 19px; font-weight: 800; letter-spacing:
 .cc-excel tfoot .acc { border: 0 !important; }
 .cc-excel .acciones-fila { display: flex; gap: 4px; justify-content: center; }
 .cc-excel .cc-dj { color: var(--primario); font-weight: 700; text-decoration: underline; text-underline-offset: 2px; }
+
+/* Caja chica: varias cajas en el mismo mes */
+.cc-cajas { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin: 0 0 12px; }
+.cc-caja { padding: 6px 12px; border: 1px solid var(--borde); border-radius: 999px; background: var(--panel); font-size: 13px; color: inherit; text-decoration: none; }
+.cc-caja.activa { border-color: var(--primario); color: var(--primario); font-weight: 700; }
+
+/* Logo de Sebaz en la cabecera: se ve igual en modo claro y oscuro (insignia azul, visto y nombre blancos) */
+.cabecera .logo-sebaz { color: #fff !important; opacity: 1 !important; filter: none !important; }
+.cabecera .logo-sebaz svg rect:first-child { fill: #3b82f6; opacity: 1; }
+.cabecera .logo-sebaz svg rect:nth-child(2) { stroke: #8fb8fa; }
+.cabecera .logo-sebaz svg path { stroke: #fff; }
+.cabecera .logo-sebaz .ls-nombre { color: #fff; }
+.cabecera .logo-sebaz .ls-frase { color: #c3d3ea; opacity: 1; }

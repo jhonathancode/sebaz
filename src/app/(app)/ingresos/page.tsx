@@ -121,36 +121,37 @@ export default async function Ingresos({ searchParams }: { searchParams: ParamsA
             <a className="btn contorno" href={`/exportar/ingresos?mes=${periodo}&estado=${sp.estado ?? ""}&rubro=${sp.rubro ?? ""}&q=${encodeURIComponent(sp.q ?? "")}`}>Descargar Excel</a>
           </form>
 
-          <div className="tabla-marco">
-            <table className="tabla" style={{ minWidth: 820 }}>
+          <div className="cc-excel-marco">
+            <table className="cc-excel">
+              <caption>Ingresos propios mes de {nombrePeriodo(periodo)}</caption>
               <thead>
-                <tr><th>N° recibo</th><th>Fecha</th><th>Rubro</th><th>Pagador</th><th>Concepto</th><th>Estado</th><th className="num">Monto S/</th><th className="num">Acciones</th></tr>
+                <tr><th>N° recibo</th><th>Fecha</th><th>Rubro</th><th>Pagador</th><th>Concepto</th><th>Estado</th><th>Monto</th><th className="cc-acc-th"><span className="sr-solo">Acciones</span></th></tr>
               </thead>
               <tbody>
                 {filas.length === 0 && (
-                  <tr><td colSpan={8} className="tenue">{delMes.length ? "Ningún recibo coincide con el filtro." : "No hay recibos este mes."}</td></tr>
+                  <tr><td colSpan={9} className="cc-vacio">{delMes.length ? "Ningún recibo coincide con el filtro." : "No hay recibos este mes."}</td></tr>
                 )}
                 {filas.map((r) => (
                   <tr key={r.id} className={r.estado === "anulado" ? "anulado" : undefined}>
-                    <td style={{ fontWeight: 600 }}>{String(r.numero).padStart(4, "0")}</td>
-                    <td>{fecha(r.fecha)}</td>
+                    <td className="c"><b>{String(r.numero).padStart(4, "0")}</b></td>
+                    <td className="c">{fecha(r.fecha)}</td>
                     <td>{RUBRO[r.rubro]}</td>
                     <td>
                       {r.pagador_nombre}
                       {r.pagador_doc && <div className="pequeno tenue">{r.pagador_doc}</div>}
                     </td>
-                    <td className="envolver tachar">
+                    <td className="tachar">
                       {r.concepto}
                       {r.estado === "anulado" && <div className="pequeno">Motivo: {r.anulado_motivo}</div>}
                     </td>
-                    <td><Estado valor={r.estado} /></td>
-                    <td className="num tachar">{soles(r.monto)}</td>
-                    <td><div className="acciones-fila"><Link className="btn chico contorno" href={`/ingresos/${r.id}`}>Ver recibo</Link></div></td>
+                    <td className="c"><Estado valor={r.estado} /></td>
+                    <td className="m tachar">S/ {soles(r.monto)}</td>
+                    <td className="acc"><div className="acciones-fila"><Link className="btn chico contorno" href={`/ingresos/${r.id}`}>Ver recibo</Link></div></td>
                   </tr>
                 ))}
               </tbody>
               <tfoot>
-                <tr><td colSpan={6}>Total vigente mostrado</td><td className="num">{soles(filas.filter((f) => f.estado !== "anulado").reduce((s, f) => s + Number(f.monto), 0))}</td><td></td></tr>
+                <tr><td colSpan={6} className="m">Total vigente mostrado</td><td className="m">S/ {soles(filas.filter((f) => f.estado !== "anulado").reduce((s, f) => s + Number(f.monto), 0))}</td><td className="acc"></td></tr>
               </tfoot>
             </table>
           </div>

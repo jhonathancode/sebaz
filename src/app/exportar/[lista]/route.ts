@@ -92,18 +92,18 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ list
       if (sp.get("rubro")) c = c.eq("rubro", sp.get("rubro")!);
       if (q) c = c.or(`concepto.ilike.%${q}%,pagador_nombre.ilike.%${q}%,pagador_doc.ilike.%${q}%`);
       const { data } = await c;
-      const filas = (data ?? []).map((x) => [
-        `${String(x.numero).padStart(4, "0")}-${x.anio}`, fechaPe(x.fecha), x.rubro, x.concepto, x.pagador_doc, x.pagador_nombre,
-        ESTADO[x.estado] ?? x.estado, x.estado === "anulado" ? 0 : Number(x.monto),
-      ]);
+      // Mismo orden que la pantalla: N°, FECHA, TIPO, DNI/RUC, NOMBRE, CONCEPTO, MONTO (solo recibos vigentes)
+      const filas = (data ?? [])
+        .filter((x) => x.estado !== "anulado")
+        .map((x) => [String(x.numero).padStart(4, "0"), fechaPe(x.fecha), "RI", x.pagador_doc || "SN", x.pagador_nombre.toUpperCase(), x.concepto.toUpperCase(), Number(x.monto)]);
       hoja = {
-        titulo: `Ingresos propios · ${nombrePeriodo(mes)}`,
+        titulo: `INGRESOS PROPIOS MES DE ${nombrePeriodo(mes).toUpperCase()}`,
         columnas: [
-          { titulo: "N° recibo", ancho: 12 }, { titulo: "Fecha", ancho: 12 }, { titulo: "Rubro", ancho: 12 }, { titulo: "Concepto", ancho: 44 },
-          { titulo: "DNI / RUC", ancho: 14 }, { titulo: "Pagó", ancho: 34 }, { titulo: "Estado", ancho: 12 }, { titulo: "Monto S/", ancho: 14, tipo: "monto" },
+          { titulo: "N°", ancho: 8 }, { titulo: "FECHA", ancho: 12 }, { titulo: "TIPO", ancho: 7 }, { titulo: "DNI / RUC", ancho: 14 },
+          { titulo: "NOMBRE", ancho: 36 }, { titulo: "CONCEPTO", ancho: 60 }, { titulo: "MONTO", ancho: 14, tipo: "monto" },
         ],
         filas,
-        totales: ["TOTAL", null, null, null, null, null, null, suma(filas, 7)],
+        totales: ["TOTAL", null, null, null, null, null, suma(filas, 6)],
       };
       break;
     }

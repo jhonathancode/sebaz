@@ -1,7 +1,6 @@
 import Link from "next/link";
 import BotonPdf from "@/components/BotonPdf";
 import Avisos, { type ParamsAviso } from "@/components/Avisos";
-import Estado from "@/components/Estado";
 import VentanaFlotante from "@/components/VentanaFlotante";
 import { RUBROS_INGRESO } from "@/lib/catalogos";
 import { contextoMcp, tiene } from "@/lib/contexto";
@@ -9,7 +8,6 @@ import { fecha, hoyISO, nombrePeriodo, periodoActual, soles } from "@/lib/format
 import { supabaseServidor } from "@/lib/supabase/server";
 import { emitirRecibo } from "./acciones";
 
-const RUBRO = Object.fromEntries(RUBROS_INGRESO.map((r) => [r.codigo, r.nombre]));
 
 const MES_CORTO = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Set", "Oct", "Nov", "Dic"];
 const DOS = (n: number) => String(n).padStart(2, "0");
@@ -336,33 +334,30 @@ export default async function Ingresos({ searchParams }: { searchParams: ParamsA
             <table className="cc-excel">
               <caption>Ingresos propios {etiqueta}</caption>
               <thead>
-                <tr><th>N° recibo</th><th>Fecha</th><th>Rubro</th><th>Pagador</th><th>Concepto</th><th>Estado</th><th>Monto</th><th className="cc-acc-th"><span className="sr-solo">Acciones</span></th></tr>
+                <tr><th>N°</th><th>Fecha</th><th>Tipo</th><th>DNI / RUC</th><th>Nombre</th><th>Concepto</th><th>Monto</th><th className="cc-acc-th"><span className="sr-solo">Acciones</span></th></tr>
               </thead>
               <tbody>
                 {filas.length === 0 && (
-                  <tr><td colSpan={9} className="cc-vacio">{delMes.length ? "Ningún recibo coincide con el filtro." : "No hay recibos este mes."}</td></tr>
+                  <tr><td colSpan={8} className="cc-vacio">{delMes.length ? "Ningún recibo coincide con el filtro." : "No hay recibos este mes."}</td></tr>
                 )}
-                {filas.map((r) => (
+                {[...filas].reverse().map((r) => (
                   <tr key={r.id} className={r.estado === "anulado" ? "anulado sin-pdf" : undefined}>
                     <td className="c"><b>{String(r.numero).padStart(4, "0")}</b></td>
                     <td className="c">{fecha(r.fecha)}</td>
-                    <td>{RUBRO[r.rubro]}</td>
-                    <td>
-                      {r.pagador_nombre}
-                      {r.pagador_doc && <div className="pequeno tenue">{r.pagador_doc}</div>}
-                    </td>
+                    <td className="c" title="Recibo de ingreso">RI</td>
+                    <td className="c">{r.pagador_doc || "SN"}</td>
+                    <td>{r.pagador_nombre}</td>
                     <td className="tachar">
                       {r.concepto}
-                      {r.estado === "anulado" && <div className="pequeno">Motivo: {r.anulado_motivo}</div>}
+                      {r.estado === "anulado" && <span className="cc-anulado-motivo"> · ANULADO: {r.anulado_motivo}</span>}
                     </td>
-                    <td className="c"><Estado valor={r.estado} /></td>
                     <td className="m tachar">S/ {soles(r.monto)}</td>
                     <td className="acc"><div className="acciones-fila"><Link className="btn chico contorno" href={`/ingresos/${r.id}`}>Ver recibo</Link></div></td>
                   </tr>
                 ))}
               </tbody>
               <tfoot>
-                <tr><td colSpan={6} className="m">Total vigente mostrado</td><td className="m">S/ {soles(filas.filter((f) => f.estado !== "anulado").reduce((s, f) => s + Number(f.monto), 0))}</td><td className="acc"></td></tr>
+                <tr><td colSpan={6} className="m">Total</td><td className="m">S/ {soles(filas.filter((f) => f.estado !== "anulado").reduce((s, f) => s + Number(f.monto), 0))}</td><td className="acc"></td></tr>
               </tfoot>
             </table>
           </div>

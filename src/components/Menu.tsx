@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect } from "react";
 
-export type ItemMenu = { href: string; texto: string; n?: number };
+export type ItemMenu = { href: string; texto: string; n?: number; sub?: { href: string; texto: string }[] };
 
 /** Íconos de trazo fino (estilo lineal), dibujados aquí para no cargar librerías. */
 const ICONOS: Record<string, React.ReactNode> = {
@@ -264,6 +264,20 @@ export default function Menu({ items, abajo = [], nuevo = true, mcp, panel }: { 
                   <span>{i.texto}</span>
                   {!!i.n && <span className="lm-n">{i.n}</span>}
                 </Link>
+                {i.sub && (ruta === i.href || ruta.startsWith(i.href + "/")) && (
+                  <ul className="lm-sub">
+                    {i.sub.map((x) => {
+                      const subActivo = x.href === i.href ? ruta === i.href : ruta === x.href || ruta.startsWith(x.href + "/");
+                      return (
+                        <li key={x.href}>
+                          <Link href={x.href} className={subActivo ? "activo" : undefined} aria-current={subActivo ? "page" : undefined}>
+                            <span>{x.texto}</span>
+                          </Link>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                )}
               </li>
             );
           })}

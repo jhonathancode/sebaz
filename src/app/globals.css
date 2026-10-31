@@ -1980,3 +1980,8 @@ html.pdf-captura .cc-excel .cc-dj { color: #000; font-weight: 400; text-decorati
 .cfg-cierre .campo { flex: 1; min-width: 160px; }
 .cfg-mes-fila { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; padding: 8px 0; border-top: 1px solid var(--linea); }
 @media (max-width: 900px) { .cfg-hero { grid-template-columns: auto minmax(0, 1fr); } .cfg-avance { grid-column: 1 / -1; } .cfg-dos { grid-template-columns: minmax(0, 1fr); } .cfg-tres { grid-template-columns: minmax(0, 1fr); } }
+
+/* Submenús del menú lateral */
+.lateral-menu ul.lm-sub { margin: 2px 0 6px 26px; padding-left: 8px; border-left: 2px solid var(--linea); }
+.lateral-menu ul.lm-sub a { margin: 1px 6px; padding: 7px 10px; font-size: 13.5px; font-weight: 600; }
+.lateral-menu ul.lm-sub a.activo { box-shadow: none; }

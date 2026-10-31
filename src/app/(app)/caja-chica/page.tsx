@@ -1,6 +1,7 @@
 import Link from "next/link";
 import Avisos, { type ParamsAviso } from "@/components/Avisos";
 import BotonConfirmar from "@/components/BotonConfirmar";
+import AutoDocumento from "@/components/AutoDocumento";
 import NumeroSustento from "@/components/formularios/NumeroSustento";
 import BotonPdf from "@/components/BotonPdf";
 import Estado from "@/components/Estado";
@@ -142,6 +143,8 @@ export default async function CajaChica({ searchParams }: { searchParams: Params
           </select>
         </label>
         <NumeroSustento automatico={`${String(proxDj ?? "").padStart(3, "0") || "—"}-${periodo.slice(0, 4)}`} />
+        <label className="campo">DNI, RUC u otro documento<input name="razon_doc" inputMode="numeric" maxLength={11} placeholder="8 u 11 dígitos" /></label>
+        <AutoDocumento doc="razon_doc" nombre="razon_social" />
         <label className="campo">Razón social o comisionado<input name="razon_social" required /></label>
         <label className="campo ancho">Concepto<input name="concepto" required placeholder="Salida a Perené: verificación de documentos para la rendición" /></label>
         <label className="campo">Monto S/<input name="monto" required inputMode="decimal" /></label>
@@ -387,6 +390,8 @@ export default async function CajaChica({ searchParams }: { searchParams: Params
                                     </select>
                                   </label>
                                   <NumeroSustento automatico={g.sustento_tipo === "DJ" && g.sustento_numero ? g.sustento_numero : `${String(proxDj ?? "").padStart(3, "0") || "—"}-${periodo.slice(0, 4)}`} defaultValue={g.sustento_tipo === "DJ" ? "" : g.sustento_numero ?? ""} />
+                                  <label className="campo">DNI, RUC u otro documento<input name="razon_doc" inputMode="numeric" maxLength={11} defaultValue={g.razon_doc ?? ""} /></label>
+                                  <AutoDocumento doc="razon_doc" nombre="razon_social" />
                                   <label className="campo">Razón social o comisionado<input name="razon_social" required defaultValue={g.razon_social} /></label>
                                   <label className="campo ancho">Concepto<input name="concepto" required defaultValue={g.concepto} /></label>
                                   <label className="campo">Monto S/<input name="monto" required inputMode="decimal" defaultValue={Number(g.monto).toFixed(2)} /></label>

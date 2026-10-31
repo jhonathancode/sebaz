@@ -34,6 +34,7 @@ export default async function DeclaracionJurada({ params }: { params: Promise<{ 
         <table className="formato" style={{ marginTop: 16 }}>
           <tbody>
             <tr><th style={{ width: 200 }}>Nombres y apellidos</th><td>{g.razon_social}</td></tr>
+            {g.razon_doc && <tr><th>DNI / RUC</th><td>{g.razon_doc}</td></tr>}
             <tr><th>Dependencia</th><td></td></tr>
             <tr><th>Motivo</th><td>{g.concepto}</td></tr>
           </tbody>

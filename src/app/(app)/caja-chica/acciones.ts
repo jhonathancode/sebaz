@@ -46,6 +46,7 @@ export async function agregarGasto(fd: FormData) {
     concepto: texto(fd, "concepto"),
     sustento_tipo: tipo,
     sustento_numero: tipo === "DJ" ? null : texto(fd, "sustento_numero"),
+    razon_doc: texto(fd, "razon_doc"),
     razon_social: texto(fd, "razon_social"),
     monto,
   });
@@ -72,6 +73,7 @@ export async function editarGasto(fd: FormData) {
       concepto: texto(fd, "concepto")?.toUpperCase(),
       sustento_tipo: tipo,
       sustento_numero: tipo === "DJ" ? null : texto(fd, "sustento_numero")?.toUpperCase() ?? null,
+      razon_doc: texto(fd, "razon_doc"),
       razon_social: texto(fd, "razon_social")?.toUpperCase(),
       monto,
     })

@@ -1937,3 +1937,11 @@ html.pdf-captura .cc-excel .cc-dj { color: #000; font-weight: 400; text-decorati
 .ing-punto-link { cursor: pointer; }
 .ing-punto-link:hover .ing-punto { fill: var(--primario); }
 @media (max-width: 760px) { .ing-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+
+/* Paginación de la lista de expedientes */
+.paginas { display: flex; justify-content: center; align-items: center; gap: 6px; flex-wrap: wrap; padding: 14px 18px; border-top: 1px solid var(--borde); }
+.pag-grupo { display: inline-flex; align-items: center; gap: 6px; }
+.pag-puntos { color: var(--tenue); padding: 0 2px; }
+.pag { min-width: 38px; height: 38px; padding: 0 12px; display: inline-grid; place-items: center; border: 1.5px solid var(--borde); border-radius: 11px; background: var(--panel); color: var(--texto); font-weight: 700; text-decoration: none; }
+.pag:hover { border-color: var(--primario-claro); background: var(--primario-fondo); }
+.pag.activa { background: linear-gradient(135deg, var(--primario), var(--primario-hover)); border-color: var(--primario); color: #fff; box-shadow: 0 8px 16px -10px var(--primario); }

@@ -1871,3 +1871,16 @@ dialog.asistente .vf-cab h2 { font-size: 19px; font-weight: 800; letter-spacing:
 .cabecera .logo-sebaz svg path { stroke: #fff; }
 .cabecera .logo-sebaz .ls-nombre { color: #fff; }
 .cabecera .logo-sebaz .ls-frase { color: #c3d3ea; opacity: 1; }
+
+/* Ingresos: ver un día */
+.cc-dia { display: inline-flex; align-items: center; gap: 6px; margin-left: auto; }
+.cc-dia input[type="date"] { min-height: 32px; }
+
+/* PDF de los cuadros (caja chica, ingresos): siempre claro y sin la columna de acciones */
+html.pdf-captura .cc-excel-marco {
+  --panel: #fff; --panel-2: #eef1f5; --borde: #8a929c; --borde-fuerte: #222; --texto: #000; --tenue: #444; --primario-fondo: #fff; --rojo: #b42318;
+  background: #fff; color: #000; border-radius: 0; overflow: visible;
+}
+html.pdf-captura .cc-excel .acc, html.pdf-captura .cc-excel .cc-acc-th { display: none; }
+html.pdf-captura .cc-excel .estado, html.pdf-captura .cc-excel .etq { color: #000; background: #fff; border-color: #888; }
+.cc-excel td.num, .cc-excel th.num { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }

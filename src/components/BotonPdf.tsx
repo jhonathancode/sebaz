@@ -11,11 +11,14 @@ export default function BotonPdf({
   selector = "main .hoja",
   texto = "Descargar PDF",
   className = "btn",
+  horizontal = false,
 }: {
   nombre: string;
   selector?: string;
   texto?: string;
   className?: string;
+  /** Hoja A4 horizontal (para cuadros anchos). */
+  horizontal?: boolean;
 }) {
   const [cargando, setCargando] = useState(false);
 
@@ -28,7 +31,7 @@ export default function BotonPdf({
     await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
     try {
       const [{ default: html2canvas }, { jsPDF }] = await Promise.all([import("html2canvas-pro"), import("jspdf")]);
-      const pdf = new jsPDF({ unit: "mm", format: "a4", orientation: "portrait" });
+      const pdf = new jsPDF({ unit: "mm", format: "a4", orientation: horizontal ? "landscape" : "portrait" });
       const W = pdf.internal.pageSize.getWidth();
       const H = pdf.internal.pageSize.getHeight();
       const margen = 10;

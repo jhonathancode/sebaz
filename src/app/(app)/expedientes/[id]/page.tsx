@@ -384,7 +384,12 @@ export default async function Expediente({ params, searchParams }: { params: Par
   } else if (cp.estado === "aprobado") {
     sigue = {
       texto: "Todo listo. Este gasto ya puede entrar en la rendición del mes.",
-      accion: <Link className="btn primario grande" href="/rendicion">Ir a la rendición</Link>,
+      accion: (
+        <div className="acciones-fila">
+          {puedeRegistrar && <Link className="btn contorno grande" href="/expedientes?nuevo=1">+ Nuevo expediente</Link>}
+          <Link className="btn primario grande" href="/rendicion">Ir a la rendición</Link>
+        </div>
+      ),
     };
   } else {
     sigue = {

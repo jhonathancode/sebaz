@@ -70,7 +70,7 @@ export default function Motivo({
           <div className="dialogo-cab">{titulo ?? boton}</div>
           <div className="dialogo-cuerpo">
             {peligro && (
-              <p className="tenue" style={{ margin: 0 }}>
+              <p className="motivo-nota">
                 No se borra: queda registrado como anulado, con su motivo, quién lo hizo y cuándo.
               </p>
             )}

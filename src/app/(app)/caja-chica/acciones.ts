@@ -14,13 +14,15 @@ export async function abrirCaja(fd: FormData) {
   const fuente = texto(fd, "fuente_id")!;
   const monto = numero(fd, "monto_fondo");
   if (!monto || monto <= 0) volver(ruta(periodo, fuente), "error", "Escriba el monto del fondo.");
+  const cheque = texto(fd, "numero_cheque")?.toUpperCase();
+  if (!cheque) volver(ruta(periodo, fuente), "error", "Escriba el número del cheque con el que se abre la caja chica.");
   const { error } = await supabase.from("cajas_chicas").insert({
     mcp_id: ctx.mcp.id,
     periodo,
     fuente_id: fuente,
     monto_fondo: monto,
     responsable_id: texto(fd, "responsable_id"),
-    numero_cheque: texto(fd, "numero_cheque")?.toUpperCase() ?? null,
+    numero_cheque: cheque,
   });
   if (error) volver(ruta(periodo, fuente), "error", mensajeError(error));
   volver(ruta(periodo, fuente), "ok", "Fondo de caja chica abierto.");

@@ -289,37 +289,55 @@ export default async function CajaChica({ searchParams }: { searchParams: Params
             </div>
           </div>
 
-          <div className="filas">
-            {(gastos ?? []).length === 0 && <div className="vacio">Aún no hay gastos. Registre el primero con «+ Registrar gasto».</div>}
-            {(gastos ?? []).map((g, i) => (
-              <div key={g.id} className={`fila${g.anulado ? " anulada" : ""}`}>
-                <div className="f-num">
-                  N° {i + 1}
-                  <small>{fecha(g.fecha)}</small>
-                </div>
-                <div className="f-desc">
-                  <span className="f-titulo">{g.concepto}</span>
-                  <div className="f-meta">
-                    <span className="etq">{g.sustento_tipo}{g.sustento_numero ? ` ${g.sustento_numero}` : ""}</span>
-                    <span>{g.razon_social}</span>
-                    {g.anulado && <span className="no">Anulado: {g.anulado_motivo}</span>}
-                  </div>
-                </div>
-                <div className="f-monto">S/ {soles(g.monto)}</div>
-                <div className="f-acc">
-                  {g.sustento_tipo === "DJ" && !g.anulado && <Link className="btn chico contorno" href={`/caja-chica/dj/${g.id}`}>Declaración jurada</Link>}
-                  {abierta && !g.anulado && puede && (
-                    <Motivo accion={anularGasto} boton="Anular" ayuda="Motivo" campos={{ gasto_id: g.id, periodo, fuente_id: fuenteId ?? "" }} />
-                  )}
-                </div>
-              </div>
-            ))}
-            {(gastos ?? []).length > 0 && (
-              <div className="pie-filas">
-                <span>Total gastado</span>
-                <span>S/ {soles(gastado)}</span>
-              </div>
-            )}
+          <div className="cc-excel-marco">
+            <table className="cc-excel">
+              <caption>Caja chica mes de {nombrePeriodo(periodo)}</caption>
+              <thead>
+                <tr>
+                  <th>N°</th><th>Fecha</th><th>CP</th><th>N° CP</th><th>Razón social</th><th>Concepto</th><th>Monto</th><th className="cc-acc-th"><span className="sr-solo">Acciones</span></th>
+                </tr>
+              </thead>
+              <tbody>
+                {(gastos ?? []).length === 0 && (
+                  <tr><td colSpan={8} className="cc-vacio">Aún no hay gastos. Registre el primero con «+ Registrar gasto».</td></tr>
+                )}
+                {(() => {
+                  let n = 0;
+                  return (gastos ?? []).map((g) => {
+                    if (!g.anulado) n += 1;
+                    return (
+                      <tr key={g.id} className={g.anulado ? "anulada" : undefined}>
+                        <td className="c">{g.anulado ? "—" : n}</td>
+                        <td className="c">{fecha(g.fecha)}</td>
+                        <td className="c">{g.sustento_tipo}</td>
+                        <td className="c">{g.sustento_numero ?? "SN"}</td>
+                        <td>{g.razon_social}</td>
+                        <td>
+                          {g.concepto}
+                          {g.anulado && <span className="cc-anulado-motivo"> · ANULADO: {g.anulado_motivo}</span>}
+                        </td>
+                        <td className="m">S/ {soles(g.monto)}</td>
+                        <td className="acc">
+                          <div className="acciones-fila">
+                            {g.sustento_tipo === "DJ" && !g.anulado && <Link className="btn chico contorno" href={`/caja-chica/dj/${g.id}`}>Declaración jurada</Link>}
+                            {abierta && !g.anulado && puede && (
+                              <Motivo chico accion={anularGasto} boton="Anular" ayuda="Motivo" campos={{ gasto_id: g.id, periodo, fuente_id: fuenteId ?? "" }} />
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  });
+                })()}
+              </tbody>
+              {(gastos ?? []).length > 0 && (
+                <tfoot>
+                  <tr><td colSpan={6} className="m">Total gastado</td><td className="m">S/ {soles(gastado)}</td><td className="acc"></td></tr>
+                  <tr><td colSpan={6} className="m">Fondo</td><td className="m">S/ {soles(fondo)}</td><td className="acc"></td></tr>
+                  <tr><td colSpan={6} className="m">{cuadra ? "Saldo (cuadra)" : saldo < 0 ? "Se pasó del fondo" : "Falta gastar"}</td><td className="m">S/ {soles(Math.abs(saldo))}</td><td className="acc"></td></tr>
+                </tfoot>
+              )}
+            </table>
           </div>
 
           {abierta && puede && (

@@ -1835,3 +1835,19 @@ dialog.asistente .vf-cab h2 { font-size: 19px; font-weight: 800; letter-spacing:
 .cc-fuente.sel, .cc-vista-op.sel { background: var(--panel); color: var(--primario-texto); font-weight: 800; box-shadow: 0 2px 8px rgba(15, 23, 42, .14); }
 .cc-fila-vacia td { color: var(--tenue); }
 @media (max-width: 900px) { .cc-meses { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+
+/* ------------------------------------------------ Caja chica: la hoja con el formato de siempre */
+.cc-excel-marco { background: var(--panel); border: 1px solid var(--borde-fuerte); border-radius: 12px; overflow-x: auto; }
+.cc-excel { width: 100%; border-collapse: collapse; font-size: 14px; }
+.cc-excel caption { caption-side: top; padding: 16px 12px 14px; font-size: 24px; font-weight: 800; letter-spacing: -.01em; text-align: center; text-transform: uppercase; border-bottom: 1px solid var(--borde-fuerte); }
+.cc-excel th { background: var(--panel-2); font-weight: 800; font-size: 14px; text-transform: uppercase; text-align: center; padding: 8px 10px; border: 1px solid var(--borde-fuerte); }
+.cc-excel td { padding: 7px 10px; border: 1px solid var(--borde); text-transform: uppercase; vertical-align: middle; }
+.cc-excel td.c { text-align: center; white-space: nowrap; }
+.cc-excel td.m { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.cc-excel tbody tr:hover td { background: var(--primario-fondo); }
+.cc-excel tr.anulada td { text-decoration: line-through; color: var(--tenue); }
+.cc-excel .cc-anulado-motivo { text-decoration: none; display: inline-block; color: var(--rojo); font-weight: 700; }
+.cc-excel tfoot td { font-weight: 800; background: var(--panel-2); border-color: var(--borde-fuerte); }
+.cc-excel td.cc-vacio { text-align: center; color: var(--tenue); padding: 28px; text-transform: none; }
+.cc-excel .acc, .cc-excel .cc-acc-th { border: 0; background: transparent !important; padding: 4px 8px; text-transform: none; white-space: nowrap; width: 1%; }
+.sr-solo { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }

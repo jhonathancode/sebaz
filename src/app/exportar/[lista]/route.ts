@@ -109,17 +109,19 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ list
       const { data } = caja
         ? await supabase.from("caja_chica_gastos").select("fecha, concepto, sustento_tipo, sustento_numero, razon_social, monto, anulado").eq("caja_id", caja.id).order("fecha")
         : { data: [] as { fecha: string; concepto: string; sustento_tipo: string; sustento_numero: string | null; razon_social: string; monto: number; anulado: boolean }[] };
+      // Mismo formato que la hoja de caja chica: N°, FECHA, CP, N° CP, RAZÓN SOCIAL, CONCEPTO, MONTO (solo gastos vigentes)
       const filas = (data ?? [])
+        .filter((g) => !g.anulado)
         .filter((g) => !q || `${g.concepto} ${g.razon_social}`.toUpperCase().includes(q.toUpperCase()))
-        .map((g, i) => [i + 1, fechaPe(g.fecha), g.concepto, g.sustento_tipo, g.sustento_numero, g.razon_social, g.anulado ? "Anulado" : "Vigente", g.anulado ? 0 : Number(g.monto)]);
+        .map((g, i) => [i + 1, fechaPe(g.fecha), g.sustento_tipo, g.sustento_numero ?? "SN", g.razon_social.toUpperCase(), g.concepto.toUpperCase(), Number(g.monto)]);
       hoja = {
-        titulo: `Caja chica · ${nombrePeriodo(mes)}${caja ? ` · fondo S/ ${Number(caja.monto_fondo).toFixed(2)}` : ""}`,
+        titulo: `CAJA CHICA MES DE ${nombrePeriodo(mes).toUpperCase()}${caja ? ` · FONDO S/ ${Number(caja.monto_fondo).toFixed(2)}` : ""}`,
         columnas: [
-          { titulo: "N°", ancho: 6 }, { titulo: "Fecha", ancho: 12 }, { titulo: "Concepto", ancho: 44 }, { titulo: "Sustento", ancho: 10 },
-          { titulo: "N° documento", ancho: 16 }, { titulo: "Razón social / persona", ancho: 34 }, { titulo: "Estado", ancho: 10 }, { titulo: "Monto S/", ancho: 14, tipo: "monto" },
+          { titulo: "N°", ancho: 6 }, { titulo: "FECHA", ancho: 12 }, { titulo: "CP", ancho: 8 }, { titulo: "N° CP", ancho: 14 },
+          { titulo: "RAZON SOCIAL", ancho: 38 }, { titulo: "CONCEPTO", ancho: 70 }, { titulo: "MONTO", ancho: 14, tipo: "monto" },
         ],
         filas,
-        totales: ["TOTAL", null, null, null, null, null, null, suma(filas, 7)],
+        totales: ["TOTAL", null, null, null, null, null, suma(filas, 6)],
       };
       break;
     }

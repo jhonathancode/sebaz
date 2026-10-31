@@ -1947,3 +1947,36 @@ html.pdf-captura .cc-excel .cc-dj { color: #000; font-weight: 400; text-decorati
 .pag.activa { background: linear-gradient(135deg, var(--primario), var(--primario-hover)); border-color: var(--primario); color: #fff; box-shadow: 0 8px 16px -10px var(--primario); }
 .campo-concepto-ing { grid-column: 1 / -1; display: flex; flex-direction: column; gap: 4px; }
 .campo-concepto-ing .chips-concepto { margin-top: 6px; }
+
+/* Configuración: ficha de la MCP, pestañas y secciones a todo el ancho */
+.cfg-hero { display: grid; grid-template-columns: auto minmax(0, 1fr) minmax(260px, 340px); gap: 20px; align-items: center; background: linear-gradient(135deg, var(--primario-fondo), var(--panel) 70%); border: 1px solid var(--primario-claro); border-radius: 20px; padding: 18px 22px; margin: 0 0 14px; }
+.cfg-logo { width: 92px; height: 92px; border-radius: 50%; display: grid; place-items: center; background: #f4f5f7; border: 1px solid var(--borde); overflow: hidden; }
+.cfg-logo img { width: 100%; height: 100%; object-fit: contain; }
+.cfg-logo span { font-size: 12px; color: var(--tenue); }
+.cfg-hero-datos h1 { margin: 0 0 2px; font-size: 21px; line-height: 1.25; }
+.cfg-hero-datos p { margin: 0; font-size: 13.5px; }
+.cfg-avance { display: flex; flex-direction: column; gap: 8px; }
+.cfg-avance-fila { display: flex; align-items: baseline; gap: 10px; }
+.cfg-avance-fila b { font-size: 26px; font-weight: 800; color: var(--primario-texto); }
+.cfg-avance-fila span { font-size: 12.5px; color: var(--tenue); }
+.cfg-faltan { display: flex; flex-wrap: wrap; gap: 6px; }
+.cfg-ok { font-size: 12.5px; font-weight: 700; color: var(--primario-texto); }
+.cfg-tabs { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 14px; padding: 5px; background: var(--panel); border: 1px solid var(--borde); border-radius: 16px; }
+.cfg-tab { padding: 9px 16px; border-radius: 11px; font-weight: 700; font-size: 14px; color: var(--suave); text-decoration: none; }
+.cfg-tab:hover { background: var(--primario-fondo); color: var(--primario-texto); }
+.cfg-tab.activa { background: linear-gradient(135deg, var(--primario), var(--primario-hover)); color: #fff; box-shadow: 0 8px 16px -10px var(--primario); }
+.cfg-dos { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); gap: 14px; align-items: start; }
+.cfg-dos-iguales { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr)); gap: 14px; align-items: start; }
+.cfg-columna { display: flex; flex-direction: column; gap: 14px; }
+.cfg-tres { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px 14px; }
+.cfg-panel { margin: 0; }
+.cfg-panel .panel-cuerpo { display: flex; flex-direction: column; gap: 14px; }
+.cfg-panel fieldset { border: 0; padding: 0; margin: 0; min-width: 0; }
+.cfg-pie { display: flex; justify-content: flex-end; padding-top: 4px; border-top: 1px solid var(--linea); margin-top: 2px; padding-top: 14px; }
+.cfg-form-logo { display: flex; flex-direction: column; gap: 10px; }
+.cfg-dia { display: flex; align-items: center; gap: 8px; }
+.cfg-dia input { width: 84px; }
+.cfg-cierre { display: flex; gap: 10px; align-items: flex-end; flex-wrap: wrap; }
+.cfg-cierre .campo { flex: 1; min-width: 160px; }
+.cfg-mes-fila { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; padding: 8px 0; border-top: 1px solid var(--linea); }
+@media (max-width: 900px) { .cfg-hero { grid-template-columns: auto minmax(0, 1fr); } .cfg-avance { grid-column: 1 / -1; } .cfg-dos { grid-template-columns: minmax(0, 1fr); } .cfg-tres { grid-template-columns: minmax(0, 1fr); } }

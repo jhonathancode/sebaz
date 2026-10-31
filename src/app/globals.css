@@ -1806,3 +1806,32 @@ dialog.asistente .vf-cab h2 { font-size: 19px; font-weight: 800; letter-spacing:
 .pin-teclado button { background: var(--panel-2); border: 1px solid var(--linea); box-shadow: none; font-weight: 700; transition: background .12s, border-color .12s, transform .08s; }
 .pin-teclado button:hover { background: var(--primario-fondo); border-color: var(--primario-claro); }
 .dialogo:not(.dialogo-seguro) .pin-campo { margin: 0 auto; }
+
+/* ------------------------------------------------ Caja chica: elegir mes y ver el cuadro */
+.cc-selector { background: var(--panel); border: 1px solid var(--borde); border-radius: 18px; padding: 14px 18px; display: flex; flex-direction: column; gap: 12px; box-shadow: 0 1px 2px rgba(15, 23, 42, .05); }
+.cc-fila { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+.cc-pie { justify-content: space-between; }
+.cc-anio { display: inline-flex; align-items: center; gap: 4px; background: var(--panel-2); border: 1px solid var(--linea); border-radius: 12px; padding: 4px; flex: none; }
+.cc-anio b { min-width: 60px; text-align: center; font-size: 17px; font-weight: 800; }
+.cc-flecha { width: 36px; height: 36px; display: grid; place-items: center; border-radius: 9px; font-size: 22px; color: var(--primario-texto); text-decoration: none; }
+.cc-flecha:hover { background: var(--primario-fondo); }
+.cc-meses { flex: 1; min-width: 280px; display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: 6px; }
+.cc-mes { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px; min-height: 52px; padding: 4px 2px; border: 1.5px solid var(--borde); border-radius: 12px; background: var(--panel); color: var(--texto); text-decoration: none; transition: transform .12s, box-shadow .12s, border-color .12s; }
+.cc-mes:hover { border-color: var(--primario-claro); transform: translateY(-1px); box-shadow: 0 8px 16px -12px rgba(31, 95, 209, .6); }
+.cc-mes-n { font-size: 14px; font-weight: 800; }
+.cc-mes-d { font-size: 10.5px; font-weight: 600; color: var(--tenue); white-space: nowrap; }
+.cc-mes.vacia { border-style: dashed; background: transparent; }
+.cc-mes.vacia .cc-mes-n { color: var(--tenue); font-weight: 700; }
+.cc-mes.liq { background: var(--primario-fondo); border-color: var(--primario-claro); }
+.cc-mes.liq .cc-mes-d { color: var(--primario-texto); }
+.cc-mes.abierta { background: var(--ambar-fondo); border-color: var(--ambar-borde); }
+.cc-mes.abierta .cc-mes-d { color: var(--ambar); }
+.cc-mes.hoy .cc-mes-n::after { content: " •"; color: var(--primario); }
+.cc-mes.sel { background: linear-gradient(135deg, var(--primario), var(--primario-hover)); border-color: var(--primario); box-shadow: 0 10px 20px -10px var(--primario); }
+.cc-mes.sel .cc-mes-n, .cc-mes.sel .cc-mes-d { color: #fff; }
+.cc-fuentes, .cc-vista { display: inline-flex; gap: 4px; padding: 4px; background: var(--panel-2); border: 1px solid var(--linea); border-radius: 12px; flex-wrap: wrap; }
+.cc-fuente, .cc-vista-op { padding: 8px 16px; border-radius: 9px; font-size: 13.5px; font-weight: 600; color: var(--tenue); text-decoration: none; }
+.cc-fuente:hover, .cc-vista-op:hover { background: rgba(31, 95, 209, .07); }
+.cc-fuente.sel, .cc-vista-op.sel { background: var(--panel); color: var(--primario-texto); font-weight: 800; box-shadow: 0 2px 8px rgba(15, 23, 42, .14); }
+.cc-fila-vacia td { color: var(--tenue); }
+@media (max-width: 900px) { .cc-meses { grid-template-columns: repeat(4, minmax(0, 1fr)); } }

@@ -7,6 +7,8 @@ import VentanaFlotante from "@/components/VentanaFlotante";
 import { SUSTENTOS } from "@/lib/catalogos";
 import { contextoMcp, tiene } from "@/lib/contexto";
 import { codigoCP, fecha, hoyISO, nombrePeriodo, periodoActual, soles } from "@/lib/formato";
+
+const MES_CORTO = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Set", "Oct", "Nov", "Dic"];
 import { supabaseServidor } from "@/lib/supabase/server";
 import { abrirCaja, agregarGasto, anularGasto, liquidarCaja } from "./acciones";
 
@@ -20,18 +22,54 @@ export default async function CajaChica({ searchParams }: { searchParams: Params
   const fuenteId = sp.fuente ?? ctx.fuentes.find((f) => f.tipo === "distrito")?.id ?? ctx.fuentes[0]?.id;
   const puede = tiene(ctx, "admin", "tesorero");
 
-  const { data: caja } = await supabase
-    .from("cajas_chicas")
-    .select("*, perfiles(nombre), comprobantes_pago!cajas_chicas_comprobante_id_fkey(id, numero, origen, estado)")
-    .eq("mcp_id", ctx.mcp.id)
-    .eq("periodo", periodo)
-    .eq("fuente_id", fuenteId ?? "")
-    .neq("estado", "anulada")
-    .maybeSingle();
+  const anio = periodo.slice(0, 4);
+  const mesNum = periodo.slice(5, 7);
+  const vista = sp.vista === "anio" ? "anio" : "mes";
+  const hoyPeriodo = periodoActual();
 
-  const { data: gastos } = caja
-    ? await supabase.from("caja_chica_gastos").select("*").eq("caja_id", caja.id).order("fecha").order("creado_en")
-    : { data: [] };
+  // La caja del mes y todas las del año (para elegir el mes y ver el cuadro del año) se piden a la vez
+  const [{ data: caja }, { data: cajasAnio }] = await Promise.all([
+    supabase
+      .from("cajas_chicas")
+      .select("*, perfiles(nombre), comprobantes_pago!cajas_chicas_comprobante_id_fkey(id, numero, origen, estado)")
+      .eq("mcp_id", ctx.mcp.id)
+      .eq("periodo", periodo)
+      .eq("fuente_id", fuenteId ?? "")
+      .neq("estado", "anulada")
+      .maybeSingle(),
+    supabase
+      .from("cajas_chicas")
+      .select("id, periodo, monto_fondo, estado")
+      .eq("mcp_id", ctx.mcp.id)
+      .eq("fuente_id", fuenteId ?? "")
+      .gte("periodo", `${anio}-01`)
+      .lte("periodo", `${anio}-12`)
+      .neq("estado", "anulada"),
+  ]);
+  const idsAnio = (cajasAnio ?? []).map((c) => c.id);
+  const [{ data: gastos }, { data: gastosAnio }] = await Promise.all([
+    caja
+      ? supabase.from("caja_chica_gastos").select("*").eq("caja_id", caja.id).order("fecha").order("creado_en")
+      : Promise.resolve({ data: [] as never[] }),
+    idsAnio.length
+      ? supabase.from("caja_chica_gastos").select("caja_id, monto").in("caja_id", idsAnio).eq("anulado", false)
+      : Promise.resolve({ data: [] as { caja_id: string; monto: number }[] }),
+  ]);
+  // Resumen de cada mes del año
+  const resumenMes = new Map<string, { fondo: number; gastado: number; n: number; estado: string }>();
+  (cajasAnio ?? []).forEach((c) => resumenMes.set(c.periodo, { fondo: Number(c.monto_fondo), gastado: 0, n: 0, estado: c.estado }));
+  const periodoDeCaja = new Map((cajasAnio ?? []).map((c) => [c.id, c.periodo]));
+  (gastosAnio ?? []).forEach((g) => {
+    const r = resumenMes.get(periodoDeCaja.get(g.caja_id) ?? "");
+    if (r) {
+      r.gastado += Number(g.monto);
+      r.n += 1;
+    }
+  });
+  const enlace = (c: Record<string, string>) => {
+    const q = new URLSearchParams({ mes: periodo, ...(fuenteId ? { fuente: fuenteId } : {}), ...(vista === "anio" ? { vista: "anio" } : {}), ...c });
+    return `/caja-chica?${q.toString()}`;
+  };
 
   const vigentes = (gastos ?? []).filter((g) => !g.anulado);
   const gastado = vigentes.reduce((s, g) => s + Number(g.monto), 0);
@@ -86,24 +124,105 @@ export default async function CajaChica({ searchParams }: { searchParams: Params
           <h1>Caja chica {caja && <Estado valor={caja.estado} />}</h1>
           <div className="sub">Fondo de {nombrePeriodo(periodo)}{fuenteNombre ? ` · pagado con ${fuenteNombre}` : ""}</div>
         </div>
-        <form className="selector-mes" method="get">
-          <input type="month" name="mes" defaultValue={periodo} aria-label="Mes" />
-          {ctx.fuentes.length > 1 && (
-            <select name="fuente" defaultValue={fuenteId} aria-label="Fondo pagado con">
-              {ctx.fuentes.map((f) => (
-                <option key={f.id} value={f.id}>{f.municipalidad.replace(/^municipalidad (distrital|provincial) de /i, "")}</option>
-              ))}
-            </select>
-          )}
-          <button className="btn chico" type="submit">Ver</button>
-        </form>
         <span className="espacio" />
-        {caja && <a className="btn contorno" href={`/exportar/caja-chica?mes=${periodo}`}>Descargar Excel</a>}
-        {caja && <Link className="btn contorno" href={`/caja-chica/${caja.id}/requerimiento`}>Requerimiento</Link>}
-        {caja && <Link className="btn contorno" href={`/caja-chica/${caja.id}/relacion`}>Relación de gastos</Link>}
-        {formGasto}
+        {vista === "mes" && caja && <a className="btn contorno" href={`/exportar/caja-chica?mes=${periodo}`}>Descargar Excel</a>}
+        {vista === "mes" && caja && <Link className="btn contorno" href={`/caja-chica/${caja.id}/requerimiento`}>Requerimiento</Link>}
+        {vista === "mes" && caja && <Link className="btn contorno" href={`/caja-chica/${caja.id}/relacion`}>Relación de gastos</Link>}
+        {vista === "mes" && formGasto}
       </div>
       <Avisos ok={sp.ok} error={sp.error} />
+
+      <section className="cc-selector" aria-label="Elegir el período">
+        <div className="cc-fila">
+          <div className="cc-anio">
+            <Link className="cc-flecha" href={enlace({ mes: `${Number(anio) - 1}-${mesNum}` })} aria-label={`Año ${Number(anio) - 1}`}>‹</Link>
+            <b>{anio}</b>
+            <Link className="cc-flecha" href={enlace({ mes: `${Number(anio) + 1}-${mesNum}` })} aria-label={`Año ${Number(anio) + 1}`}>›</Link>
+          </div>
+          <div className="cc-meses" role="group" aria-label="Meses del año">
+            {MES_CORTO.map((nombre, i) => {
+              const per = `${anio}-${String(i + 1).padStart(2, "0")}`;
+              const r = resumenMes.get(per);
+              const clase = `cc-mes${per === periodo ? " sel" : ""}${r ? (r.estado === "liquidada" ? " liq" : " abierta") : " vacia"}${per === hoyPeriodo ? " hoy" : ""}`;
+              return (
+                <Link
+                  key={per}
+                  href={enlace({ mes: per })}
+                  className={clase}
+                  aria-current={per === periodo ? "page" : undefined}
+                  title={`${nombrePeriodo(per)} · ${r ? (r.estado === "liquidada" ? "Liquidada" : "Abierta") : "Sin fondo"}${r ? ` · S/ ${soles(r.fondo)}` : ""}`}
+                >
+                  <span className="cc-mes-n">{nombre}</span>
+                  <span className="cc-mes-d">{r ? (r.estado === "liquidada" ? "✓ Liquidada" : "Abierta") : "—"}</span>
+                </Link>
+              );
+            })}
+          </div>
+        </div>
+        <div className="cc-fila cc-pie">
+          {ctx.fuentes.length > 1 ? (
+            <div className="cc-fuentes" role="group" aria-label="Fondo pagado con">
+              {ctx.fuentes.map((f) => (
+                <Link key={f.id} href={enlace({ fuente: f.id })} className={`cc-fuente${f.id === fuenteId ? " sel" : ""}`}>
+                  {f.municipalidad.replace(/^municipalidad (distrital|provincial) de /i, "") || "Ingresos propios"}
+                </Link>
+              ))}
+            </div>
+          ) : (
+            <span />
+          )}
+          <div className="cc-vista" role="group" aria-label="Qué ver">
+            <Link href={enlace({ vista: "mes" })} className={`cc-vista-op${vista === "mes" ? " sel" : ""}`}>Un mes</Link>
+            <Link href={enlace({ vista: "anio" })} className={`cc-vista-op${vista === "anio" ? " sel" : ""}`}>Cuadro del año {anio}</Link>
+          </div>
+        </div>
+      </section>
+
+      {vista === "anio" && (
+        <section className="panel">
+          <div className="panel-cab">
+            Cuadro de caja chica · {anio}
+            <span className="tenue pequeno">{fuenteNombre}</span>
+          </div>
+          <div className="tabla-marco" style={{ border: "none", borderRadius: 0 }}>
+            <table className="tabla">
+              <thead>
+                <tr><th>Mes</th><th className="num">Fondo S/</th><th className="num">Gastado S/</th><th className="num">Falta gastar S/</th><th className="num">Gastos</th><th>Estado</th><th></th></tr>
+              </thead>
+              <tbody>
+                {MES_CORTO.map((nombre, i) => {
+                  const per = `${anio}-${String(i + 1).padStart(2, "0")}`;
+                  const r = resumenMes.get(per);
+                  return (
+                    <tr key={per} className={r ? undefined : "cc-fila-vacia"}>
+                      <td><Link href={enlace({ mes: per, vista: "mes" })}><b>{nombrePeriodo(per)}</b></Link></td>
+                      <td className="num">{r ? soles(r.fondo) : "—"}</td>
+                      <td className="num">{r ? soles(r.gastado) : "—"}</td>
+                      <td className="num">{r ? (Math.round((r.fondo - r.gastado) * 100) === 0 ? "✓ cuadra" : soles(r.fondo - r.gastado)) : "—"}</td>
+                      <td className="num">{r ? r.n : "—"}</td>
+                      <td>{r ? <Estado valor={r.estado} /> : <span className="tenue">Sin fondo</span>}</td>
+                      <td><Link className="btn chico contorno" href={enlace({ mes: per, vista: "mes" })}>{r ? "Ver" : puede ? "Abrir fondo" : "Ver"}</Link></td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+              <tfoot>
+                <tr>
+                  <td>Total {anio}</td>
+                  <td className="num">{soles([...resumenMes.values()].reduce((t, r) => t + r.fondo, 0))}</td>
+                  <td className="num">{soles([...resumenMes.values()].reduce((t, r) => t + r.gastado, 0))}</td>
+                  <td className="num">{soles([...resumenMes.values()].reduce((t, r) => t + (r.fondo - r.gastado), 0))}</td>
+                  <td className="num">{[...resumenMes.values()].reduce((t, r) => t + r.n, 0)}</td>
+                  <td colSpan={2}></td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+        </section>
+      )}
+
+      {vista === "mes" && (
+        <>
 
       {!caja &&
         (puede ? (
@@ -228,6 +347,8 @@ export default async function CajaChica({ searchParams }: { searchParams: Params
               </form>
             </div>
           )}
+        </>
+      )}
         </>
       )}
     </>

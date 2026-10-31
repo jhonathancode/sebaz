@@ -1,4 +1,5 @@
 import Link from "next/link";
+import CampoConceptoIngreso from "@/components/formularios/CampoConceptoIngreso";
 import BotonPdf from "@/components/BotonPdf";
 import Avisos, { type ParamsAviso } from "@/components/Avisos";
 import VentanaFlotante from "@/components/VentanaFlotante";
@@ -148,7 +149,7 @@ export default async function Ingresos({ searchParams }: { searchParams: ParamsA
               </label>
               <label className="campo">DNI o RUC del pagador<input name="pagador_doc" inputMode="numeric" maxLength={11} placeholder="8 u 11 dígitos" /></label>
               <label className="campo">Nombre o razón social<input name="pagador_nombre" required /></label>
-              <label className="campo ancho">Concepto<input name="concepto" required placeholder="Tipeo, copias e impresión de documentos" /></label>
+              <CampoConceptoIngreso historial={(delAnio ?? []).map((r) => ({ rubro: r.rubro, concepto: r.concepto }))} />
               <label className="campo">Monto S/<input name="monto" required inputMode="decimal" placeholder="0.00" /></label>
             </div>
             <p className="pequeno tenue" style={{ margin: 0 }}>

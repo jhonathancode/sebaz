@@ -12,6 +12,7 @@ const MOTIVOS_ANULAR = [
   "Mes o periodo equivocado",
   "Fuente de dinero equivocada",
   "El gasto ya no se realizará",
+  "Error en el número de cheque",
   "Datos del comprobante o del sustento incorrectos",
 ];
 const MOTIVOS_DEVOLVER = [

@@ -51,6 +51,32 @@ export async function agregarGasto(fd: FormData) {
   volver(ruta(periodo, fuente), "ok", "Gasto registrado.");
 }
 
+export async function editarGasto(fd: FormData) {
+  await contextoMcp();
+  const supabase = await supabaseServidor();
+  const periodo = texto(fd, "periodo")!;
+  const fuente = texto(fd, "fuente_id")!;
+  const monto = numero(fd, "monto");
+  if (!monto || monto <= 0) volver(ruta(periodo, fuente), "error", "Escriba el monto del gasto.");
+  const fechaGasto = texto(fd, "fecha") ?? "";
+  if (!fechaGasto.startsWith(periodo)) volver(ruta(periodo, fuente), "error", "La fecha del gasto debe ser del mismo mes del fondo.");
+  const tipo = texto(fd, "sustento_tipo") ?? "DJ";
+  const { error } = await supabase
+    .from("caja_chica_gastos")
+    .update({
+      fecha: fechaGasto,
+      concepto: texto(fd, "concepto")?.toUpperCase(),
+      sustento_tipo: tipo,
+      sustento_numero: tipo === "DJ" ? null : texto(fd, "sustento_numero")?.toUpperCase() ?? null,
+      razon_social: texto(fd, "razon_social")?.toUpperCase(),
+      monto,
+    })
+    .eq("id", texto(fd, "gasto_id")!);
+  if (error) volver(ruta(periodo, fuente), "error", mensajeError(error));
+  revalidatePath("/caja-chica");
+  volver(ruta(periodo, fuente), "ok", "Gasto corregido.");
+}
+
 export async function anularGasto(fd: FormData) {
   await contextoMcp();
   const supabase = await supabaseServidor();

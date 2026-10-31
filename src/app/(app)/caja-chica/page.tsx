@@ -10,7 +10,7 @@ import { codigoCP, fecha, hoyISO, nombrePeriodo, periodoActual, soles } from "@/
 
 const MES_CORTO = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Set", "Oct", "Nov", "Dic"];
 import { supabaseServidor } from "@/lib/supabase/server";
-import { abrirCaja, agregarGasto, anularGasto, cambiarCheque, liquidarCaja } from "./acciones";
+import { abrirCaja, agregarGasto, anularGasto, cambiarCheque, editarGasto, liquidarCaja } from "./acciones";
 
 const NOMBRE_SUSTENTO = Object.fromEntries(SUSTENTOS.map((s) => [s.codigo, s.nombre]));
 
@@ -321,7 +321,13 @@ export default async function CajaChica({ searchParams }: { searchParams: Params
                         <td className="c">{g.anulado ? "—" : n}</td>
                         <td className="c">{fecha(g.fecha)}</td>
                         <td className="c">{caja.numero_cheque ?? "—"}</td>
-                        <td className="c">{g.sustento_tipo}</td>
+                        <td className="c">
+                          {g.sustento_tipo === "DJ" && !g.anulado ? (
+                            <Link className="cc-dj" href={`/caja-chica/dj/${g.id}`} title="Ver o imprimir la declaración jurada">DJ</Link>
+                          ) : (
+                            g.sustento_tipo
+                          )}
+                        </td>
                         <td className="c">{g.sustento_numero ?? "SN"}</td>
                         <td>{g.razon_social}</td>
                         <td>
@@ -331,7 +337,28 @@ export default async function CajaChica({ searchParams }: { searchParams: Params
                         <td className="m">S/ {soles(g.monto)}</td>
                         <td className="acc">
                           <div className="acciones-fila">
-                            {g.sustento_tipo === "DJ" && !g.anulado && <Link className="btn chico contorno" href={`/caja-chica/dj/${g.id}`}>Declaración jurada</Link>}
+                                                        {abierta && !g.anulado && puede && (
+                              <VentanaFlotante boton="Editar" titulo="Corregir el gasto" accion={editarGasto} textoGuardar="Guardar cambios" claseBoton="btn chico contorno">
+                                <input type="hidden" name="gasto_id" value={g.id} />
+                                <input type="hidden" name="periodo" value={periodo} />
+                                <input type="hidden" name="fuente_id" value={fuenteId} />
+                                <div className="rejilla">
+                                  <label className="campo">Fecha<input type="date" name="fecha" required defaultValue={g.fecha} /></label>
+                                  <label className="campo">
+                                    Sustento
+                                    <select name="sustento_tipo" defaultValue={g.sustento_tipo}>
+                                      {SUSTENTOS.map((x) => (
+                                        <option key={x.codigo} value={x.codigo}>{x.nombre}</option>
+                                      ))}
+                                    </select>
+                                  </label>
+                                  <label className="campo">N° del documento (no para DJ)<input name="sustento_numero" defaultValue={g.sustento_numero ?? ""} /></label>
+                                  <label className="campo">Razón social o comisionado<input name="razon_social" required defaultValue={g.razon_social} /></label>
+                                  <label className="campo ancho">Concepto<input name="concepto" required defaultValue={g.concepto} /></label>
+                                  <label className="campo">Monto S/<input name="monto" required inputMode="decimal" defaultValue={Number(g.monto).toFixed(2)} /></label>
+                                </div>
+                              </VentanaFlotante>
+                            )}
                             {abierta && !g.anulado && puede && (
                               <Motivo chico accion={anularGasto} boton="Anular" ayuda="Motivo" campos={{ gasto_id: g.id, periodo, fuente_id: fuenteId ?? "" }} />
                             )}

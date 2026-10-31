@@ -1851,3 +1851,10 @@ dialog.asistente .vf-cab h2 { font-size: 19px; font-weight: 800; letter-spacing:
 .cc-excel td.cc-vacio { text-align: center; color: var(--tenue); padding: 28px; text-transform: none; }
 .cc-excel .acc, .cc-excel .cc-acc-th { border: 0; background: transparent !important; padding: 4px 8px; text-transform: none; white-space: nowrap; width: 1%; }
 .sr-solo { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+
+/* Caja chica: acciones dentro de la tabla y DJ como enlace en la columna CP */
+.cc-excel .acc, .cc-excel .cc-acc-th { border: 1px solid var(--borde) !important; background: transparent !important; padding: 3px 6px; text-transform: none; white-space: nowrap; width: 1%; }
+.cc-excel .cc-acc-th { background: var(--panel-2) !important; }
+.cc-excel tfoot .acc { border: 0 !important; }
+.cc-excel .acciones-fila { display: flex; gap: 4px; justify-content: center; }
+.cc-excel .cc-dj { color: var(--primario); font-weight: 700; text-decoration: underline; text-underline-offset: 2px; }

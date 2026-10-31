@@ -1884,3 +1884,37 @@ html.pdf-captura .cc-excel-marco {
 html.pdf-captura .cc-excel .acc, html.pdf-captura .cc-excel .cc-acc-th { display: none; }
 html.pdf-captura .cc-excel .estado, html.pdf-captura .cc-excel .etq { color: #000; background: #fff; border-color: #888; }
 .cc-excel td.num, .cc-excel th.num { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
+
+/* Ingresos: resumen del año, con color */
+.ing-grafico { background: linear-gradient(160deg, var(--primario-fondo), var(--panel) 70%); border: 1px solid var(--primario-claro); border-radius: 20px; padding: 18px 20px 12px; margin: 0 0 16px; box-shadow: 0 10px 30px -22px var(--primario); }
+.ing-grafico-tit { font-size: 15px; font-weight: 800; color: var(--primario-texto); margin-bottom: 8px; }
+.ing-barras { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: 8px; align-items: end; }
+.ing-barra { display: flex; flex-direction: column; align-items: center; gap: 4px; text-decoration: none; color: var(--texto); }
+.ing-monto { font-size: 11px; font-weight: 700; color: var(--primario-texto); min-height: 14px; white-space: nowrap; }
+.ing-columna { width: 100%; height: 150px; display: flex; align-items: flex-end; border-radius: 12px; background: color-mix(in srgb, var(--primario) 8%, transparent); overflow: hidden; }
+.ing-columna > span { display: block; width: 100%; border-radius: 12px 12px 0 0; background: linear-gradient(180deg, var(--primario-hover), var(--primario)); transition: filter .15s; }
+.ing-barra:hover .ing-columna > span { filter: brightness(1.12); }
+.ing-mes { font-size: 12px; font-weight: 700; color: var(--tenue); }
+.ing-barra.hoy .ing-mes { color: var(--primario); }
+.ing-barra.vacia .ing-columna { background: transparent; border: 1.5px dashed var(--borde); }
+
+.ing-meses { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 12px; margin: 0 0 18px; }
+.ing-mes-tarjeta { display: flex; flex-direction: column; gap: 4px; padding: 14px 16px; border-radius: 18px; background: var(--panel); border: 1.5px solid var(--primario-claro); text-decoration: none; color: var(--texto); transition: transform .12s, box-shadow .12s; }
+.ing-mes-tarjeta:hover { transform: translateY(-2px); box-shadow: 0 14px 26px -18px var(--primario); }
+.ing-mes-tarjeta.vacia { border: 1.5px dashed var(--borde); background: transparent; }
+.ing-mes-tarjeta.hoy { box-shadow: 0 0 0 2px var(--primario) inset; }
+.ing-mt-nombre { font-size: 13px; font-weight: 800; text-transform: uppercase; letter-spacing: .06em; color: var(--primario-texto); }
+.ing-mes-tarjeta.vacia .ing-mt-nombre { color: var(--tenue); }
+.ing-mt-monto { font-size: 22px; font-weight: 800; letter-spacing: -.01em; }
+.ing-mes-tarjeta.vacia .ing-mt-monto { font-size: 15px; font-weight: 600; color: var(--tenue); }
+.ing-mt-det { font-size: 12px; color: var(--tenue); }
+.ing-mt-pista { height: 8px; border-radius: 99px; background: var(--primario-fondo); overflow: hidden; margin-top: 4px; }
+.ing-mt-pista > span { display: block; height: 100%; border-radius: 99px; background: linear-gradient(90deg, var(--primario), var(--primario-hover)); }
+.ing-mt-pie { display: flex; justify-content: space-between; align-items: center; font-size: 12px; color: var(--tenue); min-height: 18px; }
+.ing-var { font-weight: 800; padding: 1px 8px; border-radius: 99px; }
+.ing-var.sube { color: var(--primario-texto); background: var(--primario-fondo); }
+.ing-var.baja { color: var(--rojo); background: var(--rojo-fondo); }
+
+/* PDF limpio: lo anulado no sale y la DJ se ve como texto simple */
+html.pdf-captura .sin-pdf { display: none !important; }
+html.pdf-captura .cc-excel .cc-dj { color: #000; font-weight: 400; text-decoration: none; }

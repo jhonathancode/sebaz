@@ -155,30 +155,28 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ list
     }
     case "ingresos-anio": {
       const anio = mes.slice(0, 4);
-      const propios = ctx.fuentes.find((f) => f.tipo === "propios");
-      const [{ data: ing }, { data: pagos }] = await Promise.all([
-        supabase.from("ingresos").select("fecha, monto").eq("mcp_id", mcpId).eq("estado", "emitido").gte("fecha", `${anio}-01-01`).lte("fecha", `${anio}-12-31`),
-        propios
-          ? supabase.from("comprobantes_pago").select("fecha, importe").eq("mcp_id", mcpId).eq("fuente_id", propios.id).neq("estado", "anulado").gte("fecha", `${anio}-01-01`).lte("fecha", `${anio}-12-31`)
-          : Promise.resolve({ data: [] as { fecha: string; importe: number }[] }),
-      ]);
-      let caja = 0;
-      const filas = Array.from({ length: 12 }, (_, i) => {
+      const { data: ing } = await supabase.from("ingresos").select("fecha, monto, numero").eq("mcp_id", mcpId).eq("estado", "emitido").gte("fecha", `${anio}-01-01`).lte("fecha", `${anio}-12-31`);
+      const meses = Array.from({ length: 12 }, (_, i) => {
         const per = `${anio}-${String(i + 1).padStart(2, "0")}`;
         const rec = (ing ?? []).filter((r) => r.fecha.startsWith(per));
-        const ingreso = rec.reduce((t, r) => t + Number(r.monto), 0);
-        const gasto = (pagos ?? []).filter((c) => c.fecha.startsWith(per)).reduce((t, c) => t + Number(c.importe), 0);
-        caja += ingreso - gasto;
-        return [nombrePeriodo(per).toUpperCase(), rec.length, ingreso, gasto, ingreso - gasto, caja];
+        const nums = rec.map((r) => Number(r.numero));
+        return { per, n: rec.length, ingreso: rec.reduce((t, r) => t + Number(r.monto), 0), del: nums.length ? Math.min(...nums) : null, al: nums.length ? Math.max(...nums) : null };
+      });
+      const total = meses.reduce((t, m) => t + m.ingreso, 0);
+      const cod = (n: number | null) => (n === null ? "" : String(n).padStart(4, "0"));
+      const filas = meses.map((m, i) => {
+        const previo = i > 0 ? meses[i - 1].ingreso : 0;
+        const variacion = i > 0 && previo > 0 && m.n ? Math.round(((m.ingreso - previo) / previo) * 1000) / 10 : null;
+        return [nombrePeriodo(m.per).toUpperCase(), m.n, cod(m.del), cod(m.al), m.ingreso, total ? Math.round((m.ingreso / total) * 1000) / 10 : 0, variacion === null ? "" : `${variacion >= 0 ? "+" : ""}${variacion} %`];
       });
       hoja = {
         titulo: `INGRESOS PROPIOS ${anio} · RESUMEN POR MES`,
         columnas: [
-          { titulo: "MES", ancho: 22 }, { titulo: "RECIBOS", ancho: 10 }, { titulo: "RECAUDADO", ancho: 16, tipo: "monto" },
-          { titulo: "GASTADO", ancho: 16, tipo: "monto" }, { titulo: "SALDO DEL MES", ancho: 16, tipo: "monto" }, { titulo: "EN CAJA (ACUMULADO)", ancho: 20, tipo: "monto" },
+          { titulo: "MES", ancho: 22 }, { titulo: "RECIBOS", ancho: 10 }, { titulo: "DEL RECIBO N°", ancho: 14 }, { titulo: "AL RECIBO N°", ancho: 14 },
+          { titulo: "RECAUDADO", ancho: 16, tipo: "monto" }, { titulo: "% DEL AÑO", ancho: 11 }, { titulo: "FRENTE AL MES ANTERIOR", ancho: 24 },
         ],
         filas,
-        totales: ["TOTAL", filas.reduce((t, f) => t + Number(f[1]), 0), suma(filas, 2), suma(filas, 3), suma(filas, 4), suma(filas, 4)],
+        totales: ["TOTAL", filas.reduce((t, f) => t + Number(f[1]), 0), null, null, suma(filas, 4), null, null],
       };
       break;
     }

@@ -83,10 +83,11 @@ export default async function Inicio() {
   const cpPorAprobar = lista.filter((c) => c.estado === "borrador").length;
   const cpSinCheque = lista.filter((c) => c.estado === "aprobado" && !c.cheque).length;
   const totalIngresos = (ingresos ?? []).reduce((s, i) => s + Number(i.monto), 0);
-  const caja = (cajas ?? [])[0];
-  const gastadoCaja = caja
-    ? (caja.caja_chica_gastos as { monto: number; anulado: boolean }[]).filter((g) => !g.anulado).reduce((s, g) => s + Number(g.monto), 0)
-    : 0;
+  const caja = (cajas ?? []).length ? { monto_fondo: (cajas ?? []).reduce((t, c) => t + Number(c.monto_fondo), 0) } : undefined;
+  const gastadoCaja = (cajas ?? []).reduce(
+    (t, c) => t + (c.caja_chica_gastos as { monto: number; anulado: boolean }[]).filter((g) => !g.anulado).reduce((s, g) => s + Number(g.monto), 0),
+    0,
+  );
   const alcalde = tiene(ctx, "alcalde");
   const delMes = lista.filter((c) => c.fecha >= desde);
   const gastadoPropios = delMes.filter((c) => c.fuente_id === propios?.id).reduce((s, c) => s + Number(c.importe), 0);

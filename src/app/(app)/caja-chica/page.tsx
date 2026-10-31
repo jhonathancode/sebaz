@@ -28,7 +28,7 @@ export default async function CajaChica({ searchParams }: { searchParams: Params
   const hoyPeriodo = periodoActual();
 
   // La caja del mes y todas las del año (para elegir el mes y ver el cuadro del año) se piden a la vez
-  const [{ data: caja }, { data: cajasAnio }] = await Promise.all([
+  const [{ data: cajasMes }, { data: cajasAnio }] = await Promise.all([
     supabase
       .from("cajas_chicas")
       .select("*, perfiles(nombre), comprobantes_pago!cajas_chicas_comprobante_id_fkey(id, numero, origen, estado)")
@@ -36,7 +36,7 @@ export default async function CajaChica({ searchParams }: { searchParams: Params
       .eq("periodo", periodo)
       .eq("fuente_id", fuenteId ?? "")
       .neq("estado", "anulada")
-      .maybeSingle(),
+      .order("numero"),
     supabase
       .from("cajas_chicas")
       .select("id, periodo, monto_fondo, estado")
@@ -46,6 +46,8 @@ export default async function CajaChica({ searchParams }: { searchParams: Params
       .lte("periodo", `${anio}-12`)
       .neq("estado", "anulada"),
   ]);
+  // La caja que se ve: la pedida, si no la primera abierta, si no la última del mes
+  const caja = (cajasMes ?? []).find((c) => c.id === sp.caja) ?? (cajasMes ?? []).find((c) => c.estado === "abierta") ?? (cajasMes ?? []).at(-1) ?? null;
   const idsAnio = (cajasAnio ?? []).map((c) => c.id);
   const [{ data: gastos }, { data: gastosAnio }] = await Promise.all([
     caja
@@ -57,7 +59,13 @@ export default async function CajaChica({ searchParams }: { searchParams: Params
   ]);
   // Resumen de cada mes del año
   const resumenMes = new Map<string, { fondo: number; gastado: number; n: number; estado: string }>();
-  (cajasAnio ?? []).forEach((c) => resumenMes.set(c.periodo, { fondo: Number(c.monto_fondo), gastado: 0, n: 0, estado: c.estado }));
+  (cajasAnio ?? []).forEach((c) => {
+    const r = resumenMes.get(c.periodo);
+    if (r) {
+      r.fondo += Number(c.monto_fondo);
+      if (c.estado === "abierta") r.estado = "abierta";
+    } else resumenMes.set(c.periodo, { fondo: Number(c.monto_fondo), gastado: 0, n: 0, estado: c.estado });
+  });
   const periodoDeCaja = new Map((cajasAnio ?? []).map((c) => [c.id, c.periodo]));
   (gastosAnio ?? []).forEach((g) => {
     const r = resumenMes.get(periodoDeCaja.get(g.caja_id) ?? "");
@@ -92,6 +100,27 @@ export default async function CajaChica({ searchParams }: { searchParams: Params
   const cp = caja?.comprobantes_pago as unknown as { id: string; numero: number; origen: string; estado: string } | null;
 
   const cuadra = !!caja && Math.round(saldo * 100) === 0;
+  const formAbrir = (boton: string, clase: string) => (
+    <VentanaFlotante boton={boton} titulo="Abrir el fondo de caja chica" accion={abrirCaja} textoGuardar="Abrir fondo" claseBoton={clase}>
+      <input type="hidden" name="periodo" value={periodo} />
+      <input type="hidden" name="fuente_id" value={fuenteId} />
+      <div className="rejilla-2">
+        <label className="campo">Monto del fondo S/<input name="monto_fondo" required inputMode="decimal" placeholder="2000.00" /></label>
+        <label className="campo">N° de cheque<input name="numero_cheque" required autoFocus placeholder="Ej. 00012345" style={{ textTransform: "uppercase" }} /></label>
+        <label className="campo">
+          Responsable del fondo
+          <select name="responsable_id" required>
+            {(responsables ?? []).map((r) => (
+              <option key={r.user_id + r.rol} value={r.user_id}>
+                {(r.perfiles as unknown as { nombre: string } | null)?.nombre}
+              </option>
+            ))}
+          </select>
+        </label>
+      </div>
+    </VentanaFlotante>
+  );
+
   const fuenteNombre = ctx.fuentes.find((f) => f.id === fuenteId)?.municipalidad ?? "";
   const formGasto = caja && abierta && puede && (
     <VentanaFlotante boton="+ Registrar gasto" titulo="Registrar un gasto de caja chica" accion={agregarGasto} textoGuardar="Agregar gasto" claseBoton="btn primario grande">
@@ -224,6 +253,19 @@ export default async function CajaChica({ searchParams }: { searchParams: Params
       {vista === "mes" && (
         <>
 
+      {(cajasMes ?? []).length > 0 && (
+        <div className="cc-cajas">
+          {(cajasMes ?? []).length > 1 &&
+            (cajasMes ?? []).map((c) => (
+              <Link key={c.id} href={enlace({ caja: c.id })} className={`cc-caja${c.id === caja?.id ? " activa" : ""}`}>
+                Caja {c.numero}{c.numero_cheque ? ` · cheque ${c.numero_cheque}` : ""} · {c.estado === "abierta" ? "abierta" : "cerrada"}
+              </Link>
+            ))}
+          <span className="espacio" />
+          {puede && formAbrir("+ Abrir otra caja chica", "btn chico contorno")}
+        </div>
+      )}
+
       {!caja &&
         (puede ? (
           <div className="kpi azul" style={{ flexDirection: "row", alignItems: "center", gap: 16, flexWrap: "wrap" }}>
@@ -232,24 +274,7 @@ export default async function CajaChica({ searchParams }: { searchParams: Params
               <span className="k-val">Aún no se abre el fondo</span>
               <span className="k-det">Ábralo con el monto que se retiró (normalmente S/ 2,000 de la transferencia) y el responsable.</span>
             </div>
-            <VentanaFlotante boton="Abrir fondo del mes" titulo="Abrir el fondo de caja chica" accion={abrirCaja} textoGuardar="Abrir fondo" claseBoton="btn primario grande">
-              <input type="hidden" name="periodo" value={periodo} />
-              <input type="hidden" name="fuente_id" value={fuenteId} />
-              <div className="rejilla-2">
-                <label className="campo">Monto del fondo S/<input name="monto_fondo" required inputMode="decimal" placeholder="2000.00" /></label>
-                <label className="campo">N° de cheque<input name="numero_cheque" required autoFocus placeholder="Ej. 00012345" style={{ textTransform: "uppercase" }} /></label>
-                <label className="campo">
-                  Responsable del fondo
-                  <select name="responsable_id" required>
-                    {(responsables ?? []).map((r) => (
-                      <option key={r.user_id + r.rol} value={r.user_id}>
-                        {(r.perfiles as unknown as { nombre: string } | null)?.nombre}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-              </div>
-            </VentanaFlotante>
+            {formAbrir("Abrir fondo del mes", "btn primario grande")}
           </div>
         ) : (
           <div className="aviso info">No hay fondo de caja chica abierto este mes.</div>
@@ -272,7 +297,7 @@ export default async function CajaChica({ searchParams }: { searchParams: Params
             <div className={`kpi ${cuadra ? "azul" : saldo < 0 ? "rojo" : "alerta"}`}>
               <span className="k-et">{cuadra ? "Cuadra" : saldo < 0 ? "Se pasó del fondo" : "Falta gastar"}</span>
               <span className="k-val">S/ {soles(Math.abs(saldo))}</span>
-              <span className="k-det">{cuadra ? (abierta ? "Ya puede cerrar la caja chica" : "Caja liquidada") : saldo < 0 ? "Anule o corrija algún gasto" : "Para cerrar, lo gastado debe ser igual al fondo"}</span>
+              <span className="k-det">{cuadra ? (abierta ? "Ya puede cerrar la caja chica" : "Caja liquidada") : saldo < 0 ? "Anule o corrija algún gasto" : "Puede cerrarla aunque no se gaste todo; se le preguntará"}</span>
             </div>
             <div className="kpi">
               <span className="k-et">Por sustento</span>
@@ -340,6 +365,7 @@ export default async function CajaChica({ searchParams }: { searchParams: Params
                                                         {abierta && !g.anulado && puede && (
                               <VentanaFlotante boton="Editar" titulo="Corregir el gasto" accion={editarGasto} textoGuardar="Guardar cambios" claseBoton="btn chico contorno">
                                 <input type="hidden" name="gasto_id" value={g.id} />
+                                <input type="hidden" name="caja_id" value={caja.id} />
                                 <input type="hidden" name="periodo" value={periodo} />
                                 <input type="hidden" name="fuente_id" value={fuenteId} />
                                 <div className="rejilla">
@@ -360,7 +386,7 @@ export default async function CajaChica({ searchParams }: { searchParams: Params
                               </VentanaFlotante>
                             )}
                             {abierta && !g.anulado && puede && (
-                              <Motivo chico accion={anularGasto} boton="Anular" ayuda="Motivo" campos={{ gasto_id: g.id, periodo, fuente_id: fuenteId ?? "" }} />
+                              <Motivo chico accion={anularGasto} boton="Anular" ayuda="Motivo" campos={{ gasto_id: g.id, caja_id: caja.id, periodo, fuente_id: fuenteId ?? "" }} />
                             )}
                           </div>
                         </td>
@@ -385,7 +411,7 @@ export default async function CajaChica({ searchParams }: { searchParams: Params
                 <span className="k-et">Cerrar (liquidar) la caja chica</span>
                 <span className="k-det">
                   Se genera un comprobante de pago por lo gastado, con la relación de gastos, y entra en la rendición como una sola línea.
-                  {!cuadra && ` Falta ${saldo > 0 ? `registrar S/ ${soles(saldo)}` : `quitar S/ ${soles(-saldo)}`} para poder cerrar.`}
+                  {!cuadra && saldo > 0 && ` Aún no se gastó todo el fondo (faltan S/ ${soles(saldo)}): igual puede cerrarla y se le preguntará antes.`}
                 </span>
               </div>
               <form action={liquidarCaja}>
@@ -394,9 +420,9 @@ export default async function CajaChica({ searchParams }: { searchParams: Params
                 <input type="hidden" name="fuente_id" value={fuenteId} />
                 <BotonConfirmar
                   className="btn primario grande"
-                  disabled={!cuadra}
-                  pregunta="¿Está seguro de cerrar la caja chica?"
-                  detalle={`Se generará el comprobante de pago por S/ ${soles(gastado)}. Cerrada, ya no admite gastos ni cambios.`}
+                  disabled={vigentes.length === 0}
+                  pregunta={cuadra ? "¿Está seguro de cerrar la caja chica?" : `¿Cerrar la caja chica con S/ ${soles(gastado)} de S/ ${soles(fondo)}?`}
+                  detalle={cuadra ? `Se generará el comprobante de pago por S/ ${soles(gastado)}. Cerrada, ya no admite gastos ni cambios.` : `No se gastó todo el fondo: faltan S/ ${soles(saldo)}. Se generará el comprobante de pago solo por S/ ${soles(gastado)}. Cerrada, ya no admite gastos ni cambios.`}
                   textoConfirmar="Sí, cerrar caja chica"
                 >
                   Cerrar caja chica

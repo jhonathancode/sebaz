@@ -39,7 +39,7 @@ export default function SelectorRendicion({
   puedeGenerar: boolean;
 }) {
   const disponibles = filas.filter((f) => f.disponible);
-  const [marcados, setMarcados] = useState<Set<string>>(() => new Set(disponibles.map((f) => f.id)));
+  const [marcados, setMarcados] = useState<Set<string>>(() => new Set());
 
   const total = useMemo(() => filas.filter((f) => marcados.has(f.id) && !f.propio).reduce((s, f) => s + f.importe, 0), [filas, marcados]);
   const totalPropios = useMemo(() => filas.filter((f) => marcados.has(f.id) && f.propio).reduce((s, f) => s + f.importe, 0), [filas, marcados]);

@@ -104,8 +104,8 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ list
       break;
     }
     case "caja-chica": {
-      const { data: cajas } = await supabase.from("cajas_chicas").select("id, monto_fondo, numero_cheque").eq("mcp_id", mcpId).eq("periodo", mes).neq("estado", "anulada");
-      const caja = (cajas ?? [])[0];
+      const { data: cajas } = await supabase.from("cajas_chicas").select("id, monto_fondo, numero_cheque").eq("mcp_id", mcpId).eq("periodo", mes).neq("estado", "anulada").order("numero");
+      const caja = (cajas ?? []).find((c) => c.id === sp.get("caja")) ?? (cajas ?? [])[0];
       const { data } = caja
         ? await supabase.from("caja_chica_gastos").select("fecha, concepto, sustento_tipo, sustento_numero, razon_social, monto, anulado").eq("caja_id", caja.id).order("fecha")
         : { data: [] as { fecha: string; concepto: string; sustento_tipo: string; sustento_numero: string | null; razon_social: string; monto: number; anulado: boolean }[] };

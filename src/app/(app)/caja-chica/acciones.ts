@@ -5,7 +5,7 @@ import { contextoMcp } from "@/lib/contexto";
 import { mensajeError, numero, texto, volver } from "@/lib/acciones";
 import { supabaseServidor } from "@/lib/supabase/server";
 
-const ruta = (periodo: string, fuente: string) => `/caja-chica?mes=${periodo}&fuente=${fuente}`;
+const ruta = (periodo: string, fuente: string, caja?: string | null) => `/caja-chica?mes=${periodo}&fuente=${fuente}${caja ? `&caja=${caja}` : ""}`;
 
 export async function abrirCaja(fd: FormData) {
   const ctx = await contextoMcp();
@@ -16,16 +16,16 @@ export async function abrirCaja(fd: FormData) {
   if (!monto || monto <= 0) volver(ruta(periodo, fuente), "error", "Escriba el monto del fondo.");
   const cheque = texto(fd, "numero_cheque")?.toUpperCase();
   if (!cheque) volver(ruta(periodo, fuente), "error", "Escriba el número del cheque con el que se abre la caja chica.");
-  const { error } = await supabase.from("cajas_chicas").insert({
+  const { data: nueva, error } = await supabase.from("cajas_chicas").insert({
     mcp_id: ctx.mcp.id,
     periodo,
     fuente_id: fuente,
     monto_fondo: monto,
     responsable_id: texto(fd, "responsable_id"),
     numero_cheque: cheque,
-  });
+  }).select("id").single();
   if (error) volver(ruta(periodo, fuente), "error", mensajeError(error));
-  volver(ruta(periodo, fuente), "ok", "Fondo de caja chica abierto.");
+  volver(ruta(periodo, fuente, nueva?.id), "ok", "Fondo de caja chica abierto.");
 }
 
 export async function agregarGasto(fd: FormData) {
@@ -33,10 +33,11 @@ export async function agregarGasto(fd: FormData) {
   const supabase = await supabaseServidor();
   const periodo = texto(fd, "periodo")!;
   const fuente = texto(fd, "fuente_id")!;
+  const cajaId = texto(fd, "caja_id");
   const monto = numero(fd, "monto");
-  if (!monto || monto <= 0) volver(ruta(periodo, fuente), "error", "Escriba el monto del gasto.");
+  if (!monto || monto <= 0) volver(ruta(periodo, fuente, cajaId), "error", "Escriba el monto del gasto.");
   const fechaGasto = texto(fd, "fecha") ?? "";
-  if (!fechaGasto.startsWith(periodo)) volver(ruta(periodo, fuente), "error", "La fecha del gasto debe ser del mismo mes del fondo.");
+  if (!fechaGasto.startsWith(periodo)) volver(ruta(periodo, fuente, cajaId), "error", "La fecha del gasto debe ser del mismo mes del fondo.");
   const tipo = texto(fd, "sustento_tipo") ?? "DJ";
   const { error } = await supabase.from("caja_chica_gastos").insert({
     mcp_id: ctx.mcp.id,
@@ -48,9 +49,9 @@ export async function agregarGasto(fd: FormData) {
     razon_social: texto(fd, "razon_social"),
     monto,
   });
-  if (error) volver(ruta(periodo, fuente), "error", mensajeError(error));
+  if (error) volver(ruta(periodo, fuente, cajaId), "error", mensajeError(error));
   revalidatePath("/caja-chica");
-  volver(ruta(periodo, fuente), "ok", "Gasto registrado.");
+  volver(ruta(periodo, fuente, cajaId), "ok", "Gasto registrado.");
 }
 
 export async function editarGasto(fd: FormData) {
@@ -58,10 +59,11 @@ export async function editarGasto(fd: FormData) {
   const supabase = await supabaseServidor();
   const periodo = texto(fd, "periodo")!;
   const fuente = texto(fd, "fuente_id")!;
+  const cajaId = texto(fd, "caja_id");
   const monto = numero(fd, "monto");
-  if (!monto || monto <= 0) volver(ruta(periodo, fuente), "error", "Escriba el monto del gasto.");
+  if (!monto || monto <= 0) volver(ruta(periodo, fuente, cajaId), "error", "Escriba el monto del gasto.");
   const fechaGasto = texto(fd, "fecha") ?? "";
-  if (!fechaGasto.startsWith(periodo)) volver(ruta(periodo, fuente), "error", "La fecha del gasto debe ser del mismo mes del fondo.");
+  if (!fechaGasto.startsWith(periodo)) volver(ruta(periodo, fuente, cajaId), "error", "La fecha del gasto debe ser del mismo mes del fondo.");
   const tipo = texto(fd, "sustento_tipo") ?? "DJ";
   const { error } = await supabase
     .from("caja_chica_gastos")
@@ -74,9 +76,9 @@ export async function editarGasto(fd: FormData) {
       monto,
     })
     .eq("id", texto(fd, "gasto_id")!);
-  if (error) volver(ruta(periodo, fuente), "error", mensajeError(error));
+  if (error) volver(ruta(periodo, fuente, cajaId), "error", mensajeError(error));
   revalidatePath("/caja-chica");
-  volver(ruta(periodo, fuente), "ok", "Gasto corregido.");
+  volver(ruta(periodo, fuente, cajaId), "ok", "Gasto corregido.");
 }
 
 export async function anularGasto(fd: FormData) {
@@ -84,12 +86,13 @@ export async function anularGasto(fd: FormData) {
   const supabase = await supabaseServidor();
   const periodo = texto(fd, "periodo")!;
   const fuente = texto(fd, "fuente_id")!;
+  const cajaId = texto(fd, "caja_id");
   const { error } = await supabase
     .from("caja_chica_gastos")
     .update({ anulado: true, anulado_motivo: texto(fd, "motivo") })
     .eq("id", texto(fd, "gasto_id")!);
-  if (error) volver(ruta(periodo, fuente), "error", mensajeError(error));
-  volver(ruta(periodo, fuente), "ok", "Gasto anulado. Queda en el historial.");
+  if (error) volver(ruta(periodo, fuente, cajaId), "error", mensajeError(error));
+  volver(ruta(periodo, fuente, cajaId), "ok", "Gasto anulado. Queda en el historial.");
 }
 
 export async function liquidarCaja(fd: FormData) {
@@ -97,8 +100,9 @@ export async function liquidarCaja(fd: FormData) {
   const supabase = await supabaseServidor();
   const periodo = texto(fd, "periodo")!;
   const fuente = texto(fd, "fuente_id")!;
+  const cajaId = texto(fd, "caja_id");
   const { data, error } = await supabase.rpc("liquidar_caja_chica", { p_caja: texto(fd, "caja_id") });
-  if (error) volver(ruta(periodo, fuente), "error", mensajeError(error));
+  if (error) volver(ruta(periodo, fuente, cajaId), "error", mensajeError(error));
   revalidatePath("/comprobantes");
   volver(`/comprobantes/${data}`, "ok", "Caja chica liquidada. Se generó su comprobante de pago en borrador.");
 }
@@ -107,8 +111,9 @@ export async function cambiarCheque(fd: FormData) {
   const supabase = await supabaseServidor();
   const periodo = texto(fd, "periodo")!;
   const fuente = texto(fd, "fuente_id")!;
+  const cajaId = texto(fd, "caja_id");
   const cheque = texto(fd, "numero_cheque")?.toUpperCase() ?? null;
   const { error } = await supabase.from("cajas_chicas").update({ numero_cheque: cheque }).eq("id", texto(fd, "caja_id") ?? "");
-  if (error) volver(ruta(periodo, fuente), "error", mensajeError(error));
-  volver(ruta(periodo, fuente), "ok", "Número de cheque guardado.");
+  if (error) volver(ruta(periodo, fuente, cajaId), "error", mensajeError(error));
+  volver(ruta(periodo, fuente, cajaId), "ok", "Número de cheque guardado.");
 }

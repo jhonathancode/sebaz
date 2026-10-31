@@ -129,6 +129,7 @@ export default async function Expedientes({ searchParams }: { searchParams: Para
             hechoPor={ctx.nombre}
             proveedores={provData ?? []}
             chequeSugerido={chequeSugerido}
+            fuentes={ctx.fuentes}
           >
             <CamposRequerimiento modo="asistente" fuentes={ctx.fuentes} pagosFijos={pagosFijos} chequeSugerido={chequeSugerido} historial={atajos.historial} fuenteFrecuente={atajos.fuenteFrecuente} proveedores={provData ?? []} />
           </AsistenteRequerimiento>

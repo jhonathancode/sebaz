@@ -51,7 +51,7 @@ function leerCabecera(fd: FormData, items: { descripcion: string }[]) {
     tipo,
     descripcion: conceptoSeRequiere(texto(fd, "descripcion") ?? "") || resumenAuto(tipo, items),
     area_usuaria: texto(fd, "area_usuaria"),
-    fuente_id: texto(fd, "fuente_id"),
+    fuente_id: texto(fd, "fuente_id") ?? texto(fd, "fuente_final"),
     meta: texto(fd, "meta"),
     clasificador: texto(fd, "clasificador"),
   };

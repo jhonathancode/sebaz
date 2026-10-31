@@ -33,7 +33,7 @@ const TIPOS = [
 ];
 
 /** Orden en pantalla: ingresos propios, luego la distrital (Perené) y la provincial (Chanchamayo). */
-const ORDEN_FUENTES: Record<Fuente["tipo"], number> = { propios: 0, distrito: 1, provincia: 2 };
+export const ORDEN_FUENTES: Record<Fuente["tipo"], number> = { propios: 0, distrito: 1, provincia: 2 };
 
 /** Nombre corto y claro de cada fuente de dinero. */
 export function nombreFuente(f: Fuente) {
@@ -42,7 +42,7 @@ export function nombreFuente(f: Fuente) {
   return `Transferencia de ${lugar}`;
 }
 
-function detalleFuente(f: Fuente) {
+export function detalleFuente(f: Fuente) {
   if (f.tipo === "propios") return "Lo recaudado por la MCP: copias, constancias, alquileres";
   return f.tipo === "distrito" ? "Municipalidad distrital" : "Municipalidad provincial";
 }

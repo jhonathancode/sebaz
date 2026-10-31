@@ -243,15 +243,6 @@ export default async function Inicio() {
 
   return (
     <>
-      <section className="saludo">
-        <div>
-          <h1>{saludo()}, {nombreCorto}</h1>
-          <div className="tenue">
-            {mayus(nombrePeriodo(periodo))} · {diasMes === 0 ? "hoy cierra el mes" : `faltan ${diasMes} días para cerrar el mes`}
-          </div>
-        </div>
-      </section>
-
       {(tieneModulo(ctx.mcp, "rendicion") ? atrasadas : []).map((a) => (
         <div key={a.f.id} className={`aviso ${a.dias < 0 ? "error" : "alerta"} aviso-accion`}>
           <span>
@@ -269,85 +260,32 @@ export default async function Inicio() {
       )}
 
 
-      {/* Lo siguiente que le toca */}
-      <section className="ini-hero" aria-label="Lo siguiente que le toca">
-        <div className="ini-hero-texto">
-          <span className="ini-hero-et">{siguiente ? `Lo siguiente · paso ${pasoActual + 1} de 3` : "Todo al día"}</span>
-          <strong>{siguiente ? siguiente.titulo : `Su mes de ${mesActual} está completo`}</strong>
-          <span>{siguiente ? siguiente.detalle : "Los tres pasos están listos."}</span>
-        </div>
-        <div className="ini-hero-pasos" aria-hidden="true">
-          {pasos.map((p, i) => (
-            <span key={p.titulo} className={p.hecho ? "hecho" : i === pasoActual ? "actual" : undefined}>{p.hecho ? "✓" : i + 1}</span>
-          ))}
-        </div>
-        {siguiente && <Link className="ini-hero-boton" href={siguiente.href}>{siguiente.accion}</Link>}
-      </section>
-
-      {/* Cifras del mes */}
-      <section className="ini-kpis" aria-label="Cifras del mes">
-        <div className="ini-kpi">
-          <span className="ini-kpi-et">Por sustentar</span>
-          <b>S/ {soles(totalFalta)}</b>
-          <small>{tarjetas.map((t) => t.f.municipalidad.replace(/^municipalidad (distrital|provincial) de /i, "")).join(" y ") || "Sin transferencias"}</small>
-        </div>
-        {tieneModulo(ctx.mcp, "ingresos") && (
-          <Link className="ini-kpi" href={`/ingresos?vista=mes&mes=${periodo}`}>
-            <span className="ini-kpi-et">Ingresos propios</span>
-            <b>S/ {soles(ingMes.total)}</b>
-            <small>
-              {variacion === null ? `${ingMes.n} recibo(s) en ${mesActual}` : (
-                <span className={`ini-var ${variacion >= 0 ? "sube" : "baja"}`}>{variacion >= 0 ? "▲" : "▼"} {Math.abs(variacion).toFixed(0)} % vs {mesAnterior}</span>
-              )}
-            </small>
-          </Link>
-        )}
-        {tieneModulo(ctx.mcp, "caja_chica") && (
-          <Link className="ini-kpi destacado" href="/caja-chica">
-            <span className="ini-kpi-et">Caja chica · {cajasMes.length ? (faltaCuadrar > 0 ? "falta cuadrar" : faltaCuadrar < 0 ? "se pasó" : "cuadra") : "sin fondo"}</span>
-            <b>{cajasMes.length ? (faltaCuadrar === 0 ? "✓ Cuadra" : `S/ ${soles(Math.abs(faltaCuadrar))}`) : "—"}</b>
-            <small>{cajasMes.length ? `de S/ ${soles(fondoCaja)} · ${pctCaja} % gastado` : "Aún no se abre el fondo"}</small>
-          </Link>
-        )}
-        <div className="ini-kpi">
-          <span className="ini-kpi-et">En la cuenta del banco</span>
-          <b>S/ {soles(quedaBanco)}</b>
-          <small>{cheques.length} cheque(s) girado(s)</small>
-        </div>
-      </section>
-
       <div className="ini-dos">
         <div className="ini-col">
-          {tieneModulo(ctx.mcp, "ingresos") && (
-            <section className="ini-panel" aria-label="Ingresos propios por mes">
-              <div className="ini-panel-cab">
-                <span>Ingresos propios por mes</span>
-                <Link href="/ingresos?vista=anio">Resumen del año →</Link>
-              </div>
-              <svg className="ini-curva" viewBox="0 0 520 150" role="img" aria-label="Ingresos propios por mes">
-                <defs>
-                  <linearGradient id="iniRelleno" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="var(--primario)" stopOpacity="0.3" />
-                    <stop offset="100%" stopColor="var(--primario)" stopOpacity="0" />
-                  </linearGradient>
-                </defs>
-                {[38, 68, 98].map((y) => <line key={y} x1="30" x2="490" y1={y} y2={y} className="ini-rejilla" />)}
-                {trazo && <path d={`${trazo} L ${pts[pts.length - 1][0]} 118 L ${pts[0][0]} 118 Z`} fill="url(#iniRelleno)" />}
-                {trazo && <path d={trazo} className="ini-linea" />}
-                {pts.length === 1 && <circle cx={pts[0][0]} cy={pts[0][1]} r="5" className="ini-punto" />}
-                {pts.length > 1 && <circle cx={pts[pts.length - 1][0]} cy={pts[pts.length - 1][1]} r="5" className="ini-punto" />}
-                {ingMes.n > 0 && <text x={pts[pts.length - 1][0]} y={pts[pts.length - 1][1] - 12} textAnchor="middle" className="ini-valor">{soles(ingMes.total)}</text>}
-                {mesesIng.slice(0, iMes + 1).map((m, i) => (
-                  <text key={m.per} x={pts[i][0]} y="142" textAnchor="middle" className="ini-eje">{nombrePeriodo(m.per).slice(0, 3)}</text>
-                ))}
-              </svg>
-              <div className="ini-datos">
-                <div><span>Recibos del mes</span><b>{ingMes.n ? `${ingMes.n} · del ${codRec(ingMes.del)} al ${codRec(ingMes.al)}` : "0"}</b></div>
-                <div><span>Promedio por mes</span><b>S/ {soles(promedioMes)}</b></div>
-                <div><span>Mejor mes</span><b>{mejorMes ? `${nombrePeriodo(mejorMes.per).split(" ")[0]} · S/ ${soles(mejorMes.total)}` : "—"}</b></div>
-              </div>
-            </section>
-          )}
+          <section className="saludo">
+        <div>
+          <h1>{saludo()}, {nombreCorto}</h1>
+          <div className="tenue">
+            {mayus(nombrePeriodo(periodo))} · {diasMes === 0 ? "hoy cierra el mes" : `faltan ${diasMes} días para cerrar el mes`}
+          </div>
+        </div>
+      </section>
+
+          {/* Lo siguiente que le toca */}
+          <section className="ini-hero" aria-label="Lo siguiente que le toca">
+            <div className="ini-hero-texto">
+              <span className="ini-hero-et">{siguiente ? `Lo siguiente · paso ${pasoActual + 1} de 3` : "Todo al día"}</span>
+              <strong>{siguiente ? siguiente.titulo : `Su mes de ${mesActual} está completo`}</strong>
+              <span>{siguiente ? siguiente.detalle : "Los tres pasos están listos."}</span>
+            </div>
+            <div className="ini-hero-pasos" aria-hidden="true">
+              {pasos.map((p, i) => (
+                <span key={p.titulo} className={p.hecho ? "hecho" : i === pasoActual ? "actual" : undefined}>{p.hecho ? "✓" : i + 1}</span>
+              ))}
+            </div>
+            {siguiente && <Link className="ini-hero-boton" href={siguiente.href}>{siguiente.accion}</Link>}
+          </section>
+
 
           {tieneModulo(ctx.mcp, "rendicion") && (
             <section className="ini-panel" aria-label="Rendición del mes">
@@ -405,66 +343,7 @@ export default async function Inicio() {
             </section>
           )}
 
-        <section className="ini-panel" aria-label="Gastos del mes por función">
-          <div className="ini-panel-cab">
-            Gastos del mes por función
-            <span className="tenue pequeno">S/ {soles(delMes.reduce((s, c) => s + Number(c.importe), 0))}</span>
-          </div>
-          <div>
-            {conGasto.length === 0 ? (
-              <span className="tenue">Aún no hay comprobantes de pago este mes.</span>
-            ) : (
-              <div className="barras">
-                {conGasto.map((f) => (
-                  <div key={f.nombre} className="fila" title={`${f.nombre}: S/ ${soles(f.total)}`}>
-                    <span className={f.nombre.startsWith("Sin función") ? "falta" : undefined}>{f.nombre}</span>
-                    <span className="monto">{soles(f.total)}</span>
-                    <div className="pista" aria-hidden="true">
-                      <div style={{ width: `${(f.total / maxFuncion) * 100}%`, background: f.nombre.startsWith("Sin función") ? "var(--ambar-borde)" : undefined }} />
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        </section>
-        </div>
-
-        <div className="ini-col">
-          {tieneModulo(ctx.mcp, "caja_chica") && (
-            <section className="ini-panel" aria-label="Caja chica">
-              <div className="ini-panel-cab">
-                <span>Caja chica · cómo va el cuadre</span>
-                {chequesCaja && <small>cheque {chequesCaja}</small>}
-              </div>
-              {cajasMes.length > 0 ? (
-                <>
-                  <div className="ini-trio">
-                    <div><span>Fondo</span><b>{soles(fondoCaja)}</b></div>
-                    <div><span>Gastado</span><b>{soles(gastadoCaja)}</b></div>
-                    <div className="resalta"><span>{faltaCuadrar < 0 ? "Se pasó" : "Falta"}</span><b>{soles(Math.abs(faltaCuadrar))}</b></div>
-                  </div>
-                  <div className="ini-barra" aria-hidden="true"><div style={{ width: `${Math.min(100, pctCaja)}%` }} /></div>
-                  <p className="ini-nota">
-                    {gastosCaja.length} gasto(s) · {djCaja} declaración(es) jurada(s)
-                    {faltaCuadrar === 0 ? " · ya cuadra: puede cerrar la caja." : faltaCuadrar > 0 ? ` · al llegar a S/ ${soles(fondoCaja)} cuadra; también puede cerrarla antes.` : " · anule o corrija algún gasto."}
-                    {cajasMes.length > 1 ? ` (${cajasMes.length} cajas este mes)` : ""}
-                  </p>
-                  <div className="ini-acciones">
-                    {hayCajaAbierta && <Link className="btn primario" href="/caja-chica">+ Registrar gasto</Link>}
-                    <Link className="btn" href="/caja-chica">Ver caja chica</Link>
-                  </div>
-                </>
-              ) : (
-                <>
-                  <p className="ini-nota">Aún no se abre el fondo de caja chica de {mesActual}.</p>
-                  <div className="ini-acciones"><Link className="btn primario" href="/caja-chica">Abrir el fondo</Link></div>
-                </>
-              )}
-            </section>
-          )}
-
-        {/* 1. Pagos fijos del mes */}
+                {/* 1. Pagos fijos del mes */}
         <section className="ini-panel" aria-label="Pagos fijos del mes">
           <div className="ini-panel-cab">
             Pagos fijos de {mesActual}
@@ -537,7 +416,7 @@ export default async function Inicio() {
           </div>
         </section>
 
-        <section className="ini-panel" aria-label="Pendientes">
+                <section className="ini-panel" aria-label="Pendientes">
           <div className="ini-panel-cab"><span>Pendientes</span></div>
           <ul className="pendientes">
             {pendientes.map((p) => (
@@ -573,6 +452,115 @@ export default async function Inicio() {
           </ul>
         </section>
 
+        </div>
+
+        <div className="ini-col">
+          {tieneModulo(ctx.mcp, "ingresos") && (
+            <section className="ini-panel" aria-label="Ingresos propios por mes">
+              <div className="ini-panel-cab">
+                <span>Ingresos propios por mes</span>
+                <Link href="/ingresos?vista=anio">Resumen del año →</Link>
+              </div>
+              <div className="ini-grande">S/ {soles(ingMes.total)}</div>
+              <div className="ini-sub">
+                {mesActual.toLowerCase()}
+                {variacion !== null && <> · <span className={`ini-var ${variacion >= 0 ? "sube" : "baja"}`}>{variacion >= 0 ? "▲" : "▼"} {Math.abs(variacion).toFixed(0)} %</span> frente a {mesAnterior.toLowerCase()}</>}
+              </div>
+              <svg className="ini-curva" viewBox="0 0 520 150" role="img" aria-label="Ingresos propios por mes">
+                <defs>
+                  <linearGradient id="iniRelleno" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="var(--primario)" stopOpacity="0.3" />
+                    <stop offset="100%" stopColor="var(--primario)" stopOpacity="0" />
+                  </linearGradient>
+                </defs>
+                {[38, 68, 98].map((y) => <line key={y} x1="30" x2="490" y1={y} y2={y} className="ini-rejilla" />)}
+                {trazo && <path d={`${trazo} L ${pts[pts.length - 1][0]} 118 L ${pts[0][0]} 118 Z`} fill="url(#iniRelleno)" />}
+                {trazo && <path d={trazo} className="ini-linea" />}
+                {pts.length === 1 && <circle cx={pts[0][0]} cy={pts[0][1]} r="5" className="ini-punto" />}
+                {pts.length > 1 && <circle cx={pts[pts.length - 1][0]} cy={pts[pts.length - 1][1]} r="5" className="ini-punto" />}
+                {ingMes.n > 0 && <text x={pts[pts.length - 1][0]} y={pts[pts.length - 1][1] - 12} textAnchor="middle" className="ini-valor">{soles(ingMes.total)}</text>}
+                {mesesIng.slice(0, iMes + 1).map((m, i) => (
+                  <text key={m.per} x={pts[i][0]} y="142" textAnchor="middle" className="ini-eje">{nombrePeriodo(m.per).slice(0, 3)}</text>
+                ))}
+              </svg>
+              <div className="ini-datos">
+                <div><span>Recibos del mes</span><b>{ingMes.n ? `${ingMes.n} · del ${codRec(ingMes.del)} al ${codRec(ingMes.al)}` : "0"}</b></div>
+                <div><span>Promedio por mes</span><b>S/ {soles(promedioMes)}</b></div>
+                <div><span>Mejor mes</span><b>{mejorMes ? `${nombrePeriodo(mejorMes.per).split(" ")[0]} · S/ ${soles(mejorMes.total)}` : "—"}</b></div>
+              </div>
+            </section>
+          )}
+
+          {tieneModulo(ctx.mcp, "caja_chica") && (
+            <section className="ini-panel" aria-label="Caja chica">
+              <div className="ini-panel-cab">
+                <span>Caja chica · cómo va el cuadre</span>
+                {chequesCaja && <small>cheque {chequesCaja}</small>}
+              </div>
+              {cajasMes.length > 0 ? (
+                <>
+                  <div className="ini-trio">
+                    <div><span>Fondo</span><b>{soles(fondoCaja)}</b></div>
+                    <div><span>Gastado</span><b>{soles(gastadoCaja)}</b></div>
+                    <div className="resalta"><span>{faltaCuadrar < 0 ? "Se pasó" : "Falta"}</span><b>{soles(Math.abs(faltaCuadrar))}</b></div>
+                  </div>
+                  <div className="ini-barra" aria-hidden="true"><div style={{ width: `${Math.min(100, pctCaja)}%` }} /></div>
+                  <p className="ini-nota">
+                    {gastosCaja.length} gasto(s) · {djCaja} declaración(es) jurada(s)
+                    {faltaCuadrar === 0 ? " · ya cuadra: puede cerrar la caja." : faltaCuadrar > 0 ? ` · al llegar a S/ ${soles(fondoCaja)} cuadra; también puede cerrarla antes.` : " · anule o corrija algún gasto."}
+                    {cajasMes.length > 1 ? ` (${cajasMes.length} cajas este mes)` : ""}
+                  </p>
+                  <div className="ini-acciones">
+                    {hayCajaAbierta && <Link className="btn primario" href="/caja-chica">+ Registrar gasto</Link>}
+                    <Link className="btn" href="/caja-chica">Ver caja chica</Link>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <p className="ini-nota">Aún no se abre el fondo de caja chica de {mesActual}.</p>
+                  <div className="ini-acciones"><Link className="btn primario" href="/caja-chica">Abrir el fondo</Link></div>
+                </>
+              )}
+            </section>
+          )}
+
+          <section className="ini-panel" aria-label="Cuenta del banco">
+            <div className="ini-panel-cab">
+              <span>Cuenta del {ctx.mcp.banco_nombre || "Banco de la Nación"}</span>
+              {ctx.mcp.banco_cuenta && <small>N° {ctx.mcp.banco_cuenta}</small>}
+            </div>
+            <div className="ini-lineas">
+              {tarjetas.map((t) => (
+                <div key={t.f.id}><span>Transferencia de {t.f.municipalidad.replace(/^municipalidad (distrital|provincial) de /i, "")}</span><b>+ {soles(t.transferencia)}</b></div>
+              ))}
+              <div><span>Cheques girados ({cheques.length})</span><b>− {soles(girado)}</b></div>
+              <div className="total"><span>Debería quedar en la cuenta</span><b>S/ {soles(quedaBanco)}</b></div>
+            </div>
+          </section>
+
+<section className="ini-panel" aria-label="Gastos del mes por función">
+          <div className="ini-panel-cab">
+            Gastos del mes por función
+            <span className="tenue pequeno">S/ {soles(delMes.reduce((s, c) => s + Number(c.importe), 0))}</span>
+          </div>
+          <div>
+            {conGasto.length === 0 ? (
+              <span className="tenue">Aún no hay comprobantes de pago este mes.</span>
+            ) : (
+              <div className="barras">
+                {conGasto.map((f) => (
+                  <div key={f.nombre} className="fila" title={`${f.nombre}: S/ ${soles(f.total)}`}>
+                    <span className={f.nombre.startsWith("Sin función") ? "falta" : undefined}>{f.nombre}</span>
+                    <span className="monto">{soles(f.total)}</span>
+                    <div className="pista" aria-hidden="true">
+                      <div style={{ width: `${(f.total / maxFuncion) * 100}%`, background: f.nombre.startsWith("Sin función") ? "var(--ambar-borde)" : undefined }} />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </section>
         </div>
       </div>
 

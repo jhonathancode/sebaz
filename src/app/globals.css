@@ -1918,3 +1918,22 @@ html.pdf-captura .cc-excel .estado, html.pdf-captura .cc-excel .etq { color: #00
 /* PDF limpio: lo anulado no sale y la DJ se ve como texto simple */
 html.pdf-captura .sin-pdf { display: none !important; }
 html.pdf-captura .cc-excel .cc-dj { color: #000; font-weight: 400; text-decoration: none; }
+
+/* Ingresos: datos estadísticos compactos y elegantes */
+.ing-resumen { background: var(--panel); border: 1px solid var(--borde); border-radius: 18px; margin: 0 0 14px; overflow: hidden; box-shadow: 0 1px 2px rgba(15, 23, 42, .05); }
+.ing-kpis { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); border-bottom: 1px solid var(--linea); }
+.ing-kpis > div { display: flex; flex-direction: column; gap: 1px; padding: 12px 18px; border-right: 1px solid var(--linea); }
+.ing-kpis > div:last-child { border-right: 0; }
+.ing-kpis span { font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--tenue); }
+.ing-kpis b { font-size: 21px; font-weight: 800; letter-spacing: -.01em; color: var(--primario-texto); line-height: 1.2; }
+.ing-kpis small { font-size: 12px; color: var(--tenue); }
+.ing-curva { display: block; width: 100%; height: auto; max-height: 200px; }
+.ing-rejilla { stroke: var(--linea); stroke-width: 1; stroke-dasharray: 3 5; }
+.ing-linea { fill: none; stroke: var(--primario); stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
+.ing-punto { fill: var(--panel); stroke: var(--primario); stroke-width: 3; }
+.ing-valor { font-size: 13px; font-weight: 800; fill: var(--primario-texto); }
+.ing-eje { font-size: 12.5px; font-weight: 600; fill: var(--tenue); }
+.ing-eje.hoy { fill: var(--primario); font-weight: 800; }
+.ing-punto-link { cursor: pointer; }
+.ing-punto-link:hover .ing-punto { fill: var(--primario); }
+@media (max-width: 760px) { .ing-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); } }

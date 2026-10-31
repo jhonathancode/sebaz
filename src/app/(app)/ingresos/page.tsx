@@ -29,6 +29,21 @@ function semanasDelMes(periodo: string) {
   return out;
 }
 
+/** Curva suave (Catmull-Rom → Bézier) por los puntos dados. */
+function curva(p: [number, number][], piso: number, techo: number) {
+  if (p.length < 2) return "";
+  const cl = (v: number) => Math.min(piso, Math.max(techo, v));
+  let d = `M ${p[0][0]} ${p[0][1]}`;
+  for (let i = 0; i < p.length - 1; i++) {
+    const a = p[i - 1] ?? p[i];
+    const b = p[i];
+    const c = p[i + 1];
+    const e = p[i + 2] ?? c;
+    d += ` C ${b[0] + (c[0] - a[0]) / 6} ${cl(b[1] + (c[1] - a[1]) / 6)}, ${c[0] - (e[0] - b[0]) / 6} ${cl(c[1] - (e[1] - b[1]) / 6)}, ${c[0]} ${c[1]}`;
+  }
+  return d;
+}
+
 export default async function Ingresos({ searchParams }: { searchParams: ParamsAviso }) {
   const sp = await searchParams;
   const ctx = await contextoMcp();
@@ -68,7 +83,7 @@ export default async function Ingresos({ searchParams }: { searchParams: ParamsA
     supabase.from("ingresos").select("numero, anio").eq("mcp_id", ctx.mcp.id).order("anio", { ascending: false }).order("numero", { ascending: false }).limit(1).maybeSingle(),
   ]);
 
-  // Resumen de cada mes del año: lo recaudado, de qué recibo a qué recibo, cuánto pesa en el año y cómo va frente al mes anterior
+  // Resumen de cada mes del año: lo recaudado, de qué recibo a qué recibo, de qué recibo a qué recibo
   const base = MES_CORTO.map((_, i) => {
     const per = `${anio}-${DOS(i + 1)}`;
     const rec = (delAnio ?? []).filter((r) => r.fecha.startsWith(per) && r.estado !== "anulado");
@@ -83,14 +98,7 @@ export default async function Ingresos({ searchParams }: { searchParams: ParamsA
   });
   const totalAnio = base.reduce((t, r) => t + r.ingreso, 0);
   const nAnio = base.reduce((t, r) => t + r.n, 0);
-  const resumen = base.map((r, i) => {
-    const previo = i > 0 ? base[i - 1].ingreso : 0;
-    return {
-      ...r,
-      parte: totalAnio ? (r.ingreso / totalAnio) * 100 : 0,
-      variacion: i > 0 && previo > 0 && r.n ? ((r.ingreso - previo) / previo) * 100 : null,
-    };
-  });
+  const resumen = base;
   const mesesConIngreso = resumen.filter((r) => r.n > 0);
   const promedioMes = mesesConIngreso.length ? totalAnio / mesesConIngreso.length : 0;
   const mejor = mesesConIngreso.reduce<(typeof resumen)[number] | null>((m, r) => (!m || r.ingreso > m.ingreso ? r : m), null);
@@ -199,67 +207,51 @@ export default async function Ingresos({ searchParams }: { searchParams: ParamsA
 
       {vista === "anio" ? (
         <>
-          <div className="tarjetas">
-            <div className="tarjeta">
-              <span className="etiqueta">Recaudado en {anio}</span>
-              <span className="valor">S/ {soles(totalAnio)}</span>
-              <span className="detalle">{nAnio} recibo(s) vigentes</span>
+          <section className="ing-resumen" aria-label="Datos estadísticos del año">
+            <div className="ing-kpis">
+              <div><span>Recaudado en {anio}</span><b>S/ {soles(totalAnio)}</b><small>{nAnio} recibo(s)</small></div>
+              <div><span>Promedio por mes</span><b>S/ {soles(promedioMes)}</b><small>{mesesConIngreso.length} mes(es) con ingresos</small></div>
+              <div><span>Mejor mes</span><b>{mejor ? nombrePeriodo(mejor.per).split(" ")[0] : "—"}</b><small>{mejor ? `S/ ${soles(mejor.ingreso)}` : "Aún sin ingresos"}</small></div>
+              <div><span>Siguiente recibo</span><b>N° {String(siguiente).padStart(4, "0")}</b><small>{ultimo ? `Último: ${String(ultimo.numero).padStart(4, "0")}-${ultimo.anio}` : "Aún no hay recibos"}</small></div>
             </div>
-            <div className="tarjeta">
-              <span className="etiqueta">Promedio por mes</span>
-              <span className="valor">S/ {soles(promedioMes)}</span>
-              <span className="detalle">{mesesConIngreso.length ? `En ${mesesConIngreso.length} mes(es) con ingresos` : "Aún sin ingresos"}</span>
-            </div>
-            <div className="tarjeta">
-              <span className="etiqueta">Mejor mes</span>
-              <span className="valor">{mejor ? nombrePeriodo(mejor.per).split(" ")[0] : "—"}</span>
-              <span className="detalle">{mejor ? `S/ ${soles(mejor.ingreso)} · ${mejor.n} recibo(s)` : "Aún sin ingresos"}</span>
-            </div>
-            <div className="tarjeta">
-              <span className="etiqueta">Siguiente recibo</span>
-              <span className="valor">N° {String(siguiente).padStart(4, "0")}</span>
-              <span className="detalle">{ultimo ? `Último emitido: ${String(ultimo.numero).padStart(4, "0")}-${ultimo.anio}` : "Aún no hay recibos"}</span>
-            </div>
-          </div>
-
-          <section className="ing-grafico" aria-label="Cómo van los ingresos por mes">
-            <div className="ing-grafico-tit">Cómo van mes a mes</div>
-            <div className="ing-barras">
-              {resumen.map((r, i) => (
-                <Link key={r.per} href={enlace({ vista: "mes", mes: r.per })} className={`ing-barra${r.n ? "" : " vacia"}${r.per === hoyPeriodo ? " hoy" : ""}`} title={`${nombrePeriodo(r.per)} · S/ ${soles(r.ingreso)}`}>
-                  <span className="ing-monto">{r.n ? soles(r.ingreso) : ""}</span>
-                  <span className="ing-columna"><span style={{ height: `${r.n ? Math.max(6, (r.ingreso / maxMes) * 100) : 0}%` }} /></span>
-                  <span className="ing-mes">{MES_CORTO[i]}</span>
-                </Link>
-              ))}
-            </div>
+            {(() => {
+              const W = 1000, H = 190, X0 = 30, X1 = 970, TOP = 34, BASE = 160;
+              const pts: [number, number][] = resumen.map((r, k) => [X0 + (k * (X1 - X0)) / 11, BASE - (r.ingreso / maxMes) * (BASE - TOP)]);
+              const linea = curva(pts, BASE, TOP);
+              return (
+                <svg className="ing-curva" viewBox={`0 0 ${W} ${H}`} role="img" aria-label="Ingresos por mes">
+                  <defs>
+                    <linearGradient id="ingRelleno" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="var(--primario)" stopOpacity="0.32" />
+                      <stop offset="100%" stopColor="var(--primario)" stopOpacity="0" />
+                    </linearGradient>
+                  </defs>
+                  {[0, 1, 2, 3].map((g) => (
+                    <line key={g} x1={X0} x2={X1} y1={TOP + ((BASE - TOP) * g) / 3} y2={TOP + ((BASE - TOP) * g) / 3} className="ing-rejilla" />
+                  ))}
+                  {linea && <path d={`${linea} L ${X1} ${BASE} L ${X0} ${BASE} Z`} fill="url(#ingRelleno)" />}
+                  {linea && <path d={linea} className="ing-linea" />}
+                  {resumen.map((r, k) => (
+                    <a key={r.per} href={enlace({ vista: "mes", mes: r.per })} className="ing-punto-link">
+                      <title>{`${nombrePeriodo(r.per)} · S/ ${soles(r.ingreso)}${r.n ? ` · ${r.n} recibo(s)` : ""}`}</title>
+                      <rect x={pts[k][0] - 40} y={0} width={80} height={H} fill="transparent" />
+                      {r.n > 0 && <circle cx={pts[k][0]} cy={pts[k][1]} r={5} className="ing-punto" />}
+                      {r.n > 0 && (
+                        <text x={pts[k][0]} y={pts[k][1] - 12} textAnchor="middle" className="ing-valor">{soles(r.ingreso)}</text>
+                      )}
+                      <text x={pts[k][0]} y={H - 8} textAnchor="middle" className={`ing-eje${r.per === hoyPeriodo ? " hoy" : ""}`}>{MES_CORTO[k]}</text>
+                    </a>
+                  ))}
+                </svg>
+              );
+            })()}
           </section>
-
-          <div className="ing-meses">
-            {resumen.map((r, i) => (
-              <Link key={r.per} href={enlace({ vista: "mes", mes: r.per })} className={`ing-mes-tarjeta${r.n ? "" : " vacia"}${r.per === hoyPeriodo ? " hoy" : ""}`}>
-                <span className="ing-mt-nombre">{nombrePeriodo(r.per).split(" ")[0]}</span>
-                <span className="ing-mt-monto">{r.n ? `S/ ${soles(r.ingreso)}` : "Sin recibos"}</span>
-                <span className="ing-mt-det">{r.n ? `Recibo ${codRec(r.del)} al ${codRec(r.al)} · ${r.n}` : "—"}</span>
-                <span className="ing-mt-pista" aria-hidden="true"><span style={{ width: `${r.parte}%` }} /></span>
-                <span className="ing-mt-pie">
-                  <span>{r.n ? `${r.parte.toFixed(0)} % del año` : ""}</span>
-                  {r.variacion !== null && (
-                    <span className={`ing-var ${r.variacion >= 0 ? "sube" : "baja"}`}>
-                      {r.variacion >= 0 ? "▲" : "▼"} {Math.abs(r.variacion).toFixed(0)} %
-                    </span>
-                  )}
-                </span>
-                <span className="sr-solo">{MES_CORTO[i]}</span>
-              </Link>
-            ))}
-          </div>
 
           <div className="cc-excel-marco">
             <table className="cc-excel">
               <caption>Ingresos propios {anio} · resumen por mes</caption>
               <thead>
-                <tr><th>Mes</th><th>Recibos</th><th>Del recibo N°</th><th>Al recibo N°</th><th>Recaudado</th><th>% del año</th><th>Frente al mes anterior</th><th className="cc-acc-th"><span className="sr-solo">Ver</span></th></tr>
+                <tr><th>Mes</th><th>Recibos</th><th>Del recibo N°</th><th>Al recibo N°</th><th>Recaudado</th><th className="cc-acc-th"><span className="sr-solo">Ver</span></th></tr>
               </thead>
               <tbody>
                 {resumen.map((r) => (
@@ -269,8 +261,6 @@ export default async function Ingresos({ searchParams }: { searchParams: ParamsA
                     <td className="c">{codRec(r.del)}</td>
                     <td className="c">{codRec(r.al)}</td>
                     <td className="m">{r.n ? `S/ ${soles(r.ingreso)}` : "—"}</td>
-                    <td className="c">{r.n ? `${r.parte.toFixed(1)} %` : "—"}</td>
-                    <td className="c">{r.variacion === null ? "—" : `${r.variacion >= 0 ? "+" : "−"}${Math.abs(r.variacion).toFixed(1)} %`}</td>
                     <td className="acc"><Link className="btn chico contorno" href={enlace({ vista: "mes", mes: r.per })}>Ver</Link></td>
                   </tr>
                 ))}
@@ -282,8 +272,6 @@ export default async function Ingresos({ searchParams }: { searchParams: ParamsA
                   <td className="c">{codRec(mesesConIngreso.length ? Math.min(...mesesConIngreso.map((r) => r.del ?? Infinity)) : null)}</td>
                   <td className="c">{codRec(mesesConIngreso.length ? Math.max(...mesesConIngreso.map((r) => r.al ?? 0)) : null)}</td>
                   <td className="m">S/ {soles(totalAnio)}</td>
-                  <td className="c">{totalAnio ? "100 %" : "—"}</td>
-                  <td></td>
                   <td className="acc"></td>
                 </tr>
               </tfoot>
@@ -306,7 +294,7 @@ export default async function Ingresos({ searchParams }: { searchParams: ParamsA
         <div className="tarjeta">
           <span className="etiqueta">Recibos del mes</span>
           <span className="valor">{rMes?.n ? `${codRec(rMes.del)} al ${codRec(rMes.al)}` : "—"}</span>
-          <span className="detalle">{rMes?.n ? `${rMes.parte.toFixed(0)} % de lo recaudado en ${anio}` : "Sin recibos este mes"}</span>
+          <span className="detalle">{rMes?.n ? `${rMes.n} recibo(s) vigentes` : "Sin recibos este mes"}</span>
         </div>
         <div className="tarjeta">
           <span className="etiqueta">Siguiente recibo</span>

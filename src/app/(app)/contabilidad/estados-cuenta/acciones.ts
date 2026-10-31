@@ -17,34 +17,40 @@ export async function subirEstadoCuenta(fd: FormData) {
   const periodo = texto(fd, "periodo") ?? "";
   if (!/^\d{4}-\d{2}$/.test(periodo)) volver(RUTA, "error", "Elija el mes del estado de cuenta.");
   const destino = `${RUTA}?anio=${periodo.slice(0, 4)}`;
-  const archivo = fd.get("archivo");
-  if (!(archivo instanceof File) || archivo.size === 0) volver(destino, "error", "Elija la foto o el PDF del estado de cuenta.");
-  const ext = TIPOS[archivo.type];
-  if (!ext) volver(destino, "error", "El archivo debe ser PDF o una foto (JPG, PNG o WEBP).");
-  if (archivo.size > MAXIMO) volver(destino, "error", "El archivo pesa más de 4 MB. Si es una foto, tómela con menos calidad; si es PDF, descárguelo de nuevo del banco.");
+  const archivos = fd.getAll("archivo").filter((x): x is File => x instanceof File && x.size > 0);
+  if (archivos.length === 0) volver(destino, "error", "Elija la foto o el PDF del estado de cuenta.");
+  if (archivos.some((a) => !TIPOS[a.type])) volver(destino, "error", "Los archivos deben ser PDF o fotos (JPG, PNG o WEBP).");
+  if (archivos.reduce((t, a) => t + a.size, 0) > MAXIMO) volver(destino, "error", "Los archivos pesan más de 4 MB en total. Súbalos en dos veces o use fotos con menos calidad.");
 
-  const ruta = `${ctx.mcp.id}/estados-cuenta/${periodo}-${Date.now()}.${ext}`;
-  const { error: eSubida } = await supabase.storage.from("sustentos").upload(ruta, archivo, { contentType: archivo.type });
-  if (eSubida) volver(destino, "error", mensajeError(eSubida));
-  const { data: nuevo, error } = await supabase.from("estados_cuenta").insert({
-    mcp_id: ctx.mcp.id,
-    periodo,
-    banco: ctx.mcp.banco_nombre ?? "Banco de la Nación",
-    cuenta: ctx.mcp.banco_cuenta,
-    archivo_path: ruta,
-    archivo_nombre: archivo.name.slice(0, 160),
-    archivo_tipo: archivo.type,
-    archivo_tamano: archivo.size,
-    nota: texto(fd, "nota"),
-  }).select("id").single();
-  if (error) {
-    await supabase.storage.from("sustentos").remove([ruta]);
-    volver(destino, "error", /estados_cuenta/i.test(error.message) ? "Falta la actualización de la base (ACTUALIZAR_BASE.sql). Avise a soporte." : mensajeError(error));
+  const subidos: string[] = [];
+  for (const [i, archivo] of archivos.entries()) {
+    const ruta = `${ctx.mcp.id}/estados-cuenta/${periodo}-${Date.now()}-${i}.${TIPOS[archivo.type]}`;
+    const { error: eSubida } = await supabase.storage.from("sustentos").upload(ruta, archivo, { contentType: archivo.type });
+    if (eSubida) {
+      if (subidos.length) await supabase.storage.from("sustentos").remove(subidos);
+      volver(destino, "error", mensajeError(eSubida));
+    }
+    const { error } = await supabase.from("estados_cuenta").insert({
+      mcp_id: ctx.mcp.id,
+      periodo,
+      banco: ctx.mcp.banco_nombre ?? "Banco de la Nación",
+      cuenta: ctx.mcp.banco_cuenta,
+      archivo_path: ruta,
+      archivo_nombre: archivo.name.slice(0, 160),
+      archivo_tipo: archivo.type,
+      archivo_tamano: archivo.size,
+      nota: texto(fd, "nota"),
+    });
+    if (error) {
+      await supabase.storage.from("sustentos").remove([ruta]);
+      volver(destino, "error", /estados_cuenta/i.test(error.message) ? "Falta la actualización de la base (ACTUALIZAR_BASE.sql). Avise a soporte." : mensajeError(error));
+    }
+    subidos.push(ruta);
   }
   revalidatePath(RUTA);
   const [a, m] = periodo.split("-").map(Number);
   const MES = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "setiembre", "octubre", "noviembre", "diciembre"][m - 1];
-  volver(`${destino}&nuevo=${nuevo?.id ?? ""}`, "ok", `Listo: el estado de cuenta de ${MES} ${a} se subió correctamente (archivo «${archivo.name}»). Está resaltado en la lista; puede abrirlo con «Ver».`);
+  volver(`${destino}&mes=${periodo}`, "ok", `Listo: ${archivos.length === 1 ? "se subió 1 hoja" : `se subieron ${archivos.length} hojas`} del estado de cuenta de ${MES} ${a}. Ya aparece en su mes de la lista.`);
 }
 
 /** Un estado de cuenta subido por error no se borra: se anula con motivo y queda en el historial. */

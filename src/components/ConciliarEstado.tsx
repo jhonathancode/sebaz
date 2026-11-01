@@ -52,8 +52,8 @@ function vistaAIso(texto: string, ref: string): string {
 }
 
 /** Pone las barras solas mientras se escribe: «24» → «24/», «2402» → «24/02/», «24021993» → «24/02/1993». */
-function autoBarras(raw: string, anterior: string): string {
-  if (/^\d{4}-/.test(raw)) return raw;
+function autoBarras(raw: string, anterior: string, anio: string): { t: string; auto: boolean } {
+  if (/^\d{4}-/.test(raw)) return { t: raw, auto: false };
   const borrando = raw.length < anterior.length;
   let partes: string[];
   if (raw.includes("/") || raw.includes("-")) partes = raw.split(/[/-]/).slice(0, 3).map((p) => p.replace(/\D/g, ""));
@@ -65,24 +65,41 @@ function autoBarras(raw: string, anterior: string): string {
   }
   partes = partes.map((p, i) => p.slice(0, i === 2 ? 4 : 2));
   const out = partes.map((p, i) => (i < partes.length - 1 && p.length === 1 ? `0${p}` : p)).join("/");
-  return !borrando && partes.length < 3 && partes[partes.length - 1].length === 2 ? `${out}/` : out;
+  // Con día y mes completos el año sale solo (el del estado de cuenta): queda seleccionado por si hay que cambiarlo
+  const diaMesListos = partes.length >= 2 && partes[0].length === 2 && partes[1].length === 2;
+  if (!borrando && anio && diaMesListos && (partes.length === 2 || (partes.length === 3 && partes[2] === ""))) return { t: `${partes[0]}/${partes[1]}/${anio}`, auto: true };
+  return { t: !borrando && partes.length < 3 && partes[partes.length - 1].length === 2 ? `${out}/` : out, auto: false };
 }
 
 /** Campo de fecha que se escribe rápido: «6» → día 6 del mes del estado de cuenta; «0602» → 06/02. */
 function CampoDia({ valor, refFecha, onCambio, ...resto }: { valor: string; refFecha: string; onCambio: (iso: string) => void } & Omit<React.InputHTMLAttributes<HTMLInputElement>, "value" | "onChange" | "ref">) {
   const [texto, setTexto] = useState(isoAVista(valor));
   const [editando, setEditando] = useState(false);
+  const caja = useRef<HTMLInputElement>(null);
+  const selAnio = useRef(false);
+  const anioRef = /^\d{4}-\d{2}/.test(refFecha) ? refFecha.slice(0, 4) : "";
   useEffect(() => {
     if (!editando) setTexto(isoAVista(valor));
   }, [valor, editando]);
+  useEffect(() => {
+    if (selAnio.current && caja.current) {
+      caja.current.setSelectionRange(6, 10);
+      selAnio.current = false;
+    }
+  }, [texto]);
   return (
     <input
       {...resto}
+      ref={caja}
       value={texto}
       inputMode="numeric"
-      placeholder="dd/mm/aaaa"
+      placeholder={/^\d{4}-\d{2}/.test(refFecha) ? `dd/${refFecha.slice(5, 7)}/${refFecha.slice(0, 4)}` : "dd/mm/aaaa"}
       onFocus={(e) => { setEditando(true); e.currentTarget.select(); }}
-      onChange={(e) => setTexto((ant) => autoBarras(e.target.value, ant))}
+      onChange={(e) => {
+        const r = autoBarras(e.target.value, texto, anioRef);
+        selAnio.current = r.auto;
+        setTexto(r.t);
+      }}
       onBlur={() => {
         setEditando(false);
         const iso = texto.trim() === "" ? "" : vistaAIso(texto, refFecha);
@@ -364,7 +381,9 @@ export default function ConciliarEstado({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const refFecha = cab.fecha_corte || cab.fecha_saldo_anterior || `${periodo}-01`;
+  // Año y mes de referencia: el de la última fecha anotada; si no hay, el del estado de cuenta
+  const ultimaDia = [...lineas].reverse().find((l) => l.dia)?.dia ?? "";
+  const refFecha = ultimaDia || cab.fecha_corte || cab.fecha_saldo_anterior || `${periodo}-01`;
 
   function ponCab(k: keyof CabeceraExtracto, v: string) {
     tocado.current = true;

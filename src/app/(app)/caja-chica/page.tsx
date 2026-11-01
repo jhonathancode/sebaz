@@ -277,8 +277,9 @@ export default async function CajaChica({ searchParams }: { searchParams: Params
         </div>
       )}
 
-      {!caja &&
-        (puede ? (
+      {!caja && (
+        <>
+        {puede ? (
           <div className="kpi azul" style={{ flexDirection: "row", alignItems: "center", gap: 16, flexWrap: "wrap" }}>
             <div style={{ display: "flex", flexDirection: "column", gap: 4, flex: 1 }}>
               <span className="k-et">Caja chica de {nombrePeriodo(periodo)}</span>
@@ -289,7 +290,29 @@ export default async function CajaChica({ searchParams }: { searchParams: Params
           </div>
         ) : (
           <div className="aviso info">No hay fondo de caja chica abierto este mes.</div>
-        ))}
+        )}
+
+        {/* El cuadro del mes se ve igual, vacío, hasta que se abra el fondo */}
+        <div className="cc-excel-marco">
+          <table className="cc-excel">
+            <caption>Caja chica mes de {nombrePeriodo(periodo)}</caption>
+            <thead>
+              <tr>
+                <th>N°</th><th>Fecha</th><th>Cheque</th><th>CP</th><th>N° CP</th><th>Razón social</th><th>Concepto</th><th>Monto</th><th className="cc-acc-th"><span className="sr-solo">Acciones</span></th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td colSpan={9} className="cc-vacio">Aún no se abre el fondo de {nombrePeriodo(periodo)}. Ábralo para empezar a registrar los gastos.</td></tr>
+            </tbody>
+            <tfoot>
+              <tr><td colSpan={7} className="m">Total gastado</td><td className="m">S/ 0.00</td><td className="acc"></td></tr>
+              <tr><td colSpan={7} className="m">Fondo</td><td className="m">S/ 0.00</td><td className="acc"></td></tr>
+              <tr><td colSpan={7} className="m">Falta gastar</td><td className="m">S/ 0.00</td><td className="acc"></td></tr>
+            </tfoot>
+          </table>
+        </div>
+        </>
+      )}
 
       {caja && (
         <>

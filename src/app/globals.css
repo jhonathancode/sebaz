@@ -3629,3 +3629,12 @@ label.opcion:has(input:checked) { border-color: var(--primario); background: lin
 .fila.anulada .f-desc .f-titulo, .fila.anulada .f-desc > a:first-child { color: color-mix(in srgb, var(--rojo) 55%, var(--texto)); }
 .fila.anulada .doc-paso { filter: saturate(.3) opacity(.85); border-color: color-mix(in srgb, var(--rojo) 35%, var(--borde)); }
 .fila.anulada .doc-paso .ic { background: color-mix(in srgb, var(--rojo) 70%, #fff); }
+
+/* Conciliado: potente y moderno, se nota a primera vista */
+.fila.conciliada { background: linear-gradient(100deg, color-mix(in srgb, #2fa56a 16%, var(--panel)) 0%, color-mix(in srgb, #2fa56a 6%, var(--panel)) 55%, var(--panel) 100%); box-shadow: inset 8px 0 0 #2563eb; }
+.filas .fila.conciliada:hover { background: linear-gradient(100deg, color-mix(in srgb, #2563eb 14%, var(--panel)) 0%, color-mix(in srgb, #2563eb 6%, var(--panel)) 60%, var(--panel) 100%); box-shadow: inset 8px 0 0 #2563eb; }
+.fila.conciliada .f-num::after { content: "✓ CONCILIADO"; display: inline-block; margin-top: 6px; padding: 3px 10px; border-radius: 6px; background: linear-gradient(120deg, #1f8f57, #2fa56a); color: #fff; font-size: 11px; font-weight: 800; letter-spacing: .07em; box-shadow: 0 6px 12px -6px rgba(31, 143, 87, .7); }
+.fila.conciliada .doc-conciliado { background: linear-gradient(120deg, #1f8f57, #2fa56a); color: #fff; border-color: #1f8f57; font-weight: 800; box-shadow: 0 8px 16px -8px rgba(31, 143, 87, .75); }
+.fila.conciliada .f-monto { color: #137a45; }
+:root[data-theme="dark"] .fila.conciliada .f-monto { color: #8bf0bd; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .fila.conciliada .f-monto { color: #8bf0bd; } }

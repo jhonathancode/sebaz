@@ -79,7 +79,7 @@ export default function AsistenteRequerimiento({
   fuentes,
   children,
 }: {
-  boton: string;
+  boton?: string;
   claseBoton?: string;
   abierta?: boolean;
   error?: string;
@@ -113,7 +113,9 @@ export default function AsistenteRequerimiento({
   }, [abierta]);
   useEffect(() => {
     if (!eventoAbrir) return;
-    const abrir = () => {
+    const abrir = (e: Event) => {
+      const d = (e as CustomEvent<{ tomado?: boolean } | undefined>).detail;
+      if (d && typeof d === "object") d.tomado = true;
       if (ref.current && !ref.current.open) ref.current.showModal();
     };
     window.addEventListener(eventoAbrir, abrir);
@@ -271,9 +273,11 @@ export default function AsistenteRequerimiento({
 
   return (
     <>
-      <button type="button" className={`${claseBoton} no-imprimir`} onClick={() => ref.current?.showModal()}>
-        {boton}
-      </button>
+      {boton && (
+        <button type="button" className={`${claseBoton} no-imprimir`} onClick={() => ref.current?.showModal()}>
+          {boton}
+        </button>
+      )}
       <dialog
         ref={ref}
         className="ventana-flotante ancha asistente"

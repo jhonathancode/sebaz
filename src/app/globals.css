@@ -3611,3 +3611,4 @@ label.opcion:has(input:checked) { border-color: var(--primario); background: lin
 .aviso-item.nt-pend .nt-ico { background: var(--ambar-fondo); color: var(--ambar); border: 1px solid var(--ambar-borde); }
 .aviso-item.nt-pend.vencido .nt-ico { background: color-mix(in srgb, var(--rojo) 12%, var(--panel)); color: var(--rojo); border-color: color-mix(in srgb, var(--rojo) 40%, transparent); }
 .aviso-item.nt-pend .nt-etq { font-weight: 800; }
+.ini-hero-boton { border: 0; cursor: pointer; font-family: inherit; }

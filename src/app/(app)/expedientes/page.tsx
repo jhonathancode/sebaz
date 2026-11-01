@@ -125,7 +125,7 @@ export default async function Expedientes({ searchParams }: { searchParams: Para
   const conc = sp.conc === "si" || sp.conc === "no" ? sp.conc : "";
   const nConciliados = todos.filter((e) => e.estado !== "anulado" && conciliadoExp(e.id)).length;
   const nSinConciliar = todos.filter(sinConciliarExp).length;
-  const filas = todos.filter((e) => (!estado || e.estado === estado) && (conc === "" || (conc === "si" ? e.estado !== "anulado" && conciliadoExp(e.id) : sinConciliarExp(e))));
+  const filas = todos.filter((e) => (!estado || e.estado === estado) && (conc === "" || estado === "anulado" || (conc === "si" ? e.estado !== "anulado" && conciliadoExp(e.id) : sinConciliarExp(e))));
   const cuenta = (v: string) => (v ? todos.filter((e) => e.estado === v).length : todos.length);
   const vigentes = todos.filter((e) => e.estado !== "anulado");
   const totalMes = vigentes.reduce((s, e) => s + e.monto, 0);
@@ -273,7 +273,7 @@ export default async function Expedientes({ searchParams }: { searchParams: Para
       <div className="filtros">
         <div className="grupo" role="group" aria-label="Estado">
           {ESTADOS.map((x) => (
-            <Link key={x.v} className={`f-chip${estado === x.v ? " activo" : ""}${x.v === "anulado" ? " rojo" : ""}`} href={enlace({ estado: x.v })}>
+            <Link key={x.v} className={`f-chip${estado === x.v ? " activo" : ""}${x.v === "anulado" ? " rojo" : ""}`} href={enlace(x.v === "anulado" ? { estado: x.v, conc: "" } : { estado: x.v })}>
               {x.t} <span className="n">{cuenta(x.v)}</span>
             </Link>
           ))}

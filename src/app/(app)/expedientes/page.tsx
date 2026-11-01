@@ -6,7 +6,7 @@ import VentanaFlotante from "@/components/VentanaFlotante";
 import Motivo from "@/components/Motivo";
 import { contextoMcp, tiene } from "@/lib/contexto";
 import { cargarCierres, estadoGestion } from "@/lib/gestion";
-import { fecha, hoyISO, nombrePeriodo, num3, periodoActual, rangoPeriodo, soles } from "@/lib/formato";
+import { codigoCP, fecha, hoyISO, nombrePeriodo, num3, periodoActual, rangoPeriodo, soles } from "@/lib/formato";
 import { supabaseServidor } from "@/lib/supabase/server";
 import { cargarCatalogoPagosFijos, siguienteCheque } from "@/lib/pagosFijos";
 import { cargarAtajos } from "@/lib/atajos";
@@ -97,6 +97,38 @@ export default async function Expedientes({ searchParams }: { searchParams: Para
   const totalPaginas = Math.max(1, Math.ceil(filas.length / POR_PAGINA));
   const pagina = Math.min(totalPaginas, Math.max(1, Math.floor(Number(sp.pag)) || 1));
   const visibles = filas.slice((pagina - 1) * POR_PAGINA, pagina * POR_PAGINA);
+  // Números de los documentos de cada expediente visible (orden, conformidad, comprobante, cheque, NEA)
+  const idsVis = visibles.map((e) => e.id);
+  const idsQ = idsVis.length ? idsVis : ["00000000-0000-0000-0000-000000000000"];
+  const [{ data: ordsV }, { data: confV }, { data: cotsV }, { data: cpsV }, { data: neasV }] = await Promise.all([
+    supabase.from("ordenes").select("expediente_id, tipo, numero, anio, anulado, creado_en").in("expediente_id", idsQ),
+    supabase.from("conformidades").select("expediente_id, memorando_numero, anio, anulado, creado_en").in("expediente_id", idsQ),
+    supabase.from("cotizaciones").select("expediente_id, anulado").in("expediente_id", idsQ),
+    supabase.from("comprobantes_pago").select("expediente_id, numero, origen, cheque, estado, creado_en").in("expediente_id", idsQ),
+    supabase.from("notas_entrada").select("id, expediente_id, numero, anio, anulado, creado_en").in("expediente_id", idsQ),
+  ]);
+  const elegir = <T extends { creado_en: string }>(xs: T[] | null | undefined, vigente: (x: T) => boolean) => {
+    const orden = [...(xs ?? [])].sort((a, b) => b.creado_en.localeCompare(a.creado_en));
+    return orden.find(vigente) ?? orden[0] ?? null;
+  };
+  const docsDe = (e: { id: string; estado: string }) => {
+    const mios = <T extends { expediente_id: string }>(xs: T[] | null | undefined) => (xs ?? []).filter((x) => x.expediente_id === e.id);
+    const anul = e.estado === "anulado";
+    const o = elegir(mios(ordsV), (x) => !x.anulado);
+    const c = elegir(mios(confV), (x) => !x.anulado);
+    const cp = elegir(mios(cpsV), (x) => x.estado !== "anulado");
+    const n = elegir(mios(neasV), (x) => !x.anulado);
+    const cots = mios(cotsV).filter((x) => anul || !x.anulado).length;
+    return {
+      orden: o ? `${o.tipo === "compra" ? "OC" : "OS"} ${num3(o.numero)}-${o.anio}` : null,
+      conformidad: c ? `MEMO ${num3(c.memorando_numero)}-${c.anio}` : null,
+      cotizaciones: cots > 0 ? `${cots} cot.` : null,
+      comprobante: cp ? codigoCP(cp.numero, cp.origen) : null,
+      cheque: cp?.cheque ?? null,
+      hayCp: !!cp,
+      nea: n ? { id: n.id as string, texto: `NEA ${num3(n.numero)}-${n.anio}` } : null,
+    };
+  };
   const numeros = Array.from({ length: totalPaginas }, (_, i) => i + 1).filter((n) => n === 1 || n === totalPaginas || Math.abs(n - pagina) <= 2);
   const enlace = (cambios: Record<string, string>) => {
     const p = new URLSearchParams({ mes: periodo, estado, tipo, q, ...cambios });
@@ -221,6 +253,14 @@ export default async function Expedientes({ searchParams }: { searchParams: Para
                 ? ["requerimiento", "orden", "conformidad", "comprobante"] // pago fijo con expediente completo: sin cotizaciones
                 : ["requerimiento", "comprobante"];
           const hecho = e.estado === "rendido" ? pasos.length : Math.max(1, pasos.indexOf(e.fase) + 1);
+          const dd = docsDe(e);
+          const numDe: Record<string, string | null> = {
+            requerimiento: `${num3(e.numero)}-${e.anio}`,
+            cotizaciones: dd.cotizaciones,
+            orden: dd.orden,
+            conformidad: dd.conformidad,
+            comprobante: dd.comprobante,
+          };
           return (
             <div key={e.id} className={`fila${e.estado === "anulado" ? " anulada" : ""}`}>
               <div className="f-num">
@@ -248,6 +288,7 @@ export default async function Expedientes({ searchParams }: { searchParams: Para
                         {listo ? (
                           <Link className="doc-paso" href={`/expedientes/${e.id}?paso=${p}&ver=${d.clave}`} title={`Ver ${d.corto.toLowerCase()}`}>
                             <span className="ic" aria-hidden="true">✓</span>{d.corto}
+                            {numDe[p] && <span className="doc-num">{numDe[p]}</span>}
                           </Link>
                         ) : (
                           siguiente ? (
@@ -259,6 +300,19 @@ export default async function Expedientes({ searchParams }: { searchParams: Para
                               <span className="ic" aria-hidden="true" />{d.corto}
                             </span>
                           )
+                        )}
+                        {p === "conformidad" && dd.nea && (
+                          <>
+                            <i className="doc-sep ok" aria-hidden="true" />
+                            <Link className="doc-paso" href={`/almacen/nea/${dd.nea.id}`} title="Ver la nota de entrada a almacén">
+                              <span className="ic" aria-hidden="true">✓</span>Almacén<span className="doc-num">{dd.nea.texto}</span>
+                            </Link>
+                          </>
+                        )}
+                        {p === "comprobante" && dd.hayCp && (
+                          <span className={`doc-cheque${dd.cheque ? "" : " sin"}`} title={dd.cheque ? "Cheque con el que se pagó" : "Aún sin número de cheque"}>
+                            {dd.cheque ? `Cheque ${dd.cheque}` : "Sin cheque"}
+                          </span>
                         )}
                       </span>
                     );

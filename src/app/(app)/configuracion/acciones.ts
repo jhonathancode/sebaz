@@ -5,6 +5,7 @@ import { BANCOS, CAMPOS_CAPITULO1, CAMPOS_CAPITULO1_LARGOS } from "@/lib/catalog
 import { contextoMcp, tiene } from "@/lib/contexto";
 import { mensajeError, numero, texto, volver } from "@/lib/acciones";
 import { supabaseServidor } from "@/lib/supabase/server";
+import { NUMERACIONES, ultimoEmitido } from "@/lib/numeracion";
 
 export async function guardarDatosMcp(fd: FormData) {
   const ctx = await contextoMcp();
@@ -235,4 +236,28 @@ export async function desactivarFuente(fd: FormData) {
   if (error) volver(SEC, "error", mensajeError(error));
   revalidatePath("/", "layout");
   volver(SEC, "ok", "Fuente desactivada. Lo ya registrado se conserva.");
+}
+
+// ---------------------------------------------------------------------
+// Numeración: desde qué número sigue cada documento (MCP que ya avanzó antes)
+// ---------------------------------------------------------------------
+export async function fijarNumeracion(fd: FormData) {
+  const ctx = await contextoMcp();
+  const supabase = await supabaseServidor();
+  const anio = numero(fd, "anio") ?? new Date().getFullYear();
+  const destino = `/configuracion?seccion=numeracion&anio=${anio}`;
+  if (!tiene(ctx, "admin")) volver(destino, "error", "Solo el administrador puede cambiar la numeración.");
+  const tipo = texto(fd, "tipo") ?? "";
+  const def = NUMERACIONES.find((n) => n.tipo === tipo);
+  if (!def) volver(destino, "error", "Documento no válido.");
+  const inicio = numero(fd, "inicio");
+  if (inicio === null || !Number.isInteger(inicio) || inicio < 1 || inicio > 999999) volver(destino, "error", "Escriba un número entero desde 1.");
+  if (anio < 2020 || anio > 2100) volver(destino, "error", "Año no válido.");
+  // Nunca por debajo de lo ya emitido (incluye lo anulado): se repetirían números
+  const emitido = await ultimoEmitido(supabase, ctx.mcp.id, tipo, anio);
+  if (inicio - 1 < emitido) volver(destino, "error", `Ya se emitió hasta el N° ${emitido} de ${def.nombre.toLowerCase()} en ${anio}. Escriba ${emitido + 1} o un número mayor.`);
+  const { error } = await supabase.rpc("fijar_correlativo", { p_mcp: ctx.mcp.id, p_tipo: tipo, p_anio: anio, p_ultimo: inicio - 1 });
+  if (error) volver(destino, "error", /fijar_correlativo|function/i.test(error.message) ? "Falta la actualización de la base (ACTUALIZAR_BASE.sql). Avise a soporte." : mensajeError(error));
+  revalidatePath("/", "layout");
+  volver(destino, "ok", `Listo: el próximo ${def.nombre.toLowerCase()} de ${anio} será el N° ${inicio}.`);
 }

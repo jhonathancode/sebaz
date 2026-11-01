@@ -3377,3 +3377,14 @@ label.opcion:has(input:checked) { border-color: var(--primario); background: lin
 .fu-pie { display: flex; justify-content: flex-end; }
 .fu-quitar { border-top: 1px dashed var(--borde); padding-top: 10px; display: flex; justify-content: flex-end; }
 :root[data-theme="dark"] .fu-pill.si { color: #6ee7a8; }
+/* Numeración */
+.nu-anios { display: inline-flex; gap: 6px; }
+.nu-card { box-shadow: inset 5px 0 0 var(--primario); }
+.nu-numeros { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.nu-numeros > div { display: flex; flex-direction: column; gap: 2px; padding: 10px 12px; border-radius: 14px; background: var(--panel-2); }
+.nu-numeros > div.sig { background: var(--primario-fondo); }
+.nu-numeros span { font-size: 11px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: var(--tenue); }
+.nu-numeros b { font-size: 22px; font-variant-numeric: tabular-nums; }
+.nu-numeros .sig b { color: var(--primario-texto); }
+.nu-form { display: flex; align-items: flex-end; gap: 10px; }
+.nu-form .campo { flex: 1; }

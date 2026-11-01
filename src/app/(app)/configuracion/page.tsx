@@ -4,14 +4,15 @@ import Avisos, { type ParamsAviso } from "@/components/Avisos";
 import BotonConfirmar from "@/components/BotonConfirmar";
 import Encabezado from "@/components/Encabezado";
 import Motivo from "@/components/Motivo";
-import { CAMPOS_CAPITULO1, CAMPOS_CAPITULO1_LARGOS, CLASIFICADORES } from "@/lib/catalogos";
+import { BANCOS, CAMPOS_CAPITULO1, CAMPOS_CAPITULO1_LARGOS, CLASIFICADORES } from "@/lib/catalogos";
+import { FRECUENCIAS, MESES_LARGO, textoFrecuencia, tocaEnMes } from "@/lib/fuentes";
 import VentanaFlotante from "@/components/VentanaFlotante";
 import { nombreFuente } from "@/components/formularios/CamposRequerimiento";
 import { cargarCatalogoPagosFijos, type PagoFijoCatalogo } from "@/lib/pagosFijos";
 import { contextoMcp, tiene } from "@/lib/contexto";
 import { fechaHora, nombrePeriodo, periodoActual, monto2, soles, urlLogo } from "@/lib/formato";
 import { supabaseServidor } from "@/lib/supabase/server";
-import { cerrarMes, guardarCapitulo1, guardarDatosMcp, guardarDiaLimite, reabrirMes, subirLogo, guardarPagoFijo, alternarPagoFijo, guardarExigirPin } from "./acciones";
+import { agregarCuentaBancaria, agregarFuente, cerrarMes, desactivarCuentaBancaria, desactivarFuente, guardarCapitulo1, guardarDatosMcp, guardarFuente, reabrirMes, subirLogo, guardarPagoFijo, alternarPagoFijo, guardarExigirPin } from "./acciones";
 
 export default async function Configuracion({ searchParams }: { searchParams: ParamsAviso }) {
   const sp = await searchParams;
@@ -20,11 +21,13 @@ export default async function Configuracion({ searchParams }: { searchParams: Pa
   const admin = tiene(ctx, "admin");
   const m = ctx.mcp;
   const cap1 = m.capitulo1 ?? {};
-  const [{ data: periodos }, { data: reaperturas }, pagosFijos] = await Promise.all([
+  const [{ data: periodos }, { data: reaperturas }, pagosFijos, { data: cuentasExtra }] = await Promise.all([
     supabase.from("periodos").select("*").eq("mcp_id", m.id).order("periodo", { ascending: false }).limit(12),
     supabase.from("periodo_reaperturas").select("*").eq("mcp_id", m.id).order("hecho_en", { ascending: false }).limit(10),
     cargarCatalogoPagosFijos(supabase, m.id, false),
+    supabase.from("cuentas_bancarias").select("id, banco, numero, alias").eq("mcp_id", m.id).eq("activo", true).order("creado_en"),
   ]);
+  const mesActual = periodoActual();
   const puedePagos = tiene(ctx, "admin", "tesorero", "contador", "alcalde");
   const anio = periodoActual().slice(0, 4);
   const camposPago = (p?: PagoFijoCatalogo) => (
@@ -138,39 +141,49 @@ export default async function Configuracion({ searchParams }: { searchParams: Pa
 
       {seccion === "identidad" && (
         <div className="cfg-dos">
+          <div className="cfg-columna">
           <form action={guardarDatosMcp} className="panel cfg-panel">
             <div className="panel-cab">
               Identidad de la MCP
-              <span className="ayuda">Tal como figura en la ficha RUC.</span>
+              <span className="ayuda">Empiece por el RUC: el resto se llena solo.</span>
             </div>
             <fieldset disabled={!admin}>
               <div className="panel-cuerpo">
+                <div className="cfg-ruc">
+                  <label className="campo">
+                    <span className="cfg-paso"><i>1</i> RUC de la MCP</span>
+                    <input name="ruc" defaultValue={m.ruc ?? ""} inputMode="numeric" maxLength={11} placeholder="Escriba los 11 dígitos" autoComplete="off" />
+                  </label>
+                  <AutoDocumento doc="ruc" nombre="nombre" direccion="direccion" distrito="distrito" provincia="provincia" departamento="departamento" />
+                  <span className="pequeno tenue">Al completar el RUC se buscan solos el nombre, la dirección, el distrito, la provincia y el departamento. Puede corregirlos.</span>
+                </div>
                 <label className="campo">
-                  Nombre completo
+                  <span className="cfg-paso"><i>2</i> Nombre completo</span>
                   <input name="nombre" defaultValue={m.nombre} required placeholder="Municipalidad del Centro Poblado ..." />
                 </label>
-                <div className="rejilla-2">
-                  <label className="campo">
-                    RUC
-                    <input name="ruc" defaultValue={m.ruc ?? ""} inputMode="numeric" maxLength={11} placeholder="11 dígitos" />
-                  </label>
-                  <AutoDocumento doc="ruc" nombre="nombre" direccion="direccion" />
-                  <label className="campo">
-                    Dirección
-                    <input name="direccion" defaultValue={m.direccion ?? ""} placeholder="Av., jirón o calle, Mz., Lt." />
-                  </label>
-                </div>
+                <label className="campo">
+                  Dirección
+                  <input name="direccion" defaultValue={m.direccion ?? ""} placeholder="Av., jirón o calle, Mz., Lt." />
+                </label>
                 <div className="cfg-tres">
                   <label className="campo">Distrito<input name="distrito" defaultValue={m.distrito ?? ""} /></label>
                   <label className="campo">Provincia<input name="provincia" defaultValue={m.provincia ?? ""} /></label>
                   <label className="campo">Departamento<input name="departamento" defaultValue={m.departamento ?? ""} /></label>
                 </div>
-                <div className="rejilla-2">
-                  <label className="campo">Banco<input value={m.banco_nombre} readOnly /></label>
-                  <label className="campo">
-                    N° de cuenta corriente
-                    <input name="banco_cuenta" defaultValue={m.banco_cuenta ?? ""} inputMode="numeric" placeholder="Sale en cada comprobante de pago" />
-                  </label>
+                <div className="cfg-banco">
+                  <span className="cfg-paso"><i>3</i> Cuenta principal</span>
+                  <div className="rejilla-2">
+                    <label className="campo">
+                      Banco
+                      <select name="banco_nombre" defaultValue={(BANCOS as readonly string[]).includes(m.banco_nombre) ? m.banco_nombre : BANCOS[0]}>
+                        {BANCOS.map((b) => <option key={b} value={b}>{b}</option>)}
+                      </select>
+                    </label>
+                    <label className="campo">
+                      N° de cuenta corriente
+                      <input name="banco_cuenta" defaultValue={m.banco_cuenta ?? ""} inputMode="numeric" placeholder="Sale en cada comprobante de pago" />
+                    </label>
+                  </div>
                 </div>
                 {admin && (
                   <div className="cfg-pie">
@@ -180,6 +193,50 @@ export default async function Configuracion({ searchParams }: { searchParams: Pa
               </div>
             </fieldset>
           </form>
+
+          <section className="panel cfg-panel">
+            <div className="panel-cab">
+              Otras cuentas bancarias
+              <span className="ayuda">Si la MCP tiene cuentas en otros bancos, agréguelas aquí.</span>
+            </div>
+            <div className="panel-cuerpo">
+              {(cuentasExtra ?? []).length === 0 ? (
+                <p className="tenue pequeno" style={{ margin: 0 }}>Solo tiene la cuenta principal.</p>
+              ) : (
+                <ul className="cfg-cuentas">
+                  {(cuentasExtra ?? []).map((c) => (
+                    <li key={c.id}>
+                      <div>
+                        <b>{c.banco}</b>
+                        <span>N° {c.numero}{c.alias ? ` · ${c.alias}` : ""}</span>
+                      </div>
+                      {admin && (
+                        <form action={desactivarCuentaBancaria}>
+                          <input type="hidden" name="id" value={c.id} />
+                          <BotonConfirmar className="btn chico contorno" pregunta="¿Quitar esta cuenta de la lista?" detalle="No se borra nada: solo deja de mostrarse." textoConfirmar="Sí, quitar">Quitar</BotonConfirmar>
+                        </form>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              )}
+              {admin && (
+                <VentanaFlotante boton="+ Agregar otra cuenta" titulo="Agregar una cuenta bancaria" accion={agregarCuentaBancaria} textoGuardar="Agregar cuenta" claseBoton="btn contorno">
+                  <div className="rejilla-2">
+                    <label className="campo">
+                      Banco
+                      <select name="banco" defaultValue={BANCOS[0]}>
+                        {BANCOS.map((b) => <option key={b} value={b}>{b}</option>)}
+                      </select>
+                    </label>
+                    <label className="campo">N° de cuenta<input name="numero" inputMode="numeric" required placeholder="Solo números" /></label>
+                    <label className="campo ancho">Nombre de la cuenta (opcional)<input name="alias" placeholder="Ej.: Cuenta de recaudación" /></label>
+                  </div>
+                </VentanaFlotante>
+              )}
+            </div>
+          </section>
+          </div>
 
           <div className="cfg-columna">
             <section className="panel cfg-panel">
@@ -309,37 +366,107 @@ export default async function Configuracion({ searchParams }: { searchParams: Pa
       )}
 
       {seccion === "dinero" && (
-        <section className="panel cfg-panel">
-          <div className="panel-cab">
-            Con qué se paga y fecha límite para rendir
-            <span className="ayuda">Los montos los registra soporte al activar la MCP. La fecha límite es el día del mes siguiente hasta el que se entrega la rendición; Inicio avisa cuántos días faltan.</span>
+        <section className="fu-seccion">
+          <div className="fu-cab">
+            <div>
+              <h2>Fuentes de ingresos</h2>
+              <p>Municipalidades u otras instituciones que transfieren dinero a la MCP: cuánto, cada cuánto y hasta qué día se rinde.</p>
+            </div>
+            {puedeCambiar && (
+              <VentanaFlotante boton="+ Agregar fuente de ingresos" titulo="Nueva fuente de ingresos" accion={agregarFuente} textoGuardar="Agregar fuente" claseBoton="btn primario">
+                <div className="rejilla-2">
+                  <label className="campo ancho">
+                    <span className="cfg-paso"><i>1</i> RUC o DNI de quien transfiere</span>
+                    <input name="documento" inputMode="numeric" maxLength={11} placeholder="11 dígitos (RUC) u 8 (DNI)" autoComplete="off" />
+                  </label>
+                  <AutoDocumento doc="documento" nombre="municipalidad" />
+                  <label className="campo ancho">
+                    <span className="cfg-paso"><i>2</i> Nombre de la institución</span>
+                    <input name="municipalidad" required placeholder="Ej.: Gobierno Regional de Junín" />
+                  </label>
+                  <label className="campo">Monto de cada transferencia S/<input name="monto" required inputMode="decimal" placeholder="0.00" /></label>
+                  <label className="campo">
+                    Cada cuánto llega
+                    <select name="frecuencia" defaultValue="mensual">
+                      {FRECUENCIAS.map((f) => <option key={f.v} value={f.v}>{f.t}</option>)}
+                    </select>
+                  </label>
+                  <label className="campo">
+                    Primer mes en que llega
+                    <select name="mes_inicio" defaultValue="1">
+                      {MESES_LARGO.map((n, i) => <option key={n} value={i + 1}>{n}</option>)}
+                    </select>
+                  </label>
+                  <label className="campo">Día límite para rendir<input type="number" name="dia_limite" min={1} max={28} defaultValue={10} required /></label>
+                </div>
+                <p className="pequeno tenue" style={{ margin: 0 }}>El «primer mes» sirve para las transferencias trimestrales, semestrales y anuales: desde ese mes se cuenta cuándo llega cada una.</p>
+              </VentanaFlotante>
+            )}
           </div>
-          <div className="tabla-marco" style={{ border: "none", borderRadius: 0 }}>
-            <table className="tabla">
-              <thead>
-                <tr><th>Municipalidad o fuente</th><th className="num">Transferencia mensual</th><th>Día límite para rendir</th></tr>
-              </thead>
-              <tbody>
-                {ctx.fuentes.length === 0 && <tr><td colSpan={3} className="tenue">Aún no hay fuentes de dinero registradas.</td></tr>}
-                {ctx.fuentes.map((f) => (
-                  <tr key={f.id}>
-                    <td className="envolver" style={{ fontWeight: 600 }}>{f.municipalidad}</td>
-                    <td className="num">{f.tipo === "propios" ? "Variable" : `S/ ${soles(f.monto_mensual)}`}</td>
-                    <td>
-                      {f.tipo === "propios" ? (
-                        <span className="tenue">No aplica</span>
-                      ) : (
-                        <form action={guardarDiaLimite} className="cfg-dia">
-                          <input type="hidden" name="fuente_id" value={f.id} />
-                          <input type="number" name="dia_limite" min={1} max={28} defaultValue={f.dia_limite ?? 10} required disabled={!puedeCambiar} aria-label={`Día límite de ${f.municipalidad}`} />
-                          {puedeCambiar && <BotonConfirmar className="btn chico" pregunta="¿Guardar la fecha límite?" textoConfirmar="Sí, guardar">Guardar</BotonConfirmar>}
-                        </form>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+
+          {ctx.fuentes.length === 0 && <div className="aviso info">Aún no hay fuentes de dinero registradas.</div>}
+          <div className="fu-grid">
+            {ctx.fuentes.map((f) => {
+              const propios = f.tipo === "propios";
+              const toca = tocaEnMes(f, mesActual);
+              return (
+                <article key={f.id} className={`fu-card ${f.tipo}`}>
+                  <header className="fu-card-cab">
+                    <span className="fu-tipo">{f.tipo === "distrito" ? "Municipalidad distrital" : f.tipo === "provincia" ? "Municipalidad provincial" : f.tipo === "propios" ? "Recursos propios" : "Otra institución"}</span>
+                    {!propios && <span className={`fu-pill ${toca ? "si" : "no"}`}>{toca ? "Le toca este mes" : "No le toca este mes"}</span>}
+                  </header>
+                  {propios ? (
+                    <>
+                      <h3>{f.municipalidad}</h3>
+                      <p className="tenue pequeno" style={{ margin: 0 }}>Lo que la propia MCP recauda (copias, constancias, alquileres). El monto es variable: se ve en Ingresos.</p>
+                    </>
+                  ) : (
+                    <form action={guardarFuente} className="fu-form">
+                      <input type="hidden" name="fuente_id" value={f.id} />
+                      <fieldset disabled={!puedeCambiar}>
+                        <label className="campo">
+                          RUC o DNI
+                          <input name="documento" inputMode="numeric" maxLength={11} defaultValue={f.documento ?? ""} placeholder="Opcional" autoComplete="off" />
+                        </label>
+                        <AutoDocumento doc="documento" nombre="municipalidad" />
+                        <label className="campo">
+                          Nombre
+                          <input name="municipalidad" defaultValue={f.municipalidad} required />
+                        </label>
+                        <div className="rejilla-2">
+                          <label className="campo">Monto de cada transferencia S/<input name="monto" inputMode="decimal" required defaultValue={monto2(f.monto_mensual)} /></label>
+                          <label className="campo">
+                            Cada cuánto llega
+                            <select name="frecuencia" defaultValue={f.frecuencia ?? "mensual"}>
+                              {FRECUENCIAS.map((x) => <option key={x.v} value={x.v}>{x.t}</option>)}
+                            </select>
+                          </label>
+                          <label className="campo">
+                            Primer mes en que llega
+                            <select name="mes_inicio" defaultValue={f.mes_inicio ?? 1}>
+                              {MESES_LARGO.map((n, i) => <option key={n} value={i + 1}>{n}</option>)}
+                            </select>
+                          </label>
+                          <label className="campo">Día límite para rendir<input type="number" name="dia_limite" min={1} max={28} defaultValue={f.dia_limite ?? 10} required /></label>
+                        </div>
+                        <div className="fu-resumen">{textoFrecuencia(f)} · S/ {soles(f.monto_mensual)} por transferencia</div>
+                        {puedeCambiar && (
+                          <div className="fu-pie">
+                            <BotonConfirmar className="btn primario" pregunta="¿Guardar los cambios de esta fuente?" detalle="Cambia lo que se espera recibir y los plazos de la rendición." textoConfirmar="Sí, guardar">Guardar cambios</BotonConfirmar>
+                          </div>
+                        )}
+                      </fieldset>
+                    </form>
+                  )}
+                  {!propios && f.tipo === "otra" && puedeCambiar && (
+                    <form action={desactivarFuente} className="fu-quitar">
+                      <input type="hidden" name="fuente_id" value={f.id} />
+                      <BotonConfirmar className="btn chico contorno rojo" pregunta="¿Dejar de usar esta fuente?" detalle="No se borra nada: lo ya registrado se conserva." textoConfirmar="Sí, dejar de usarla">Dejar de usar esta fuente</BotonConfirmar>
+                    </form>
+                  )}
+                </article>
+              );
+            })}
           </div>
         </section>
       )}

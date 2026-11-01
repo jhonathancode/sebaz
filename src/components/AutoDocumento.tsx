@@ -17,10 +17,10 @@ type Estado = { tipo: "nada" } | { tipo: "buscando" } | { tipo: "ok"; datos: Dat
  * dirección del RUC) y los llena solos en los campos del mismo formulario. No pisa lo que la
  * persona ya escribió a mano. Si la consulta no está activada o falla, no estorba.
  */
-export default function AutoDocumento({ doc, nombre, direccion }: { doc: string; nombre: string; direccion?: string }) {
+export default function AutoDocumento({ doc, nombre, direccion, distrito, provincia, departamento }: { doc: string; nombre: string; direccion?: string; distrito?: string; provincia?: string; departamento?: string }) {
   const marca = useRef<HTMLDivElement>(null);
   const [estado, setEstado] = useState<Estado>({ tipo: "nada" });
-  const llenados = useRef<{ nombre: string; direccion: string }>({ nombre: "", direccion: "" });
+  const llenados = useRef<Record<string, string>>({});
 
   useEffect(() => {
     const form = marca.current?.closest("form");
@@ -29,8 +29,9 @@ export default function AutoDocumento({ doc, nombre, direccion }: { doc: string;
     let espera: ReturnType<typeof setTimeout> | undefined;
     let control: AbortController | undefined;
 
-    const llenar = (campo: "nombre" | "direccion", valor: string | null) => {
-      const el = form.querySelector<HTMLInputElement>(`input[name="${campo === "nombre" ? nombre : direccion}"]`);
+    const llenar = (campo: string, nombreCampo: string | undefined, valor: string | null | undefined) => {
+      if (!nombreCampo) return;
+      const el = form.querySelector<HTMLInputElement>(`input[name="${nombreCampo}"]`);
       if (!el) return;
       // Solo si está vacío o lo llenó antes esta misma función (nunca pisa lo escrito a mano)
       if (el.value.trim() === "" || el.value === llenados.current[campo]) {
@@ -54,8 +55,13 @@ export default function AutoDocumento({ doc, nombre, direccion }: { doc: string;
         if (entrada.value.replace(/\D/g, "") !== n) return;
         if (j.ok) {
           const datos = j.datos as DatosDocumento;
-          llenar("nombre", datos.nombre);
-          if (datos.tipo === "ruc") llenar("direccion", datos.direccion);
+          llenar("nombre", nombre, datos.nombre);
+          if (datos.tipo === "ruc") {
+            llenar("direccion", direccion, datos.direccion);
+            llenar("distrito", distrito, datos.distrito);
+            llenar("provincia", provincia, datos.provincia);
+            llenar("departamento", departamento, datos.departamento);
+          }
           setEstado({ tipo: "ok", datos, cache: !!j.cache });
         } else if (j.codigo === "no_configurado" || j.codigo === "sin_sesion") {
           setEstado({ tipo: "nada" });
@@ -77,7 +83,7 @@ export default function AutoDocumento({ doc, nombre, direccion }: { doc: string;
       clearTimeout(espera);
       control?.abort();
     };
-  }, [doc, nombre, direccion]);
+  }, [doc, nombre, direccion, distrito, provincia, departamento]);
 
   const d = estado.tipo === "ok" ? estado.datos : null;
   const mal = d?.tipo === "ruc" && ((d.estado && d.estado !== "ACTIVO") || (d.condicion && d.condicion !== "HABIDO"));

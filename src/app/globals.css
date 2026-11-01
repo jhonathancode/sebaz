@@ -3345,3 +3345,35 @@ label.opcion:has(input:checked) { border-color: var(--primario); background: lin
   .ini-panel .tabla-marco { margin: 0 !important; padding: 0 !important; }
   .ini-panel .tabla td { padding-inline: 2px; }
 }
+/* ============ Configuración: RUC primero, bancos y fuentes de ingresos ============ */
+.cfg-paso { display: inline-flex; align-items: center; gap: 8px; font-weight: 800; color: var(--primario-texto); }
+.cfg-paso i { width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center; font-style: normal; font-size: 12px; background: linear-gradient(135deg, #2563eb, #60a5fa); color: #fff; }
+.cfg-ruc { display: flex; flex-direction: column; gap: 6px; padding: 14px 16px; border-radius: 16px; background: linear-gradient(120deg, var(--primario-fondo), var(--panel)); border: 1px solid color-mix(in srgb, var(--primario) 25%, var(--borde)); }
+.cfg-ruc input { font-size: 20px; font-weight: 800; letter-spacing: .08em; min-height: 52px; }
+.cfg-banco { display: flex; flex-direction: column; gap: 8px; padding-top: 6px; }
+.cfg-cuentas { list-style: none; margin: 0 0 12px; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.cfg-cuentas li { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 14px; border-radius: 14px; background: var(--panel-2); border: 1px solid var(--borde); }
+.cfg-cuentas li > div { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+.cfg-cuentas li span { color: var(--tenue); font-size: 13px; font-variant-numeric: tabular-nums; }
+.fu-seccion { display: flex; flex-direction: column; gap: 14px; }
+.fu-cab { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; flex-wrap: wrap; padding: 18px 20px; border-radius: 20px; background: linear-gradient(120deg, color-mix(in srgb, var(--primario) 11%, var(--panel)), var(--panel) 75%); border: 1px solid color-mix(in srgb, var(--primario) 22%, var(--borde)); }
+.fu-cab h2 { margin: 0 0 2px; font-size: 19px; }
+.fu-cab p { margin: 0; color: var(--tenue); font-size: 13.5px; max-width: 640px; }
+.fu-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 360px), 1fr)); gap: 14px; align-items: start; }
+.fu-card { display: flex; flex-direction: column; gap: 10px; padding: 16px 18px; border-radius: 20px; background: var(--panel); border: 1px solid var(--borde); box-shadow: inset 5px 0 0 var(--borde-fuerte); transition: transform .2s, box-shadow .2s; }
+.fu-card:hover { transform: translateY(-2px); box-shadow: inset 5px 0 0 var(--primario), 0 18px 32px -24px rgba(37, 99, 235, .55); }
+.fu-card.distrito { box-shadow: inset 5px 0 0 #2563eb; }
+.fu-card.provincia { box-shadow: inset 5px 0 0 #475569; }
+.fu-card.otra { box-shadow: inset 5px 0 0 #0f9d8a; }
+.fu-card.propios { box-shadow: inset 5px 0 0 #2fa56a; }
+.fu-card-cab { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
+.fu-tipo { font-size: 11px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: var(--tenue); }
+.fu-pill { font-size: 11.5px; font-weight: 800; padding: 3px 10px; border-radius: 99px; }
+.fu-pill.si { background: color-mix(in srgb, #2fa56a 16%, var(--panel)); color: #137a45; border: 1px solid #82d3a6; }
+.fu-pill.no { background: var(--panel-2); color: var(--tenue); border: 1px dashed var(--borde-fuerte); }
+.fu-card h3 { margin: 0; font-size: 16px; }
+.fu-form fieldset { border: 0; padding: 0; margin: 0; min-width: 0; display: flex; flex-direction: column; gap: 10px; }
+.fu-resumen { padding: 8px 12px; border-radius: 12px; background: var(--primario-fondo); color: var(--primario-texto); font-weight: 700; font-size: 13px; }
+.fu-pie { display: flex; justify-content: flex-end; }
+.fu-quitar { border-top: 1px dashed var(--borde); padding-top: 10px; display: flex; justify-content: flex-end; }
+:root[data-theme="dark"] .fu-pill.si { color: #6ee7a8; }

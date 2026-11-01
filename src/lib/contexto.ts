@@ -28,13 +28,17 @@ export type Mcp = {
 export type Fuente = {
   id: string;
   mcp_id: string;
-  tipo: "distrito" | "provincia" | "propios";
+  tipo: "distrito" | "provincia" | "propios" | "otra";
   municipalidad: string;
   monto_mensual: number;
   formato: "perene" | "chanchamayo" | "general";
   activo: boolean;
   /** Día del mes siguiente hasta el que se entrega la rendición (no existe antes de la actualización). */
   dia_limite?: number | null;
+  /** Cada cuánto llega la transferencia y desde qué mes (no existen antes de la actualización). */
+  frecuencia?: "mensual" | "trimestral" | "semestral" | "anual" | null;
+  mes_inicio?: number | null;
+  documento?: string | null;
 };
 
 export type Contexto = {

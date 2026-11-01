@@ -8,6 +8,7 @@ import { contextoMcp, tiene } from "@/lib/contexto";
 import { cargarContabilidad, chequesEnTransito, libro, libroDiario, matriz, MESES_CORTOS, nombreRubro } from "@/lib/contabilidad";
 import { fecha, hoyISO, nombrePeriodo, periodoActual, monto2, soles } from "@/lib/formato";
 import { supabaseServidor } from "@/lib/supabase/server";
+import { tocaEnMes } from "@/lib/fuentes";
 import { anularTransferencia, guardarExtracto, guardarSaldoInicial, marcarCobrados, registrarTransferencia } from "./acciones";
 
 const VISTAS = [
@@ -51,7 +52,7 @@ export default async function Contabilidad({ searchParams }: { searchParams: Par
   const totalTransito = transito.reduce((s, c) => s + c.liquido, 0);
   const extracto = d.conciliaciones.get(mes);
   const diferencia = extracto ? Math.round((extracto.saldo_extracto - (bancos.final + totalTransito)) * 100) / 100 : null;
-  const sinTransferenciaMes = transferencias.filter((f) => !d.transferencias.some((t) => t.fuente_id === f.id && t.periodo === mes));
+  const sinTransferenciaMes = transferencias.filter((f) => tocaEnMes(f, mes)).filter((f) => !d.transferencias.some((t) => t.fuente_id === f.id && t.periodo === mes));
 
   const enlace = (v: string, m = mes) => `/contabilidad?ver=${v}&mes=${m}`;
 

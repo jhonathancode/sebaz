@@ -2411,3 +2411,29 @@ details.cj-guia p { margin: 8px 0 0; line-height: 1.7; }
 .cj .te-tabla td.te-enl { text-align: center; }
 .cj .te-tabla tfoot td { border: 0; border-top: 1px solid color-mix(in srgb, var(--texto) 32%, transparent); background: var(--panel-2); }
 .cj .te-tabla tr.mal td { background: color-mix(in srgb, var(--rojo) 8%, var(--panel)); }
+/* Hoja moderna: rejilla suave, tipografía limpia, sin desplazamiento lateral */
+.cj .te-tabla-marco { border: 1px solid var(--borde); border-radius: 16px; background: var(--panel); box-shadow: 0 14px 30px -24px rgba(15, 23, 42, .45); overflow: hidden; }
+.cj .te-tabla { min-width: 0; width: 100%; font-family: inherit; }
+.cj .te-tabla th, .cj .te-tabla td { border: 1px solid color-mix(in srgb, var(--borde) 70%, transparent); }
+.cj .te-tabla tr > :first-child { border-left: 0; }
+.cj .te-tabla tr > :last-child { border-right: 0; }
+.cj .te-tabla thead th { border-top: 0; background: var(--panel-2); color: var(--tenue); font-size: 10.5px; font-weight: 800; letter-spacing: .08em; padding: 11px 6px; }
+.cj .te-tabla tbody tr:last-child td { border-bottom: 0; }
+.cj .te-tabla th:nth-child(1), .cj .te-tabla td:nth-child(1) { width: 34px; }
+.cj .te-tabla th:nth-child(2) { width: auto; }
+.cj .te-tabla th:nth-child(3), .cj .te-tabla th:nth-child(4), .cj .te-tabla th:nth-child(5) { width: 100px; }
+.cj .te-tabla th:nth-child(6) { width: 122px; }
+.cj .te-tabla th:nth-child(7) { width: 86px; }
+.cj .te-tabla th:nth-child(8) { width: 96px; }
+.cj .te-tabla th:nth-child(9), .cj .te-tabla td:nth-child(9) { width: 32px; }
+.cj .te-tabla td input { font-family: inherit; font-size: 14px; font-weight: 500; font-variant-numeric: tabular-nums; padding: 8px 9px; min-height: 44px; background: transparent; }
+.cj .te-tabla td input::placeholder { color: color-mix(in srgb, var(--tenue) 60%, transparent); font-weight: 400; }
+.cj .te-tabla td input:focus { background: var(--primario-fondo); box-shadow: inset 0 0 0 2px var(--primario); border-radius: 0; }
+.cj .te-tabla td.n { background: transparent; color: var(--tenue); font-size: 12px; }
+.cj .te-tabla .te-previo td { background: var(--panel-2); font-size: 12.5px; }
+.cj .te-tabla .te-fijo { letter-spacing: .06em; font-size: 11.5px; font-weight: 800; }
+.cj .te-tabla tbody:not(:first-of-type) tr:hover td { background: color-mix(in srgb, var(--primario) 4%, transparent); }
+.cj .te-tabla td.te-va { font-size: 12px; font-weight: 600; padding: 0 8px !important; }
+.cj .te-tabla td.te-enl { padding: 0 4px !important; }
+.cj .te-enlazado { font-size: 10.5px; padding: 3px 8px; }
+.cj .te-tabla tfoot td { background: var(--panel-2); border-top: 1px solid var(--borde); border-left: 0; border-right: 0; border-bottom: 0; }

@@ -2737,3 +2737,75 @@ details.cj-guia p { margin: 8px 0 0; line-height: 1.7; }
 .cj-op.igual .cj-op-m { color: #137a45; }
 .cj-singuardar.ok { background: color-mix(in srgb, #2fa56a 10%, var(--panel)); border-color: #82d3a6; color: #137a45; }
 .cj-singuardar.ok span { color: var(--suave); }
+/* ============ Vida en Expedientes, Rendición y listas: entradas suaves y efectos al pasar el mouse ============ */
+@keyframes vida-subir { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
+@keyframes vida-crecer { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+@keyframes vida-pop { 0% { transform: scale(.6); opacity: 0; } 70% { transform: scale(1.12); } 100% { transform: scale(1); opacity: 1; } }
+
+/* Tarjetas de cifras */
+.kpis .kpi, .kpi { animation: vida-subir .45s cubic-bezier(.2, .7, .2, 1) both; transition: transform .2s cubic-bezier(.2, .7, .2, 1), box-shadow .2s, border-color .2s; }
+.kpis .kpi:nth-child(2) { animation-delay: .05s; }
+.kpis .kpi:nth-child(3) { animation-delay: .1s; }
+.kpis .kpi:nth-child(4) { animation-delay: .15s; }
+.kpi:hover { transform: translateY(-4px); box-shadow: 0 20px 36px -24px rgba(37, 99, 235, .55); border-color: color-mix(in srgb, var(--primario) 45%, var(--borde)); }
+.kpi .k-val { transition: transform .2s; transform-origin: left center; }
+.kpi:hover .k-val { transform: scale(1.06); }
+
+/* Filtros */
+.f-chip { transition: transform .15s, box-shadow .15s, background .15s, border-color .15s; }
+.f-chip:hover { transform: translateY(-2px); box-shadow: 0 8px 16px -10px rgba(37, 99, 235, .55); }
+.f-chip:active { transform: translateY(0) scale(.96); }
+.muni-tab { transition: transform .2s, box-shadow .2s, border-color .2s; animation: vida-subir .45s cubic-bezier(.2, .7, .2, 1) both; }
+.muni-tab:hover { transform: translateY(-3px); box-shadow: 0 18px 32px -22px rgba(37, 99, 235, .6); border-color: color-mix(in srgb, var(--primario) 50%, var(--borde)); }
+
+/* Filas de expedientes y listas */
+.filas .fila { animation: vida-subir .45s cubic-bezier(.2, .7, .2, 1) both; transition: transform .18s cubic-bezier(.2, .7, .2, 1), box-shadow .18s, background .18s; position: relative; }
+.filas .fila:nth-child(2) { animation-delay: .04s; }
+.filas .fila:nth-child(3) { animation-delay: .08s; }
+.filas .fila:nth-child(4) { animation-delay: .12s; }
+.filas .fila:nth-child(5) { animation-delay: .16s; }
+.filas .fila:nth-child(6) { animation-delay: .2s; }
+.filas .fila:nth-child(n+7) { animation-delay: .24s; }
+.filas .fila:hover { transform: translateY(-2px) scale(1.003); background: color-mix(in srgb, var(--primario) 4%, var(--panel)); box-shadow: 0 16px 30px -22px rgba(37, 99, 235, .55), inset 4px 0 0 var(--primario); z-index: 1; }
+.filas .fila.conciliada:hover { box-shadow: 0 16px 30px -22px rgba(31, 122, 85, .6), inset 4px 0 0 #2fa56a; background: color-mix(in srgb, #2fa56a 9%, var(--panel)); }
+.filas .fila.anulada:hover { transform: none; box-shadow: none; background: transparent; }
+.f-monto { transition: transform .18s; }
+.fila:hover .f-monto { transform: scale(1.05); }
+.f-desc > a { transition: color .15s; }
+.fila:hover .f-desc > a { color: var(--primario-texto); }
+.doc-paso { transition: transform .15s, box-shadow .15s, background .15s, border-color .15s; }
+.doc-paso:hover { transform: translateY(-2px) scale(1.04); box-shadow: 0 8px 16px -8px rgba(37, 99, 235, .6); background: #fff; border-color: var(--primario); }
+.doc-paso .ic { animation: vida-pop .4s ease-out both; }
+.doc-conciliado { animation: vida-pop .5s ease-out both; }
+.doc-cheque { transition: transform .15s, box-shadow .15s; }
+.doc-cheque:hover { transform: translateY(-1px) scale(1.04); box-shadow: 0 8px 14px -8px rgba(37, 99, 235, .7); }
+
+/* Rendición: comprobantes marcables, panel de cuadre y barras */
+.cp-sel.marcable { transition: transform .18s cubic-bezier(.2, .7, .2, 1), box-shadow .18s, background .18s, border-color .18s; animation: vida-subir .4s cubic-bezier(.2, .7, .2, 1) both; }
+.cp-sel.marcable:hover:not(.bloqueado) { transform: translateX(5px); background: color-mix(in srgb, var(--primario) 6%, var(--panel)); box-shadow: -4px 0 0 var(--primario), 0 14px 26px -22px rgba(37, 99, 235, .6); }
+.cp-sel.marcable.marcado { box-shadow: -4px 0 0 var(--primario); }
+.cp-sel .c-monto, .cp-sel .c-estado { transition: transform .18s; }
+.cp-sel:hover .c-monto { transform: scale(1.06); }
+.rend-cuadro { animation: vida-subir .5s cubic-bezier(.2, .7, .2, 1) .1s both; transition: transform .22s, box-shadow .22s, border-color .22s; }
+.rend-cuadro:hover { transform: translateY(-4px); box-shadow: 0 24px 40px -26px rgba(37, 99, 235, .55); border-color: color-mix(in srgb, var(--primario) 40%, var(--borde)); }
+.r-barra > div, .k-barra > div, .pista > div, .apilada > div { transform-origin: left center; animation: vida-crecer .9s cubic-bezier(.2, .7, .2, 1) .15s both; }
+.r-saldo { transition: transform .2s; transform-origin: left center; }
+.rend-cuadro:hover .r-saldo { transform: scale(1.05); }
+.rend-cuadro .btn.primario:not(:disabled) { animation: ini-brillo 2.2s ease-out infinite; }
+
+/* Botones en todo el sistema: responden al tacto */
+.btn { transition: transform .15s, box-shadow .15s, background .15s, border-color .15s, color .15s; }
+.btn:not(:disabled):hover { transform: translateY(-2px); box-shadow: 0 10px 18px -12px rgba(37, 99, 235, .65); }
+.btn:not(:disabled):active { transform: translateY(0) scale(.97); box-shadow: none; }
+.btn.primario:not(:disabled):hover { box-shadow: 0 12px 22px -10px rgba(37, 99, 235, .8); }
+
+/* Tablas y paneles */
+.tabla tbody tr { transition: background .15s, box-shadow .15s; }
+.tabla tbody tr:hover { background: color-mix(in srgb, var(--primario) 5%, transparent); box-shadow: inset 3px 0 0 var(--primario); }
+.panel { animation: vida-subir .45s cubic-bezier(.2, .7, .2, 1) both; transition: box-shadow .22s, border-color .22s; }
+.panel:hover { box-shadow: 0 18px 34px -26px rgba(37, 99, 235, .45); }
+
+@media (prefers-reduced-motion: reduce) {
+  .kpi, .muni-tab, .filas .fila, .cp-sel.marcable, .rend-cuadro, .panel, .doc-paso .ic, .doc-conciliado, .r-barra > div, .k-barra > div, .pista > div, .apilada > div, .rend-cuadro .btn.primario { animation: none !important; }
+  .kpi:hover, .muni-tab:hover, .filas .fila:hover, .cp-sel.marcable:hover, .rend-cuadro:hover, .btn:hover, .f-chip:hover, .doc-paso:hover { transform: none !important; }
+}

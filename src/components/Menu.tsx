@@ -201,6 +201,10 @@ export type DatosMcpMenu = { nombre: string; ruc: string | null; logo: string | 
 export default function Menu({ items, abajo = [], mcp, panel }: { items: ItemMenu[]; abajo?: ItemMenu[]; nuevo?: boolean; mcp: DatosMcpMenu; panel?: string }) {
   const ruta = usePathname();
   const [abierto, setAbierto] = useState<Record<string, boolean>>({});
+  // Al cambiar de página, cada grupo vuelve a su estado normal: abierto solo si se está dentro de él
+  useEffect(() => {
+    setAbierto({});
+  }, [ruta]);
   // Se marca la opción que más se parece a la ruta (así «Clientes» no queda marcado en «Pagos»).
   const actual = [...items, ...abajo]
     .map((i) => i.href)

@@ -475,7 +475,7 @@ export default async function Inicio() {
                 </defs>
                 {[38, 68, 98].map((y) => <line key={y} x1="30" x2="490" y1={y} y2={y} className="ini-rejilla" />)}
                 {trazo && <path d={`${trazo} L ${pts[pts.length - 1][0]} 118 L ${pts[0][0]} 118 Z`} fill="url(#iniRelleno)" />}
-                {trazo && <path d={trazo} className="ini-linea" />}
+                {trazo && <path d={trazo} className="ini-linea" pathLength={1} />}
                 {pts.length === 1 && <circle cx={pts[0][0]} cy={pts[0][1]} r="5" className="ini-punto" />}
                 {pts.length > 1 && <circle cx={pts[pts.length - 1][0]} cy={pts[pts.length - 1][1]} r="5" className="ini-punto" />}
                 {ingMes.n > 0 && <text x={pts[pts.length - 1][0]} y={pts[pts.length - 1][1] - 12} textAnchor="middle" className="ini-valor">{soles(ingMes.total)}</text>}

@@ -61,35 +61,45 @@ export default async function EstadosCuenta({ searchParams }: { searchParams: Pa
       <Avisos ok={sp.ok} error={sp.error} />
       {error && <div className="aviso error">Los estados de cuenta aún no están activos: falta la actualización de la base de datos (ACTUALIZAR_BASE.sql). Avise a soporte.</div>}
 
-      <p className="pequeno tenue" style={{ margin: "0 0 10px" }}>
-        Suba el estado de cuenta del mes, cópielo en la pantalla de dos caras y compruebe que cuadra. {subidos} mes(es) subido(s) · {cuadrados} cuadrado(s) en {anio}.
-      </p>
+      <section className="ec-resumen" aria-label="Avance del año">
+        <div>
+          <b>{cuadrados} de {meses.filter((m) => !m.futuro).length} meses listos en {anio}</b>
+          <span>Listo = subido, copiado y cuadra con el original. {subidos} subido(s).</span>
+        </div>
+        <div className="ec-barra" aria-hidden="true"><div style={{ width: `${Math.round((cuadrados / Math.max(1, meses.filter((m) => !m.futuro).length)) * 100)}%` }} /></div>
+      </section>
 
-      <div className="ec-lista">
+      <div className="ec-rejilla">
         {meses.map((m) => {
           const subido = m.hojas.length > 0;
           const ultima = m.hojas[m.hojas.length - 1];
+          const nombre = nombrePeriodo(m.per).split(" ")[0];
+          // Un solo estado claro por mes
+          const est = !subido
+            ? { clase: m.futuro ? "futuro" : "vacio", texto: m.futuro ? "Aún no llega" : "Sin subir", ayuda: m.futuro ? "" : "Suba la foto o el PDF" }
+            : m.copia === "cuadra"
+              ? { clase: "listo", texto: "✓ Listo", ayuda: "Copiado y cuadra" }
+              : m.copia === "no_cuadra"
+                ? { clase: "mal", texto: "No cuadra", ayuda: "Revise lo copiado" }
+                : m.copia === "copiando"
+                  ? { clase: "falta", texto: "Casi listo", ayuda: "Faltan los totales del pie" }
+                  : { clase: "falta", texto: "Falta copiarlo", ayuda: "Ya está subido" };
           return (
-            <div key={m.per} className={`ec-mes${subido ? " subido" : ""}${m.futuro ? " futuro" : ""}`}>
-              <div className="ec-nombre">
-                <b>{nombrePeriodo(m.per).split(" ")[0]}</b>
-                {ultima && <small>subido {fechaHora(ultima.creado_en)}</small>}
-              </div>
-              <div className="ec-estado">
-                {!subido && <span className="cc-pendiente">{m.futuro ? "—" : "Sin subir"}</span>}
-                {subido && <span className="cc-subido">✓ Subido · {m.hojas.length} hoja(s)</span>}
-                {m.copia === "sin_copiar" && <span className="ec-copia">Falta copiarlo</span>}
-                {m.copia === "copiando" && <span className="ec-copia">Copiando · faltan los totales</span>}
-                {m.copia === "cuadra" && <span className="ec-copia ok">✓ Copiado y cuadra</span>}
-                {m.copia === "no_cuadra" && <span className="ec-copia mal">Copiado · no cuadra, revise</span>}
-              </div>
+            <article key={m.per} className={`ec-tarjeta ${est.clase}`}>
+              <header>
+                <b>{nombre}</b>
+                <span className="ec-pastilla">{est.texto}</span>
+              </header>
+              <p>{est.ayuda}{ultima ? <small> · {fechaHora(ultima.creado_en)}</small> : null}</p>
               <div className="ec-accion">
                 {subido ? (
-                  <Link className="btn primario" href={`/contabilidad/estados-cuenta/conciliar?mes=${m.per}`}>{m.copia === "cuadra" ? "Abrir" : "Copiar / revisar"}</Link>
+                  <Link className={`btn ${m.copia === "cuadra" ? "contorno" : "primario"}`} href={`/contabilidad/estados-cuenta/conciliar?mes=${m.per}`}>
+                    {m.copia === "cuadra" ? "Abrir" : m.copia === "no_cuadra" ? "Revisar" : "Copiar"}
+                  </Link>
                 ) : (
                   puede &&
                   !m.futuro && (
-                    <VentanaFlotante boton="Subir estado de cuenta" titulo={`Subir el estado de cuenta de ${nombrePeriodo(m.per)}`} accion={subirEstadoCuenta} textoGuardar="Subir y copiar" claseBoton="btn contorno">
+                    <VentanaFlotante boton="Subir" titulo={`Subir el estado de cuenta de ${nombrePeriodo(m.per)}`} accion={subirEstadoCuenta} textoGuardar="Subir y copiar" claseBoton="btn contorno">
                       <div className="rejilla">
                         <input type="hidden" name="periodo" value={m.per} />
                         <CampoArchivoEstado />
@@ -99,7 +109,7 @@ export default async function EstadosCuenta({ searchParams }: { searchParams: Pa
                   )
                 )}
               </div>
-            </div>
+            </article>
           );
         })}
       </div>

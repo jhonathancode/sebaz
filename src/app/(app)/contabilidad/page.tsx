@@ -60,7 +60,7 @@ export default async function Contabilidad({ searchParams }: { searchParams: Par
       <div className="cab-vista">
         <div>
           <h1>Contabilidad</h1>
-          <div className="sub">Libros, ejecución y conciliación de {nombrePeriodo(mes)}, calculados de lo registrado</div>
+          <div className="sub">Así está {nombrePeriodo(mes)}: lo que entró, lo que salió y si cuadra con el banco</div>
         </div>
         <span className="espacio" />
         {["bancos", "caja", "ejecucion", "diario"].includes(ver) && (
@@ -95,7 +95,7 @@ export default async function Contabilidad({ searchParams }: { searchParams: Par
         ))}
       </nav>
 
-      {(!d.hayDatosIniciales || sinTransferenciaMes.length > 0) && ver !== "datos" && (
+      {(!d.hayDatosIniciales || sinTransferenciaMes.length > 0) && ver !== "datos" && ver !== "resumen" && (
         <div className="aviso alerta aviso-accion">
           <span>
             {!d.hayDatosIniciales && <>Falta el <b>saldo inicial {anio}</b> de la cuenta. </>}
@@ -120,71 +120,101 @@ export default async function Contabilidad({ searchParams }: { searchParams: Par
             const maxPartida = Math.max(1, ...partidas.map((f) => f.total));
             return (
               <>
-                <section className="ini-kpis" aria-label="Cifras del mes">
-                  <div className="ini-kpi destacado">
-                    <span className="ini-kpi-et">Saldo en banco</span>
+                {/* 1 · Lo que falta, en pasos simples */}
+                {(() => {
+                  const pasos = [
+                    { ok: d.hayDatosIniciales, t: `Saldo inicial de ${anio}`, d: d.hayDatosIniciales ? "Ya está registrado" : "Cuánto dinero había en el banco y en caja al empezar", href: enlace("datos"), b: "Registrar" },
+                    { ok: sinTransferenciaMes.length === 0, t: `Transferencia de ${nombrePeriodo(mes)}`, d: sinTransferenciaMes.length === 0 ? "Ya está registrada" : `Falta la de ${sinTransferenciaMes.map((f) => f.municipalidad.replace(/^municipalidad (distrital|provincial) de /i, "")).join(" y ")}`, href: enlace("datos"), b: "Registrar" },
+                    { ok: !!extracto, t: "Estado de cuenta del banco", d: extracto ? "Ya está copiado" : "Súbalo y cópielo para comparar con el banco", href: `/contabilidad/estados-cuenta/conciliar?mes=${mes}`, b: "Subir y copiar" },
+                  ];
+                  const faltan = pasos.filter((x) => !x.ok).length;
+                  return (
+                    <section className={`cs-pasos${faltan === 0 ? " listo" : ""}`} aria-label="Lo que falta">
+                      <div className="cs-pasos-cab">
+                        <b>{faltan === 0 ? "✓ Todo está en orden" : `Faltan ${faltan} cosa${faltan > 1 ? "s" : ""} para que cuadre`}</b>
+                        <span>{faltan === 0 ? `${nombrePeriodo(mes)} tiene todo lo necesario.` : "Hágalas en este orden:"}</span>
+                      </div>
+                      <ol>
+                        {pasos.map((x, n) => (
+                          <li key={x.t} className={x.ok ? "hecho" : ""}>
+                            <i>{x.ok ? "✓" : n + 1}</i>
+                            <div><b>{x.t}</b><small>{x.d}</small></div>
+                            {!x.ok && <Link className="btn chico primario" href={x.href}>{x.b}</Link>}
+                          </li>
+                        ))}
+                      </ol>
+                    </section>
+                  );
+                })()}
+
+                {/* 2 · Cuatro cifras en palabras claras */}
+                <section className="cs-cifras" aria-label="Cifras del mes">
+                  <div className="cs-cifra azul">
+                    <span>Dinero en el banco</span>
                     <b>S/ {soles(bancos.final)}</b>
-                    <small>{d.hayDatosIniciales ? `Al cierre de ${nombrePeriodo(mes)} según libro` : "Falta el saldo inicial para que cuadre"}</small>
+                    <small>{d.hayDatosIniciales ? `Según su libro al cerrar ${nombrePeriodo(mes)}` : "Aún falta el saldo inicial"}</small>
                   </div>
-                  <div className="ini-kpi">
-                    <span className="ini-kpi-et">Saldo en caja</span>
+                  <div className="cs-cifra">
+                    <span>Dinero en caja</span>
                     <b>S/ {soles(caja.final)}</b>
-                    <small>Ingresos propios en efectivo</small>
+                    <small>Efectivo de ingresos propios</small>
                   </div>
-                  <div className="ini-kpi">
-                    <span className="ini-kpi-et">Ingresos del mes</span>
-                    <b>S/ {soles(ingresosMes)}</b>
-                    <small>En el año: S/ {soles(ingresosAnio)}</small>
+                  <div className="cs-cifra mas">
+                    <span>Entró este mes</span>
+                    <b>+ S/ {soles(ingresosMes)}</b>
+                    <small>En todo {anio}: S/ {soles(ingresosAnio)}</small>
                   </div>
-                  <div className="ini-kpi">
-                    <span className="ini-kpi-et">Gastos del mes</span>
-                    <b>S/ {soles(gastosMes)}</b>
-                    <small>En el año: S/ {soles(gastosAnio)}</small>
-                  </div>
-                </section>
-
-                <section className="ini-panel" aria-label="Ingresos y gastos del año por mes">
-                  <div className="ini-panel-cab">
-                    <span>Ingresos y gastos de {anio}, mes a mes</span>
-                    <small><i className="ct-leyenda ing" /> Ingresos · <i className="ct-leyenda gas" /> Gastos</small>
-                  </div>
-                  <div className="ct-barras">
-                    {MESES_CORTOS.map((nombre, i) => (
-                      <Link key={nombre} href={enlace("resumen", `${anio}-${String(i + 1).padStart(2, "0")}`)} className={`ct-par${i === mesNum ? " sel" : ""}`} title={`${nombre}: ingresos S/ ${soles(ing[i])} · gastos S/ ${soles(gas[i])}`}>
-                        <span className="ct-col">
-                          <span className="ing" style={{ height: `${(ing[i] / tope) * 100}%` }} />
-                          <span className="gas" style={{ height: `${(gas[i] / tope) * 100}%` }} />
-                        </span>
-                        <span className="ct-mes">{nombre}</span>
-                      </Link>
-                    ))}
+                  <div className="cs-cifra menos">
+                    <span>Salió este mes</span>
+                    <b>− S/ {soles(gastosMes)}</b>
+                    <small>En todo {anio}: S/ {soles(gastosAnio)}</small>
                   </div>
                 </section>
 
-                <div className="ini-dos">
-                  <section className="ini-panel" aria-label="Conciliación">
-                    <div className="ini-panel-cab"><span>Conciliación de {nombrePeriodo(mes)}</span></div>
-                    <div className="ini-lineas">
-                      <div><span>Saldo según libro</span><b>S/ {soles(bancos.final)}</b></div>
-                      <div><span>(+) Cheques en tránsito ({transito.length})</span><b>S/ {soles(totalTransito)}</b></div>
-                      <div className="total"><span>Saldo conciliado</span><b>S/ {soles(bancos.final + totalTransito)}</b></div>
-                      <div><span>Saldo según estado de cuenta</span><b>{extracto ? `S/ ${soles(extracto.saldo_extracto)}` : "—"}</b></div>
-                    </div>
-                    {extracto ? (
-                      diferencia === 0 ? (
-                        <div className="aviso ok" style={{ margin: "10px 0 0" }}>✓ Conciliada: el libro más los cheques en tránsito es igual al estado de cuenta.</div>
-                      ) : (
-                        <div className="aviso error" style={{ margin: "10px 0 0" }}>Diferencia de S/ {soles(Math.abs(diferencia!))} con el estado de cuenta. Revise la conciliación.</div>
-                      )
+                {/* 3 · ¿Cuadra con el banco? */}
+                <section className="cs-cuadra" aria-label="¿Cuadra con el banco?">
+                  <h2>¿Cuadra con el banco?</h2>
+                  <div className="cs-cuenta">
+                    <div><span>Su libro dice</span><b>S/ {soles(bancos.final)}</b></div>
+                    <div className="op"><span>+ Cheques girados que el banco aún no cobra ({transito.length})</span><b>S/ {soles(totalTransito)}</b></div>
+                    <div className="tot"><span>El banco debería tener</span><b>S/ {soles(bancos.final + totalTransito)}</b></div>
+                    <div><span>El estado de cuenta dice</span><b>{extracto ? `S/ ${soles(extracto.saldo_extracto)}` : "—"}</b></div>
+                  </div>
+                  {extracto ? (
+                    diferencia === 0 ? (
+                      <div className="cs-veredicto ok">✓ Sí cuadra. No hay diferencia con el banco.</div>
                     ) : (
-                      <p className="ini-nota" style={{ margin: "10px 0 0" }}>Aún no se registra el saldo del estado de cuenta de este mes.</p>
-                    )}
-                    <div className="ini-acciones" style={{ marginTop: 12 }}>
-                      <Link className="btn primario" href={`/contabilidad/estados-cuenta/conciliar?mes=${mes}`}>Subir y copiar el estado de cuenta</Link>
-                      <Link className="btn" href={enlace("conciliacion")}>Ir a la conciliación</Link>
+                      <div className="cs-veredicto mal">⚠ No cuadra: hay una diferencia de S/ {soles(Math.abs(diferencia!))}. Revise los movimientos en la conciliación.</div>
+                    )
+                  ) : (
+                    <div className="cs-veredicto pend">Aún no se puede comparar: falta copiar el estado de cuenta de {nombrePeriodo(mes)}.</div>
+                  )}
+                  <div className="ini-acciones">
+                    <Link className="btn primario" href={`/contabilidad/estados-cuenta/conciliar?mes=${mes}`}>{extracto ? "Ver o corregir el estado de cuenta" : "Subir y copiar el estado de cuenta"}</Link>
+                    <Link className="btn" href={enlace("conciliacion")}>Ver cheques en tránsito</Link>
+                  </div>
+                </section>
+
+                {/* 4 · El detalle, plegado para no cargar la vista */}
+                <details className="cs-mas">
+                  <summary>Ver más detalle: mes a mes y por partida</summary>
+                  <section className="ini-panel" aria-label="Ingresos y gastos del año por mes">
+                    <div className="ini-panel-cab">
+                      <span>Ingresos y gastos de {anio}, mes a mes</span>
+                      <small><i className="ct-leyenda ing" /> Ingresos · <i className="ct-leyenda gas" /> Gastos</small>
+                    </div>
+                    <div className="ct-barras">
+                      {MESES_CORTOS.map((nombre, i) => (
+                        <Link key={nombre} href={enlace("resumen", `${anio}-${String(i + 1).padStart(2, "0")}`)} className={`ct-par${i === mesNum ? " sel" : ""}`} title={`${nombre}: ingresos S/ ${soles(ing[i])} · gastos S/ ${soles(gas[i])}`}>
+                          <span className="ct-col">
+                            <span className="ing" style={{ height: `${(ing[i] / tope) * 100}%` }} />
+                            <span className="gas" style={{ height: `${(gas[i] / tope) * 100}%` }} />
+                          </span>
+                          <span className="ct-mes">{nombre}</span>
+                        </Link>
+                      ))}
                     </div>
                   </section>
-
                   <section className="ini-panel" aria-label="Gasto del año por partida">
                     <div className="ini-panel-cab"><span>Gasto de {anio} por partida</span><small>S/ {soles(gastosAnio)}</small></div>
                     {partidas.length === 0 ? (
@@ -201,7 +231,7 @@ export default async function Contabilidad({ searchParams }: { searchParams: Par
                       </div>
                     )}
                   </section>
-                </div>
+                </details>
               </>
             );
           })()}

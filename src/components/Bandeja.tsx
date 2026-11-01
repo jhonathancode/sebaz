@@ -27,7 +27,6 @@ export default function Bandeja({
   const [abierta, setAbierta] = useState(false);
   const caja = useRef<HTMLDivElement>(null);
   const ruta = usePathname();
-  const [sel, setSel] = useState<string | null>(null);
   // Las rendiciones por armar no son mensajes guardados: lo «leído» se recuerda en este navegador
   const [leidos, setLeidos] = useState<string[]>([]);
   useEffect(() => {
@@ -82,24 +81,24 @@ export default function Bandeja({
           <div className="bandeja-lista">
             {pendientes.map((p) => {
               const leido = leidos.includes(p.id);
-              const abierto = sel === p.id;
+              const abierto = true;
               return (
                 <div key={p.id} className={`aviso-fila${abierto ? " abierto" : ""}`}>
-                  <button type="button" className={`aviso-item nt-pend${p.vencido ? " vencido" : ""}${leido ? "" : " nuevo"}`} aria-expanded={abierto} onClick={() => setSel(abierto ? null : p.id)}>
+                  <div className={`aviso-item nt-pend${p.vencido ? " vencido" : ""}${leido ? "" : " nuevo"}`}>
                     <span className="nt-ico" aria-hidden="true">{p.vencido ? "!" : "⏱"}</span>
                     <span className="nt-texto">
                       <span className="nt-titulo">{p.titulo}</span>
                       <span className="nt-detalle">{p.detalle}</span>
-                      <span className="nt-pie"><span className="nt-etq">{p.vencido ? "Vencido" : "Por hacer"}</span> · {leido ? "Leído, sigue pendiente" : "Toque para ver opciones"}</span>
+                      <span className="nt-pie"><span className="nt-etq">{p.vencido ? "Vencido" : "Por hacer"}</span> · {leido ? "Leído, sigue pendiente" : "Pendiente"}</span>
                     </span>
-                  </button>
+                  </div>
                   {abierto && (
                     <div className="aviso-acciones">
                       <Link className="btn chico primario" href={p.enlace}>Armar ahora</Link>
                       {leido ? (
-                        <button type="button" className="btn chico contorno" onClick={() => { guardarLeidos(leidos.filter((x) => x !== p.id)); setSel(null); }}>Dejar pendiente</button>
+                        <button type="button" className="btn chico contorno" onClick={() => { guardarLeidos(leidos.filter((x) => x !== p.id)); }}>Dejar pendiente</button>
                       ) : (
-                        <button type="button" className="btn chico contorno" onClick={() => { guardarLeidos([...leidos, p.id]); setSel(null); }}>✓ Marcar como leído</button>
+                        <button type="button" className="btn chico contorno" onClick={() => { guardarLeidos([...leidos, p.id]); }}>✓ Marcar como leído</button>
                       )}
                     </div>
                   )}
@@ -108,17 +107,17 @@ export default function Bandeja({
             })}
             {avisos.length === 0 && pendientes.length === 0 && <div className="vacio">No tiene notificaciones todavía.</div>}
             {avisos.map((a) => {
-              const abierto = sel === a.id;
+              const abierto = true;
               return (
                 <div key={a.id} className={`aviso-fila${abierto ? " abierto" : ""}`}>
-                  <button type="button" className={`aviso-item nt-${a.tipo}${a.leida_en ? "" : " nuevo"}`} aria-expanded={abierto} onClick={() => setSel(abierto ? null : a.id)}>
+                  <div className={`aviso-item nt-${a.tipo}${a.leida_en ? "" : " nuevo"}`}>
                     <span className="nt-ico" aria-hidden="true">{TIPOS_AVISO[a.tipo].simbolo}</span>
                     <span className="nt-texto">
                       <span className="nt-titulo">{a.titulo}</span>
                       {a.detalle && <span className="nt-detalle">{a.detalle}</span>}
                       <span className="nt-pie"><span className="nt-etq">{TIPOS_AVISO[a.tipo].nombre}</span> · {hace(a.creado_en)}{a.leida_en ? " · leído" : ""}</span>
                     </span>
-                  </button>
+                  </div>
                   {abierto && (
                     <div className="aviso-acciones">
                       <form action={abrir}>

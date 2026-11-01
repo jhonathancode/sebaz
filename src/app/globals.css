@@ -2809,3 +2809,47 @@ details.cj-guia p { margin: 8px 0 0; line-height: 1.7; }
   .kpi, .muni-tab, .filas .fila, .cp-sel.marcable, .rend-cuadro, .panel, .doc-paso .ic, .doc-conciliado, .r-barra > div, .k-barra > div, .pista > div, .apilada > div, .rend-cuadro .btn.primario { animation: none !important; }
   .kpi:hover, .muni-tab:hover, .filas .fila:hover, .cp-sel.marcable:hover, .rend-cuadro:hover, .btn:hover, .f-chip:hover, .doc-paso:hover { transform: none !important; }
 }
+/* ============ Caja chica e Ingresos: barra compacta arriba y el cuadro como protagonista ============ */
+.cc-selector { padding: 8px 12px; gap: 8px; border-radius: 18px; background: linear-gradient(120deg, color-mix(in srgb, var(--primario) 9%, var(--panel)) 0%, var(--panel) 65%); border-color: color-mix(in srgb, var(--primario) 24%, var(--borde)); }
+.cc-selector .cc-fila { gap: 10px; }
+.cc-selector .cc-anio { padding: 2px; border-radius: 11px; }
+.cc-selector .cc-flecha { width: 30px; height: 30px; font-size: 20px; }
+.cc-selector .cc-anio b { min-width: 54px; font-size: 15px; }
+.cc-selector .cc-meses { gap: 5px; min-width: 260px; }
+.cc-selector .cc-mes { min-height: 34px; flex-direction: row; gap: 6px; padding: 3px 2px; border-radius: 10px; }
+.cc-selector .cc-mes-n { font-size: 13px; }
+.cc-selector .cc-mes-d { display: none; }
+.cc-selector .cc-mes.liq::after, .cc-selector .cc-mes.abierta::after { content: ""; width: 6px; height: 6px; border-radius: 50%; background: var(--primario); flex: none; }
+.cc-selector .cc-mes.abierta::after { background: #e0a030; }
+.cc-selector .cc-mes.sel::after { background: #fff; }
+.cc-selector .cc-fuente, .cc-selector .cc-vista-op, .cc-selector .cc-caja { padding: 5px 12px; font-size: 13px; }
+.cc-selector .cc-fuentes, .cc-selector .cc-vista { padding: 3px; border-radius: 11px; }
+.cc-selector .cc-dia input[type="date"] { min-height: 30px; }
+.cc-selector .chips-rango, .cc-selector .cc-pie { gap: 8px; }
+
+/* Cifras en una tira baja y con color */
+.cc-selector ~ .kpis, .cc-selector ~ .tarjetas { gap: 10px; }
+.cc-selector ~ .kpis .kpi, .cc-selector ~ .tarjetas .tarjeta { padding: 10px 14px 10px 16px; gap: 1px; border-radius: 16px; border-top-width: 0 !important; border-left: 5px solid var(--primario-claro); }
+.cc-selector ~ .kpis .kpi:nth-child(1), .cc-selector ~ .tarjetas .tarjeta:nth-child(1) { border-left-color: var(--primario); background: linear-gradient(120deg, var(--primario-fondo), var(--panel) 80%); }
+.cc-selector ~ .kpis .kpi:nth-child(2), .cc-selector ~ .tarjetas .tarjeta:nth-child(2) { border-left-color: #e0a030; background: linear-gradient(120deg, var(--ambar-fondo), var(--panel) 80%); }
+.cc-selector ~ .kpis .kpi:nth-child(3), .cc-selector ~ .tarjetas .tarjeta:nth-child(3) { border-left-color: #2fa56a; background: linear-gradient(120deg, color-mix(in srgb, #2fa56a 10%, var(--panel)), var(--panel) 80%); }
+.cc-selector ~ .kpis .kpi:nth-child(4), .cc-selector ~ .tarjetas .tarjeta:nth-child(4) { border-left-color: #8b5cf6; background: linear-gradient(120deg, color-mix(in srgb, #8b5cf6 9%, var(--panel)), var(--panel) 80%); }
+.cc-selector ~ .kpis .kpi.rojo { border-left-color: var(--rojo); }
+.cc-selector ~ .kpis .kpi .k-val, .cc-selector ~ .tarjetas .tarjeta .valor { font-size: 21px; font-weight: 800; }
+.cc-selector ~ .kpis .kpi .k-det, .cc-selector ~ .tarjetas .tarjeta .detalle { font-size: 12px; }
+.cc-selector ~ .tarjetas .tarjeta .etiqueta { font-size: 11px; letter-spacing: .06em; }
+
+/* El cuadro: imponente */
+.cc-excel-marco { border: 1px solid color-mix(in srgb, var(--primario) 28%, var(--borde)); border-radius: 22px; overflow: hidden; box-shadow: 0 26px 48px -34px rgba(29, 79, 184, .6); }
+.cc-excel caption { background: linear-gradient(120deg, #1d4fb8 0%, #3b82f6 100%); color: #fff; font-size: 24px; padding: 20px 16px; border-bottom: 0; letter-spacing: .01em; text-shadow: 0 2px 10px rgba(0, 0, 0, .18); }
+.cc-excel th { background: color-mix(in srgb, var(--primario) 11%, var(--panel)); color: var(--primario-texto); border-color: color-mix(in srgb, var(--primario) 22%, var(--borde)); font-size: 13px; letter-spacing: .05em; padding: 10px; }
+.cc-excel td { border-color: color-mix(in srgb, var(--primario) 12%, var(--borde)); }
+.cc-excel tbody tr:nth-child(even) td { background: color-mix(in srgb, var(--primario) 3%, transparent); }
+.cc-excel tbody tr:hover td { background: color-mix(in srgb, var(--primario) 10%, var(--panel)); }
+.cc-excel tfoot td { background: color-mix(in srgb, var(--primario) 9%, var(--panel)); color: var(--primario-texto); font-size: 15px; border-color: color-mix(in srgb, var(--primario) 22%, var(--borde)); }
+.cc-excel td.m, .cc-excel td.num { font-weight: 700; }
+/* PDF: el cuadro vuelve a ser sobrio */
+html.pdf-captura .cc-excel-marco { border: 0; box-shadow: none; border-radius: 0; }
+html.pdf-captura .cc-excel caption { background: #fff; color: #000; text-shadow: none; border-bottom: 1px solid #222; }
+html.pdf-captura .cc-excel th, html.pdf-captura .cc-excel tfoot td { background: #eef1f5; color: #000; border-color: #222; }
+html.pdf-captura .cc-excel td { border-color: #8a929c; background: #fff !important; }

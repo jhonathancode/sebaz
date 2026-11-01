@@ -2730,3 +2730,8 @@ details.cj-guia p { margin: 8px 0 0; line-height: 1.7; }
 .bandeja-lista .vacio::before { content: "🔔"; display: grid; place-items: center; width: 52px; height: 52px; border-radius: 50%; font-size: 24px; background: var(--primario-fondo); margin-bottom: 4px; }
 .bandeja-lista .aviso-item { padding-inline: 18px; }
 .bandeja-pie { padding: 13px 18px; }
+/* «Coincide»: verde para que se note */
+.cj-ok { background: #2fa56a; color: #fff; font-size: 11.5px; padding: 2px 10px; box-shadow: 0 4px 10px -6px rgba(31, 122, 85, .8); }
+.cj-ok::before { content: "✓ "; }
+.cj-op.igual { background: color-mix(in srgb, #2fa56a 10%, var(--panel)); border-color: #82d3a6; }
+.cj-op.igual .cj-op-m { color: #137a45; }

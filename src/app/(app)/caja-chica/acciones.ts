@@ -1,31 +1,70 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { contextoMcp } from "@/lib/contexto";
+import { contextoMcp, tiene } from "@/lib/contexto";
+import { exigirPin } from "@/lib/pin";
+import { nombrePeriodo } from "@/lib/formato";
 import { mensajeError, numero, texto, volver } from "@/lib/acciones";
 import { supabaseServidor } from "@/lib/supabase/server";
 
 const ruta = (periodo: string, fuente: string, caja?: string | null) => `/caja-chica?mes=${periodo}&fuente=${fuente}${caja ? `&caja=${caja}` : ""}`;
 
-export async function abrirCaja(fd: FormData) {
+/**
+ * Pide el fondo de la caja chica: registra el requerimiento «Apertura de caja chica» (un expediente).
+ * Si quien lo pide es el alcalde o el administrador, se aprueba de una vez y la caja se abre sola;
+ * si no, queda por aprobar y la caja se abre cuando el alcalde lo apruebe.
+ */
+export async function solicitarFondo(fd: FormData) {
   const ctx = await contextoMcp();
   const supabase = await supabaseServidor();
   const periodo = texto(fd, "periodo")!;
   const fuente = texto(fd, "fuente_id")!;
   const monto = numero(fd, "monto_fondo");
   if (!monto || monto <= 0) volver(ruta(periodo, fuente), "error", "Escriba el monto del fondo.");
-  const cheque = texto(fd, "numero_cheque")?.toUpperCase();
+  const cheque = (texto(fd, "numero_cheque") ?? "").replace(/\s/g, "").toUpperCase();
   if (!cheque) volver(ruta(periodo, fuente), "error", "Escriba el número del cheque con el que se abre la caja chica.");
-  const { data: nueva, error } = await supabase.from("cajas_chicas").insert({
+  const responsable = texto(fd, "responsable_id");
+  if (!responsable) volver(ruta(periodo, fuente), "error", "Elija al responsable del fondo.");
+  await exigirPin(ctx.userId, fd, ruta(periodo, fuente));
+
+  const a = Number(periodo.slice(0, 4));
+  const mes = nombrePeriodo(periodo).split(" ")[0].toUpperCase();
+  const concepto = `SE REQUIERE LA APERTURA DE LA CAJA CHICA DEL MES DE ${mes} ${a}`;
+  const { data: exp, error } = await supabase
+    .from("expedientes")
+    .insert({
+      mcp_id: ctx.mcp.id,
+      tipo: "caja_chica",
+      descripcion: concepto,
+      fuente_id: fuente,
+      cheque_previsto: cheque.replace(/\D/g, "") || null,
+      caja_periodo: periodo,
+      caja_responsable_id: responsable,
+    })
+    .select("id")
+    .single();
+  if (error || !exp) volver(ruta(periodo, fuente), "error", mensajeError(error));
+  const { error: eI } = await supabase.from("expediente_items").insert({
     mcp_id: ctx.mcp.id,
-    periodo,
-    fuente_id: fuente,
-    monto_fondo: monto,
-    responsable_id: texto(fd, "responsable_id"),
-    numero_cheque: cheque,
-  }).select("id").single();
-  if (error) volver(ruta(periodo, fuente), "error", mensajeError(error));
-  volver(ruta(periodo, fuente, nueva?.id), "ok", "Fondo de caja chica abierto.");
+    expediente_id: exp.id,
+    item: 1,
+    cantidad: 1,
+    unidad: "UND",
+    descripcion: `FONDO DE CAJA CHICA DE ${mes} ${a}`,
+    precio_unitario: monto,
+  });
+  if (eI) volver(`/expedientes/${exp.id}`, "error", "Se creó el requerimiento pero no su monto: " + mensajeError(eI));
+  revalidatePath("/expedientes");
+  revalidatePath("/caja-chica");
+  // Alcalde o administrador: se aprueba al instante y la caja se abre sola
+  if (tiene(ctx, "alcalde", "admin")) {
+    const { error: eA } = await supabase.from("expedientes").update({ estado: "aprobado" }).eq("id", exp.id);
+    if (!eA) {
+      const { data: caja } = await supabase.from("cajas_chicas").select("id").eq("expediente_id", exp.id).maybeSingle();
+      volver(ruta(periodo, fuente, caja?.id), "ok", "Requerimiento aprobado y fondo de caja chica abierto.");
+    }
+  }
+  volver(`/expedientes/${exp.id}`, "ok", "Requerimiento de caja chica registrado. Cuando el alcalde lo apruebe, la caja chica se abre sola.");
 }
 
 export async function agregarGasto(fd: FormData) {

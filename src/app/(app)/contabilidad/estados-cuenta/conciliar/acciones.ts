@@ -14,7 +14,19 @@ const num = (v: unknown): number | null => {
 };
 const fechaIso = (v: unknown): string | null => (typeof v === "string" && /^\d{4}-\d{2}-\d{2}$/.test(v) ? v : null);
 
-type LineaEntrada = { codigo?: string; cargo?: string; abono?: string; saldo?: string; dia?: string };
+type EnlaceEntrada = { tipo?: string; id?: string; periodo?: string; etiqueta?: string } | null;
+type LineaEntrada = { codigo?: string; cargo?: string; abono?: string; saldo?: string; dia?: string; enlace?: EnlaceEntrada };
+
+const esUuid = (v: unknown): v is string => typeof v === "string" && /^[0-9a-f-]{36}$/i.test(v);
+function limpiarEnlace(e: EnlaceEntrada | undefined) {
+  if (!e || !["cp", "transferencia", "ingresos", "banco", "otro"].includes(e.tipo ?? "")) return null;
+  return {
+    tipo: e.tipo,
+    ...(esUuid(e.id) ? { id: e.id } : {}),
+    ...(typeof e.periodo === "string" && /^\d{4}-\d{2}$/.test(e.periodo) ? { periodo: e.periodo } : {}),
+    etiqueta: String(e.etiqueta ?? "").slice(0, 160),
+  };
+}
 
 /** Guarda lo que la tesorera copió del estado de cuenta (cabecera, líneas y totales del PDF). */
 export async function guardarTranscripcion(fd: FormData) {
@@ -36,6 +48,7 @@ export async function guardarTranscripcion(fd: FormData) {
     abono: num(l.abono),
     saldo: num(l.saldo),
     dia: fechaIso(l.dia),
+    enlace: limpiarEnlace(l.enlace),
   }));
   const supabase = await supabaseServidor();
   const { error } = await supabase.from("extractos_transcritos").upsert(
@@ -55,6 +68,20 @@ export async function guardarTranscripcion(fd: FormData) {
     { onConflict: "mcp_id,periodo" },
   );
   if (error) volver(destino, "error", /extractos_transcritos/i.test(error.message) ? "Falta la actualización de la base (ACTUALIZAR_BASE.sql). Avise a soporte." : mensajeError(error));
+  // Los cheques enlazados con un comprobante quedan marcados como cobrados (con la fecha del banco)
+  let marcados = 0;
+  const cobros = lineas.filter((l) => l.enlace?.tipo === "cp" && l.enlace.id && l.dia).map((l) => ({ id: l.enlace!.id as string, dia: l.dia as string }));
+  if (cobros.length) {
+    const { data: ya } = await supabase.from("cheques_cobrados").select("comprobante_id").eq("mcp_id", ctx.mcp.id).eq("anulado", false).in("comprobante_id", cobros.map((c) => c.id));
+    const existentes = new Set((ya ?? []).map((x) => x.comprobante_id));
+    const nuevos = cobros.filter((c) => !existentes.has(c.id)).map((c) => ({ mcp_id: ctx.mcp.id, comprobante_id: c.id, fecha_cobro: c.dia }));
+    if (nuevos.length) {
+      const { error: eCobro } = await supabase.from("cheques_cobrados").insert(nuevos);
+      if (!eCobro) marcados = nuevos.length;
+    }
+  }
+  const enlazadas = lineas.filter((l) => l.enlace).length;
   revalidatePath(RUTA);
-  volver(destino, "ok", `Guardado: ${lineas.length} línea(s) del estado de cuenta.`);
+  revalidatePath("/contabilidad");
+  volver(destino, "ok", `Guardado: ${lineas.length} línea(s), ${enlazadas} enlazada(s)${marcados ? ` y ${marcados} cheque(s) marcados como cobrados` : ""}.`);
 }

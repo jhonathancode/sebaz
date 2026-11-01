@@ -36,8 +36,15 @@ export default async function Expedientes({ searchParams }: { searchParams: Para
   const sp = await searchParams;
   const ctx = await contextoMcp();
   const supabase = await supabaseServidor();
-  const periodo = sp.mes ?? periodoActual();
+  // Sin mes elegido se ve lo que sigue pendiente (de cualquier mes) más lo reciente; con mes, solo ese mes
+  const modo: "mes" | "pendientes" = sp.mes ? "mes" : "pendientes";
+  const periodo = sp.mes || periodoActual();
   const { desde, hasta } = rangoPeriodo(periodo);
+  const hoyP = periodoActual();
+  const hace3 = (() => {
+    const d = new Date(Number(hoyP.slice(0, 4)), Number(hoyP.slice(5, 7)) - 1 - 3, 1);
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-01`;
+  })();
   const estado = sp.estado ?? "";
   const tipo = sp.tipo ?? "";
   const q = sp.q ?? "";
@@ -47,9 +54,9 @@ export default async function Expedientes({ searchParams }: { searchParams: Para
     .from("expedientes")
     .select("id, anio, numero, fecha, tipo, flujo_completo, descripcion, area_usuaria, fase, estado, expediente_items(total, anulado)")
     .eq("mcp_id", ctx.mcp.id)
-    .gte("fecha", desde)
-    .lte("fecha", hasta)
+    .order("fecha", { ascending: false })
     .order("numero", { ascending: false });
+  consulta = modo === "mes" ? consulta.gte("fecha", desde).lte("fecha", hasta) : consulta.or(`estado.in.(borrador,aprobado),fecha.gte.${hace3}`);
   if (q) consulta = consulta.ilike("descripcion", `%${q}%`);
   if (tipo) consulta = consulta.eq("tipo", tipo);
   const anioNum = Number(hoyISO().slice(0, 4));
@@ -69,13 +76,13 @@ export default async function Expedientes({ searchParams }: { searchParams: Para
     proximoNumero(supabase, ctx.mcp.id, CORRELATIVO.comprobante, anioNum),
   ]);
 
-  const todos = (lista ?? []).map((e) => ({
+  const todosBase = (lista ?? []).map((e) => ({
     ...e,
     monto: (e.expediente_items as { total: number; anulado: boolean }[]).filter((i) => !i.anulado).reduce((s, i) => s + Number(i.total), 0),
   }));
   // Conciliación con el banco de todos los del mes (para poder filtrar): un cheque está conciliado si figura cobrado
   // o si su estado de cuenta guardado enlaza comprobantes que suman lo que cobró el banco.
-  const idsTodos = todos.map((e) => e.id);
+  const idsTodos = todosBase.map((e) => e.id);
   const { data: cpsAll } = idsTodos.length
     ? await supabase.from("comprobantes_pago").select("id, expediente_id, cheque, estado, creado_en, importe, deducciones").in("expediente_id", idsTodos)
     : { data: [] as { id: string; expediente_id: string; cheque: string | null; estado: string; creado_en: string; importe: number; deducciones: number | null }[] };
@@ -111,6 +118,10 @@ export default async function Expedientes({ searchParams }: { searchParams: Para
   };
   /** Pagado con cheque pero aún sin pasar por el estado de cuenta del banco. */
   const sinConciliarExp = (e: { id: string; estado: string }) => e.estado !== "anulado" && !!cpVigente.get(e.id)?.cheque && !conciliadoExp(e.id);
+  // Vista de pendientes: lo que aún no se rinde ni se paga, lo del mes actual y lo pagado que falta conciliar
+  const todos = modo === "mes"
+    ? todosBase
+    : todosBase.filter((e) => e.estado === "borrador" || e.estado === "aprobado" || e.fecha >= `${hoyP}-01` || sinConciliarExp(e));
   const conc = sp.conc === "si" || sp.conc === "no" ? sp.conc : "";
   const nConciliados = todos.filter((e) => e.estado !== "anulado" && conciliadoExp(e.id)).length;
   const nSinConciliar = todos.filter(sinConciliarExp).length;
@@ -173,7 +184,7 @@ export default async function Expedientes({ searchParams }: { searchParams: Para
   };
   const numeros = Array.from({ length: totalPaginas }, (_, i) => i + 1).filter((n) => n === 1 || n === totalPaginas || Math.abs(n - pagina) <= 2);
   const enlace = (cambios: Record<string, string>) => {
-    const p = new URLSearchParams({ mes: periodo, estado, tipo, q, conc, ...cambios });
+    const p = new URLSearchParams({ ...(modo === "mes" ? { mes: periodo } : {}), estado, tipo, q, conc, ...cambios });
     [...p.keys()].forEach((k) => !p.get(k) && p.delete(k));
     return `/expedientes?${p.toString()}`;
   };
@@ -183,15 +194,16 @@ export default async function Expedientes({ searchParams }: { searchParams: Para
       <div className="cab-vista">
         <div>
           <h1>Expedientes</h1>
-          <div className="sub">Cada gasto, del requerimiento al comprobante de pago</div>
+          <div className="sub">{modo === "pendientes" ? "Lo pendiente de cualquier mes y lo de este mes · para el historial elija un mes" : `Historial de ${nombrePeriodo(periodo)}`}</div>
         </div>
         <form className="selector-mes" method="get">
           <input type="hidden" name="estado" value={estado} />
           <input type="hidden" name="tipo" value={tipo} />
           <input type="hidden" name="conc" value={conc} />
-          <input type="month" name="mes" defaultValue={periodo} aria-label="Mes" />
-          <button className="btn chico" type="submit">Ver</button>
+          <input type="month" name="mes" defaultValue={modo === "mes" ? periodo : ""} aria-label="Mes" />
+          <button className="btn chico" type="submit">Ver mes</button>
         </form>
+        <Link className={`btn${modo === "pendientes" ? " primario" : " contorno"}`} href={enlace({ mes: "" })} title="Todo lo que sigue pendiente, de cualquier mes">Pendientes</Link>
         <span className="espacio" />
         <Link className="btn contorno" href={`/comprobantes?mes=${periodo}`}>Comprobantes de pago</Link>
         <a className="btn contorno" href={`/exportar/expedientes?mes=${periodo}&estado=${estado}&tipo=${tipo}&q=${encodeURIComponent(q)}`}>Descargar Excel</a>
@@ -237,7 +249,7 @@ export default async function Expedientes({ searchParams }: { searchParams: Para
 
       <div className="kpis">
         <div className="kpi azul">
-          <span className="k-et">Gasto de {nombrePeriodo(periodo)}</span>
+          <span className="k-et">{modo === "mes" ? `Gasto de ${nombrePeriodo(periodo)}` : "Gasto de lo pendiente y del mes"}</span>
           <span className="k-val">S/ {soles(totalMes)}</span>
           <span className="k-det">{vigentes.length} expedientes vigentes</span>
         </div>
@@ -280,7 +292,7 @@ export default async function Expedientes({ searchParams }: { searchParams: Para
         </div>
         <form className="buscador" method="get" role="search">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><circle cx="11" cy="11" r="7" /><path d="m20 20-3.5-3.5" /></svg>
-          <input type="hidden" name="mes" value={periodo} />
+          <input type="hidden" name="mes" value={modo === "mes" ? periodo : ""} />
           <input type="hidden" name="estado" value={estado} />
           <input type="hidden" name="tipo" value={tipo} />
           <input type="hidden" name="conc" value={conc} />
@@ -292,7 +304,7 @@ export default async function Expedientes({ searchParams }: { searchParams: Para
       <div className="filas">
         {filas.length === 0 && (
           <div className="vacio">
-            {todos.length === 0 ? "No hay expedientes en este mes. Empiece con «+ Nuevo requerimiento»." : "Ningún expediente con ese filtro."}
+            {todos.length === 0 ? "No hay expedientes pendientes. Empiece con «+ Nuevo requerimiento»." : "Ningún expediente con ese filtro."}
           </div>
         )}
         {visibles.map((e) => {

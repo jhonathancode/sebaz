@@ -3645,3 +3645,12 @@ label.opcion:has(input:checked) { border-color: var(--primario); background: lin
 .aviso-acciones { display: flex; flex-wrap: wrap; gap: 8px; padding: 2px 18px 14px 50px; }
 .aviso-acciones form { margin: 0; }
 .aviso-acciones .btn { white-space: nowrap; }
+
+/* Conciliado: etiqueta azul que cabe en su columna y fondo azul claro marcado */
+.fila.conciliada { background: linear-gradient(100deg, color-mix(in srgb, #2563eb 17%, var(--panel)) 0%, color-mix(in srgb, #2563eb 8%, var(--panel)) 60%, color-mix(in srgb, #2563eb 3%, var(--panel)) 100%); box-shadow: inset 8px 0 0 #1d4fb8; }
+.filas .fila.conciliada:hover { background: linear-gradient(100deg, color-mix(in srgb, #2563eb 23%, var(--panel)) 0%, color-mix(in srgb, #2563eb 12%, var(--panel)) 60%, color-mix(in srgb, #2563eb 5%, var(--panel)) 100%); box-shadow: inset 8px 0 0 #1d4fb8; }
+.fila.conciliada .f-num::after { content: "✓ CONCILIADO"; display: block; width: fit-content; max-width: 100%; white-space: nowrap; margin-top: 6px; padding: 3px 8px; border-radius: 6px; background: linear-gradient(120deg, #1d4fb8, #3b82f6); color: #fff; font-size: 10.5px; font-weight: 800; letter-spacing: .04em; line-height: 1.3; box-shadow: 0 6px 12px -6px rgba(29, 79, 184, .75); }
+.fila.anulada .f-num::after { display: block; width: fit-content; max-width: 100%; white-space: nowrap; padding: 3px 8px; font-size: 10.5px; letter-spacing: .04em; line-height: 1.3; }
+.fila.conciliada .f-monto { color: #1d4fb8; }
+:root[data-theme="dark"] .fila.conciliada .f-monto { color: #93c5ff; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .fila.conciliada .f-monto { color: #93c5ff; } }

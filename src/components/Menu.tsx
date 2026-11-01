@@ -149,33 +149,50 @@ function Icono({ href }: { href: string }) {
 }
 
 /** Abre o cierra el menú: en computadora lo oculta (se recuerda); en celular lo despliega encima. */
-export function BotonMenu({ dentro = false }: { dentro?: boolean }) {
-  function alternar() {
-    const marco = document.querySelector<HTMLElement>(".marco-app");
-    if (!marco) return;
-    if (window.matchMedia("(max-width: 900px)").matches) {
-      marco.dataset.movil = marco.dataset.movil === "abierto" ? "" : "abierto";
-      return;
-    }
-    const oculto = marco.dataset.menu !== "oculto";
-    marco.dataset.menu = oculto ? "oculto" : "visible";
-    document.cookie = `menu=${oculto ? "oculto" : "visible"}; path=/; max-age=31536000; samesite=lax`;
+/** Pasa el menú de ancho (con nombres) a riel (solo íconos) y viceversa; en el celular abre y cierra el cajón. */
+export function alternarMenu() {
+  const marco = document.querySelector<HTMLElement>(".marco-app");
+  if (!marco) return;
+  if (window.matchMedia("(max-width: 900px)").matches) {
+    marco.dataset.movil = marco.dataset.movil === "abierto" ? "" : "abierto";
+    return;
+  }
+  const riel = marco.dataset.menu !== "oculto";
+  marco.dataset.menu = riel ? "oculto" : "visible";
+  document.cookie = `menu=${riel ? "oculto" : "visible"}; path=/; max-age=31536000; samesite=lax`;
+}
+
+export function BotonMenu({ dentro = false, pie = false }: { dentro?: boolean; pie?: boolean }) {
+  // Atajo de teclado: la tecla « [ » abre o contrae el menú (si no se está escribiendo)
+  useEffect(() => {
+    if (dentro || pie) return;
+    const alTeclear = (e: KeyboardEvent) => {
+      const t = e.target as HTMLElement | null;
+      if (e.key !== "[" || e.ctrlKey || e.metaKey || e.altKey) return;
+      if (t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.tagName === "SELECT" || t.isContentEditable)) return;
+      alternarMenu();
+    };
+    window.addEventListener("keydown", alTeclear);
+    return () => window.removeEventListener("keydown", alTeclear);
+  }, [dentro, pie]);
+  if (dentro) return null;
+  if (pie) {
+    return (
+      <button type="button" className="lm-contraer" onClick={alternarMenu} aria-label="Contraer o expandir el menú" title="Contraer o expandir el menú ( [ )">
+        <svg className="lm-contraer-ic" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <path d="m11 17-5-5 5-5M18 17l-5-5 5-5" />
+        </svg>
+        <span>Contraer menú</span>
+      </button>
+    );
   }
   return (
-    dentro ? (
-      <button type="button" className="lm-ocultar" onClick={alternar} aria-label="Ocultar el menú" title="Ocultar el menú">
-        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-          <path d="m15 6-6 6 6 6" />
-        </svg>
-      </button>
-    ) : (
-      <button type="button" className="boton-menu" onClick={alternar} aria-label="Mostrar el menú" title="Mostrar el menú">
-        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" aria-hidden="true">
-          <path d="M4 6h16M4 12h16M4 18h16" />
-        </svg>
-        <span>Menú</span>
-      </button>
-    )
+    <button type="button" className="boton-menu" onClick={alternarMenu} aria-label="Mostrar u ocultar el menú" title="Mostrar u ocultar el menú ( [ )">
+      <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" aria-hidden="true">
+        <path d="M4 6h16M4 12h16M4 18h16" />
+      </svg>
+      <span>Menú</span>
+    </button>
   );
 }
 
@@ -219,7 +236,6 @@ export default function Menu({ items, abajo = [], mcp, panel }: { items: ItemMen
               <strong>{mcp.nombre}</strong>
               <span>RUC {mcp.ruc ?? "pendiente"}</span>
             </div>
-            <BotonMenu dentro />
           </div>
         )}
 
@@ -230,7 +246,6 @@ export default function Menu({ items, abajo = [], mcp, panel }: { items: ItemMen
               <strong>{panel}</strong>
               <span>Panel de administración</span>
             </div>
-            <BotonMenu dentro />
           </div>
         )}
 
@@ -245,7 +260,17 @@ export default function Menu({ items, abajo = [], mcp, panel }: { items: ItemMen
               <li key={i.href}>
                 {i.sub ? (
                   // Con sub-menús: al pulsar solo se abren o cierran; se elige luego
-                  <button type="button" className={`lm-padre${dentro ? " activo" : ""}`} aria-expanded={desplegado} onClick={() => setAbierto((a) => ({ ...a, [i.href]: !(a[i.href] ?? dentro) }))}>
+                  <button type="button" className={`lm-padre${dentro ? " activo" : ""}`} title={i.texto} aria-expanded={desplegado} onClick={() => {
+                    // En el riel (solo íconos) se expande el menú para ver los sub-menús
+                    const marco = document.querySelector<HTMLElement>(".marco-app");
+                    if (marco && marco.dataset.menu === "oculto" && !window.matchMedia("(max-width: 900px)").matches) {
+                      marco.dataset.menu = "visible";
+                      document.cookie = "menu=visible; path=/; max-age=31536000; samesite=lax";
+                      setAbierto((a) => ({ ...a, [i.href]: true }));
+                      return;
+                    }
+                    setAbierto((a) => ({ ...a, [i.href]: !(a[i.href] ?? dentro) }));
+                  }}>
                     <Icono href={i.href} />
                     <span>{i.texto}</span>
                     <svg className={`lm-flecha-sub${desplegado ? " abierta" : ""}`} viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
@@ -253,7 +278,7 @@ export default function Menu({ items, abajo = [], mcp, panel }: { items: ItemMen
                     </svg>
                   </button>
                 ) : (
-                  <Link href={i.href} className={activo ? "activo" : undefined} aria-current={activo ? "page" : undefined}>
+                  <Link href={i.href} title={i.texto} className={activo ? "activo" : undefined} aria-current={activo ? "page" : undefined}>
                     <Icono href={i.href} />
                     <span>{i.texto}</span>
                     {!!i.n && <span className="lm-n">{i.n}</span>}
@@ -280,7 +305,17 @@ export default function Menu({ items, abajo = [], mcp, panel }: { items: ItemMen
 
         {abajo.length > 0 && (
           <details className="lm-admin" open={abajo.some((i) => ruta.startsWith(i.href)) || undefined}>
-            <summary>
+            <summary
+              title="Configuración"
+              onClick={() => {
+                // En el riel se expande el menú para ver las opciones
+                const marco = document.querySelector<HTMLElement>(".marco-app");
+                if (marco && marco.dataset.menu === "oculto" && !window.matchMedia("(max-width: 900px)").matches) {
+                  marco.dataset.menu = "visible";
+                  document.cookie = "menu=visible; path=/; max-age=31536000; samesite=lax";
+                }
+              }}
+            >
               <Icono href="/configuracion" />
               <span>Configuración</span>
               <svg className="lm-flecha" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
@@ -302,6 +337,7 @@ export default function Menu({ items, abajo = [], mcp, panel }: { items: ItemMen
             </ul>
           </details>
         )}
+        <BotonMenu pie />
       </nav>
     </>
   );

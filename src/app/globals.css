@@ -2354,3 +2354,10 @@ a.ini-kpi:hover { border-color: var(--primario-claro); }
 .doc-conciliado { margin-left: 6px; padding: 3px 11px; border-radius: 99px; background: var(--primario-fondo); color: var(--primario-texto); border: 1px solid var(--primario); font-size: 11.5px; font-weight: 800; white-space: nowrap; }
 .te-enl { width: 1%; white-space: nowrap; padding: 0 6px !important; }
 .te-enlazado { display: inline-block; padding: 2px 9px; border-radius: 99px; background: var(--primario-fondo); color: var(--primario-texto); font-size: 11px; font-weight: 700; cursor: default; }
+.cj-caja { display: inline-flex; align-items: center; justify-content: center; width: 17px; height: 17px; margin-right: 8px; border: 1.5px solid var(--borde); border-radius: 5px; background: var(--fondo-input, #fff); font-style: normal; font-size: 11px; font-weight: 800; color: #fff; vertical-align: -3px; }
+.cj-op.marcado { border-color: var(--primario); background: var(--primario-fondo); }
+.cj-op.marcado .cj-caja { background: var(--primario); border-color: var(--primario); }
+.cj-suma { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 10px; padding: 10px 14px; border-radius: 12px; background: var(--panel); border: 1px solid var(--borde); font-size: 13px; font-weight: 600; color: var(--tenue); }
+.cj-suma.cuadra { background: var(--primario-fondo); border-color: var(--primario); color: var(--primario-texto); }
+.cj-suma.falta { background: var(--ambar-fondo); border-color: var(--ambar-borde); color: var(--ambar); }
+.cj-ok-suma { color: var(--primario-texto); font-weight: 700; font-size: 12px; }

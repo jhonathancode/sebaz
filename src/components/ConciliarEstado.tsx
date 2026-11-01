@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import BotonConfirmar from "@/components/BotonConfirmar";
-import { aNum, fmt, igual, r2, sugerir, tipoLinea, type Candidatos, type Enlace, type LineaExtracto } from "@/lib/extracto";
+import { aNum, fmt, idsEnlace, igual, r2, sugerir, tipoLinea, type Candidatos, type Enlace, type LineaExtracto } from "@/lib/extracto";
 
 export type { LineaExtracto } from "@/lib/extracto";
 
@@ -93,26 +93,32 @@ function Elegir({ abierta, indice, linea, lineas, cands, onElegir, onCerrar }: {
   const dlg = useRef<HTMLDialogElement>(null);
   const [q, setQ] = useState("");
   const [nota, setNota] = useState("");
+  const [sel, setSel] = useState<string[]>([]);
   useEffect(() => {
     const d = dlg.current;
     if (!d) return;
     if (abierta && !d.open) {
       setQ("");
       setNota("");
+      setSel(linea?.enlace?.tipo === "cp" ? idsEnlace(linea.enlace) : []);
       d.showModal();
     }
     if (!abierta && d.open) d.close();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [abierta]);
   if (!linea) return <dialog ref={dlg} className="cj-dlg" onClose={onCerrar} />;
   const t = tipoLinea(linea);
   const esAbono = aNum(linea.abono) !== null;
   const monto = (esAbono ? aNum(linea.abono) : aNum(linea.cargo)) ?? 0;
-  const usadoPor = (id: string) => lineas.findIndex((l, j) => j !== indice && l.enlace?.id === id);
+  const usadoPor = (id: string) => lineas.findIndex((l, j) => j !== indice && idsEnlace(l.enlace).includes(id));
   const termino = q.trim().toLowerCase();
   const cps = cands.cps
     .filter((c) => !termino || `${c.codigo} ${c.cheque} ${c.beneficiario} ${c.concepto}`.toLowerCase().includes(termino))
     .sort((a, b) => Number(igual(b.monto, monto)) - Number(igual(a.monto, monto)) || b.fecha.localeCompare(a.fecha))
     .slice(0, 40);
+  const etqCp = (id: string) => { const c = cands.cps.find((x) => x.id === id); return c ? `${c.codigo} · ${c.beneficiario}` : ""; };
+  const sumaSel = r2(sel.reduce((t, id) => t + (cands.cps.find((x) => x.id === id)?.monto ?? 0), 0));
+  const armar = (): Enlace => ({ tipo: "cp", id: sel[0], etiqueta: etqCp(sel[0]), ...(sel.length > 1 ? { extra: sel.slice(1).map((id) => ({ id, etiqueta: etqCp(id) })) } : {}) });
   return (
     <dialog ref={dlg} className="cj-dlg" onClose={onCerrar} onClick={(e) => e.target === dlg.current && onCerrar()}>
       <div className="cj-dlg-cab">
@@ -130,14 +136,27 @@ function Elegir({ abierta, indice, linea, lineas, cands, onElegir, onCerrar }: {
               {cps.length === 0 && <p className="tenue">No hay comprobantes de pago con cheque que coincidan.</p>}
               {cps.map((c) => {
                 const otra = usadoPor(c.id);
+                const marcado = sel.includes(c.id);
                 return (
-                  <button key={c.id} type="button" className={`cj-op${igual(c.monto, monto) ? " igual" : ""}`} disabled={otra >= 0} onClick={() => onElegir({ tipo: "cp", id: c.id, etiqueta: `${c.codigo} · ${c.beneficiario}` })}>
-                    <span className="cj-op-t"><b>{c.codigo}</b> · Cheque {c.cheque}{igual(c.monto, monto) && <i className="cj-ok">monto igual</i>}{otra >= 0 && <i className="cj-ya">ya enlazado en la línea {otra + 1}</i>}</span>
+                  <button key={c.id} type="button" className={`cj-op${igual(c.monto, monto) ? " igual" : ""}${marcado ? " marcado" : ""}`} disabled={otra >= 0} onClick={() => setSel((x) => (x.includes(c.id) ? x.filter((i) => i !== c.id) : [...x, c.id]))}>
+                    <span className="cj-op-t"><i className="cj-caja" aria-hidden="true">{marcado ? "✓" : ""}</i><b>{c.codigo}</b> · Cheque {c.cheque}{igual(c.monto, monto) && <i className="cj-ok">monto igual</i>}{otra >= 0 && <i className="cj-ya">ya enlazado en la línea {otra + 1}</i>}</span>
                     <span className="cj-op-d">{c.beneficiario} · {c.concepto}</span>
                     <span className="cj-op-m">S/ {fmt(c.monto)}</span>
                   </button>
                 );
               })}
+            </div>
+            <div className={`cj-suma${sel.length === 0 ? "" : igual(sumaSel, monto) ? " cuadra" : " falta"}`}>
+              <span>
+                {sel.length === 0
+                  ? "Marque uno o varios comprobantes. Si un cheque pagó varios expedientes, marque todos."
+                  : igual(sumaSel, monto)
+                    ? `✓ ${sel.length} comprobante(s) suman S/ ${fmt(sumaSel)}: cuadra con el banco`
+                    : sumaSel < monto
+                      ? `${sel.length} comprobante(s) suman S/ ${fmt(sumaSel)} · faltan S/ ${fmt(r2(monto - sumaSel))} para S/ ${fmt(monto)}`
+                      : `${sel.length} comprobante(s) suman S/ ${fmt(sumaSel)} · sobran S/ ${fmt(r2(sumaSel - monto))}`}
+              </span>
+              <button type="button" className="btn chico primario" disabled={sel.length === 0} onClick={() => onElegir(armar())}>Enlazar {sel.length || ""}</button>
             </div>
             <div className="cj-otros">
               <button type="button" className="cj-op chico" onClick={() => onElegir({ tipo: "banco", etiqueta: t === "itf" ? "Impuesto a las transacciones (ITF)" : "Gasto del banco (comisión, mantenimiento)" })}>Es un gasto del banco (ITF, comisión, mantenimiento)</button>
@@ -337,18 +356,18 @@ export default function ConciliarEstado({
   const activas = lineas.map((l, i) => ({ l, i, tipo: tipoLinea(l) })).filter((x) => x.tipo !== "vacia");
   const enlazadas = activas.filter((x) => x.l.enlace).length;
   const pctEnlace = activas.length ? Math.round((enlazadas / activas.length) * 100) : 0;
-  const usados = useMemo(() => new Set(lineas.map((l) => l.enlace?.id).filter(Boolean) as string[]), [lineas]);
+  const usados = useMemo(() => new Set(lineas.flatMap((l) => idsEnlace(l.enlace))), [lineas]);
   const infoCp = useMemo(() => new Map(candidatos.cps.map((c) => [c.id, c])), [candidatos.cps]);
 
   function enlazarAutomatico() {
     tocado.current = true;
     setLineas((ls) => {
-      const ocupados = new Set(ls.map((l) => l.enlace?.id).filter(Boolean) as string[]);
+      const ocupados = new Set(ls.flatMap((l) => idsEnlace(l.enlace)));
       return ls.map((l) => {
         if (l.enlace || tipoLinea(l) === "vacia") return l;
         const s = sugerir(l, candidatos, ocupados);
         if (!s) return l;
-        if (s.enlace.id) ocupados.add(s.enlace.id);
+        idsEnlace(s.enlace).forEach((x) => ocupados.add(x));
         return { ...l, enlace: s.enlace };
       });
     });
@@ -547,8 +566,10 @@ export default function ConciliarEstado({
                   const cargo = aNum(l.cargo);
                   const abono = aNum(l.abono);
                   const sug = !l.enlace ? sugerir(l, candidatos, usados) : null;
-                  const cp = l.enlace?.tipo === "cp" && l.enlace.id ? infoCp.get(l.enlace.id) : null;
-                  const dif = cp && cargo !== null && !igual(cp.monto, cargo) ? cp.monto : null;
+                  const cpsEnl = l.enlace?.tipo === "cp" ? idsEnlace(l.enlace).map((id) => infoCp.get(id)).filter(Boolean) as Candidatos["cps"] : [];
+                  const sumaCp = r2(cpsEnl.reduce((t, x) => t + x.monto, 0));
+                  const dif = cpsEnl.length && cargo !== null && !igual(sumaCp, cargo) ? sumaCp : null;
+                  const varios = cpsEnl.length > 1;
                   return (
                     <li key={i} className={`cj-mov${l.enlace ? " listo" : ""}`}>
                       <div className="cj-mov-fecha"><b>{diaCorto(l.dia)}</b><small>#{i + 1}</small></div>
@@ -562,11 +583,13 @@ export default function ConciliarEstado({
                           <>
                             <span className={`cj-pill ${l.enlace.tipo}`}>{l.enlace.tipo === "banco" ? "Banco" : l.enlace.tipo === "cp" ? "Comprobante" : l.enlace.tipo === "transferencia" ? "Transferencia" : l.enlace.tipo === "ingresos" ? "Ingresos propios" : "Otro"}</span>
                             <b className="cj-etq">{l.enlace.etiqueta}</b>
-                            {dif !== null && <small className="cj-alerta">El comprobante es por S/ {fmt(dif)}</small>}
+                            {(l.enlace.extra ?? []).map((x) => <b key={x.id} className="cj-etq">{x.etiqueta}</b>)}
+                            {varios && dif === null && <small className="cj-ok-suma">✓ Un cheque, {cpsEnl.length} comprobantes: suman S/ {fmt(sumaCp)}, cuadra con el banco</small>}
+                            {dif !== null && <small className="cj-alerta">{varios ? `Los ${cpsEnl.length} comprobantes suman S/ ${fmt(dif)}` : `El comprobante es por S/ ${fmt(dif)}`}</small>}
                           </>
                         ) : sug ? (
                           <>
-                            <small className="cj-sug">Sugerido: <b>{sug.enlace.etiqueta}</b></small>
+                            <small className="cj-sug">Sugerido: <b>{[sug.enlace.etiqueta, ...(sug.enlace.extra ?? []).map((x) => x.etiqueta)].join(" + ")}</b></small>
                           </>
                         ) : (
                           <small className="cj-pend">Sin enlazar</small>

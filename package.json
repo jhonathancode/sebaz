@@ -14,15 +14,18 @@
     "exceljs": "^4.4.0",
     "html2canvas-pro": "^1.6.7",
     "jspdf": "^4.2.1",
+    "marked": "^18.1.2",
     "next": "15.5.28",
     "react": "19.1.0",
-    "react-dom": "19.1.0"
+    "react-dom": "19.1.0",
+    "sanitize-html": "^2.18.1"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@types/sanitize-html": "^2.16.2",
     "eslint": "^9",
     "eslint-config-next": "15.5.28",
     "typescript": "^5"

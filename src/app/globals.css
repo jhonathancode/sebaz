@@ -3011,3 +3011,10 @@ label.opcion:has(input:checked) { border-color: var(--primario); background: lin
 /* Menú lateral sin barra de desplazamiento visible (sigue desplazándose con la rueda o el dedo) */
 .lateral-menu { scrollbar-width: none; -ms-overflow-style: none; }
 .lateral-menu::-webkit-scrollbar { display: none; width: 0; height: 0; }
+/* Cabecera en computador: solo el logo; el menú se contrae con el botón de su pie (o la tecla « [ ») */
+@media (min-width: 901px) {
+  .cabecera .boton-menu, body:has(.marco-app[data-menu="visible"]) .cabecera .boton-menu, body:has(.marco-app[data-menu="oculto"]) .cabecera .boton-menu { display: none !important; }
+  body:has(.marco-app[data-menu="oculto"]) .marca-mcp { display: none; }
+}
+/* El botón de contraer siempre a la vista, aunque el menú sea largo */
+.lm-contraer { position: sticky; bottom: 0; z-index: 2; background: var(--panel); box-shadow: 0 -14px 14px -10px var(--panel); }

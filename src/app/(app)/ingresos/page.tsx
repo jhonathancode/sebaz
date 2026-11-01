@@ -79,9 +79,19 @@ export default async function Ingresos({ searchParams }: { searchParams: ParamsA
       ingreso: rec.reduce((t, r) => t + Number(r.monto), 0),
       del: nums.length ? Math.min(...nums) : null,
       al: nums.length ? Math.max(...nums) : null,
+      dep: Math.round(depositos.filter((d) => d.fecha.startsWith(per)).reduce((t, d) => t + Number(d.monto), 0) * 100) / 100,
+      nDep: depositos.filter((d) => d.fecha.startsWith(per)).length,
     };
   });
   const totalAnio = base.reduce((t, r) => t + r.ingreso, 0);
+  const totalDepAnio = Math.round(base.reduce((t, r) => t + r.dep, 0) * 100) / 100;
+  const estadoVoucher = (ingreso: number, dep: number, n: number) => {
+    const dif = Math.round((ingreso - dep) * 100) / 100;
+    if (!n && dep === 0) return { c: "vacio", t: "—" };
+    if (Math.abs(dif) < 0.005) return { c: "ok", t: "✓ Cuadra" };
+    if (dep === 0) return { c: "falta", t: "Sin voucher" };
+    return dif > 0 ? { c: "falta", t: `Falta S/ ${soles(dif)}` } : { c: "sobra", t: `Sobra S/ ${soles(-dif)}` };
+  };
   const nAnio = base.reduce((t, r) => t + r.n, 0);
   const resumen = base;
   const mesesConIngreso = resumen.filter((r) => r.n > 0);
@@ -216,7 +226,7 @@ export default async function Ingresos({ searchParams }: { searchParams: ParamsA
             <table className="cc-excel">
               <caption>Ingresos propios {anio} · resumen por mes</caption>
               <thead>
-                <tr><th>Mes</th><th>Recibos</th><th>Del recibo N°</th><th>Al recibo N°</th><th>Recaudado</th><th className="cc-acc-th"><span className="sr-solo">Ver</span></th></tr>
+                <tr><th>Mes</th><th>Recibos</th><th>Del recibo N°</th><th>Al recibo N°</th><th>Recaudado</th><th>Depositado (vouchers)</th><th>Control</th><th className="cc-acc-th"><span className="sr-solo">Ver</span></th></tr>
               </thead>
               <tbody>
                 {resumen.map((r) => (
@@ -226,6 +236,8 @@ export default async function Ingresos({ searchParams }: { searchParams: ParamsA
                     <td className="c">{codRec(r.del)}</td>
                     <td className="c">{codRec(r.al)}</td>
                     <td className="m">{r.n ? `S/ ${soles(r.ingreso)}` : "—"}</td>
+                    <td className="m">{r.dep ? `S/ ${soles(r.dep)}` : "—"}{r.nDep > 1 && <small className="tenue" style={{ display: "block", fontWeight: 400 }}>{r.nDep} vouchers</small>}</td>
+                    <td className="c">{(() => { const e = estadoVoucher(r.ingreso, r.dep, r.n); return e.c === "vacio" ? "—" : <span className={`res-vo ${e.c}`}>{e.t}</span>; })()}</td>
                     <td className="acc"><Link className="btn chico contorno" href={enlace({ vista: "mes", mes: r.per })}>Ver</Link></td>
                   </tr>
                 ))}
@@ -237,6 +249,8 @@ export default async function Ingresos({ searchParams }: { searchParams: ParamsA
                   <td className="c">{codRec(mesesConIngreso.length ? Math.min(...mesesConIngreso.map((r) => r.del ?? Infinity)) : null)}</td>
                   <td className="c">{codRec(mesesConIngreso.length ? Math.max(...mesesConIngreso.map((r) => r.al ?? 0)) : null)}</td>
                   <td className="m">S/ {soles(totalAnio)}</td>
+                  <td className="m">S/ {soles(totalDepAnio)}</td>
+                  <td className="c">{(() => { const e = estadoVoucher(totalAnio, totalDepAnio, nAnio); return e.c === "vacio" ? "—" : <span className={`res-vo ${e.c}`}>{e.t}</span>; })()}</td>
                   <td className="acc"></td>
                 </tr>
               </tfoot>

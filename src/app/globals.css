@@ -2972,3 +2972,42 @@ label.opcion:has(input:checked) { border-color: var(--primario); background: lin
 .lm-ocultar { border-radius: 50%; transition: transform .2s, background .15s; }
 .lm-ocultar:hover { transform: scale(1.1); }
 @media (prefers-reduced-motion: reduce) { .lm-n { animation: none; } .lateral-menu ul a:hover, .lm-admin > summary:hover { transform: none; } }
+/* ============ Menú: ancho ⇄ riel de íconos, con el mismo botón siempre a la vista ============ */
+.cabecera .boton-menu { display: inline-flex !important; align-items: center; gap: 8px; width: auto; min-width: 38px; padding: 0 12px; height: 38px; border-radius: 12px; font-weight: 700; transition: background .15s, transform .15s; }
+.cabecera .boton-menu:hover { transform: translateY(-1px); }
+.cabecera .boton-menu:active { transform: scale(.96); }
+@media (min-width: 901px) {
+  body:has(.marco-app[data-menu="visible"]) .cabecera .boton-menu { display: inline-flex !important; }
+  .marco-app { transition: grid-template-columns .28s cubic-bezier(.2, .7, .2, 1); }
+  .marco-app[data-menu="oculto"] { grid-template-columns: 78px minmax(0, 1fr); }
+  .marco-app[data-menu="oculto"] .lateral-menu { display: flex; overflow-x: hidden; }
+  .marco-app[data-menu="oculto"] .lm-mcp { padding: 14px 6px 10px; }
+  .marco-app[data-menu="oculto"] .lm-escudo { width: 54px !important; height: 54px !important; padding: 3px; }
+  .marco-app[data-menu="oculto"] .lm-mcp-texto { display: none; }
+  .marco-app[data-menu="oculto"] .lm-titulo { font-size: 0; padding: 10px 18px 6px; }
+  .marco-app[data-menu="oculto"] .lateral-menu ul a,
+  .marco-app[data-menu="oculto"] .lateral-menu ul button.lm-padre { justify-content: center; padding: 8px 0; margin: 3px 10px; width: auto; gap: 0; }
+  .marco-app[data-menu="oculto"] .lateral-menu ul button.lm-padre { width: calc(100% - 20px); }
+  .marco-app[data-menu="oculto"] .lateral-menu ul a > span:not(.lm-n),
+  .marco-app[data-menu="oculto"] .lateral-menu ul button.lm-padre > span,
+  .marco-app[data-menu="oculto"] .lm-flecha-sub { display: none !important; }
+  .marco-app[data-menu="oculto"] .lateral-menu ul a:hover,
+  .marco-app[data-menu="oculto"] .lateral-menu ul button.lm-padre:hover { transform: none; }
+  .marco-app[data-menu="oculto"] .lm-n { position: absolute; top: 5px; right: 12px; min-width: 10px; width: 10px; height: 10px; padding: 0; font-size: 0; border: 2px solid var(--panel); }
+  .marco-app[data-menu="oculto"] ul.lm-sub { display: none; }
+  .marco-app[data-menu="oculto"] .lm-admin > summary { justify-content: center; padding: 8px 0; margin: 0 10px; gap: 0; }
+  .marco-app[data-menu="oculto"] .lm-admin > summary > span,
+  .marco-app[data-menu="oculto"] .lm-admin > summary .lm-flecha,
+  .marco-app[data-menu="oculto"] .lm-admin ul { display: none; }
+}
+/* Botón de contraer, siempre al pie del menú */
+.lm-contraer { display: flex; align-items: center; gap: 10px; margin: 6px 12px 14px; padding: 10px 12px; border: 1px dashed color-mix(in srgb, var(--primario) 35%, var(--borde)); border-radius: 14px; background: transparent; color: var(--primario-texto); font: inherit; font-weight: 700; font-size: 13px; cursor: pointer; transition: background .18s, transform .18s, border-color .18s; }
+.lm-contraer:hover { background: var(--primario-fondo); border-style: solid; transform: translateX(-2px); }
+.lm-contraer-ic { transition: transform .3s; flex: none; }
+.marco-app[data-menu="oculto"] .lm-contraer { justify-content: center; margin: 6px 10px 14px; padding: 10px 0; }
+.marco-app[data-menu="oculto"] .lm-contraer span { display: none; }
+.marco-app[data-menu="oculto"] .lm-contraer-ic { transform: rotate(180deg); }
+@media (max-width: 900px) { .lm-contraer { display: none; } }
+/* Menú lateral sin barra de desplazamiento visible (sigue desplazándose con la rueda o el dedo) */
+.lateral-menu { scrollbar-width: none; -ms-overflow-style: none; }
+.lateral-menu::-webkit-scrollbar { display: none; width: 0; height: 0; }

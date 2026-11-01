@@ -2722,3 +2722,11 @@ details.cj-guia p { margin: 8px 0 0; line-height: 1.7; }
 .cj-sug-banner span { font-size: 11px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: var(--primario-texto); }
 .cj-sug-banner small { color: var(--ambar); font-weight: 700; }
 .btn.rojo { color: var(--rojo); border-color: color-mix(in srgb, var(--rojo) 40%, var(--borde)); }
+/* Bandeja de mensajes: contenido centrado y con aire */
+.bandeja-panel { border-radius: 16px; }
+.bandeja-cab { padding: 14px 18px; }
+.bandeja-cab b { font-size: 15px; }
+.bandeja-lista .vacio { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 30px 20px 26px; text-align: center; color: var(--tenue); font-size: 13.5px; border: 0; background: transparent; }
+.bandeja-lista .vacio::before { content: "🔔"; display: grid; place-items: center; width: 52px; height: 52px; border-radius: 50%; font-size: 24px; background: var(--primario-fondo); margin-bottom: 4px; }
+.bandeja-lista .aviso-item { padding-inline: 18px; }
+.bandeja-pie { padding: 13px 18px; }

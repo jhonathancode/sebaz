@@ -192,7 +192,7 @@ function Elegir({ abierta, indice, linea, lineas, cands, sug, onElegir, onCerrar
                 const marcado = sel.includes(c.id);
                 return (
                   <button key={c.id} type="button" className={`cj-op${igual(c.monto, monto) ? " igual" : ""}${marcado ? " marcado" : ""}`} disabled={otra >= 0} onClick={() => setSel((x) => (x.includes(c.id) ? x.filter((i) => i !== c.id) : [...x, c.id]))}>
-                    <span className="cj-op-t"><i className="cj-caja" aria-hidden="true">{marcado ? "✓" : ""}</i><b>{c.codigo}</b> · Cheque {c.cheque}{igual(c.monto, monto) && <i className="cj-ok">monto igual</i>}{otra >= 0 && <i className="cj-ya">ya enlazado en la línea {otra + 1}</i>}</span>
+                    <span className="cj-op-t"><i className="cj-caja" aria-hidden="true">{marcado ? "✓" : ""}</i><b>{c.codigo}</b> · Cheque {c.cheque}{igual(c.monto, monto) && <i className="cj-ok">coincide</i>}{otra >= 0 && <i className="cj-ya">ya enlazado en la línea {otra + 1}</i>}</span>
                     <span className="cj-op-d">{c.beneficiario} · {c.concepto}</span>
                     <span className="cj-op-m">S/ {fmt(c.monto)}</span>
                   </button>
@@ -224,7 +224,7 @@ function Elegir({ abierta, indice, linea, lineas, cands, sug, onElegir, onCerrar
                 const otra = usadoPor(x.id);
                 return (
                   <button key={x.id} type="button" className={`cj-op${igual(x.monto, monto) ? " igual" : ""}`} disabled={otra >= 0} onClick={() => onElegir({ tipo: "transferencia", id: x.id, etiqueta: `Transferencia de ${x.municipalidad.replace(/^municipalidad (distrital|provincial) de /i, "")} · ${x.periodo}` })}>
-                    <span className="cj-op-t"><b>{x.municipalidad.replace(/^municipalidad (distrital|provincial) de /i, "")}</b> · {nombreMes(x.periodo)}{igual(x.monto, monto) && <i className="cj-ok">monto igual</i>}{otra >= 0 && <i className="cj-ya">ya enlazada</i>}</span>
+                    <span className="cj-op-t"><b>{x.municipalidad.replace(/^municipalidad (distrital|provincial) de /i, "")}</b> · {nombreMes(x.periodo)}{igual(x.monto, monto) && <i className="cj-ok">coincide</i>}{otra >= 0 && <i className="cj-ya">ya enlazada</i>}</span>
                     <span className="cj-op-d">{x.documento || "Sin documento"}</span>
                     <span className="cj-op-m">S/ {fmt(x.monto)}</span>
                   </button>
@@ -236,7 +236,7 @@ function Elegir({ abierta, indice, linea, lineas, cands, sug, onElegir, onCerrar
               {cands.ingresos.filter((x) => x.n > 0).length === 0 && <p className="tenue">No hay recibos de ingresos propios emitidos.</p>}
               {cands.ingresos.filter((x) => x.n > 0).map((x) => (
                 <button key={x.periodo} type="button" className={`cj-op${igual(x.total, monto) ? " igual" : ""}`} onClick={() => onElegir({ tipo: "ingresos", periodo: x.periodo, etiqueta: `Depósito de ingresos propios de ${nombreMes(x.periodo)}` })}>
-                  <span className="cj-op-t"><b>Recibos de {nombreMes(x.periodo)}</b>{igual(x.total, monto) && <i className="cj-ok">monto igual</i>}</span>
+                  <span className="cj-op-t"><b>Recibos de {nombreMes(x.periodo)}</b>{igual(x.total, monto) && <i className="cj-ok">coincide</i>}</span>
                   <span className="cj-op-d">{x.n} recibo(s) emitido(s)</span>
                   <span className="cj-op-m">S/ {fmt(x.total)}</span>
                 </button>

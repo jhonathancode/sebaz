@@ -4,9 +4,10 @@ import Motivo from "@/components/Motivo";
 import PanelArchivos from "@/components/PanelArchivos";
 import VentanaFlotante from "@/components/VentanaFlotante";
 import CampoArchivoEstado from "@/components/formularios/CampoArchivoEstado";
-import TranscribirExtracto, { type CabeceraExtracto, type LineaExtracto } from "@/components/TranscribirExtracto";
+import ConciliarEstado, { type CabeceraExtracto, type LineaExtracto } from "@/components/ConciliarEstado";
+import type { Candidatos, Enlace } from "@/lib/extracto";
 import { contextoMcp, tiene } from "@/lib/contexto";
-import { nombrePeriodo, periodoActual } from "@/lib/formato";
+import { codigoCP, nombrePeriodo, periodoActual } from "@/lib/formato";
 import { supabaseServidor } from "@/lib/supabase/server";
 import { anularEstadoCuenta, subirEstadoCuenta } from "../acciones";
 import { guardarTranscripcion } from "./acciones";
@@ -20,10 +21,34 @@ export default async function Conciliar({ searchParams }: { searchParams: Params
   const mes = /^\d{4}-\d{2}$/.test(sp.mes ?? "") ? sp.mes! : periodoActual();
   const puede = tiene(ctx, "admin", "tesorero", "contador", "alcalde");
 
-  const [{ data: hojas }, { data: ext }] = await Promise.all([
+  const anio = mes.slice(0, 4);
+  const [{ data: hojas }, { data: ext }, { data: cpsDb }, { data: trDb }, { data: ingDb }, { data: cobDb }] = await Promise.all([
     supabase.from("estados_cuenta").select("*").eq("mcp_id", ctx.mcp.id).eq("periodo", mes).order("creado_en"),
     supabase.from("extractos_transcritos").select("*").eq("mcp_id", ctx.mcp.id).eq("periodo", mes).maybeSingle(),
+    supabase.from("comprobantes_pago").select("id, numero, origen, cheque, importe, deducciones, fecha, beneficiario, concepto, estado").eq("mcp_id", ctx.mcp.id).not("cheque", "is", null).neq("estado", "anulado").order("fecha", { ascending: false }).limit(600),
+    supabase.from("transferencias_recibidas").select("id, periodo, fecha, monto, documento, fuentes(municipalidad)").eq("mcp_id", ctx.mcp.id).eq("anulado", false).order("fecha", { ascending: false }).limit(60),
+    supabase.from("ingresos").select("fecha, monto").eq("mcp_id", ctx.mcp.id).eq("estado", "emitido").gte("fecha", `${anio}-01-01`).lte("fecha", `${anio}-12-31`),
+    supabase.from("cheques_cobrados").select("comprobante_id").eq("mcp_id", ctx.mcp.id).eq("anulado", false),
   ]);
+  const cobrados = new Set((cobDb ?? []).map((c) => c.comprobante_id));
+  const candidatos: Candidatos = {
+    cps: (cpsDb ?? []).map((c) => ({
+      id: c.id,
+      codigo: codigoCP(c.numero, c.origen),
+      cheque: String(c.cheque ?? ""),
+      monto: Math.round((Number(c.importe) - Number(c.deducciones ?? 0)) * 100) / 100,
+      beneficiario: c.beneficiario ?? "",
+      concepto: c.concepto ?? "",
+      fecha: c.fecha,
+      cobrado: cobrados.has(c.id),
+    })),
+    transferencias: (trDb ?? []).map((t) => ({ id: t.id, municipalidad: (t.fuentes as unknown as { municipalidad: string } | null)?.municipalidad ?? "Transferencia", periodo: t.periodo, fecha: t.fecha, monto: Number(t.monto), documento: t.documento })),
+    ingresos: Array.from({ length: 12 }, (_, i) => {
+      const per = `${anio}-${String(i + 1).padStart(2, "0")}`;
+      const rec = (ingDb ?? []).filter((r) => r.fecha.startsWith(per));
+      return { periodo: per, n: rec.length, total: Math.round(rec.reduce((t, r) => t + Number(r.monto), 0) * 100) / 100 };
+    }),
+  };
   const vigentes = (hojas ?? []).filter((h) => !h.anulado);
   const firmadas = vigentes.length ? await supabase.storage.from("sustentos").createSignedUrls(vigentes.map((h) => h.archivo_path), 1800) : { data: [] as { path: string | null; signedUrl: string }[] };
   const url = new Map((firmadas.data ?? []).map((u) => [u.path, u.signedUrl]));
@@ -38,12 +63,13 @@ export default async function Conciliar({ searchParams }: { searchParams: Params
     abonos_pdf: aTexto(ext?.total_abonos_pdf),
     saldo_pdf: aTexto(ext?.saldo_actual_pdf),
   };
-  const lineasInicial: LineaExtracto[] = ((ext?.lineas as { codigo: string; cargo: number | null; abono: number | null; saldo: number | null; dia: string | null }[] | null) ?? []).map((l) => ({
+  const lineasInicial: LineaExtracto[] = ((ext?.lineas as { codigo: string; cargo: number | null; abono: number | null; saldo: number | null; dia: string | null; enlace?: Enlace | null }[] | null) ?? []).map((l) => ({
     codigo: l.codigo ?? "",
     cargo: aTexto(l.cargo),
     abono: aTexto(l.abono),
     saldo: aTexto(l.saldo),
     dia: l.dia ?? "",
+    enlace: l.enlace ?? null,
   }));
 
   return (
@@ -93,10 +119,10 @@ export default async function Conciliar({ searchParams }: { searchParams: Params
 
         <section className="panel conc-der">
           <div className="panel-cab">
-            Cópielo aquí, igual que el original
-            <span className="tenue pequeno">Las sumas le avisan si cuadra con el PDF</span>
+            Copiar y enlazar
+            <span className="tenue pequeno">Paso 1: copiarlo · Paso 2: enlazarlo con lo registrado</span>
           </div>
-          <TranscribirExtracto periodo={mes} cabInicial={cabInicial} lineasInicial={lineasInicial} puede={puede} guardar={guardarTranscripcion} />
+          <ConciliarEstado periodo={mes} cabInicial={cabInicial} lineasInicial={lineasInicial} candidatos={candidatos} puede={puede} guardar={guardarTranscripcion} />
         </section>
       </div>
     </>

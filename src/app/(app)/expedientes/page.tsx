@@ -104,12 +104,33 @@ export default async function Expedientes({ searchParams }: { searchParams: Para
     supabase.from("ordenes").select("expediente_id, tipo, numero, anio, anulado, creado_en").in("expediente_id", idsQ),
     supabase.from("conformidades").select("expediente_id, memorando_numero, anio, anulado, creado_en").in("expediente_id", idsQ),
     supabase.from("cotizaciones").select("expediente_id, anulado").in("expediente_id", idsQ),
-    supabase.from("comprobantes_pago").select("id, expediente_id, numero, origen, cheque, estado, creado_en").in("expediente_id", idsQ),
+    supabase.from("comprobantes_pago").select("id, expediente_id, numero, origen, cheque, estado, creado_en, importe, deducciones").in("expediente_id", idsQ),
     supabase.from("notas_entrada").select("id, expediente_id, numero, anio, anulado, creado_en").in("expediente_id", idsQ),
   ]);
   const idsCp = (cpsV ?? []).map((c) => c.id as string);
   const { data: cobV } = idsCp.length ? await supabase.from("cheques_cobrados").select("comprobante_id").eq("anulado", false).in("comprobante_id", idsCp) : { data: [] as { comprobante_id: string }[] };
   const conciliados = new Set((cobV ?? []).map((c) => c.comprobante_id));
+  // También cuenta como conciliado un cheque enlazado en un estado de cuenta guardado cuyos comprobantes suman lo que cobró el banco
+  if (idsCp.length) {
+    const { data: exts } = await supabase.from("extractos_transcritos").select("lineas");
+    const montoDe = new Map((cpsV ?? []).map((c) => [c.id as string, Math.round((Number(c.importe) - Number(c.deducciones ?? 0)) * 100) / 100]));
+    type L = { cargo?: number | null; enlace?: { tipo?: string; id?: string; extra?: { id: string }[] } | null };
+    const todas = (exts ?? []).flatMap((e) => ((e.lineas ?? []) as L[]));
+    const faltan = Array.from(new Set(todas.flatMap((l) => (l.enlace?.tipo === "cp" && l.enlace.id ? [l.enlace.id, ...(l.enlace.extra ?? []).map((x) => x.id)] : [])))).filter((id) => !montoDe.has(id));
+    if (faltan.length) {
+      const { data: otros } = await supabase.from("comprobantes_pago").select("id, importe, deducciones").in("id", faltan);
+      (otros ?? []).forEach((c) => montoDe.set(c.id as string, Math.round((Number(c.importe) - Number(c.deducciones ?? 0)) * 100) / 100));
+    }
+    for (const l of todas) {
+      {
+        if (l.enlace?.tipo !== "cp" || !l.enlace.id || l.cargo == null) continue;
+        const ids = [l.enlace.id, ...(l.enlace.extra ?? []).map((x) => x.id)];
+        if (!ids.every((id) => montoDe.has(id))) continue;
+        const suma = Math.round(ids.reduce((t, id) => t + (montoDe.get(id) ?? 0), 0) * 100) / 100;
+        if (Math.abs(suma - Number(l.cargo)) < 0.005) ids.forEach((id) => conciliados.add(id));
+      }
+    }
+  }
   const elegir = <T extends { creado_en: string }>(xs: T[] | null | undefined, vigente: (x: T) => boolean) => {
     const orden = [...(xs ?? [])].sort((a, b) => b.creado_en.localeCompare(a.creado_en));
     return orden.find(vigente) ?? orden[0] ?? null;

@@ -3654,3 +3654,6 @@ label.opcion:has(input:checked) { border-color: var(--primario); background: lin
 .fila.conciliada .f-monto { color: #1d4fb8; }
 :root[data-theme="dark"] .fila.conciliada .f-monto { color: #93c5ff; }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .fila.conciliada .f-monto { color: #93c5ff; } }
+/* Bandeja: las opciones se ven siempre, sin tocar el aviso */
+.aviso-fila .aviso-item { cursor: default; }
+.aviso-acciones { padding-top: 0; }

@@ -79,7 +79,7 @@ export default async function InicioSuperadmin({ searchParams }: { searchParams:
       <div className="cab-vista">
         <div>
           <h1>Inicio</h1>
-          <div className="sub">Cómo va la captación de clientes y el estado de los que ya usan Sebaz.</div>
+          <div className="sub">Cómo va la captación de clientes y el estado de los que ya usan Zebaz.</div>
         </div>
         <span className="espacio" />
         <Link className="btn primario grande" href="/superadmin/clientes">Ver clientes</Link>

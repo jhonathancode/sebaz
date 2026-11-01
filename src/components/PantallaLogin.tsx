@@ -4,7 +4,7 @@ import { ingresar } from "@/app/login/acciones";
 
 export type DatosLoginMcp = { nombre: string; ruc: string | null; logo_path: string | null } | null;
 
-/** Pantalla de ingreso: la de Sebaz, o la de una municipalidad con su logo, nombre y RUC. */
+/** Pantalla de ingreso: la de Zebaz, o la de una municipalidad con su logo, nombre y RUC. */
 export default function PantallaLogin({ error, mcp, desde }: { error?: string; mcp?: DatosLoginMcp; desde: string }) {
   const logo = logoMcp(mcp);
   return (

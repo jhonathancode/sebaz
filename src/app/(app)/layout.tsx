@@ -63,7 +63,7 @@ export default async function MarcoApp({ children }: { children: React.ReactNode
   }
 
   // Trabajo diario arriba; administración bajo el nombre del usuario.
-  // El superadmin tiene su propio panel (Sebaz como empresa); las MCP son sus clientes.
+  // El superadmin tiene su propio panel (Zebaz como empresa); las MCP son sus clientes.
   const items: ItemMenu[] = ctx.esSuperadmin
     ? [
         { href: "/superadmin/inicio", texto: "Inicio" },

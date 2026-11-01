@@ -102,8 +102,8 @@ export default async function ArticuloPagina({ params }: { params: Promise<{ slu
           )}
           <div className="sw-indice">
             <h4>¿Su MCP rinde a tiempo?</h4>
-            <p style={{ margin: "0 0 12px", fontSize: 14.5 }}>Conozca Sebaz: gastos, caja chica y rendición en un solo sistema.</p>
-            <Link className="sw-boton chico" href={await rutaSitio("/")}>Conocer Sebaz</Link>
+            <p style={{ margin: "0 0 12px", fontSize: 14.5 }}>Conozca Zebaz: gastos, caja chica y rendición en un solo sistema.</p>
+            <Link className="sw-boton chico" href={await rutaSitio("/")}>Conocer Zebaz</Link>
           </div>
         </aside>
       </div>

@@ -16,7 +16,7 @@ export function urlLogo(path: string | null | undefined): string | null {
   return `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/logos/${path}`;
 }
 
-export const APP_NOMBRE = process.env.NEXT_PUBLIC_APP_NOMBRE || "Sistema MCP";
+export const APP_NOMBRE = process.env.NEXT_PUBLIC_APP_NOMBRE || "Zebaz";
 
 /** Monto como texto para un campo (sin miles, siempre 2 decimales): 2250 → «2250.00». */
 export function monto2(n: number | string | null | undefined): string {

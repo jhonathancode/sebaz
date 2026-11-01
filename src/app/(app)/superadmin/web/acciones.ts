@@ -120,7 +120,7 @@ export async function guardarAjustes(fd: FormData) {
   const { error } = await supabase
     .from("web_ajustes")
     .update({
-      nombre_sitio: texto(fd, "nombre_sitio") ?? "Sebaz",
+      nombre_sitio: texto(fd, "nombre_sitio") ?? "Zebaz",
       eslogan: texto(fd, "eslogan"),
       dominio: texto(fd, "dominio"),
       logo_path: texto(fd, "logo_path"),

@@ -1,4 +1,4 @@
-/** Marca de Sebaz: sello con visto de control, nombre y la frase «Sistema de control». */
+/** Marca de Zebaz: sello con visto de control, nombre y la frase «Sistema de control». */
 export default function LogoSebaz({ tamano = 40, claro = true, frase = true }: { tamano?: number; claro?: boolean; frase?: boolean }) {
   return (
     <span className="logo-sebaz" style={{ ["--ls" as string]: `${tamano}px` }} data-claro={claro ? "1" : "0"}>
@@ -8,7 +8,7 @@ export default function LogoSebaz({ tamano = 40, claro = true, frase = true }: {
         <path d="M14 25.5 21 32.5 34.5 16" fill="none" stroke="currentColor" strokeWidth="4.2" strokeLinecap="round" strokeLinejoin="round" />
       </svg>
       <span className="ls-texto">
-        <span className="ls-nombre">SEBAZ</span>
+        <span className="ls-nombre">ZEBAZ</span>
         {frase && <span className="ls-frase">Sistema de control</span>}
       </span>
     </span>

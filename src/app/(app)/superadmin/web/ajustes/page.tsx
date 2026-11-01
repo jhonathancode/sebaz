@@ -29,9 +29,9 @@ export default async function AjustesWeb({ searchParams }: { searchParams: Param
         <section className="panel cfg-panel">
           <div className="panel-cab">Marca y menú</div>
           <div className="panel-cuerpo">
-            <label className="campo">Nombre del sitio<input name="nombre_sitio" defaultValue={a.nombre_sitio ?? "Sebaz"} required /></label>
+            <label className="campo">Nombre del sitio<input name="nombre_sitio" defaultValue={a.nombre_sitio ?? "Zebaz"} required /></label>
             <label className="campo">Eslogan (título grande del inicio)<input name="eslogan" defaultValue={a.eslogan ?? ""} /></label>
-            <label className="campo">Dominio de la web<input name="dominio" defaultValue={a.dominio ?? ""} placeholder="https://sebaz.pe" /></label>
+            <label className="campo">Dominio de la web<input name="dominio" defaultValue={a.dominio ?? ""} placeholder="https://zebaz.pe" /></label>
             <CampoImagenWeb nombre="logo_path" titulo="Logo (opcional)" inicial={a.logo_path} carpeta="ajustes" ayuda="Si no sube logo se usa el nombre con un sello." />
             <label className="campo">
               Menú (una opción por línea: texto | enlace)
@@ -49,7 +49,7 @@ export default async function AjustesWeb({ searchParams }: { searchParams: Param
           <div className="panel-cuerpo">
             <div className="rejilla-2">
               <label className="campo">WhatsApp (con código de país)<input name="whatsapp" defaultValue={a.whatsapp ?? ""} placeholder="51999999999" inputMode="tel" /></label>
-              <label className="campo">Mensaje inicial del WhatsApp<input name="whatsapp_mensaje" defaultValue={a.whatsapp_mensaje ?? ""} placeholder="Hola, quiero información de Sebaz" /></label>
+              <label className="campo">Mensaje inicial del WhatsApp<input name="whatsapp_mensaje" defaultValue={a.whatsapp_mensaje ?? ""} placeholder="Hola, quiero información de Zebaz" /></label>
               <label className="campo">Correo<input type="email" name="correo" defaultValue={a.correo ?? ""} /></label>
               <label className="campo">Teléfono<input name="telefono" defaultValue={a.telefono ?? ""} /></label>
             </div>
@@ -76,7 +76,7 @@ export default async function AjustesWeb({ searchParams }: { searchParams: Param
         <section className="panel cfg-panel">
           <div className="panel-cab">Google (SEO) y estadísticas</div>
           <div className="panel-cuerpo">
-            <label className="campo">Título de la web en Google<input name="seo_titulo" defaultValue={a.seo_titulo ?? ""} placeholder="Sebaz · Sistema de control para municipalidades" /></label>
+            <label className="campo">Título de la web en Google<input name="seo_titulo" defaultValue={a.seo_titulo ?? ""} placeholder="Zebaz · Sistema de control para municipalidades" /></label>
             <label className="campo">Descripción en Google<textarea name="seo_descripcion" rows={3} defaultValue={a.seo_descripcion ?? ""} /></label>
             <CampoImagenWeb nombre="og_imagen" titulo="Imagen al compartir en redes (1200×630)" inicial={a.og_imagen} carpeta="ajustes" />
             <div className="rejilla-2">

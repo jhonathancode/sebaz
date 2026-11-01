@@ -3,7 +3,7 @@ import { NextResponse, type NextRequest } from "next/server";
 
 const PUBLICAS = ["/login", "/sitio"];
 
-// Dominios de la web pública (por ejemplo «sebaz.pe,www.sebaz.pe»). Lo demás es el sistema.
+// Dominios de la web pública (por ejemplo «zebaz.pe,www.zebaz.pe»). Lo demás es el sistema.
 const HOSTS_SITIO = (process.env.SITIO_HOSTS ?? "").split(",").map((h) => h.trim().toLowerCase()).filter(Boolean);
 
 export async function middleware(request: NextRequest) {

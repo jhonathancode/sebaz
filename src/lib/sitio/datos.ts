@@ -55,7 +55,7 @@ export type Articulo = {
 };
 
 const AJUSTES_BASE: Ajustes = {
-  nombre_sitio: "Sebaz",
+  nombre_sitio: "Zebaz",
   eslogan: "Sistema de control para municipalidades de centros poblados",
   dominio: null,
   logo_path: null,

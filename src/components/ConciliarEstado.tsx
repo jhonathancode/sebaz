@@ -281,7 +281,7 @@ function Elegir({ abierta, indice, linea, lineas, cands, sug, onElegir, onCerrar
 
 /**
  * Pantalla de trabajo del estado de cuenta: paso 1, copiarlo igual que el original (con sumas que avisan si cuadra);
- * paso 2, enlazar cada cheque, transferencia o depósito con lo registrado en Sebaz.
+ * paso 2, enlazar cada cheque, transferencia o depósito con lo registrado en Zebaz.
  */
 export default function ConciliarEstado({
   periodo,
@@ -696,7 +696,7 @@ export default function ConciliarEstado({
                     <input inputMode={c.num ? "decimal" : "numeric"} value={cab[c.k]} onChange={(e) => ponCab(c.k, e.target.value)} onBlur={(e) => c.num && ponCab(c.k, darFormato(e.target.value))} disabled={!puede} placeholder={c.ph} />
                   </label>
                   <div className="cj-total-suma">
-                    <span>Suma de Sebaz</span>
+                    <span>Suma de Zebaz</span>
                     <b>{ch.sist === null ? "—" : ch.f(ch.sist)}</b>
                     <small>{sin ? "Escriba el total del original" : ok ? "✓ Cuadra" : `Diferencia ${fmt(Math.abs(ch.sist! - ch.pdf!))}`}</small>
                   </div>
@@ -761,7 +761,7 @@ export default function ConciliarEstado({
           </table>
           <p className="cj-pdf-pie">
             Total del original: {cab.n_pdf} movimientos · cargos S/ {cab.cargos_pdf} · abonos S/ {cab.abonos_pdf} · saldo actual S/ {cab.saldo_pdf}.{" "}
-            Anotado en Sebaz: {calculo.n} movimientos · cargos S/ {fmt(calculo.totalCargos)} · abonos S/ {fmt(calculo.totalAbonos)}.
+            Anotado en Zebaz: {calculo.n} movimientos · cargos S/ {fmt(calculo.totalCargos)} · abonos S/ {fmt(calculo.totalAbonos)}.
           </p>
         </div>
       </div>

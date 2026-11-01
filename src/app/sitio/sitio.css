@@ -1,4 +1,4 @@
-/* Web pública de Sebaz. Todo va bajo .sw para no tocar el estilo del sistema. */
+/* Web pública de Zebaz. Todo va bajo .sw para no tocar el estilo del sistema. */
 .sw { --sw-azul: #1d4fb8; --sw-azul-2: #2b64d9; --sw-azul-suave: #eaf1fd; --sw-tinta: #0f1623; --sw-texto: #2a3342; --sw-tenue: #667286; --sw-linea: #e5e9f0; --sw-fondo: #f6f8fc;
   font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; color: var(--sw-texto); background: #fff; line-height: 1.6; -webkit-font-smoothing: antialiased; min-height: 100vh; display: flex; flex-direction: column; }
 .sw * { box-sizing: border-box; }

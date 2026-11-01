@@ -481,7 +481,7 @@ export default async function Configuracion({ searchParams }: { searchParams: Pa
           <div className="fu-cab">
             <div>
               <h2>Numeración de los documentos</h2>
-              <p>Si la MCP ya emitió documentos antes de usar Sebaz (por ejemplo, ya va en la orden de servicio N.º 25), escriba aquí desde qué número debe seguir. El sistema continúa desde ahí, sin repetir números.</p>
+              <p>Si la MCP ya emitió documentos antes de usar Zebaz (por ejemplo, ya va en la orden de servicio N.º 25), escriba aquí desde qué número debe seguir. El sistema continúa desde ahí, sin repetir números.</p>
             </div>
             <div className="nu-anios" role="group" aria-label="Año">
               {[anioNum - 1, anioNum, anioNum + 1].map((a) => (

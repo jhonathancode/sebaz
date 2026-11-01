@@ -2492,3 +2492,7 @@ details.cj-guia p { margin: 8px 0 0; line-height: 1.7; }
 .lateral-menu ul button.lm-padre.activo svg { color: var(--primario); }
 .lateral-menu ul button.lm-padre .lm-flecha-sub { margin-left: auto; transition: transform .15s; }
 .lateral-menu ul button.lm-padre .lm-flecha-sub.abierta { transform: rotate(180deg); }
+/* Saludo de Inicio: limpio, sin caja ni barra pegada al texto */
+.ini-col .saludo { background: none; border: 0; border-radius: 0; box-shadow: none; margin: 0; padding: 2px 4px 0; }
+.ini-col .saludo h1 { font-size: 26px; line-height: 1.15; letter-spacing: -.01em; margin: 0 0 4px; }
+.ini-col .saludo .tenue { font-size: 13.5px; }

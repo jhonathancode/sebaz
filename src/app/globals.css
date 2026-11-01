@@ -3638,3 +3638,10 @@ label.opcion:has(input:checked) { border-color: var(--primario); background: lin
 .fila.conciliada .f-monto { color: #137a45; }
 :root[data-theme="dark"] .fila.conciliada .f-monto { color: #8bf0bd; }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .fila.conciliada .f-monto { color: #8bf0bd; } }
+/* Bandeja: opciones al abrir un aviso */
+.aviso-fila { display: flex; flex-direction: column; border-bottom: 1px solid var(--linea); }
+.aviso-fila .aviso-item { border-bottom: 0; }
+.aviso-fila.abierto { background: color-mix(in srgb, var(--primario) 6%, var(--panel)); }
+.aviso-acciones { display: flex; flex-wrap: wrap; gap: 8px; padding: 2px 18px 14px 50px; }
+.aviso-acciones form { margin: 0; }
+.aviso-acciones .btn { white-space: nowrap; }

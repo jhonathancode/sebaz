@@ -27,3 +27,25 @@ export async function marcarTodasLeidas() {
   revalidatePath("/", "layout");
   redirect("/mensajes");
 }
+
+/** Deja un aviso como leído sin salir de donde está. */
+export async function marcarLeida(fd: FormData) {
+  await obtenerContexto();
+  const id = texto(fd, "id");
+  if (id) {
+    const supabase = await supabaseServidor();
+    await supabase.from("notificaciones").update({ leida_en: new Date().toISOString() }).eq("id", id);
+  }
+  revalidatePath("/", "layout");
+}
+
+/** Vuelve a dejar un aviso como pendiente (sin leer). */
+export async function dejarPendiente(fd: FormData) {
+  await obtenerContexto();
+  const id = texto(fd, "id");
+  if (id) {
+    const supabase = await supabaseServidor();
+    await supabase.from("notificaciones").update({ leida_en: null }).eq("id", id);
+  }
+  revalidatePath("/", "layout");
+}

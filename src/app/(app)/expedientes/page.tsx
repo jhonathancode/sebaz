@@ -287,7 +287,7 @@ export default async function Expedientes({ searchParams }: { searchParams: Para
             comprobante: dd.comprobante,
           };
           return (
-            <div key={e.id} className={`fila${e.estado === "anulado" ? " anulada" : ""}`}>
+            <div key={e.id} className={`fila${e.estado === "anulado" ? " anulada" : ""}${dd.conciliado && e.estado !== "anulado" ? " conciliada" : ""}`}>
               <div className="f-num">
                 {num3(e.numero)}-{e.anio}
                 <small>{fecha(e.fecha)}</small>
@@ -340,7 +340,7 @@ export default async function Expedientes({ searchParams }: { searchParams: Para
                           </span>
                         )}
                         {p === "comprobante" && dd.conciliado && (
-                          <span className="doc-conciliado" title="El cheque ya figura cobrado en el estado de cuenta del banco">✓ Conciliado</span>
+                          <span className="doc-conciliado" title="El cheque ya figura cobrado en el estado de cuenta del banco">✓ Conciliado con el banco</span>
                         )}
                       </span>
                     );

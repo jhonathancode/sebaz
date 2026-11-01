@@ -47,8 +47,8 @@ export default async function Ingresos({ searchParams }: { searchParams: ParamsA
   const sp = await searchParams;
   const ctx = await contextoMcp();
   const supabase = await supabaseServidor();
-  // Sin mes elegido se ve el resumen del año (inicio)
-  const vista = sp.vista === "mes" || (sp.mes && sp.vista !== "anio") ? "mes" : "anio";
+  // Al entrar se ve el mes actual; el resumen del año se abre con su botón
+  const vista = sp.vista === "anio" ? "anio" : "mes";
   const periodo = sp.mes ?? periodoActual();
   const anio = periodo.slice(0, 4);
   const mesNum = periodo.slice(5, 7);

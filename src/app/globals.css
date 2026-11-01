@@ -3620,3 +3620,12 @@ label.opcion:has(input:checked) { border-color: var(--primario); background: lin
 .fila.anulada .f-monto { color: var(--tenue); }
 .fila.anulada .doc-paso { filter: saturate(.55); }
 .tabla tbody tr.anulado .tachar { text-decoration: none; color: var(--tenue); }
+
+/* Anulado: se nota a primera vista */
+.fila.anulada { background: color-mix(in srgb, var(--rojo) 11%, var(--panel)); box-shadow: inset 8px 0 0 var(--rojo); }
+.fila.anulada:hover { background: color-mix(in srgb, var(--rojo) 15%, var(--panel)); }
+.fila.anulada .f-num::after { content: "ANULADO"; display: inline-block; margin-top: 6px; padding: 3px 10px; border-radius: 6px; background: var(--rojo); color: #fff; font-size: 11px; font-weight: 800; letter-spacing: .08em; }
+.fila.anulada .estado.anulado { background: var(--rojo); color: #fff; border-color: var(--rojo); font-weight: 800; }
+.fila.anulada .f-desc .f-titulo, .fila.anulada .f-desc > a:first-child { color: color-mix(in srgb, var(--rojo) 55%, var(--texto)); }
+.fila.anulada .doc-paso { filter: saturate(.3) opacity(.85); border-color: color-mix(in srgb, var(--rojo) 35%, var(--borde)); }
+.fila.anulada .doc-paso .ic { background: color-mix(in srgb, var(--rojo) 70%, #fff); }

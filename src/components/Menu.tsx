@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 
 export type ItemMenu = { href: string; texto: string; n?: number; sub?: { href: string; texto: string }[] };
 
@@ -183,6 +183,7 @@ export type DatosMcpMenu = { nombre: string; ruc: string | null; logo: string | 
 
 export default function Menu({ items, abajo = [], mcp, panel }: { items: ItemMenu[]; abajo?: ItemMenu[]; nuevo?: boolean; mcp: DatosMcpMenu; panel?: string }) {
   const ruta = usePathname();
+  const [abierto, setAbierto] = useState<Record<string, boolean>>({});
   // Se marca la opción que más se parece a la ruta (así «Clientes» no queda marcado en «Pagos»).
   const actual = [...items, ...abajo]
     .map((i) => i.href)
@@ -238,14 +239,27 @@ export default function Menu({ items, abajo = [], mcp, panel }: { items: ItemMen
         <ul>
           {items.map((i) => {
             const activo = actual === i.href;
+            const dentro = ruta === i.href || ruta.startsWith(i.href + "/");
+            const desplegado = abierto[i.href] ?? dentro;
             return (
               <li key={i.href}>
-                <Link href={i.href} className={activo ? "activo" : undefined} aria-current={activo ? "page" : undefined}>
-                  <Icono href={i.href} />
-                  <span>{i.texto}</span>
-                  {!!i.n && <span className="lm-n">{i.n}</span>}
-                </Link>
-                {i.sub && (ruta === i.href || ruta.startsWith(i.href + "/")) && (
+                {i.sub ? (
+                  // Con sub-menús: al pulsar solo se abren o cierran; se elige luego
+                  <button type="button" className={`lm-padre${dentro ? " activo" : ""}`} aria-expanded={desplegado} onClick={() => setAbierto((a) => ({ ...a, [i.href]: !(a[i.href] ?? dentro) }))}>
+                    <Icono href={i.href} />
+                    <span>{i.texto}</span>
+                    <svg className={`lm-flecha-sub${desplegado ? " abierta" : ""}`} viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+                      <path d="m6 9 6 6 6-6" />
+                    </svg>
+                  </button>
+                ) : (
+                  <Link href={i.href} className={activo ? "activo" : undefined} aria-current={activo ? "page" : undefined}>
+                    <Icono href={i.href} />
+                    <span>{i.texto}</span>
+                    {!!i.n && <span className="lm-n">{i.n}</span>}
+                  </Link>
+                )}
+                {i.sub && desplegado && (
                   <ul className="lm-sub">
                     {i.sub.map((x) => {
                       const subActivo = x.href === i.href ? ruta === i.href : ruta === x.href || ruta.startsWith(x.href + "/");

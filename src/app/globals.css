@@ -3510,3 +3510,8 @@ label.opcion:has(input:checked) { border-color: var(--primario); background: lin
 /* Enlace correcto: azul (lo positivo va en azul) */
 .te-chip.ok { background: linear-gradient(135deg, #1d4fb8, #3b82f6); color: #fff; box-shadow: 0 6px 12px -6px rgba(37, 99, 235, .8); }
 .te-chip.pend:hover { border-color: #2563eb; color: #2563eb; }
+/* Expedientes: al pasar el mouse, azul suave; la barra izquierda de «conciliado» es azul; la etiqueta sigue verde */
+.fila.conciliada { box-shadow: inset 4px 0 0 #2563eb; }
+.filas .fila:hover, .filas .fila.conciliada:hover { background: color-mix(in srgb, #2563eb 7%, var(--panel)); box-shadow: inset 4px 0 0 #2563eb; transform: none; }
+.fila:hover .f-desc > a { color: var(--primario-texto); }
+.filas .fila.anulada:hover { background: transparent; box-shadow: none; }

@@ -3238,3 +3238,8 @@ label.opcion:has(input:checked) { border-color: var(--primario); background: lin
 :root:not([data-theme="light"]) .btn.rojo { color: #ff8f86; }
 :root:not([data-theme="light"]) .boton-tema, :root:not([data-theme="light"]) .bandeja-boton { color: #fff; }
 }
+/* Inicio: las dos columnas siempre terminan a la misma altura, tengan o no datos */
+.ini-dos { align-items: stretch; }
+.ini-dos > .ini-col > .ini-panel:last-child, .ini-dos > .ini-col > section:last-child { flex: 1 1 auto; }
+.ini-dos > .ini-col > .ini-panel { display: flex; flex-direction: column; }
+.ini-dos > .ini-col > .ini-panel > .ini-acciones { margin-top: auto; }

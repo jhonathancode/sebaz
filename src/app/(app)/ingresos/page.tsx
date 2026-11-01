@@ -268,7 +268,7 @@ export default async function Ingresos({ searchParams }: { searchParams: ParamsA
         </div>
       </div>
 
-      <div className="columnas">
+      <div className="columnas apilada">
         <div className="principal">
           <form className="barra" method="get">
             <input type="hidden" name="vista" value="mes" />
@@ -343,7 +343,7 @@ export default async function Ingresos({ searchParams }: { searchParams: ParamsA
                 <div className="vo-cab">
                   <div>
                     <h2>Vouchers de depósito · {nombrePeriodo(periodo)}</h2>
-                    <p>La tesorera deposita lo recaudado (a diario, por semana, por quincena o por mes). Suba cada voucher y compruebe que la suma cuadra con los recibos.</p>
+                    <p>Suba cada voucher de depósito y vea si lo depositado cuadra con lo recaudado.</p>
                   </div>
                   {puede && (
                     <VentanaFlotante boton="+ Subir voucher" titulo="Subir voucher de depósito" accion={subirVoucher} textoGuardar="Guardar voucher" claseBoton="btn primario">
@@ -363,53 +363,50 @@ export default async function Ingresos({ searchParams }: { searchParams: ParamsA
 
                 {errDep && <div className="aviso error">Los vouchers aún no están activos: falta la actualización de la base de datos (ACTUALIZAR_BASE.sql). Avise a soporte.</div>}
 
-                <div className="vo-resumen">
-                  <div className="vo-caja"><span>Recaudado en el mes</span><b>S/ {soles(recaudadoMes)}</b><small>{vigentes.length} recibo(s)</small></div>
-                  <div className="vo-signo" aria-hidden="true">−</div>
-                  <div className="vo-caja azul"><span>Depositado en el mes</span><b>S/ {soles(depositadoMes)}</b><small>{depMesVigentes.length === 1 ? "1 voucher" : `${depMesVigentes.length} vouchers`}</small></div>
-                  <div className="vo-signo" aria-hidden="true">=</div>
-                  <div className={`vo-caja ${vMes.c}`}><span>Diferencia</span><b>S/ {soles(Math.abs(difMes))}</b><small>{vMes.t}</small></div>
+                {/* Una sola línea de control: cuánto se depositó de lo recaudado */}
+                <div className={`vo-control ${vMes.c}`}>
+                  <div className="vo-control-txt">
+                    <span>Depositado <b>S/ {soles(depositadoMes)}</b> de <b>S/ {soles(recaudadoMes)}</b> recaudados · {depMesVigentes.length === 1 ? "1 voucher" : `${depMesVigentes.length} vouchers`}</span>
+                    <em>{vMes.t}</em>
+                  </div>
+                  <div className="vo-barra" aria-hidden="true"><div style={{ width: `${recaudadoMes > 0 ? Math.min(100, Math.round((depositadoMes / recaudadoMes) * 100)) : depositadoMes > 0 ? 100 : 0}%` }} /></div>
+                  {depMesVigentes.length > 1 && <small className="vo-suma">{depMesVigentes.map((d) => soles(d.monto)).join(" + ")} = {soles(depositadoMes)}</small>}
                 </div>
 
-                {depMesVigentes.length > 1 && (
-                  <p className="vo-suma">{depMesVigentes.map((d) => soles(d.monto)).join(" + ")} = <b>{soles(depositadoMes)}</b></p>
-                )}
-
                 {depMes.length === 0 ? (
-                  <div className="vo-vacio">Aún no hay vouchers en {nombrePeriodo(periodo)}. {puede ? "Use «+ Subir voucher» cuando haga un depósito." : ""}</div>
+                  <div className="vo-vacio">Aún no hay vouchers este mes. {puede ? "Use «+ Subir voucher» cuando haga un depósito." : ""}</div>
                 ) : (
                   <ul className="vo-lista">
-                    {depMes.map((d, i) => (
+                    {depMes.map((d) => (
                       <li key={d.id} className={`vo-item${d.anulado ? " anulado" : ""}`}>
-                        <div className="vo-n">{d.anulado ? "—" : depMesVigentes.indexOf(d) + 1}</div>
-                        <div className="vo-datos">
-                          <b>S/ {soles(d.monto)}</b>
-                          <span>Depositado el {fecha(d.fecha)}</span>
-                          <div className="vo-chips">
-                            {d.numero_operacion && <i>Operación {d.numero_operacion}</i>}
-                            {d.desde && d.hasta ? <i>Cubre del {fecha(d.desde)} al {fecha(d.hasta)}</i> : d.desde ? <i>Desde el {fecha(d.desde)}</i> : null}
-                            {d.nota && <i>{d.nota}</i>}
-                            {!d.archivo_path && !d.anulado && <i className="aviso">Sin foto del voucher</i>}
-                            {d.anulado && <i className="rojo">ANULADO: {d.anulado_motivo}</i>}
-                          </div>
-                        </div>
-                        <div className="vo-acc">
+                        <span className="vo-n">{d.anulado ? "—" : depMesVigentes.indexOf(d) + 1}</span>
+                        <span className="vo-fecha">{fecha(d.fecha)}</span>
+                        <span className="vo-info">
+                          {d.numero_operacion ? `Op. ${d.numero_operacion}` : ""}
+                          {d.desde && d.hasta ? `${d.numero_operacion ? " · " : ""}cubre ${fecha(d.desde)} al ${fecha(d.hasta)}` : ""}
+                          {d.nota ? `${d.numero_operacion || (d.desde && d.hasta) ? " · " : ""}${d.nota}` : ""}
+                          {!d.archivo_path && !d.anulado && <em className="vo-sin"> · sin foto</em>}
+                          {d.anulado && <em className="vo-anul"> ANULADO: {d.anulado_motivo}</em>}
+                        </span>
+                        <b className="vo-monto">S/ {soles(d.monto)}</b>
+                        <span className="vo-acc">
                           {d.archivo_path && urlVer.get(d.archivo_path) && (
                             <VisorArchivo url={urlVer.get(d.archivo_path)!} descarga={urlDesc.get(d.archivo_path) ?? urlVer.get(d.archivo_path)!} nombre={d.archivo_nombre ?? "voucher"} tipo={d.archivo_tipo ?? "image/jpeg"} titulo={`Voucher de S/ ${soles(d.monto)} · ${fecha(d.fecha)}`} />
                           )}
                           {puede && !d.anulado && <Motivo chico accion={anularVoucher} boton="Anular" ayuda="Motivo" campos={{ id: d.id, mes: periodo }} />}
-                        </div>
-                        <span className="sr-solo">{i}</span>
+                        </span>
                       </li>
                     ))}
                   </ul>
                 )}
 
-                <div className={`vo-acum ${vAcum.c}`}>
-                  <span>Acumulado de {anio} hasta {nombrePeriodo(periodo).split(" ")[0]}</span>
-                  <span>Recaudado S/ {soles(recAcum)} · Depositado S/ {soles(depAcum)}</span>
-                  <b>{vAcum.t}</b>
-                </div>
+                <details className="vo-acum-d">
+                  <summary>Ver el acumulado del año</summary>
+                  <div className={`vo-acum ${vAcum.c}`}>
+                    <span>Hasta {nombrePeriodo(periodo).split(" ")[0]}: recaudado S/ {soles(recAcum)} · depositado S/ {soles(depAcum)}</span>
+                    <b>{vAcum.t}</b>
+                  </div>
+                </details>
               </section>
             );
           })()}

@@ -3435,3 +3435,42 @@ label.opcion:has(input:checked) { border-color: var(--primario); background: lin
   .vo-acc { grid-column: 1 / -1; justify-content: flex-end; }
 }
 :root[data-theme="dark"] .vo-caja.ok small, :root[data-theme="dark"] .vo-caja.ok b, :root[data-theme="dark"] .vo-acum.ok b { color: #6ee7a8; }
+/* Ingresos: el cuadro ocupa todo el ancho y lo de apoyo va debajo */
+.columnas.apilada { flex-direction: column; flex-wrap: nowrap; align-items: stretch; }
+.columnas.apilada > .principal { flex: 1 1 auto; width: 100%; }
+.columnas.apilada > .lateral { flex: 1 1 auto; width: 100%; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; align-items: start; }
+@media (max-width: 760px) { .columnas.apilada > .lateral { grid-template-columns: minmax(0, 1fr); } }
+/* Vouchers: control en una línea y lista compacta */
+.vo-seccion { gap: 12px; padding: 16px 18px; }
+.vo-control { display: flex; flex-direction: column; gap: 8px; padding: 12px 14px; border-radius: 16px; background: var(--panel-2); border: 1px solid var(--borde); }
+.vo-control-txt { display: flex; align-items: center; justify-content: space-between; gap: 6px 14px; flex-wrap: wrap; font-size: 14px; }
+.vo-control-txt b { font-variant-numeric: tabular-nums; }
+.vo-control-txt em { font-style: normal; font-weight: 800; font-size: 12.5px; padding: 3px 12px; border-radius: 99px; background: var(--panel); border: 1px solid var(--borde-fuerte); }
+.vo-barra { height: 10px; border-radius: 99px; background: color-mix(in srgb, var(--texto) 9%, transparent); overflow: hidden; }
+.vo-barra > div { height: 100%; border-radius: 99px; background: #2563eb; transition: width .6s cubic-bezier(.2, .7, .2, 1); }
+.vo-control.ok { background: color-mix(in srgb, #2fa56a 9%, var(--panel)); border-color: #82d3a6; }
+.vo-control.ok .vo-barra > div { background: #2fa56a; }
+.vo-control.ok em { color: #137a45; border-color: #82d3a6; background: color-mix(in srgb, #2fa56a 14%, var(--panel)); }
+.vo-control.falta { background: var(--ambar-fondo); border-color: var(--ambar-borde); }
+.vo-control.falta .vo-barra > div { background: #e0a030; }
+.vo-control.falta em { color: var(--ambar); border-color: var(--ambar-borde); }
+.vo-control.sobra em { color: var(--primario-texto); border-color: var(--primario-claro); }
+.vo-control .vo-suma { color: var(--tenue); font-size: 12.5px; }
+.vo-lista { gap: 0; border: 1px solid var(--borde); border-radius: 16px; overflow: hidden; }
+.vo-item { grid-template-columns: 28px 92px minmax(0, 1fr) auto auto; gap: 10px; padding: 9px 12px; border: 0; border-top: 1px solid var(--linea); border-radius: 0; box-shadow: none; }
+.vo-item:first-child { border-top: 0; }
+.vo-item:hover { transform: none; box-shadow: none; background: var(--primario-fondo); border-color: var(--linea); }
+.vo-n { width: 24px; height: 24px; font-size: 12px; }
+.vo-fecha { font-size: 13px; color: var(--suave); font-variant-numeric: tabular-nums; }
+.vo-info { font-size: 12.5px; color: var(--tenue); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.vo-info .vo-sin { color: var(--ambar); font-style: normal; font-weight: 700; }
+.vo-info .vo-anul { color: var(--rojo); font-style: normal; font-weight: 700; }
+.vo-monto { font-size: 15px; font-variant-numeric: tabular-nums; }
+.vo-item.anulado .vo-monto { text-decoration: line-through; }
+.vo-acum-d summary { cursor: pointer; font-size: 12.5px; font-weight: 700; color: var(--primario-texto); padding: 2px 0; }
+.vo-acum-d .vo-acum { margin-top: 8px; }
+@media (max-width: 760px) {
+  .vo-item { grid-template-columns: 24px minmax(0, 1fr) auto; grid-template-areas: "n fecha monto" "info info info" "acc acc acc"; }
+  .vo-item > .vo-n { grid-area: n; } .vo-item > .vo-fecha { grid-area: fecha; } .vo-item > .vo-monto { grid-area: monto; }
+  .vo-item > .vo-info { grid-area: info; white-space: normal; } .vo-item > .vo-acc { grid-area: acc; justify-content: flex-end; }
+}

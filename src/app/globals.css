@@ -3474,3 +3474,14 @@ label.opcion:has(input:checked) { border-color: var(--primario); background: lin
   .vo-item > .vo-n { grid-area: n; } .vo-item > .vo-fecha { grid-area: fecha; } .vo-item > .vo-monto { grid-area: monto; }
   .vo-item > .vo-info { grid-area: info; white-space: normal; } .vo-item > .vo-acc { grid-area: acc; justify-content: flex-end; }
 }
+/* Rendición: lo que va sumando mientras se marca */
+.cp-acum { display: block; font-size: 11px; font-weight: 700; color: var(--primario-texto); margin-top: 2px; font-variant-numeric: tabular-nums; animation: vida-pop .25s ease-out both; }
+.rend-suma { position: sticky; bottom: 12px; z-index: 5; display: flex; flex-direction: column; gap: 8px; padding: 12px 16px; border-radius: 18px; color: #fff; background: linear-gradient(120deg, #1d4fb8, #3b82f6); box-shadow: 0 22px 40px -18px rgba(29, 79, 184, .85); animation: vida-subir .3s cubic-bezier(.2, .7, .2, 1) both; }
+.rend-suma.ok { background: linear-gradient(120deg, #137a45, #2fa56a); box-shadow: 0 22px 40px -18px rgba(19, 122, 69, .85); }
+.rend-suma.mal { background: linear-gradient(120deg, #b42318, #e5484d); box-shadow: 0 22px 40px -18px rgba(180, 35, 24, .8); }
+.rs-main { display: flex; align-items: baseline; gap: 8px 12px; flex-wrap: wrap; font-size: 13px; }
+.rs-main b { font-size: 24px; font-variant-numeric: tabular-nums; letter-spacing: -.01em; }
+.rs-main span { opacity: .9; }
+.rs-barra { height: 8px; border-radius: 99px; background: rgba(255, 255, 255, .28); overflow: hidden; }
+.rs-barra > div { height: 100%; border-radius: 99px; background: #fff; transition: width .35s cubic-bezier(.2, .7, .2, 1); }
+.rs-estado { font-size: 13px; font-weight: 800; }

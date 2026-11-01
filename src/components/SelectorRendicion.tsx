@@ -58,6 +58,20 @@ export default function SelectorRendicion({
     });
   }
 
+  // Lo que va sumando, fila por fila, en el orden de la lista
+  const acumulado = useMemo(() => {
+    const m = new Map<string, number>();
+    let t = 0;
+    for (const f of filas) {
+      if (marcados.has(f.id) && !f.propio) {
+        t = Math.round((t + f.importe) * 100) / 100;
+        m.set(f.id, t);
+      }
+    }
+    return m;
+  }, [filas, marcados]);
+  const nMarcados = [...marcados].filter((id) => !filas.find((x) => x.id === id)?.propio).length;
+
   const [ver, setVer] = useState<"todos" | "listos" | "pendientes">("todos");
   const visibles = filas.filter((f) => (ver === "listos" ? f.disponible : ver === "pendientes" ? !f.disponible : true));
   const pendientes = filas.filter((f) => !f.disponible);
@@ -108,7 +122,7 @@ export default function SelectorRendicion({
                     {f.propio && <span className="etq azul">Ingresos propios</span>}
                   </div>
                 </div>
-                <div className="c-monto">S/ {fmt(f.importe)}</div>
+                <div className="c-monto">S/ {fmt(f.importe)}{m && acumulado.has(f.id) && <small className="cp-acum">suma S/ {fmt(acumulado.get(f.id)!)}</small>}</div>
                 <div className="c-estado">
                   {f.disponible ? <span className="estado aprobado">Listo</span> : <span className="estado anulado">{f.motivo}</span>}
                 </div>
@@ -116,6 +130,17 @@ export default function SelectorRendicion({
             );
           })}
         </div>
+        {nMarcados > 0 && (
+          <div className={`rend-suma${cuadra ? " ok" : saldo < 0 ? " mal" : ""}`} role="status" aria-live="polite">
+            <div className="rs-main">
+              <span>{nMarcados} marcado{nMarcados === 1 ? "" : "s"}</span>
+              <b>S/ {fmt(total)}</b>
+              <span>de S/ {fmt(transferencia)} transferidos</span>
+            </div>
+            <div className="rs-barra" aria-hidden="true"><div style={{ width: `${ancho}%` }} /></div>
+            <div className="rs-estado">{cuadra ? "✓ Cuadra: ya puede generar la rendición" : saldo < 0 ? `Se pasó por S/ ${fmt(-saldo)}: desmarque algún comprobante` : `Faltan S/ ${fmt(saldo)} para cuadrar`}</div>
+          </div>
+        )}
         {pendientes.length > 0 && (
           <p className="pequeno tenue" style={{ margin: 0 }}>
             Los que dicen «Falta aprobar» o «Falta el cheque» no se pueden marcar: complételos en su comprobante de pago.

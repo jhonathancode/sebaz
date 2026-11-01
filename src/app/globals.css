@@ -3436,10 +3436,10 @@ label.opcion:has(input:checked) { border-color: var(--primario); background: lin
 }
 :root[data-theme="dark"] .vo-caja.ok small, :root[data-theme="dark"] .vo-caja.ok b, :root[data-theme="dark"] .vo-acum.ok b { color: #6ee7a8; }
 /* Ingresos: el cuadro ocupa todo el ancho y lo de apoyo va debajo */
-.columnas.apilada { flex-direction: column; flex-wrap: nowrap; align-items: stretch; }
-.columnas.apilada > .principal { flex: 1 1 auto; width: 100%; }
-.columnas.apilada > .lateral { flex: 1 1 auto; width: 100%; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; align-items: start; }
-@media (max-width: 760px) { .columnas.apilada > .lateral { grid-template-columns: minmax(0, 1fr); } }
+.columnas.en-pila { flex-direction: column; flex-wrap: nowrap; align-items: stretch; }
+.columnas.en-pila > .principal { flex: 1 1 auto; width: 100%; }
+.columnas.en-pila > .lateral { flex: 1 1 auto; width: 100%; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; align-items: start; }
+@media (max-width: 760px) { .columnas.en-pila > .lateral { grid-template-columns: minmax(0, 1fr); } }
 /* Vouchers: control en una línea y lista compacta */
 .vo-seccion { gap: 12px; padding: 16px 18px; }
 .vo-control { display: flex; flex-direction: column; gap: 8px; padding: 12px 14px; border-radius: 16px; background: var(--panel-2); border: 1px solid var(--borde); }
@@ -3495,3 +3495,7 @@ label.opcion:has(input:checked) { border-color: var(--primario); background: lin
 .btn:not(:disabled):active { transform: none; }
 .kpi:hover .k-val { transform: none; }
 .cp-sel:hover .c-monto { transform: none; }
+/* Ingresos: vista apilada (sin flex en la columna, para que nada se encoja) */
+.columnas.en-pila { display: block; }
+.columnas.en-pila > .principal { width: 100%; margin-bottom: 14px; }
+.columnas.en-pila > .lateral { width: 100%; }

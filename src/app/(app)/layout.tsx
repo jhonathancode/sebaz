@@ -26,7 +26,7 @@ async function cambiarMcp(fd: FormData) {
   "use server";
   const id = String(fd.get("mcp") ?? "");
   (await cookies()).set(COOKIE_MCP, id, { httpOnly: true, sameSite: "lax", path: "/", maxAge: 60 * 60 * 24 * 365 });
-  redirect("/inicio");
+  redirect("/");
 }
 
 export default async function MarcoApp({ children }: { children: React.ReactNode }) {
@@ -89,7 +89,7 @@ export default async function MarcoApp({ children }: { children: React.ReactNode
       ]
     : ctx.mcp
     ? [
-        { href: "/inicio", texto: "Inicio" },
+        { href: "/", texto: "Inicio" },
         ...(tiene(ctx, "alcalde", "admin") ? [{ href: "/aprobaciones", texto: "Por aprobar", n: porAprobar }] : []),
         { href: "/expedientes", texto: "Expedientes" },
         ...(tieneModulo(ctx.mcp, "caja_chica") ? [{ href: "/caja-chica", texto: "Caja chica" }] : []),

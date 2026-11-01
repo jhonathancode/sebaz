@@ -106,7 +106,7 @@ export default async function Almacen({ searchParams }: { searchParams: ParamsAv
   );
 
   return (
-    <>
+    <div className="alm">
       <div className="titulo-ventana">
         <h1>Almacén</h1>
         <span className="espacio" />
@@ -119,18 +119,18 @@ export default async function Almacen({ searchParams }: { searchParams: ParamsAv
       </div>
       <Avisos ok={sp.ok} error={sp.error} />
 
-      <div className="rejilla-3">
-        <div className="tarjeta">
+      <div className="rejilla-3 alm-kpis">
+        <div className="tarjeta k-azul">
           <span className="etiqueta">Bienes con stock</span>
           <span className="valor">{conStock}</span>
           <span className="detalle">de {todos.length} registrados</span>
         </div>
-        <div className="tarjeta">
+        <div className="tarjeta k-verde">
           <span className="etiqueta">Valor del almacén</span>
           <span className="valor">S/ {soles(valorTotal)}</span>
           <span className="detalle">a costo promedio</span>
         </div>
-        <Link className="tarjeta" href="/almacen?filtro=minimo">
+        <Link className={`tarjeta ${bajoMinimo.length ? "k-rojo" : "k-gris"}`} href="/almacen?filtro=minimo">
           <span className="etiqueta">Por reponer</span>
           <span className="valor" style={bajoMinimo.length ? { color: "var(--rojo)" } : undefined}>{bajoMinimo.length}</span>
           <span className="detalle">{bajoMinimo.length ? "bienes en su stock mínimo o menos" : "Ningún bien bajo su mínimo"}</span>
@@ -170,7 +170,11 @@ export default async function Almacen({ searchParams }: { searchParams: ParamsAv
       </form>
 
       {ver === "stock" ? (
-        <div className="tabla-marco">
+        <div className="tabla-marco alm-marco">
+          <div className="alm-banda">
+            <b>Stock de bienes</b>
+            <span>{stock.length} bien{stock.length === 1 ? "" : "es"} · valor S/ {soles(stock.reduce((s, b) => s + Number(b.valor), 0))}</span>
+          </div>
           <table className="tabla" style={{ minWidth: 860 }}>
             <thead>
               <tr>
@@ -198,9 +202,9 @@ export default async function Almacen({ searchParams }: { searchParams: ParamsAv
                     <td>{b.unidad}</td>
                     <td className="num">{cant(b.entradas)}</td>
                     <td className="num">{cant(b.salidas)}</td>
-                    <td className="num" style={{ fontWeight: 700, color: bajo ? "var(--rojo)" : undefined }}>
-                      {cant(b.stock)}
-                      {bajo && <span className="estado anulado" style={{ marginLeft: 6 }}>Reponer</span>}
+                    <td className="num">
+                      <span className={`alm-stock ${bajo ? "bajo" : Number(b.stock) > 0 ? "ok" : "cero"}`}>{cant(b.stock)}</span>
+                      {bajo && <span className="alm-reponer">Reponer</span>}
                     </td>
                     <td className="num">{soles(b.costo_promedio)}</td>
                     <td className="num">{soles(b.valor)}</td>
@@ -217,7 +221,11 @@ export default async function Almacen({ searchParams }: { searchParams: ParamsAv
           </table>
         </div>
       ) : (
-        <div className="tabla-marco">
+        <div className="tabla-marco alm-marco">
+          <div className="alm-banda">
+            <b>{ver === "entradas" ? "Entradas al almacén (NEA)" : "Salidas del almacén (PECOSA)"}</b>
+            <span>{movimientos.filter((m) => !m.anulado).length} emitida(s) · S/ {soles(movimientos.filter((m) => !m.anulado).reduce((t, m) => t + m.total, 0))}</span>
+          </div>
           <table className="tabla" style={{ minWidth: 820 }}>
             <thead>
               <tr>
@@ -247,6 +255,6 @@ export default async function Almacen({ searchParams }: { searchParams: ParamsAv
           </table>
         </div>
       )}
-    </>
+    </div>
   );
 }

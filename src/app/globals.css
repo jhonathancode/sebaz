@@ -3485,3 +3485,13 @@ label.opcion:has(input:checked) { border-color: var(--primario); background: lin
 .rs-barra { height: 8px; border-radius: 99px; background: rgba(255, 255, 255, .28); overflow: hidden; }
 .rs-barra > div { height: 100%; border-radius: 99px; background: #fff; transition: width .35s cubic-bezier(.2, .7, .2, 1); }
 .rs-estado { font-size: 13px; font-weight: 800; }
+/* Sin efecto de zoom en las listas: solo cambian el color y el borde */
+.filas .fila:hover { transform: none; }
+.fila:hover .f-monto { transform: none; }
+.doc-paso:hover, .doc-cheque:hover, .doc-conciliado:hover { transform: none; }
+.doc-paso, .doc-cheque { transition: background .15s, border-color .15s, box-shadow .15s; }
+.filas .btn:hover, .filas .btn:active { transform: none; box-shadow: none; }
+.f-chip:hover { transform: none; }
+.btn:not(:disabled):active { transform: none; }
+.kpi:hover .k-val { transform: none; }
+.cp-sel:hover .c-monto { transform: none; }

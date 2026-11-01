@@ -104,9 +104,12 @@ export default async function Expedientes({ searchParams }: { searchParams: Para
     supabase.from("ordenes").select("expediente_id, tipo, numero, anio, anulado, creado_en").in("expediente_id", idsQ),
     supabase.from("conformidades").select("expediente_id, memorando_numero, anio, anulado, creado_en").in("expediente_id", idsQ),
     supabase.from("cotizaciones").select("expediente_id, anulado").in("expediente_id", idsQ),
-    supabase.from("comprobantes_pago").select("expediente_id, numero, origen, cheque, estado, creado_en").in("expediente_id", idsQ),
+    supabase.from("comprobantes_pago").select("id, expediente_id, numero, origen, cheque, estado, creado_en").in("expediente_id", idsQ),
     supabase.from("notas_entrada").select("id, expediente_id, numero, anio, anulado, creado_en").in("expediente_id", idsQ),
   ]);
+  const idsCp = (cpsV ?? []).map((c) => c.id as string);
+  const { data: cobV } = idsCp.length ? await supabase.from("cheques_cobrados").select("comprobante_id").eq("anulado", false).in("comprobante_id", idsCp) : { data: [] as { comprobante_id: string }[] };
+  const conciliados = new Set((cobV ?? []).map((c) => c.comprobante_id));
   const elegir = <T extends { creado_en: string }>(xs: T[] | null | undefined, vigente: (x: T) => boolean) => {
     const orden = [...(xs ?? [])].sort((a, b) => b.creado_en.localeCompare(a.creado_en));
     return orden.find(vigente) ?? orden[0] ?? null;
@@ -126,6 +129,7 @@ export default async function Expedientes({ searchParams }: { searchParams: Para
       comprobante: cp ? codigoCP(cp.numero, cp.origen) : null,
       cheque: cp?.cheque ?? null,
       hayCp: !!cp,
+      conciliado: !!cp && conciliados.has(cp.id as string),
       nea: n ? { id: n.id as string, texto: `NEA ${num3(n.numero)}-${n.anio}` } : null,
     };
   };
@@ -313,6 +317,9 @@ export default async function Expedientes({ searchParams }: { searchParams: Para
                           <span className={`doc-cheque${dd.cheque ? "" : " sin"}`} title={dd.cheque ? "Cheque con el que se pagó" : "Aún sin número de cheque"}>
                             {dd.cheque ? `Cheque ${dd.cheque}` : "Sin cheque"}
                           </span>
+                        )}
+                        {p === "comprobante" && dd.conciliado && (
+                          <span className="doc-conciliado" title="El cheque ya figura cobrado en el estado de cuenta del banco">✓ Conciliado</span>
                         )}
                       </span>
                     );

@@ -431,6 +431,7 @@ export default function ConciliarEstado({
                 <th>Día</th>
                 <th title="Lo que va la cuenta hasta esta línea">Va en</th>
                 <th aria-label="Comprobación" />
+                <th aria-label="Enlace" />
                 <th aria-label="Quitar" />
               </tr>
             </thead>
@@ -468,6 +469,9 @@ export default function ConciliarEstado({
                       {f.estado === "ok" && <span className="si" title="El saldo coincide con lo que va la cuenta">✓</span>}
                       {f.estado === "mal" && <span className="no" title={`Debería ser ${f.corrida !== null ? fmt(f.corrida) : "—"}`}>✗</span>}
                     </td>
+                    <td className="te-enl">
+                      {l.enlace && <span className="te-enlazado" title={l.enlace.etiqueta}>🔗 Enlazado</span>}
+                    </td>
                     <td>{puede && <button type="button" className="te-quitar" onClick={() => quitar(i)} aria-label={`Quitar la línea ${i + 1}`}>×</button>}</td>
                   </tr>
                 );
@@ -475,7 +479,7 @@ export default function ConciliarEstado({
             </tbody>
             <tfoot>
               <tr>
-                <td colSpan={9}>{puede && <button type="button" className="btn chico contorno" onClick={() => agregar()}>+ Agregar línea</button>}</td>
+                <td colSpan={10}>{puede && <button type="button" className="btn chico contorno" onClick={() => agregar()}>+ Agregar línea</button>}</td>
               </tr>
             </tfoot>
           </table>

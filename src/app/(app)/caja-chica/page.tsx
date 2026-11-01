@@ -203,7 +203,7 @@ export default async function CajaChica({ searchParams }: { searchParams: Params
             <div className="cc-fuentes" role="group" aria-label="Fondo pagado con">
               {ctx.fuentes.map((f) => (
                 <Link key={f.id} href={enlace({ fuente: f.id })} className={`cc-fuente${f.id === fuenteId ? " sel" : ""}`}>
-                  {f.municipalidad.replace(/^municipalidad (distrital|provincial) de /i, "") || "Ingresos propios"}
+                  {f.tipo === "propios" ? "Ingresos propios" : f.municipalidad.replace(/^municipalidad (distrital|provincial) de /i, "") || "Ingresos propios"}
                 </Link>
               ))}
             </div>

@@ -16,7 +16,7 @@ async function reducirFoto(archivo: File): Promise<File> {
   return new File([blob], archivo.name.replace(/\.[^.]+$/, "") + ".jpg", { type: "image/jpeg" });
 }
 
-export default function CampoArchivoEstado() {
+export default function CampoArchivoEstado({ etiqueta = "Hojas del estado de cuenta (foto o PDF)", multiple = true, ayuda }: { etiqueta?: string; multiple?: boolean; ayuda?: string } = {}) {
   const entrada = useRef<HTMLInputElement>(null);
   const [info, setInfo] = useState<string | null>(null);
 
@@ -39,9 +39,9 @@ export default function CampoArchivoEstado() {
 
   return (
     <label className="campo ancho">
-      Hojas del estado de cuenta (foto o PDF)
-      <input ref={entrada} type="file" name="archivo" required multiple accept="application/pdf,image/jpeg,image/png,image/webp" onChange={alElegir} />
-      <span className="pequeno tenue">{info ?? "Puede elegir varias hojas a la vez. PDF o foto (JPG, PNG, WEBP); máximo 4 MB en total. Las fotos grandes se reducen solas."}</span>
+      {etiqueta}
+      <input ref={entrada} type="file" name="archivo" required multiple={multiple} accept="application/pdf,image/jpeg,image/png,image/webp" onChange={alElegir} />
+      <span className="pequeno tenue">{info ?? ayuda ?? "Puede elegir varias hojas a la vez. PDF o foto (JPG, PNG, WEBP); máximo 4 MB en total. Las fotos grandes se reducen solas."}</span>
     </label>
   );
 }

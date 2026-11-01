@@ -7,7 +7,10 @@ import { RUBROS_INGRESO } from "@/lib/catalogos";
 import { contextoMcp, tiene } from "@/lib/contexto";
 import { fecha, hoyISO, nombrePeriodo, periodoActual, soles } from "@/lib/formato";
 import { supabaseServidor } from "@/lib/supabase/server";
-import { emitirRecibo } from "./acciones";
+import Motivo from "@/components/Motivo";
+import VisorArchivo from "@/components/VisorArchivo";
+import CampoArchivoEstado from "@/components/formularios/CampoArchivoEstado";
+import { anularVoucher, emitirRecibo, subirVoucher } from "./acciones";
 
 
 const MES_CORTO = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Set", "Oct", "Nov", "Dic"];
@@ -49,6 +52,21 @@ export default async function Ingresos({ searchParams }: { searchParams: ParamsA
     supabase.from("ingresos").select("*").eq("mcp_id", ctx.mcp.id).gte("fecha", `${anio}-01-01`).lte("fecha", `${anio}-12-31`).order("numero", { ascending: false }),
     supabase.from("ingresos").select("numero, anio").eq("mcp_id", ctx.mcp.id).order("anio", { ascending: false }).order("numero", { ascending: false }).limit(1).maybeSingle(),
   ]);
+
+  // Vouchers de depósito del año (si la base aún no tiene la actualización, se ignora)
+  const { data: depAnio, error: errDep } = await supabase.from("depositos_ingresos").select("*").eq("mcp_id", ctx.mcp.id).gte("fecha", `${anio}-01-01`).lte("fecha", `${anio}-12-31`).order("fecha").order("creado_en");
+  const depositos = (depAnio ?? []).filter((d) => !d.anulado);
+  const depMes = (depAnio ?? []).filter((d) => d.fecha >= desde && d.fecha <= hasta);
+  const depMesVigentes = depMes.filter((d) => !d.anulado);
+  const conArchivo = depMes.filter((d) => d.archivo_path);
+  const [firmadas, descargas] = conArchivo.length
+    ? await Promise.all([
+        supabase.storage.from("sustentos").createSignedUrls(conArchivo.map((d) => d.archivo_path as string), 1800),
+        supabase.storage.from("sustentos").createSignedUrls(conArchivo.map((d) => d.archivo_path as string), 1800, { download: true }),
+      ])
+    : [{ data: [] as { path: string | null; signedUrl: string }[] }, { data: [] as { path: string | null; signedUrl: string }[] }];
+  const urlVer = new Map((firmadas.data ?? []).map((u) => [u.path, u.signedUrl]));
+  const urlDesc = new Map((descargas.data ?? []).map((u) => [u.path, u.signedUrl]));
 
   // Resumen de cada mes del año: lo recaudado, de qué recibo a qué recibo, de qué recibo a qué recibo
   const base = MES_CORTO.map((_, i) => {
@@ -308,6 +326,93 @@ export default async function Ingresos({ searchParams }: { searchParams: ParamsA
               </tfoot>
             </table>
           </div>
+
+          {(() => {
+            const r2 = (n: number) => Math.round(n * 100) / 100;
+            const recaudadoMes = r2(total);
+            const depositadoMes = r2(depMesVigentes.reduce((t, d) => t + Number(d.monto), 0));
+            const difMes = r2(recaudadoMes - depositadoMes);
+            const recAcum = r2((delAnio ?? []).filter((f) => f.estado !== "anulado" && f.fecha <= hasta).reduce((t, f) => t + Number(f.monto), 0));
+            const depAcum = r2(depositos.filter((d) => d.fecha <= hasta).reduce((t, d) => t + Number(d.monto), 0));
+            const difAcum = r2(recAcum - depAcum);
+            const veredicto = (dif: number) => (Math.abs(dif) < 0.005 ? { c: "ok", t: "✓ Cuadra: todo lo recaudado está depositado" } : dif > 0 ? { c: "falta", t: `Falta depositar S/ ${soles(dif)}` } : { c: "sobra", t: `Se depositó S/ ${soles(Math.abs(dif))} de más` });
+            const vMes = veredicto(difMes);
+            const vAcum = veredicto(difAcum);
+            return (
+              <section className="vo-seccion" aria-label="Vouchers de depósito">
+                <div className="vo-cab">
+                  <div>
+                    <h2>Vouchers de depósito · {nombrePeriodo(periodo)}</h2>
+                    <p>La tesorera deposita lo recaudado (a diario, por semana, por quincena o por mes). Suba cada voucher y compruebe que la suma cuadra con los recibos.</p>
+                  </div>
+                  {puede && (
+                    <VentanaFlotante boton="+ Subir voucher" titulo="Subir voucher de depósito" accion={subirVoucher} textoGuardar="Guardar voucher" claseBoton="btn primario">
+                      <div className="rejilla">
+                        <CampoArchivoEstado etiqueta="Foto o PDF del voucher" multiple={false} ayuda="PDF o foto (JPG, PNG, WEBP); máximo 4 MB. Las fotos grandes se reducen solas." />
+                        <label className="campo">Fecha del depósito<input type="date" name="fecha" defaultValue={hoyISO().startsWith(periodo) ? hoyISO() : hasta} required /></label>
+                        <label className="campo">Monto depositado S/<input name="monto" required inputMode="decimal" placeholder="0.00" /></label>
+                        <label className="campo">N° de operación (opcional)<input name="numero_operacion" inputMode="numeric" placeholder="Sale en el voucher" /></label>
+                        <label className="campo ancho">Nota (opcional)<input name="nota" placeholder="Ej.: recaudado de la primera semana" /></label>
+                        <label className="campo">Lo recaudado desde (opcional)<input type="date" name="desde" /></label>
+                        <label className="campo">hasta (opcional)<input type="date" name="hasta" /></label>
+                      </div>
+                      <p className="pequeno tenue" style={{ margin: 0 }}>Puede subir uno o varios vouchers en el mes: el sistema los suma. Un voucher guardado no se borra; si hay un error se anula con motivo.</p>
+                    </VentanaFlotante>
+                  )}
+                </div>
+
+                {errDep && <div className="aviso error">Los vouchers aún no están activos: falta la actualización de la base de datos (ACTUALIZAR_BASE.sql). Avise a soporte.</div>}
+
+                <div className="vo-resumen">
+                  <div className="vo-caja"><span>Recaudado en el mes</span><b>S/ {soles(recaudadoMes)}</b><small>{vigentes.length} recibo(s)</small></div>
+                  <div className="vo-signo" aria-hidden="true">−</div>
+                  <div className="vo-caja azul"><span>Depositado en el mes</span><b>S/ {soles(depositadoMes)}</b><small>{depMesVigentes.length === 1 ? "1 voucher" : `${depMesVigentes.length} vouchers`}</small></div>
+                  <div className="vo-signo" aria-hidden="true">=</div>
+                  <div className={`vo-caja ${vMes.c}`}><span>Diferencia</span><b>S/ {soles(Math.abs(difMes))}</b><small>{vMes.t}</small></div>
+                </div>
+
+                {depMesVigentes.length > 1 && (
+                  <p className="vo-suma">{depMesVigentes.map((d) => soles(d.monto)).join(" + ")} = <b>{soles(depositadoMes)}</b></p>
+                )}
+
+                {depMes.length === 0 ? (
+                  <div className="vo-vacio">Aún no hay vouchers en {nombrePeriodo(periodo)}. {puede ? "Use «+ Subir voucher» cuando haga un depósito." : ""}</div>
+                ) : (
+                  <ul className="vo-lista">
+                    {depMes.map((d, i) => (
+                      <li key={d.id} className={`vo-item${d.anulado ? " anulado" : ""}`}>
+                        <div className="vo-n">{d.anulado ? "—" : depMesVigentes.indexOf(d) + 1}</div>
+                        <div className="vo-datos">
+                          <b>S/ {soles(d.monto)}</b>
+                          <span>Depositado el {fecha(d.fecha)}</span>
+                          <div className="vo-chips">
+                            {d.numero_operacion && <i>Operación {d.numero_operacion}</i>}
+                            {d.desde && d.hasta ? <i>Cubre del {fecha(d.desde)} al {fecha(d.hasta)}</i> : d.desde ? <i>Desde el {fecha(d.desde)}</i> : null}
+                            {d.nota && <i>{d.nota}</i>}
+                            {!d.archivo_path && !d.anulado && <i className="aviso">Sin foto del voucher</i>}
+                            {d.anulado && <i className="rojo">ANULADO: {d.anulado_motivo}</i>}
+                          </div>
+                        </div>
+                        <div className="vo-acc">
+                          {d.archivo_path && urlVer.get(d.archivo_path) && (
+                            <VisorArchivo url={urlVer.get(d.archivo_path)!} descarga={urlDesc.get(d.archivo_path) ?? urlVer.get(d.archivo_path)!} nombre={d.archivo_nombre ?? "voucher"} tipo={d.archivo_tipo ?? "image/jpeg"} titulo={`Voucher de S/ ${soles(d.monto)} · ${fecha(d.fecha)}`} />
+                          )}
+                          {puede && !d.anulado && <Motivo chico accion={anularVoucher} boton="Anular" ayuda="Motivo" campos={{ id: d.id, mes: periodo }} />}
+                        </div>
+                        <span className="sr-solo">{i}</span>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+
+                <div className={`vo-acum ${vAcum.c}`}>
+                  <span>Acumulado de {anio} hasta {nombrePeriodo(periodo).split(" ")[0]}</span>
+                  <span>Recaudado S/ {soles(recAcum)} · Depositado S/ {soles(depAcum)}</span>
+                  <b>{vAcum.t}</b>
+                </div>
+              </section>
+            );
+          })()}
         </div>
 
         <aside className="lateral">

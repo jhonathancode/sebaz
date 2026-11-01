@@ -3388,3 +3388,50 @@ label.opcion:has(input:checked) { border-color: var(--primario); background: lin
 .nu-numeros .sig b { color: var(--primario-texto); }
 .nu-form { display: flex; align-items: flex-end; gap: 10px; }
 .nu-form .campo { flex: 1; }
+/* ============ Vouchers de depósito (ingresos propios) ============ */
+.vo-seccion { display: flex; flex-direction: column; gap: 14px; padding: 18px 20px; border-radius: 22px; background: var(--panel); border: 1px solid color-mix(in srgb, var(--primario) 22%, var(--borde)); box-shadow: 0 24px 44px -36px rgba(29, 79, 184, .55); }
+.vo-cab { display: flex; align-items: flex-start; justify-content: space-between; gap: 14px; flex-wrap: wrap; }
+.vo-cab h2 { margin: 0 0 2px; font-size: 18px; }
+.vo-cab p { margin: 0; color: var(--tenue); font-size: 13px; max-width: 560px; }
+.vo-resumen { display: grid; grid-template-columns: 1fr auto 1fr auto 1fr; gap: 10px; align-items: stretch; }
+.vo-signo { align-self: center; font-size: 24px; font-weight: 800; color: var(--tenue); }
+.vo-caja { display: flex; flex-direction: column; gap: 2px; padding: 12px 14px; border-radius: 16px; background: var(--panel-2); border: 1px solid var(--borde); border-left: 5px solid var(--borde-fuerte); }
+.vo-caja span { font-size: 11px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: var(--tenue); }
+.vo-caja b { font-size: 22px; font-variant-numeric: tabular-nums; }
+.vo-caja small { font-size: 12px; color: var(--tenue); }
+.vo-caja.azul { border-left-color: #2563eb; background: var(--primario-fondo); }
+.vo-caja.ok { border-left-color: #2fa56a; background: color-mix(in srgb, #2fa56a 11%, var(--panel)); }
+.vo-caja.ok small, .vo-caja.ok b { color: #137a45; }
+.vo-caja.falta { border-left-color: #e0a030; background: var(--ambar-fondo); }
+.vo-caja.falta small, .vo-caja.falta b { color: var(--ambar); }
+.vo-caja.sobra { border-left-color: #2563eb; background: var(--primario-fondo); }
+.vo-caja.sobra small, .vo-caja.sobra b { color: var(--primario-texto); }
+.vo-suma { margin: 0; font-size: 13.5px; color: var(--suave); font-variant-numeric: tabular-nums; }
+.vo-vacio { padding: 20px; border-radius: 16px; border: 1.5px dashed var(--borde-fuerte); text-align: center; color: var(--tenue); }
+.vo-lista { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.vo-item { display: grid; grid-template-columns: 34px minmax(0, 1fr) auto; gap: 12px; align-items: center; padding: 12px 14px; border-radius: 16px; background: var(--panel); border: 1px solid var(--borde); transition: transform .18s, box-shadow .18s, border-color .18s; }
+.vo-item:hover { transform: translateY(-2px); box-shadow: 0 14px 26px -22px rgba(37, 99, 235, .6); border-color: color-mix(in srgb, var(--primario) 40%, var(--borde)); }
+.vo-item.anulado { opacity: .6; }
+.vo-item.anulado .vo-datos b { text-decoration: line-through; }
+.vo-n { width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; font-weight: 800; font-size: 13px; background: linear-gradient(135deg, #2563eb, #60a5fa); color: #fff; }
+.vo-item.anulado .vo-n { background: var(--borde-fuerte); }
+.vo-datos { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.vo-datos b { font-size: 17px; font-variant-numeric: tabular-nums; }
+.vo-datos > span { font-size: 12.5px; color: var(--tenue); }
+.vo-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
+.vo-chips i { font-style: normal; font-size: 11.5px; font-weight: 700; padding: 2px 10px; border-radius: 99px; background: var(--primario-fondo); color: var(--primario-texto); border: 1px solid var(--primario-claro); }
+.vo-chips i.aviso { background: var(--ambar-fondo); color: var(--ambar); border-color: var(--ambar-borde); }
+.vo-chips i.rojo { background: color-mix(in srgb, var(--rojo) 10%, var(--panel)); color: var(--rojo); border-color: color-mix(in srgb, var(--rojo) 35%, transparent); }
+.vo-acc { display: flex; gap: 6px; align-items: center; }
+.vo-acum { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px 14px; padding: 12px 16px; border-radius: 16px; background: var(--panel-2); border: 1px solid var(--borde); font-size: 13px; color: var(--suave); }
+.vo-acum b { font-weight: 800; }
+.vo-acum.ok b { color: #137a45; }
+.vo-acum.falta b { color: var(--ambar); }
+.vo-acum.sobra b { color: var(--primario-texto); }
+@media (max-width: 760px) {
+  .vo-resumen { grid-template-columns: minmax(0, 1fr); }
+  .vo-signo { display: none; }
+  .vo-item { grid-template-columns: 30px minmax(0, 1fr); }
+  .vo-acc { grid-column: 1 / -1; justify-content: flex-end; }
+}
+:root[data-theme="dark"] .vo-caja.ok small, :root[data-theme="dark"] .vo-caja.ok b, :root[data-theme="dark"] .vo-acum.ok b { color: #6ee7a8; }

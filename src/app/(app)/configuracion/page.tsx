@@ -9,10 +9,11 @@ import { FRECUENCIAS, MESES_LARGO, textoFrecuencia, tocaEnMes } from "@/lib/fuen
 import VentanaFlotante from "@/components/VentanaFlotante";
 import { nombreFuente } from "@/components/formularios/CamposRequerimiento";
 import { cargarCatalogoPagosFijos, type PagoFijoCatalogo } from "@/lib/pagosFijos";
+import { NUMERACIONES, proximoNumero } from "@/lib/numeracion";
 import { contextoMcp, tiene } from "@/lib/contexto";
 import { fechaHora, nombrePeriodo, periodoActual, monto2, soles, urlLogo } from "@/lib/formato";
 import { supabaseServidor } from "@/lib/supabase/server";
-import { agregarCuentaBancaria, agregarFuente, cerrarMes, desactivarCuentaBancaria, desactivarFuente, guardarCapitulo1, guardarDatosMcp, guardarFuente, reabrirMes, subirLogo, guardarPagoFijo, alternarPagoFijo, guardarExigirPin } from "./acciones";
+import { agregarCuentaBancaria, agregarFuente, cerrarMes, desactivarCuentaBancaria, desactivarFuente, fijarNumeracion, guardarCapitulo1, guardarDatosMcp, guardarFuente, reabrirMes, subirLogo, guardarPagoFijo, alternarPagoFijo, guardarExigirPin } from "./acciones";
 
 export default async function Configuracion({ searchParams }: { searchParams: ParamsAviso }) {
   const sp = await searchParams;
@@ -83,11 +84,15 @@ export default async function Configuracion({ searchParams }: { searchParams: Pa
     { v: "informe", t: "Capítulo I del informe" },
     { v: "pagos", t: "Pagos fijos" },
     { v: "dinero", t: "Dinero y plazos" },
+    { v: "numeracion", t: "Numeración" },
     { v: "seguridad", t: "Seguridad y cierre de mes" },
   ];
   const seccion = SECCIONES.some((x) => x.v === sp.seccion) ? (sp.seccion as string) : "identidad";
   const puedeCambiar = admin || ctx.esSoporte;
   const faltan = checks.filter((c) => !c.ok);
+  // Numeración: próximo número de cada documento en el año elegido
+  const anioNum = /^\d{4}$/.test(sp.anio ?? "") ? Number(sp.anio) : Number(anio);
+  const proximos = seccion === "numeracion" ? await Promise.all(NUMERACIONES.map((n) => proximoNumero(supabase, m.id, n.tipo, anioNum))) : [];
   const logo = urlLogo(m.logo_path);
 
   return (
@@ -463,6 +468,54 @@ export default async function Configuracion({ searchParams }: { searchParams: Pa
                       <input type="hidden" name="fuente_id" value={f.id} />
                       <BotonConfirmar className="btn chico contorno rojo" pregunta="¿Dejar de usar esta fuente?" detalle="No se borra nada: lo ya registrado se conserva." textoConfirmar="Sí, dejar de usarla">Dejar de usar esta fuente</BotonConfirmar>
                     </form>
+                  )}
+                </article>
+              );
+            })}
+          </div>
+        </section>
+      )}
+
+      {seccion === "numeracion" && (
+        <section className="fu-seccion">
+          <div className="fu-cab">
+            <div>
+              <h2>Numeración de los documentos</h2>
+              <p>Si la MCP ya emitió documentos antes de usar Sebaz (por ejemplo, ya va en la orden de servicio N.º 25), escriba aquí desde qué número debe seguir. El sistema continúa desde ahí, sin repetir números.</p>
+            </div>
+            <div className="nu-anios" role="group" aria-label="Año">
+              {[anioNum - 1, anioNum, anioNum + 1].map((a) => (
+                <Link key={a} href={`/configuracion?seccion=numeracion&anio=${a}`} className={`f-chip${a === anioNum ? " activo" : ""}`}>{a}</Link>
+              ))}
+            </div>
+          </div>
+          <div className="aviso info">La numeración empieza de nuevo cada año. Por seguridad, <b>no se puede poner un número menor al último ya emitido</b> (incluye lo anulado).</div>
+          <div className="fu-grid">
+            {NUMERACIONES.map((n, i) => {
+              const prox = proximos[i];
+              const ultimo = prox ? prox - 1 : 0;
+              return (
+                <article key={n.tipo} className="fu-card nu-card">
+                  <header className="fu-card-cab">
+                    <span className="fu-tipo">{n.nombre}</span>
+                    <span className="fu-pill no">Ej.: {n.ejemplo}</span>
+                  </header>
+                  <div className="nu-numeros">
+                    <div><span>Último emitido</span><b>{ultimo > 0 ? `N° ${ultimo}` : "Ninguno"}</b></div>
+                    <div className="sig"><span>Sigue el</span><b>N° {prox ?? "—"}</b></div>
+                  </div>
+                  {puedeCambiar ? (
+                    <form action={fijarNumeracion} className="nu-form">
+                      <input type="hidden" name="tipo" value={n.tipo} />
+                      <input type="hidden" name="anio" value={anioNum} />
+                      <label className="campo">
+                        Empezar desde el N°
+                        <input type="number" name="inicio" min={1} max={999999} defaultValue={prox ?? 1} required />
+                      </label>
+                      <BotonConfirmar className="btn primario" pregunta={`¿Cambiar la numeración de ${n.nombre.toLowerCase()}?`} detalle={`El próximo documento de ${anioNum} saldrá con el número que escribió. No se puede volver a un número ya emitido.`} textoConfirmar="Sí, cambiar">Guardar</BotonConfirmar>
+                    </form>
+                  ) : (
+                    <span className="pequeno tenue">Solo el administrador puede cambiarla.</span>
                   )}
                 </article>
               );

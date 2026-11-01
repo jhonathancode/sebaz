@@ -13,21 +13,6 @@ import { emitirRecibo } from "./acciones";
 const MES_CORTO = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Set", "Oct", "Nov", "Dic"];
 const DOS = (n: number) => String(n).padStart(2, "0");
 
-/** Semanas del mes (lunes a domingo, recortadas al mes): [[1,3],[4,10],…] */
-function semanasDelMes(periodo: string) {
-  const [a, m] = periodo.split("-").map(Number);
-  const ult = new Date(a, m, 0).getDate();
-  const out: [number, number][] = [];
-  let ini = 1;
-  while (ini <= ult) {
-    const dow = new Date(a, m - 1, ini).getDay();
-    const fin = Math.min(ult, ini + ((7 - dow) % 7));
-    out.push([ini, fin]);
-    ini = fin + 1;
-  }
-  return out;
-}
-
 /** Curva suave (Catmull-Rom → Bézier) por los puntos dados. */
 function curva(p: [number, number][], piso: number, techo: number) {
   if (p.length < 2) return "";
@@ -54,28 +39,11 @@ export default async function Ingresos({ searchParams }: { searchParams: ParamsA
   const mesNum = periodo.slice(5, 7);
   const hoyPeriodo = periodoActual();
   const ultDia = new Date(Number(anio), Number(mesNum), 0).getDate();
-  const semanas = semanasDelMes(periodo);
 
-  // Rango dentro del mes: todo el mes, quincenas, semanas o un día
-  const rango = sp.rango ?? "mes";
-  let desde = `${periodo}-01`;
-  let hasta = `${periodo}-${DOS(ultDia)}`;
-  let etiqueta = `mes de ${nombrePeriodo(periodo)}`;
-  if (rango === "q1") {
-    hasta = `${periodo}-15`;
-    etiqueta = `1.ª quincena de ${nombrePeriodo(periodo)}`;
-  } else if (rango === "q2") {
-    desde = `${periodo}-16`;
-    etiqueta = `2.ª quincena de ${nombrePeriodo(periodo)}`;
-  } else if (/^s[1-6]$/.test(rango) && semanas[Number(rango.slice(1)) - 1]) {
-    const [i, f] = semanas[Number(rango.slice(1)) - 1];
-    desde = `${periodo}-${DOS(i)}`;
-    hasta = `${periodo}-${DOS(f)}`;
-    etiqueta = `semana del ${i} al ${f} de ${nombrePeriodo(periodo)}`;
-  } else if (rango === "d" && sp.dia?.startsWith(periodo)) {
-    desde = hasta = sp.dia;
-    etiqueta = `día ${fecha(sp.dia)}`;
-  }
+  // Siempre se ve el mes completo
+  const desde = `${periodo}-01`;
+  const hasta = `${periodo}-${DOS(ultDia)}`;
+  const etiqueta = `mes de ${nombrePeriodo(periodo)}`;
 
   const [{ data: delAnio }, { data: ultimo }] = await Promise.all([
     supabase.from("ingresos").select("*").eq("mcp_id", ctx.mcp.id).gte("fecha", `${anio}-01-01`).lte("fecha", `${anio}-12-31`).order("numero", { ascending: false }),
@@ -182,26 +150,6 @@ export default async function Ingresos({ searchParams }: { searchParams: ParamsA
             })}
           </div>
         </div>
-        {vista === "mes" && (
-          <div className="cc-fila">
-            <span className="tenue pequeno">Ver:</span>
-            <Link className={`cc-caja${rango === "mes" ? " activa" : ""}`} href={enlace({ vista: "mes", mes: periodo })}>Todo el mes</Link>
-            <Link className={`cc-caja${rango === "q1" ? " activa" : ""}`} href={enlace({ vista: "mes", mes: periodo, rango: "q1" })}>1.ª quincena (1–15)</Link>
-            <Link className={`cc-caja${rango === "q2" ? " activa" : ""}`} href={enlace({ vista: "mes", mes: periodo, rango: "q2" })}>2.ª quincena (16–{ultDia})</Link>
-            {semanas.map(([i, f], k) => (
-              <Link key={k} className={`cc-caja${rango === `s${k + 1}` ? " activa" : ""}`} href={enlace({ vista: "mes", mes: periodo, rango: `s${k + 1}` })}>
-                Semana {k + 1} ({i}–{f})
-              </Link>
-            ))}
-            <form method="get" className="cc-dia">
-              <input type="hidden" name="vista" value="mes" />
-              <input type="hidden" name="mes" value={periodo} />
-              <input type="hidden" name="rango" value="d" />
-              <input type="date" name="dia" min={`${periodo}-01`} max={`${periodo}-${DOS(ultDia)}`} defaultValue={rango === "d" ? sp.dia : ""} required aria-label="Ver un día" />
-              <button className="btn chico contorno" type="submit">Ver día</button>
-            </form>
-          </div>
-        )}
       </section>
 
       {vista === "anio" ? (
@@ -307,8 +255,6 @@ export default async function Ingresos({ searchParams }: { searchParams: ParamsA
           <form className="barra" method="get">
             <input type="hidden" name="vista" value="mes" />
             <input type="hidden" name="mes" value={periodo} />
-            <input type="hidden" name="rango" value={rango} />
-            {rango === "d" && <input type="hidden" name="dia" value={sp.dia ?? ""} />}
             <label className="campo">
               Rubro
               <select name="rubro" defaultValue={sp.rubro ?? ""}>

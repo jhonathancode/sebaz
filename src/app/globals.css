@@ -3243,3 +3243,105 @@ label.opcion:has(input:checked) { border-color: var(--primario); background: lin
 .ini-dos > .ini-col > .ini-panel:last-child, .ini-dos > .ini-col > section:last-child { flex: 1 1 auto; }
 .ini-dos > .ini-col > .ini-panel { display: flex; flex-direction: column; }
 .ini-dos > .ini-col > .ini-panel > .ini-acciones { margin-top: auto; }
+
+/* =====================================================================
+   CELULAR · revisión de pantallas nuevas (se carga al final para que gane)
+   Probado a 390 px con una maqueta de cada pantalla.
+   ===================================================================== */
+@media (max-width: 1000px) {
+  .ini-dos { grid-template-columns: minmax(0, 1fr) !important; }
+  .conc-dos { grid-template-columns: minmax(0, 1fr) !important; }
+  .conc-izq { position: static !important; height: 56vh !important; max-height: 56vh !important; }
+  .conc-izq, .conc-der { border-radius: 20px; }
+  .rend-grid { grid-template-columns: minmax(0, 1fr) !important; }
+  .rend-cuadro { position: static; }
+}
+@media (max-width: 760px) {
+  /* Texto y toques cómodos */
+  input, select, textarea { font-size: 16px; }
+  .btn { min-height: 42px; }
+  .btn.chico { min-height: 36px; }
+  .panel-cab, .ini-panel-cab { padding-inline: 14px; flex-wrap: wrap; gap: 4px 10px; }
+
+  /* Inicio */
+  .ini-col > *, .ini-hero { animation-duration: .3s; }
+  .ini-hero { padding: 18px 16px; gap: 12px; }
+  .ini-hero-boton { width: 100%; text-align: center; }
+  .ini-datos { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .ini-panel { padding: 16px 14px; }
+
+  /* Rendición: cada comprobante como tarjeta clara */
+  .cp-sel { grid-template-columns: 28px minmax(0, 1fr) auto; grid-template-areas: "chk num monto" "chk desc desc" "chk estado estado"; gap: 6px 12px; padding: 14px 14px; align-items: start; }
+  .cp-sel > input[type="checkbox"] { grid-area: chk; margin-top: 2px; }
+  .cp-sel > .f-num { grid-area: num; }
+  .cp-sel > div:nth-child(3) { grid-area: desc; min-width: 0; }
+  .cp-sel > div:nth-child(3) > div:first-child { white-space: normal !important; }
+  .cp-sel > .c-monto { grid-area: monto; align-self: center; }
+  .cp-sel > .c-estado { grid-area: estado; min-width: 0; text-align: left; }
+  .muni-tab { padding: 14px 14px 12px 18px; }
+  .rend-grid .filtros { gap: 8px; }
+
+  /* Caja chica e ingresos: título del cuadro fijo y tabla con desplazamiento suave */
+  .cc-excel-marco { border-radius: 18px; -webkit-overflow-scrolling: touch; }
+  .cc-excel { min-width: 680px; }
+  .cc-excel caption { position: sticky; left: 0; width: calc(100vw - 20px); max-width: 100%; box-sizing: border-box; font-size: 16px; padding: 14px 12px; text-align: left; }
+  .cc-excel th, .cc-excel td { padding: 8px 8px; font-size: 12.5px; }
+  .cc-selector { padding: 10px; }
+  .cc-selector .cc-fuentes, .cc-selector .cc-vista { width: 100%; }
+  .cc-selector .cc-fuente, .cc-selector .cc-vista-op { flex: 1 1 auto; text-align: center; }
+  .cfg-tabs { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; }
+  .cfg-tabs::-webkit-scrollbar { display: none; }
+  .cfg-tab { flex: none; }
+
+  /* Estados de cuenta y conciliación */
+  .ec-hero { padding: 16px; }
+  .ec-hero-txt b { font-size: 19px; }
+  .ec-hero .ec-hero-btn { width: 100%; justify-content: center; text-align: center; }
+  .ec-fila { padding: 12px; }
+  .ec-tracker { flex-wrap: wrap; row-gap: 6px; }
+  .cj-resumen { position: static; grid-template-columns: minmax(0, 1fr); padding: 12px 14px; }
+  .cj-corte { flex-wrap: wrap; width: 100%; }
+  .cj-corte input { flex: 1 1 140px; width: auto; }
+  .cj-herr { flex-direction: column; align-items: stretch; }
+  .cj-herr .espacio { display: none; }
+  .cj-herr .btn { width: 100%; justify-content: center; }
+  .te-tabla-marco { -webkit-overflow-scrolling: touch; }
+  .cj .te-tabla { min-width: 760px; }
+  .cj .te-tabla thead th { white-space: nowrap; }
+  .cj-totales { padding: 12px; }
+  .cj-totales-rej { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+  .cj-pie { flex-direction: column; align-items: stretch; gap: 10px; }
+  .cj-pie .btn { width: 100%; justify-content: center; }
+  .conc-der .panel-cab { flex-direction: column; align-items: flex-start; }
+
+  /* Ventanas flotantes a pantalla completa y sin esquinas */
+  .ventana-flotante { border-radius: 0; width: 100vw; max-width: 100vw; }
+  .ventana-flotante .vf-cab { padding: 14px 16px; }
+  .vf-cuerpo fieldset.pregunta { padding: 14px 14px 16px; border-radius: 16px; }
+  .asist-pie { padding: 12px 14px; }
+  .asist-botones { width: 100%; }
+  .asist-botones .btn { flex: 1 1 auto; justify-content: center; }
+  .cj-dlg { width: 100vw; max-width: 100vw; border-radius: 0; margin: 0; max-height: 100dvh; height: 100dvh; }
+
+  /* Menú en cajón: contraer no aplica */
+  .lm-contraer { display: none; }
+}
+@media (max-width: 760px) {
+  /* Tabla de documentos de Inicio: una tarjeta por expediente */
+  .ini-panel .tabla-marco { overflow: visible; border: 0 !important; }
+  .ini-panel .tabla { min-width: 0 !important; display: block; }
+  .ini-panel .tabla tbody { display: block; }
+  .ini-panel .tabla tr { display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "a d" "b b" "c c"; gap: 4px 10px; padding: 12px 0; border-top: 1px solid var(--linea); align-items: center; }
+  .ini-panel .tabla tr:first-child { border-top: 0; }
+  .ini-panel .tabla td { display: block; padding: 0; border: 0; min-width: 0; }
+  .ini-panel .tabla td:nth-child(1) { grid-area: a; font-weight: 700; }
+  .ini-panel .tabla td:nth-child(2) { grid-area: b; }
+  .ini-panel .tabla td:nth-child(3) { grid-area: c; }
+  .ini-panel .tabla td:nth-child(4) { grid-area: d; display: flex; gap: 6px; }
+  /* Aviso de que el cuadro se desliza */
+  .cc-excel-marco::after { content: "↔ Deslice para ver todas las columnas"; display: block; position: sticky; left: 0; width: calc(100vw - 20px); max-width: 100%; box-sizing: border-box; text-align: center; font-size: 11px; color: var(--tenue); padding: 6px 4px 8px; }
+}
+@media (max-width: 760px) {
+  .ini-panel .tabla-marco { margin: 0 !important; padding: 0 !important; }
+  .ini-panel .tabla td { padding-inline: 2px; }
+}

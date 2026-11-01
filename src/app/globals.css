@@ -2887,3 +2887,54 @@ label.opcion:has(input:checked) { border-color: var(--primario); background: lin
 .asist-botones .btn.primario:hover::after { left: 130%; }
 .asist-botones .btn:not(.primario) { border-radius: 14px; }
 @media (prefers-reduced-motion: reduce) { .ventana-flotante[open], .ventana-flotante::backdrop, .asist-barra > div, .vf-cuerpo fieldset.pregunta { animation: none !important; } }
+/* ============ Rendición: más color y modernidad ============ */
+/* Municipalidades: dos tarjetas con su propio color */
+.muni-tab { position: relative; overflow: hidden; padding: 16px 18px 14px; border-radius: 20px; border: 1px solid color-mix(in srgb, var(--primario) 22%, var(--borde)); background: linear-gradient(135deg, color-mix(in srgb, var(--primario) 10%, var(--panel)), var(--panel) 75%); gap: 10px; }
+.muni-tab::before { content: ""; position: absolute; inset: 0 auto 0 0; width: 6px; background: linear-gradient(180deg, #2563eb, #60a5fa); }
+.muni-tab:nth-child(2) { border-color: color-mix(in srgb, #7c3aed 25%, var(--borde)); background: linear-gradient(135deg, color-mix(in srgb, #7c3aed 10%, var(--panel)), var(--panel) 75%); }
+.muni-tab:nth-child(2)::before { background: linear-gradient(180deg, #7c3aed, #a78bfa); }
+.muni-tab .m-nom { font-size: 14px; }
+.muni-tab .m-monto { font-size: 22px; font-weight: 800; letter-spacing: -.01em; color: var(--primario-texto); }
+.muni-tab:nth-child(2) .m-monto { color: #5b21b6; }
+.muni-tab .k-barra { height: 10px; border-radius: 99px; background: color-mix(in srgb, var(--texto) 8%, transparent); }
+.muni-tab .k-barra > div { border-radius: 99px; background: linear-gradient(90deg, #2563eb, #60a5fa); box-shadow: 0 0 10px rgba(37, 99, 235, .45); }
+.muni-tab:nth-child(2) .k-barra > div { background: linear-gradient(90deg, #7c3aed, #a78bfa); box-shadow: 0 0 10px rgba(124, 58, 237, .45); }
+.muni-tab.activo { border-width: 2px; box-shadow: 0 22px 40px -26px rgba(37, 99, 235, .7), 0 0 0 4px color-mix(in srgb, var(--primario) 14%, transparent); }
+.muni-tab:nth-child(2).activo { box-shadow: 0 22px 40px -26px rgba(124, 58, 237, .7), 0 0 0 4px color-mix(in srgb, #7c3aed 14%, transparent); border-color: #7c3aed; }
+.muni-tab.activo::after { content: "● Eligida"; position: absolute; top: 10px; right: 16px; font-size: 10px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: #fff; background: var(--primario); padding: 2px 8px; border-radius: 99px; opacity: 0; }
+
+/* Filtros con su color */
+.rend-grid .filtros .f-chip { font-weight: 700; }
+.rend-grid .filtros .grupo > .f-chip:nth-child(2) { border-color: #82d3a6; color: #137a45; background: #eefaf3; }
+.rend-grid .filtros .grupo > .f-chip:nth-child(2).activo { background: #2fa56a; border-color: #2fa56a; color: #fff; }
+.rend-grid .filtros .grupo > .f-chip:nth-child(3) { border-color: var(--ambar-borde); color: var(--ambar); background: var(--ambar-fondo); }
+.rend-grid .filtros .grupo > .f-chip:nth-child(3).activo { background: #e0a030; border-color: #e0a030; color: #fff; }
+.rend-grid .filtros .grupo > .f-chip.activo .n { background: rgba(255, 255, 255, .28); color: #fff; }
+
+/* Lista de comprobantes */
+.rend-grid .filas { border-radius: 22px; overflow: hidden; border: 1px solid color-mix(in srgb, var(--primario) 18%, var(--borde)); box-shadow: 0 26px 46px -36px rgba(29, 79, 184, .55); background: var(--panel); }
+.cp-sel { padding: 14px 18px; }
+.cp-sel:nth-child(even) { background: color-mix(in srgb, var(--primario) 3%, transparent); }
+.cp-sel .f-num { color: var(--primario-texto); font-weight: 800; }
+.cp-sel .c-monto { font-size: 17px; font-weight: 800; color: var(--texto); }
+.cp-sel .etq { background: linear-gradient(135deg, var(--primario-fondo), color-mix(in srgb, var(--primario) 14%, var(--panel))); color: var(--primario-texto); border: 1px solid var(--primario-claro); font-weight: 700; }
+.cp-sel input[type="checkbox"] { width: 20px; height: 20px; border-radius: 6px; }
+.cp-sel.marcado, .cp-sel.marcable:has(input:checked) { background: linear-gradient(90deg, color-mix(in srgb, var(--primario) 14%, var(--panel)), color-mix(in srgb, var(--primario) 4%, var(--panel))); }
+.cp-sel .estado, .cp-sel .c-estado .estado { border-radius: 99px; }
+
+/* Panel «Falta para cuadrar» */
+.rend-cuadro { border-radius: 22px; padding: 20px; border: 1px solid color-mix(in srgb, var(--primario) 25%, var(--borde)); background: linear-gradient(180deg, color-mix(in srgb, var(--primario) 8%, var(--panel)) 0%, var(--panel) 45%); box-shadow: 0 28px 50px -36px rgba(29, 79, 184, .65); }
+.rend-cuadro .r-et { color: var(--primario-texto); }
+.rend-cuadro .r-saldo { font-size: 38px; background: linear-gradient(120deg, #1d4fb8, #3b82f6); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.rend-cuadro .r-saldo.ok { background: linear-gradient(120deg, #137a45, #2fa56a); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.rend-cuadro .r-saldo.mal { background: none; color: var(--rojo); }
+.rend-cuadro .r-barra { height: 12px; border-radius: 99px; background: color-mix(in srgb, var(--primario) 12%, var(--linea)); }
+.rend-cuadro .r-barra > div { background: linear-gradient(90deg, #2563eb, #60a5fa); box-shadow: 0 0 12px rgba(37, 99, 235, .55); }
+.rend-cuadro dl dd { color: var(--primario-texto); }
+.rend-cuadro .btn.primario { border-radius: 14px; min-height: 48px; background: linear-gradient(135deg, #1d4fb8, #3b82f6); box-shadow: 0 16px 28px -14px rgba(37, 99, 235, .85); font-weight: 800; }
+.rend-cuadro .btn.primario:disabled { background: color-mix(in srgb, var(--primario) 35%, var(--panel-2)); box-shadow: none; animation: none; }
+.rend-cuadro .aviso, .rend-cuadro .nota { border-radius: 14px; }
+
+/* Rendiciones anteriores */
+.panel > .panel-cab { background: linear-gradient(120deg, color-mix(in srgb, var(--primario) 10%, var(--panel)), var(--panel) 70%); color: var(--primario-texto); font-weight: 800; letter-spacing: .06em; }
+.panel { border-radius: 20px; overflow: hidden; }

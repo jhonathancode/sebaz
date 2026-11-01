@@ -2361,3 +2361,5 @@ a.ini-kpi:hover { border-color: var(--primario-claro); }
 .cj-suma.cuadra { background: var(--primario-fondo); border-color: var(--primario); color: var(--primario-texto); }
 .cj-suma.falta { background: var(--ambar-fondo); border-color: var(--ambar-borde); color: var(--ambar); }
 .cj-ok-suma { color: var(--primario-texto); font-weight: 700; font-size: 12px; }
+.te-enlazado.parcial { background: var(--ambar-fondo); color: var(--ambar); border: 1px solid var(--ambar-borde); }
+.cj-mov.parcial { background: var(--ambar-fondo); border-color: var(--ambar-borde); }

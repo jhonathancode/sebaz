@@ -2853,3 +2853,37 @@ html.pdf-captura .cc-excel-marco { border: 0; box-shadow: none; border-radius: 0
 html.pdf-captura .cc-excel caption { background: #fff; color: #000; text-shadow: none; border-bottom: 1px solid #222; }
 html.pdf-captura .cc-excel th, html.pdf-captura .cc-excel tfoot td { background: #eef1f5; color: #000; border-color: #222; }
 html.pdf-captura .cc-excel td { border-color: #8a929c; background: #fff !important; }
+/* ============ Ventanas flotantes: elegantes y modernas ============ */
+@keyframes vf-entrar { from { opacity: 0; transform: translateY(18px) scale(.965); } to { opacity: 1; transform: none; } }
+@keyframes vf-fondo { from { opacity: 0; } to { opacity: 1; } }
+.ventana-flotante { border: 1px solid color-mix(in srgb, #fff 40%, var(--borde)); border-radius: 26px; overflow: hidden; background: var(--panel); box-shadow: 0 50px 100px -34px rgba(12, 32, 96, .75), 0 18px 40px -22px rgba(0, 0, 0, .4); }
+.ventana-flotante[open] { animation: vf-entrar .32s cubic-bezier(.2, .8, .2, 1) both; }
+.ventana-flotante::backdrop { background: radial-gradient(circle at 28% 18%, rgba(37, 99, 235, .32), transparent 55%), radial-gradient(circle at 80% 90%, rgba(124, 58, 237, .18), transparent 50%), rgba(8, 14, 34, .66); backdrop-filter: blur(7px) saturate(1.15); -webkit-backdrop-filter: blur(7px) saturate(1.15); animation: vf-fondo .3s ease both; }
+.ventana-flotante > .vf-marco { max-height: calc(100vh - 40px); }
+.ventana-flotante .vf-cab { background: linear-gradient(115deg, color-mix(in srgb, var(--primario) 11%, var(--panel)) 0%, var(--panel) 70%); padding: 18px 26px; border-bottom: 1px solid color-mix(in srgb, var(--primario) 14%, var(--borde)); }
+.ventana-flotante .vf-cab h2 { font-size: 20px; font-weight: 800; letter-spacing: -.015em; }
+.ventana-flotante .vf-cerrar { width: 34px; height: 34px; display: grid; place-items: center; border-radius: 50%; font-size: 20px; background: var(--panel-2); transition: transform .25s, background .15s, color .15s; }
+.ventana-flotante .vf-cerrar:hover { transform: rotate(90deg); background: var(--rojo-fondo, #fdecec); color: var(--rojo); }
+.asist-progreso { background: var(--primario-fondo); padding: 5px 12px; border-radius: 99px; }
+.asist-barra { height: 5px; background: color-mix(in srgb, var(--primario) 12%, var(--linea)); }
+.asist-barra > div { background: linear-gradient(90deg, #2563eb, #60a5fa, #2563eb); background-size: 200% 100%; box-shadow: 0 0 12px rgba(37, 99, 235, .65); animation: vf-brillo 2.4s linear infinite; border-radius: 0 99px 99px 0; }
+@keyframes vf-brillo { from { background-position: 0 0; } to { background-position: -200% 0; } }
+dialog.asistente .vf-cuerpo, .vf-cuerpo:has(fieldset.pregunta) { background: linear-gradient(180deg, color-mix(in srgb, var(--primario) 5%, var(--panel-2)) 0%, var(--panel-2) 40%); scrollbar-width: thin; scrollbar-color: color-mix(in srgb, var(--primario) 35%, transparent) transparent; }
+.vf-cuerpo fieldset.pregunta, .vf-cuerpo details.pregunta { border-radius: 20px; border-color: color-mix(in srgb, var(--primario) 10%, var(--borde)); box-shadow: 0 12px 26px -22px rgba(29, 79, 184, .5); transition: box-shadow .2s, border-color .2s, transform .2s; animation: vida-subir .4s cubic-bezier(.2, .7, .2, 1) both; }
+.vf-cuerpo fieldset.pregunta:hover { box-shadow: 0 18px 34px -22px rgba(29, 79, 184, .6); border-color: color-mix(in srgb, var(--primario) 30%, var(--borde)); }
+.vf-cuerpo fieldset.pregunta:nth-of-type(2) { animation-delay: .05s; }
+.vf-cuerpo fieldset.pregunta:nth-of-type(3) { animation-delay: .1s; }
+.vf-cuerpo fieldset.pregunta:nth-of-type(n+4) { animation-delay: .15s; }
+.vf-cuerpo fieldset.pregunta > legend::before { background: linear-gradient(135deg, #2563eb, #60a5fa); color: #fff; box-shadow: 0 6px 12px -6px rgba(37, 99, 235, .8); }
+label.opcion { transition: transform .16s, box-shadow .16s, border-color .16s, background .16s; }
+label.opcion:hover { transform: translateY(-2px); border-color: color-mix(in srgb, var(--primario) 55%, var(--borde)); box-shadow: 0 12px 22px -16px rgba(37, 99, 235, .7); }
+label.opcion:has(input:checked) { border-color: var(--primario); background: linear-gradient(135deg, var(--primario-fondo), color-mix(in srgb, var(--primario) 14%, var(--panel))); box-shadow: 0 0 0 2px color-mix(in srgb, var(--primario) 30%, transparent), 0 14px 26px -16px rgba(37, 99, 235, .75); }
+.vf-cuerpo input:not([type="radio"]):not([type="checkbox"]):not([type="hidden"]), .vf-cuerpo select, .vf-cuerpo textarea { border-radius: 12px; transition: border-color .15s, box-shadow .15s; }
+.vf-cuerpo input:focus, .vf-cuerpo select:focus, .vf-cuerpo textarea:focus { box-shadow: 0 0 0 3px color-mix(in srgb, var(--primario) 25%, transparent); border-color: var(--primario); outline: none; }
+.asist-pie { background: linear-gradient(180deg, color-mix(in srgb, var(--panel) 85%, transparent), var(--panel)); backdrop-filter: blur(8px); border-top: 1px solid color-mix(in srgb, var(--primario) 14%, var(--borde)); padding: 16px 26px; }
+.asist-pregunta b { font-size: 20px; letter-spacing: -.01em; }
+.asist-botones .btn.primario { position: relative; overflow: hidden; border-radius: 14px; padding-inline: 22px; background: linear-gradient(135deg, #1d4fb8, #3b82f6); box-shadow: 0 14px 26px -12px rgba(37, 99, 235, .85); }
+.asist-botones .btn.primario::after { content: ""; position: absolute; top: 0; left: -60%; width: 40%; height: 100%; background: linear-gradient(100deg, transparent, rgba(255, 255, 255, .45), transparent); transform: skewX(-20deg); transition: left .5s; }
+.asist-botones .btn.primario:hover::after { left: 130%; }
+.asist-botones .btn:not(.primario) { border-radius: 14px; }
+@media (prefers-reduced-motion: reduce) { .ventana-flotante[open], .ventana-flotante::backdrop, .asist-barra > div, .vf-cuerpo fieldset.pregunta { animation: none !important; } }

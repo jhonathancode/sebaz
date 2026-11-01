@@ -5,7 +5,7 @@ import SelectorRendicion, { type FilaCP } from "@/components/SelectorRendicion";
 import { contextoMcp, tiene } from "@/lib/contexto";
 import { codigoCP, fecha, nombrePeriodo, periodoActual, rangoPeriodo, soles } from "@/lib/formato";
 import { supabaseServidor } from "@/lib/supabase/server";
-import { generarRendicion } from "./acciones";
+import { cambiarDestinoCP, generarRendicion } from "./acciones";
 import { etiquetaFuente, montoDelMes, tocaEnMes } from "@/lib/fuentes";
 
 export default async function Rendicion({ searchParams }: { searchParams: ParamsAviso }) {
@@ -120,6 +120,8 @@ export default async function Rendicion({ searchParams }: { searchParams: Params
           accion={generarRendicion}
           ocultos={{ periodo, fuente_id: fuente.id }}
           puedeGenerar={tiene(ctx, "admin", "tesorero")}
+          cambiarDestino={cambiarDestinoCP}
+          destinos={municipalidades.filter((f) => f.id !== fuente.id).map((f) => ({ id: f.id, nombre: f.municipalidad }))}
         />
       )}
 

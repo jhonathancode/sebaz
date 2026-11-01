@@ -18,6 +18,11 @@ export function urlLogo(path: string | null | undefined): string | null {
 
 export const APP_NOMBRE = process.env.NEXT_PUBLIC_APP_NOMBRE || "Sistema MCP";
 
+/** Monto como texto para un campo (sin miles, siempre 2 decimales): 2250 → «2250.00». */
+export function monto2(n: number | string | null | undefined): string {
+  return n === null || n === undefined || n === "" || Number.isNaN(Number(n)) ? "" : Number(n).toFixed(2);
+}
+
 export function soles(n: number | string | null | undefined): string {
   const v = Number(n ?? 0);
   return v.toLocaleString("es-PE", { minimumFractionDigits: 2, maximumFractionDigits: 2 });

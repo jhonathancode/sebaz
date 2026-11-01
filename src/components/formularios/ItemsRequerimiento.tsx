@@ -122,7 +122,7 @@ export default function ItemsRequerimiento({ inicial, historial }: { inicial?: {
               <Unidad nombre={`und_${i + 1}`} valor={f.unidad} onChange={(v) => cambiar(i, "unidad", v)} />
               <label className="campo">
                 Precio por unidad S/
-                <input name={`precio_${i + 1}`} value={f.precio} onKeyDown={(e) => alTeclear(e, i)} onChange={(e) => cambiar(i, "precio", e.target.value)} inputMode="decimal" placeholder="0.00" />
+                <input name={`precio_${i + 1}`} value={f.precio} onKeyDown={(e) => alTeclear(e, i)} onChange={(e) => cambiar(i, "precio", e.target.value)} onBlur={(e) => { const n = Number(e.target.value.replace(/,/g, "")); if (e.target.value.trim() !== "" && Number.isFinite(n)) cambiar(i, "precio", n.toFixed(2)); }} inputMode="decimal" placeholder="0.00" />
               </label>
               <div className="item-total">
                 <span className="etiqueta">Subtotal</span>

@@ -29,6 +29,49 @@ function limpiarEnlace(e: EnlaceEntrada | undefined) {
   };
 }
 
+/**
+ * Guarda el avance solo, mientras se copia: así no se pierde al cerrar o apagar la máquina y se puede seguir otro día.
+ * No marca cheques como cobrados (eso solo pasa al pulsar «Guardar»).
+ */
+export async function autoguardarTranscripcion(periodo: string, datosJson: string): Promise<{ ok: boolean; hora?: string; error?: string }> {
+  try {
+    const ctx = await contextoMcp();
+    if (!tiene(ctx, "admin", "tesorero", "contador", "alcalde")) return { ok: false, error: "Sin permiso para guardar." };
+    if (!/^\d{4}-\d{2}$/.test(periodo)) return { ok: false, error: "Mes no válido." };
+    const datos = JSON.parse(datosJson || "{}") as { cab?: Record<string, string>; lineas?: LineaEntrada[] };
+    const cab = datos.cab ?? {};
+    const lineas = (datos.lineas ?? []).slice(0, 600).map((l) => ({
+      codigo: String(l.codigo ?? "").toUpperCase().slice(0, 40),
+      cargo: num(l.cargo),
+      abono: num(l.abono),
+      saldo: num(l.saldo),
+      dia: fechaIso(l.dia),
+      enlace: limpiarEnlace(l.enlace),
+    }));
+    const supabase = await supabaseServidor();
+    const { error } = await supabase.from("extractos_transcritos").upsert(
+      {
+        mcp_id: ctx.mcp.id,
+        periodo,
+        fecha_corte: fechaIso(cab.fecha_corte),
+        fecha_saldo_anterior: fechaIso(cab.fecha_saldo_anterior),
+        saldo_anterior: num(cab.saldo_anterior),
+        n_movimientos_pdf: num(cab.n_pdf) === null ? null : Math.round(num(cab.n_pdf)!),
+        total_cargos_pdf: num(cab.cargos_pdf),
+        total_abonos_pdf: num(cab.abonos_pdf),
+        saldo_actual_pdf: num(cab.saldo_pdf),
+        lineas,
+        actualizado_en: new Date().toISOString(),
+      },
+      { onConflict: "mcp_id,periodo" },
+    );
+    if (error) return { ok: false, error: mensajeError(error) };
+    return { ok: true, hora: new Date().toISOString() };
+  } catch {
+    return { ok: false, error: "No se pudo guardar el avance." };
+  }
+}
+
 /** Guarda lo que la tesorera copió del estado de cuenta (cabecera, líneas y totales del PDF). */
 export async function guardarTranscripcion(fd: FormData) {
   const ctx = await contextoMcp();

@@ -273,6 +273,7 @@ export default function ConciliarEstado({
   candidatos,
   puede,
   guardar,
+  autoguardar,
   info,
 }: {
   periodo: string;
@@ -281,6 +282,7 @@ export default function ConciliarEstado({
   candidatos: Candidatos;
   puede: boolean;
   guardar: (fd: FormData) => Promise<void>;
+  autoguardar: (periodo: string, datos: string) => Promise<{ ok: boolean; hora?: string; error?: string }>;
   info: { mcp: string; banco: string; cuenta: string; mes: string };
 }) {
   const clave = `sebaz-extracto-${periodo}`;
@@ -291,6 +293,11 @@ export default function ConciliarEstado({
   const cuerpo = useRef<HTMLTableSectionElement>(null);
   const tocado = useRef(false);
   const [sucio, setSucio] = useState(false);
+  const [auto, setAuto] = useState<"" | "guardando" | "ok" | "error">("");
+  const [horaAuto, setHoraAuto] = useState("");
+  const ultimo = useRef("");
+  const enVuelo = useRef(false);
+  const instantanea = useRef("");
 
   // Si se cierra la ventana a medias, lo escrito se recupera (solo en este equipo, hasta guardar)
   useEffect(() => {
@@ -318,6 +325,44 @@ export default function ConciliarEstado({
       /* sin espacio */
     }
   }, [cab, lineas, clave]);
+
+  // Autoguardado en el servidor: el avance no se pierde al cerrar ni al apagar, y se sigue otro día
+  instantanea.current = JSON.stringify({ cab, lineas });
+  async function enviarAvance() {
+    if (!puede || enVuelo.current) return;
+    const que = instantanea.current;
+    if (que === ultimo.current) return;
+    enVuelo.current = true;
+    setAuto("guardando");
+    const r = await autoguardar(periodo, que).catch(() => ({ ok: false as const }));
+    enVuelo.current = false;
+    if (r.ok) {
+      ultimo.current = que;
+      setHoraAuto(new Date().toLocaleTimeString("es-PE", { hour: "2-digit", minute: "2-digit" }));
+      setAuto("ok");
+      if (instantanea.current !== que) void enviarAvance();
+    } else {
+      setAuto("error");
+    }
+  }
+  useEffect(() => {
+    if (!tocado.current) return;
+    const t = setTimeout(() => void enviarAvance(), 2500);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cab, lineas]);
+  useEffect(() => {
+    const alSalir = () => {
+      if (document.visibilityState === "hidden" && tocado.current) void enviarAvance();
+    };
+    document.addEventListener("visibilitychange", alSalir);
+    window.addEventListener("pagehide", alSalir);
+    return () => {
+      document.removeEventListener("visibilitychange", alSalir);
+      window.removeEventListener("pagehide", alSalir);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const refFecha = cab.fecha_corte || cab.fecha_saldo_anterior || `${periodo}-01`;
 
@@ -486,9 +531,28 @@ export default function ConciliarEstado({
       </header>
 
       {(sucio || borradorLocal) && (
-        <div className="cj-singuardar" role="status">
-          <b>● Cambios sin guardar</b>
-          <span>{borradorLocal && !sucio ? "Se recuperó lo escrito en este equipo. " : ""}Hasta que pulse <b>Guardar</b>, los expedientes no salen como «Conciliado».</span>
+        <div className={`cj-singuardar${auto === "ok" ? " ok" : ""}`} role="status">
+          {auto === "ok" ? (
+            <>
+              <b>✓ Avance guardado solo · {horaAuto}</b>
+              <span>Puede cerrar y seguir otro día: no se pierde. Al terminar pulse <b>Guardar</b> para marcar los cheques como cobrados.</span>
+            </>
+          ) : auto === "guardando" ? (
+            <>
+              <b>Guardando su avance…</b>
+              <span>No cierre todavía.</span>
+            </>
+          ) : auto === "error" ? (
+            <>
+              <b>⚠ No se pudo guardar el avance solo</b>
+              <span>Pulse <b>Guardar</b> para no perder lo escrito.</span>
+            </>
+          ) : (
+            <>
+              <b>● Cambios sin guardar</b>
+              <span>{borradorLocal && !sucio ? "Se recuperó lo escrito en este equipo. " : ""}Se guardan solos en unos segundos.</span>
+            </>
+          )}
         </div>
       )}
 

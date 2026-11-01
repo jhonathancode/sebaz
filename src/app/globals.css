@@ -2735,3 +2735,5 @@ details.cj-guia p { margin: 8px 0 0; line-height: 1.7; }
 .cj-ok::before { content: "✓ "; }
 .cj-op.igual { background: color-mix(in srgb, #2fa56a 10%, var(--panel)); border-color: #82d3a6; }
 .cj-op.igual .cj-op-m { color: #137a45; }
+.cj-singuardar.ok { background: color-mix(in srgb, #2fa56a 10%, var(--panel)); border-color: #82d3a6; color: #137a45; }
+.cj-singuardar.ok span { color: var(--suave); }

@@ -10,7 +10,7 @@ import { contextoMcp, tiene } from "@/lib/contexto";
 import { codigoCP, nombrePeriodo, periodoActual } from "@/lib/formato";
 import { supabaseServidor } from "@/lib/supabase/server";
 import { anularEstadoCuenta, subirEstadoCuenta } from "../acciones";
-import { guardarTranscripcion } from "./acciones";
+import { guardarTranscripcion, autoguardarTranscripcion } from "./acciones";
 
 const aTexto = (n: number | string | null | undefined) => (n === null || n === undefined ? "" : String(n));
 /** Montos con miles y 2 decimales, como se ven en el estado de cuenta: 2250 → «2,250.00». */
@@ -124,7 +124,7 @@ export default async function Conciliar({ searchParams }: { searchParams: Params
             Copiar y enlazar
             <span className="tenue pequeno">Copie cada línea y enlácela debajo con su comprobante</span>
           </div>
-          <ConciliarEstado periodo={mes} cabInicial={cabInicial} lineasInicial={lineasInicial} candidatos={candidatos} puede={puede} guardar={guardarTranscripcion} info={{ mcp: ctx.mcp.nombre, banco: ctx.mcp.banco_nombre ?? "Banco", cuenta: ctx.mcp.banco_cuenta ?? "", mes: nombrePeriodo(mes) }} />
+          <ConciliarEstado periodo={mes} cabInicial={cabInicial} lineasInicial={lineasInicial} candidatos={candidatos} puede={puede} guardar={guardarTranscripcion} autoguardar={autoguardarTranscripcion} info={{ mcp: ctx.mcp.nombre, banco: ctx.mcp.banco_nombre ?? "Banco", cuenta: ctx.mcp.banco_cuenta ?? "", mes: nombrePeriodo(mes) }} />
         </section>
       </div>
     </>

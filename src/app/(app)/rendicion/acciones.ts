@@ -45,3 +45,21 @@ export async function marcarEntregada(fd: FormData) {
   if (error) volver(`/rendicion/${id}`, "error", mensajeError(error));
   volver(`/rendicion/${id}`, "ok", "Rendición marcada como entregada.");
 }
+
+export async function cambiarDestinoCP(fd: FormData) {
+  await contextoMcp();
+  const supabase = await supabaseServidor();
+  const periodo = texto(fd, "periodo")!;
+  const actual = texto(fd, "fuente_actual")!;
+  const nuevo = texto(fd, "fuente_nueva");
+  const volverA = `/rendicion?mes=${periodo}&fuente=${actual}`;
+  if (!nuevo) volver(volverA, "error", "Elija a qué municipalidad se rendirá.");
+  const { error } = await supabase.rpc("cambiar_destino_cp", {
+    p_cp: texto(fd, "cp")!,
+    p_fuente: nuevo,
+    p_motivo: texto(fd, "motivo") ?? "",
+  });
+  if (error) volver(volverA, "error", mensajeError(error));
+  revalidatePath("/rendicion");
+  volver(volverA, "ok", "Listo: el comprobante cambió de destino y quedó registrado en auditoría.");
+}

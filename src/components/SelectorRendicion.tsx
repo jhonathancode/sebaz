@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { createPortal } from "react-dom";
 import BotonConfirmar from "./BotonConfirmar";
 
 export type FilaCP = {
@@ -30,6 +31,8 @@ export default function SelectorRendicion({
   accion,
   ocultos,
   puedeGenerar,
+  cambiarDestino,
+  destinos = [],
 }: {
   filas: FilaCP[];
   transferencia: number;
@@ -37,7 +40,10 @@ export default function SelectorRendicion({
   accion: (fd: FormData) => Promise<void>;
   ocultos: Record<string, string>;
   puedeGenerar: boolean;
+  cambiarDestino?: (fd: FormData) => Promise<void>;
+  destinos?: { id: string; nombre: string }[];
 }) {
+  const [mover, setMover] = useState<FilaCP | null>(null);
   const disponibles = filas.filter((f) => f.disponible);
   const [marcados, setMarcados] = useState<Set<string>>(() => new Set());
 
@@ -120,6 +126,11 @@ export default function SelectorRendicion({
                     <span style={{ overflow: "hidden", textOverflow: "ellipsis" }}>{f.concepto}</span>
                     {f.cheque && <span className="etq">Cheque {f.cheque}</span>}
                     {f.propio && <span className="etq azul">Ingresos propios</span>}
+                    {!f.propio && puedeGenerar && cambiarDestino && destinos.length > 0 && (
+                      <button type="button" className="cp-mover" onClick={(e) => { e.preventDefault(); e.stopPropagation(); setMover(f); }}>
+                        ⇄ Cambiar destino
+                      </button>
+                    )}
                   </div>
                 </div>
                 <div className="c-monto">S/ {fmt(f.importe)}{m && acumulado.has(f.id) && <small className="cp-acum">suma S/ {fmt(acumulado.get(f.id)!)}</small>}</div>
@@ -179,6 +190,34 @@ export default function SelectorRendicion({
         )}
         <span className="pequeno tenue">Al generar, los comprobantes quedan como rendidos. Para corregir se anula la rendición con motivo.</span>
       </aside>
-    </form>
+    {mover && cambiarDestino && typeof document !== "undefined" && createPortal(
+        <div className="mover-fondo" role="dialog" aria-modal="true" onClick={() => setMover(null)}>
+          <form action={cambiarDestino} className="mover-caja" onClick={(e) => e.stopPropagation()}>
+            <h3>Cambiar a dónde se rinde</h3>
+            <p className="tenue">{mover.codigo} · {mover.beneficiario} · <b>S/ {fmt(mover.importe)}</b></p>
+            <input type="hidden" name="cp" value={mover.id} />
+            <input type="hidden" name="periodo" value={ocultos.periodo} />
+            <input type="hidden" name="fuente_actual" value={ocultos.fuente_id} />
+            <label className="mover-et">Rendir a</label>
+            <div className="mover-opc">
+              {destinos.map((d, k) => (
+                <label key={d.id} className="mover-radio">
+                  <input type="radio" name="fuente_nueva" value={d.id} defaultChecked={k === 0} />
+                  <span>{d.nombre}</span>
+                </label>
+              ))}
+            </div>
+            <label className="mover-et" htmlFor="mover-motivo">Motivo del cambio</label>
+            <input id="mover-motivo" name="motivo" required minLength={5} style={{ textTransform: "uppercase" }} placeholder="EJ. LA PROVINCIA PIDIÓ ESTE GASTO" autoComplete="off" />
+            <p className="pequeno tenue">Pasa de {municipalidad} a la otra municipalidad. Queda registrado en auditoría.</p>
+            <div className="mover-pie">
+              <button type="button" className="btn contorno" onClick={() => setMover(null)}>Cancelar</button>
+              <button type="submit" className="btn primario">Sí, cambiar destino</button>
+            </div>
+          </form>
+        </div>,
+        document.body,
+      )}
+      </form>
   );
 }

@@ -3,7 +3,7 @@
 import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import BotonConfirmar from "@/components/BotonConfirmar";
 import BotonPdf from "@/components/BotonPdf";
-import { aNum, fmt, idsEnlace, igual, r2, sugerir, tipoLinea, type Candidatos, type Enlace, type LineaExtracto } from "@/lib/extracto";
+import { aNum, fmt, idsEnlace, igual, r2, sugerir, tipoLinea, type Candidatos, type Enlace, type LineaExtracto, type Sugerencia } from "@/lib/extracto";
 
 export type { LineaExtracto } from "@/lib/extracto";
 
@@ -98,11 +98,12 @@ const nombreMes = (per: string) => `${MES_LARGO[Number(per.slice(5, 7)) - 1] ?? 
 
 
 /** Ventana para elegir con qué se enlaza un movimiento. */
-function Elegir({ abierta, indice, linea, lineas, cands, onElegir, onCerrar }: { abierta: boolean; indice: number; linea: LineaExtracto | null; lineas: LineaExtracto[]; cands: Candidatos; onElegir: (e: Enlace | null) => void; onCerrar: () => void }) {
+function Elegir({ abierta, indice, linea, lineas, cands, sug, onElegir, onCerrar }: { abierta: boolean; indice: number; linea: LineaExtracto | null; lineas: LineaExtracto[]; cands: Candidatos; sug: Sugerencia; onElegir: (e: Enlace | null) => void; onCerrar: () => void }) {
   const dlg = useRef<HTMLDialogElement>(null);
   const [q, setQ] = useState("");
   const [nota, setNota] = useState("");
   const [sel, setSel] = useState<string[]>([]);
+  const [modo, setModo] = useState<"ver" | "elegir">("elegir");
   useEffect(() => {
     const d = dlg.current;
     if (!d) return;
@@ -110,6 +111,7 @@ function Elegir({ abierta, indice, linea, lineas, cands, onElegir, onCerrar }: {
       setQ("");
       setNota("");
       setSel(linea?.enlace?.tipo === "cp" ? idsEnlace(linea.enlace) : []);
+      setModo(linea?.enlace ? "ver" : "elegir");
       d.showModal();
     }
     if (!abierta && d.open) d.close();
@@ -117,6 +119,9 @@ function Elegir({ abierta, indice, linea, lineas, cands, onElegir, onCerrar }: {
   }, [abierta]);
   if (!linea) return <dialog ref={dlg} className="cj-dlg" onClose={onCerrar} />;
   const t = tipoLinea(linea);
+  const vista = modo === "ver" && !!linea.enlace;
+  const cpsVer = linea.enlace?.tipo === "cp" ? (idsEnlace(linea.enlace).map((id) => cands.cps.find((c) => c.id === id)).filter(Boolean) as Candidatos["cps"]) : [];
+  const sumaVer = r2(cpsVer.reduce((t0, c) => t0 + c.monto, 0));
   const esAbono = aNum(linea.abono) !== null;
   const monto = (esAbono ? aNum(linea.abono) : aNum(linea.cargo)) ?? 0;
   const usadoPor = (id: string) => lineas.findIndex((l, j) => j !== indice && idsEnlace(l.enlace).includes(id));
@@ -138,6 +143,45 @@ function Elegir({ abierta, indice, linea, lineas, cands, onElegir, onCerrar }: {
         <button type="button" className="cj-x" onClick={onCerrar} aria-label="Cerrar">×</button>
       </div>
       <div className="cj-dlg-cuerpo">
+        {vista && linea.enlace ? (
+          <div className="cj-ver">
+            <div className="cj-ver-monto">
+              <span>{esAbono ? "Abono del banco" : "Cargo del banco"}</span>
+              <b>S/ {fmt(monto)}</b>
+              <small>{linea.codigo || "Sin código"}{linea.dia ? ` · ${linea.dia.split("-").reverse().join("/")}` : ""}</small>
+            </div>
+            <h4>Está enlazado con</h4>
+            {cpsVer.length > 0 ? (
+              <ul className="cj-ver-lista">
+                {cpsVer.map((c) => (
+                  <li key={c.id}>
+                    <div><b>{c.codigo}</b><span>{c.beneficiario}</span><small>{c.concepto}</small></div>
+                    <em>S/ {fmt(c.monto)}</em>
+                  </li>
+                ))}
+                {cpsVer.length > 1 && <li className="tot"><div><b>Suman</b></div><em>S/ {fmt(sumaVer)}</em></li>}
+              </ul>
+            ) : (
+              <ul className="cj-ver-lista">
+                <li><div><b>{[linea.enlace.etiqueta, ...(linea.enlace.extra ?? []).map((x) => x.etiqueta)].join(" + ")}</b></div></li>
+              </ul>
+            )}
+            {cpsVer.length > 0 && (igual(sumaVer, monto)
+              ? <div className="cj-veredicto-v ok">✓ Cuadra con el banco</div>
+              : <div className="cj-veredicto-v falta">⚠ {monto > sumaVer ? `Faltan S/ ${fmt(r2(monto - sumaVer))} por enlazar` : `Sobran S/ ${fmt(r2(sumaVer - monto))}`}: el banco cobró S/ {fmt(monto)}</div>)}
+          </div>
+        ) : (
+        <>
+        {sug && !linea.enlace && (
+          <div className="cj-sug-banner">
+            <div>
+              <span>Sugerido</span>
+              <b>{[sug.enlace.etiqueta, ...(sug.enlace.extra ?? []).map((x) => x.etiqueta)].join(" + ")}</b>
+              {sug.aviso && <small>{sug.aviso}</small>}
+            </div>
+            <button type="button" className="btn primario" onClick={() => onElegir(sug.enlace)}>Aceptar</button>
+          </div>
+        )}
         {!esAbono ? (
           <>
             <input className="cj-buscar" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Buscar por N° de cheque, beneficiario o concepto…" autoFocus />
@@ -204,10 +248,14 @@ function Elegir({ abierta, indice, linea, lineas, cands, onElegir, onCerrar }: {
           <input value={nota} onChange={(e) => setNota(e.target.value)} placeholder="Otro motivo (escríbalo) y pulse «Enlazar como otro»" />
           <button type="button" className="btn contorno" disabled={nota.trim().length < 4} onClick={() => onElegir({ tipo: "otro", etiqueta: nota.trim().toUpperCase() })}>Enlazar como otro</button>
         </div>
+        </>
+        )}
       </div>
       <div className="cj-dlg-pie">
-        {linea.enlace && <button type="button" className="btn contorno" onClick={() => onElegir(null)}>Quitar el enlace</button>}
+        {linea.enlace && <button type="button" className="btn contorno rojo" onClick={() => onElegir(null)}>Quitar el enlace</button>}
         <span className="espacio" />
+        {linea.enlace && vista && <button type="button" className="btn primario" onClick={() => setModo("elegir")}>{cpsVer.length > 0 && !igual(sumaVer, monto) ? "Agregar el que falta" : "Cambiar enlace"}</button>}
+        {linea.enlace && !vista && <button type="button" className="btn" onClick={() => setModo("ver")}>← Volver al detalle</button>}
         <button type="button" className="btn" onClick={onCerrar}>Cerrar</button>
       </div>
     </dialog>
@@ -447,7 +495,7 @@ export default function ConciliarEstado({
       <div className="cj-paso">
         <details className="cj-guia">
           <summary>Escriba cada línea como está en el original <span>· ver atajos</span></summary>
-          <p><kbd>Tab</kbd> pasa a la siguiente casilla y <kbd>Enter</kbd> baja a la línea de abajo. En «Día» las barras salen solas: <kbd>6</kbd> = día 6 del mes, <kbd>0602</kbd> = 06/02.</p>
+          <p>En la columna <b>Enlace</b>, pulse el círculo de cada línea para ver con qué está enlazada o para enlazarla: <b>✓</b> cuadra, <b>!</b> falta algo, <b>+</b> sin enlazar. <kbd>Tab</kbd> pasa a la siguiente casilla y <kbd>Enter</kbd> baja a la línea de abajo. En «Día» las barras salen solas: <kbd>6</kbd> = día 6 del mes, <kbd>0602</kbd> = 06/02.</p>
         </details>
 
         <label className="cj-corte">
@@ -472,6 +520,7 @@ export default function ConciliarEstado({
                 <th>Saldos</th>
                 <th>Día</th>
                 <th title="Lo que va la cuenta hasta esta línea">Va en</th>
+                <th title="Enlace con lo registrado">Enlace</th>
                 <th aria-label="Quitar" />
               </tr>
             </thead>
@@ -488,6 +537,7 @@ export default function ConciliarEstado({
                 </td>
                 <td />
                 <td className="te-va" />
+                <td />
                 <td />
               </tr>
             </tbody>
@@ -507,61 +557,27 @@ export default function ConciliarEstado({
                     <td className={`te-va${f.estado === "ok" ? " ok" : f.estado === "mal" ? " mal" : ""}`} title={f.estado === "mal" ? `El saldo del banco no coincide: debería ser ${f.corrida !== null ? fmt(f.corrida) : "—"}` : f.estado === "ok" ? "El saldo coincide con lo que va la cuenta" : undefined}>
                       {f.estado === "ok" && <i>✓</i>}{f.estado === "mal" && <i>✗</i>}{f.corrida !== null ? fmt(f.corrida) : ""}
                     </td>
+                    <td className="te-enl">
+                      {tipoLinea(l) !== "vacia" && (() => {
+                        const falta = faltaDe(l);
+                        const clase = !l.enlace ? "pend" : falta !== null ? "falta" : "ok";
+                        const titulo = !l.enlace ? "Sin enlazar: pulse para enlazar" : falta !== null ? `Falta S/ ${fmt(Math.abs(falta))} por enlazar: pulse para ver` : "Enlazado y cuadra: pulse para ver con qué";
+                        return (
+                          <button type="button" className={`te-chip ${clase}`} onClick={() => setEligiendo(i)} title={titulo} aria-label={titulo}>
+                            {clase === "ok" ? "✓" : clase === "falta" ? "!" : "+"}
+                          </button>
+                        );
+                      })()}
+                    </td>
                     <td>{puede && <button type="button" className="te-quitar" onClick={() => quitar(i)} aria-label={`Quitar la línea ${i + 1}`}>×</button>}</td>
                   </tr>
-                  {tipoLinea(l) !== "vacia" && (() => {
-                    const cargoL = aNum(l.cargo);
-                    const cpsL = l.enlace?.tipo === "cp" ? (idsEnlace(l.enlace).map((id) => infoCp.get(id)).filter(Boolean) as Candidatos["cps"]) : [];
-                    const falta = faltaDe(l);
-                    const sugL = !l.enlace ? sugerir(l, candidatos, usados) : null;
-                    const tipoTxt = !l.enlace ? "" : l.enlace.tipo === "banco" ? "Gasto del banco" : l.enlace.tipo === "cp" ? (cpsL.length > 1 ? "Un cheque, varios comprobantes" : "Comprobante de pago") : l.enlace.tipo === "transferencia" ? "Transferencia recibida" : l.enlace.tipo === "ingresos" ? "Ingresos propios" : "Otro";
-                    const clase = !l.enlace ? "pend" : falta !== null ? "falta" : "ok";
-                    return (
-                      <tr className="te-detalle">
-                        <td />
-                        <td colSpan={7}>
-                          <div className={`te-det ${clase}`}>
-                            <i aria-hidden="true">{clase === "ok" ? "✓" : clase === "falta" ? "⚠" : "○"}</i>
-                            <div className="te-det-txt">
-                              {l.enlace ? (
-                                <>
-                                  <b>{tipoTxt}</b>
-                                  {cpsL.length > 0 ? (
-                                    cpsL.map((c) => (
-                                      <span key={c.id}>{c.codigo} · {c.beneficiario}{c.concepto ? ` · ${c.concepto}` : ""} <em>S/ {fmt(c.monto)}</em></span>
-                                    ))
-                                  ) : (
-                                    <span>{[l.enlace.etiqueta, ...(l.enlace.extra ?? []).map((x) => x.etiqueta)].join(" + ")}</span>
-                                  )}
-                                  {cpsL.length > 0 && cargoL !== null && (falta === null
-                                    ? <small className="ok">Cuadra con el banco · S/ {fmt(cargoL)}</small>
-                                    : <small className="falta">Faltan S/ {fmt(Math.abs(falta))} por enlazar para llegar a S/ {fmt(cargoL)}</small>)}
-                                </>
-                              ) : sugL ? (
-                                <span>Sugerido: <b>{[sugL.enlace.etiqueta, ...(sugL.enlace.extra ?? []).map((x) => x.etiqueta)].join(" + ")}</b></span>
-                              ) : (
-                                <span>Sin enlazar: elija con qué se pagó o de dónde viene</span>
-                              )}
-                            </div>
-                            {puede && (
-                              <div className="te-det-acc">
-                                {sugL && !l.enlace && <button type="button" className="btn chico primario" onClick={() => ponEnlace(i, sugL.enlace)}>Aceptar</button>}
-                                <button type="button" className="btn chico contorno" onClick={() => setEligiendo(i)}>{l.enlace ? "Cambiar" : "Elegir…"}</button>
-                                {l.enlace && <button type="button" className="te-quitar" onClick={() => ponEnlace(i, null)} aria-label="Quitar el enlace" title="Quitar el enlace">×</button>}
-                              </div>
-                            )}
-                          </div>
-                        </td>
-                      </tr>
-                    );
-                  })()}
                   </Fragment>
                 );
               })}
             </tbody>
             <tfoot>
               <tr>
-                <td colSpan={8}>
+                <td colSpan={9}>
                   {puede && (
                     <div className="cj-atajos">
                       <button type="button" className="mas" onClick={() => agregar()}>+ Agregar línea</button>
@@ -673,6 +689,7 @@ export default function ConciliarEstado({
         linea={lineaElegida}
         lineas={lineas}
         cands={candidatos}
+        sug={lineaElegida && !lineaElegida.enlace ? sugerir(lineaElegida, candidatos, usados) : null}
         onCerrar={() => setEligiendo(null)}
         onElegir={(e) => {
           if (eligiendo !== null) ponEnlace(eligiendo, e);

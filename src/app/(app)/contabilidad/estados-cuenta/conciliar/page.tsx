@@ -122,9 +122,9 @@ export default async function Conciliar({ searchParams }: { searchParams: Params
         <section className="panel conc-der">
           <div className="panel-cab">
             Copiar y enlazar
-            <span className="tenue pequeno">Paso 1: copiarlo · Paso 2: enlazarlo con lo registrado</span>
+            <span className="tenue pequeno">Copie cada línea y enlácela debajo con su comprobante</span>
           </div>
-          <ConciliarEstado periodo={mes} cabInicial={cabInicial} lineasInicial={lineasInicial} candidatos={candidatos} puede={puede} guardar={guardarTranscripcion} />
+          <ConciliarEstado periodo={mes} cabInicial={cabInicial} lineasInicial={lineasInicial} candidatos={candidatos} puede={puede} guardar={guardarTranscripcion} info={{ mcp: ctx.mcp.nombre, banco: ctx.mcp.banco_nombre ?? "Banco", cuenta: ctx.mcp.banco_cuenta ?? "", mes: nombrePeriodo(mes) }} />
         </section>
       </div>
     </>

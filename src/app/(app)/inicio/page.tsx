@@ -1,6 +1,7 @@
 import Link from "next/link";
 import BotonConfirmar from "@/components/BotonConfirmar";
 import Estado from "@/components/Estado";
+import CurvaIngresos from "@/components/CurvaIngresos";
 import { FUNCIONES } from "@/lib/catalogos";
 import { contextoMcp, tiene } from "@/lib/contexto";
 import {
@@ -466,23 +467,10 @@ export default async function Inicio() {
                 {mesActual.toLowerCase()}
                 {variacion !== null && <> · <span className={`ini-var ${variacion >= 0 ? "sube" : "baja"}`}>{variacion >= 0 ? "▲" : "▼"} {Math.abs(variacion).toFixed(0)} %</span> frente a {mesAnterior.toLowerCase()}</>}
               </div>
-              <svg className="ini-curva" viewBox="0 0 520 150" role="img" aria-label="Ingresos propios por mes">
-                <defs>
-                  <linearGradient id="iniRelleno" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="var(--primario)" stopOpacity="0.3" />
-                    <stop offset="100%" stopColor="var(--primario)" stopOpacity="0" />
-                  </linearGradient>
-                </defs>
-                {[38, 68, 98].map((y) => <line key={y} x1="30" x2="490" y1={y} y2={y} className="ini-rejilla" />)}
-                {trazo && <path d={`${trazo} L ${pts[pts.length - 1][0]} 118 L ${pts[0][0]} 118 Z`} fill="url(#iniRelleno)" />}
-                {trazo && <path d={trazo} className="ini-linea" pathLength={1} />}
-                {pts.length === 1 && <circle cx={pts[0][0]} cy={pts[0][1]} r="5" className="ini-punto" />}
-                {pts.length > 1 && <circle cx={pts[pts.length - 1][0]} cy={pts[pts.length - 1][1]} r="5" className="ini-punto" />}
-                {ingMes.n > 0 && <text x={pts[pts.length - 1][0]} y={pts[pts.length - 1][1] - 12} textAnchor="middle" className="ini-valor">{soles(ingMes.total)}</text>}
-                {mesesIng.slice(0, iMes + 1).map((m, i) => (
-                  <text key={m.per} x={pts[i][0]} y="142" textAnchor="middle" className="ini-eje">{nombrePeriodo(m.per).slice(0, 3)}</text>
-                ))}
-              </svg>
+              <CurvaIngresos
+                trazo={trazo}
+                puntos={mesesIng.slice(0, iMes + 1).map((m, i) => ({ x: pts[i][0], y: pts[i][1], corto: nombrePeriodo(m.per).slice(0, 3), largo: nombrePeriodo(m.per), total: m.total, n: m.n }))}
+              />
               <div className="ini-datos">
                 <div><span>Recibos del mes</span><b>{ingMes.n ? `${ingMes.n} · del ${codRec(ingMes.del)} al ${codRec(ingMes.al)}` : "0"}</b></div>
                 <div><span>Promedio por mes</span><b>S/ {soles(promedioMes)}</b></div>

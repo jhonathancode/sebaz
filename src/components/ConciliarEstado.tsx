@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import BotonConfirmar from "@/components/BotonConfirmar";
+import BotonPdf from "@/components/BotonPdf";
 import { aNum, fmt, idsEnlace, igual, r2, sugerir, tipoLinea, type Candidatos, type Enlace, type LineaExtracto } from "@/lib/extracto";
 
 export type { LineaExtracto } from "@/lib/extracto";
@@ -94,16 +95,7 @@ function CampoDia({ valor, refFecha, onCambio, ...resto }: { valor: string; refF
 
 const MES_LARGO = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "setiembre", "octubre", "noviembre", "diciembre"];
 const nombreMes = (per: string) => `${MES_LARGO[Number(per.slice(5, 7)) - 1] ?? per} ${per.slice(0, 4)}`;
-const diaCorto = (iso: string) => (/^\d{4}-\d{2}-\d{2}$/.test(iso) ? `${iso.slice(8, 10)}/${iso.slice(5, 7)}` : "—");
 
-const ETIQUETA_TIPO: Record<string, string> = {
-  cheque: "Cheque cobrado",
-  itf: "Impuesto ITF",
-  comision: "Mantenimiento / comisión",
-  transferencia: "Transferencia recibida",
-  abono: "Abono",
-  cargo: "Cargo",
-};
 
 /** Ventana para elegir con qué se enlaza un movimiento. */
 function Elegir({ abierta, indice, linea, lineas, cands, onElegir, onCerrar }: { abierta: boolean; indice: number; linea: LineaExtracto | null; lineas: LineaExtracto[]; cands: Candidatos; onElegir: (e: Enlace | null) => void; onCerrar: () => void }) {
@@ -233,6 +225,7 @@ export default function ConciliarEstado({
   candidatos,
   puede,
   guardar,
+  info,
 }: {
   periodo: string;
   cabInicial: CabeceraExtracto;
@@ -240,13 +233,12 @@ export default function ConciliarEstado({
   candidatos: Candidatos;
   puede: boolean;
   guardar: (fd: FormData) => Promise<void>;
+  info: { mcp: string; banco: string; cuenta: string; mes: string };
 }) {
   const clave = `sebaz-extracto-${periodo}`;
-  const [paso, setPaso] = useState<"copiar" | "enlazar">("copiar");
   const [cab, setCab] = useState<CabeceraExtracto>(cabInicial);
   const [lineas, setLineas] = useState<LineaExtracto[]>(lineasInicial.length ? lineasInicial : [vacia()]);
   const [borradorLocal, setBorradorLocal] = useState(false);
-  const [soloPendientes, setSoloPendientes] = useState(false);
   const [eligiendo, setEligiendo] = useState<number | null>(null);
   const cuerpo = useRef<HTMLTableSectionElement>(null);
   const tocado = useRef(false);
@@ -445,14 +437,6 @@ export default function ConciliarEstado({
         </div>
       </header>
 
-      <div className="cj-pasos" role="tablist" aria-label="Pasos">
-        <button type="button" role="tab" aria-selected={paso === "copiar"} className={paso === "copiar" ? "activo" : ""} onClick={() => setPaso("copiar")}>
-          <i>1</i> Copiar el estado de cuenta
-        </button>
-        <button type="button" role="tab" aria-selected={paso === "enlazar"} className={paso === "enlazar" ? "activo" : ""} onClick={() => setPaso("enlazar")}>
-          <i>2</i> Enlazar con lo registrado
-        </button>
-      </div>
       {(sucio || borradorLocal) && (
         <div className="cj-singuardar" role="status">
           <b>● Cambios sin guardar</b>
@@ -460,8 +444,7 @@ export default function ConciliarEstado({
         </div>
       )}
 
-      {/* ----------------------------------------------------------- PASO 1 */}
-      <div hidden={paso !== "copiar"} className="cj-paso">
+      <div className="cj-paso">
         <details className="cj-guia">
           <summary>Escriba cada línea como está en el original <span>· ver atajos</span></summary>
           <p><kbd>Tab</kbd> pasa a la siguiente casilla y <kbd>Enter</kbd> baja a la línea de abajo. En «Día» las barras salen solas: <kbd>6</kbd> = día 6 del mes, <kbd>0602</kbd> = 06/02.</p>
@@ -471,6 +454,12 @@ export default function ConciliarEstado({
           Estado de cuenta al
           <CampoDia valor={cab.fecha_corte} refFecha={refFecha} onCambio={(v) => ponCab("fecha_corte", v)} disabled={!puede} />
         </label>
+
+        <div className="cj-herr">
+          {puede && <button type="button" className="btn primario" onClick={enlazarAutomatico}>✨ Enlazar automático</button>}
+          <span className="espacio" />
+          <BotonPdf nombre={`Estado de cuenta ${info.mes} conciliado`} selector=".cj-pdf-hoja" texto="⬇ Descargar PDF" className="btn contorno" horizontal />
+        </div>
 
         <div className="te-tabla-marco">
           <table className="te-tabla">
@@ -483,7 +472,6 @@ export default function ConciliarEstado({
                 <th>Saldos</th>
                 <th>Día</th>
                 <th title="Lo que va la cuenta hasta esta línea">Va en</th>
-                <th aria-label="Enlace" />
                 <th aria-label="Quitar" />
               </tr>
             </thead>
@@ -501,7 +489,6 @@ export default function ConciliarEstado({
                 <td />
                 <td className="te-va" />
                 <td />
-                <td />
               </tr>
             </tbody>
             <tbody ref={cuerpo}>
@@ -509,7 +496,8 @@ export default function ConciliarEstado({
                 const f = calculo.filas[i];
                 const comunes = (col: Col) => ({ "data-r": i, "data-c": col, disabled: !puede, onKeyDown: (e: React.KeyboardEvent<HTMLInputElement>) => mover(e, i, col) });
                 return (
-                  <tr key={i} className={f.estado === "mal" ? "mal" : undefined}>
+                  <Fragment key={i}>
+                  <tr className={f.estado === "mal" ? "mal" : undefined}>
                     <td className="n">{i + 1}</td>
                     <td><input {...comunes("codigo")} value={l.codigo} onChange={(e) => ponLinea(i, "codigo", e.target.value)} placeholder="86106449 · IMPT/ITF · TI 1721" aria-label={`Línea ${i + 1}: codificación`} /></td>
                     <td><input {...comunes("cargo")} className="m" inputMode="decimal" value={l.cargo} onChange={(e) => ponLinea(i, "cargo", e.target.value)} onBlur={(e) => ponLinea(i, "cargo", darFormato(e.target.value))} aria-label={`Línea ${i + 1}: cargo`} /></td>
@@ -519,19 +507,61 @@ export default function ConciliarEstado({
                     <td className={`te-va${f.estado === "ok" ? " ok" : f.estado === "mal" ? " mal" : ""}`} title={f.estado === "mal" ? `El saldo del banco no coincide: debería ser ${f.corrida !== null ? fmt(f.corrida) : "—"}` : f.estado === "ok" ? "El saldo coincide con lo que va la cuenta" : undefined}>
                       {f.estado === "ok" && <i>✓</i>}{f.estado === "mal" && <i>✗</i>}{f.corrida !== null ? fmt(f.corrida) : ""}
                     </td>
-                    <td className="te-enl">
-                      {l.enlace && (faltaDe(l) === null
-                        ? <span className="te-enlazado" title={l.enlace.etiqueta}>🔗 Enlazado</span>
-                        : <span className="te-enlazado parcial" title="Los comprobantes no suman lo que cobró el banco">⚠ Falta S/ {fmt(Math.abs(faltaDe(l) as number))}</span>)}
-                    </td>
                     <td>{puede && <button type="button" className="te-quitar" onClick={() => quitar(i)} aria-label={`Quitar la línea ${i + 1}`}>×</button>}</td>
                   </tr>
+                  {tipoLinea(l) !== "vacia" && (() => {
+                    const cargoL = aNum(l.cargo);
+                    const cpsL = l.enlace?.tipo === "cp" ? (idsEnlace(l.enlace).map((id) => infoCp.get(id)).filter(Boolean) as Candidatos["cps"]) : [];
+                    const falta = faltaDe(l);
+                    const sugL = !l.enlace ? sugerir(l, candidatos, usados) : null;
+                    const tipoTxt = !l.enlace ? "" : l.enlace.tipo === "banco" ? "Gasto del banco" : l.enlace.tipo === "cp" ? (cpsL.length > 1 ? "Un cheque, varios comprobantes" : "Comprobante de pago") : l.enlace.tipo === "transferencia" ? "Transferencia recibida" : l.enlace.tipo === "ingresos" ? "Ingresos propios" : "Otro";
+                    const clase = !l.enlace ? "pend" : falta !== null ? "falta" : "ok";
+                    return (
+                      <tr className="te-detalle">
+                        <td />
+                        <td colSpan={7}>
+                          <div className={`te-det ${clase}`}>
+                            <i aria-hidden="true">{clase === "ok" ? "✓" : clase === "falta" ? "⚠" : "○"}</i>
+                            <div className="te-det-txt">
+                              {l.enlace ? (
+                                <>
+                                  <b>{tipoTxt}</b>
+                                  {cpsL.length > 0 ? (
+                                    cpsL.map((c) => (
+                                      <span key={c.id}>{c.codigo} · {c.beneficiario}{c.concepto ? ` · ${c.concepto}` : ""} <em>S/ {fmt(c.monto)}</em></span>
+                                    ))
+                                  ) : (
+                                    <span>{[l.enlace.etiqueta, ...(l.enlace.extra ?? []).map((x) => x.etiqueta)].join(" + ")}</span>
+                                  )}
+                                  {cpsL.length > 0 && cargoL !== null && (falta === null
+                                    ? <small className="ok">Cuadra con el banco · S/ {fmt(cargoL)}</small>
+                                    : <small className="falta">Faltan S/ {fmt(Math.abs(falta))} por enlazar para llegar a S/ {fmt(cargoL)}</small>)}
+                                </>
+                              ) : sugL ? (
+                                <span>Sugerido: <b>{[sugL.enlace.etiqueta, ...(sugL.enlace.extra ?? []).map((x) => x.etiqueta)].join(" + ")}</b></span>
+                              ) : (
+                                <span>Sin enlazar: elija con qué se pagó o de dónde viene</span>
+                              )}
+                            </div>
+                            {puede && (
+                              <div className="te-det-acc">
+                                {sugL && !l.enlace && <button type="button" className="btn chico primario" onClick={() => ponEnlace(i, sugL.enlace)}>Aceptar</button>}
+                                <button type="button" className="btn chico contorno" onClick={() => setEligiendo(i)}>{l.enlace ? "Cambiar" : "Elegir…"}</button>
+                                {l.enlace && <button type="button" className="te-quitar" onClick={() => ponEnlace(i, null)} aria-label="Quitar el enlace" title="Quitar el enlace">×</button>}
+                              </div>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })()}
+                  </Fragment>
                 );
               })}
             </tbody>
             <tfoot>
               <tr>
-                <td colSpan={9}>
+                <td colSpan={8}>
                   {puede && (
                     <div className="cj-atajos">
                       <button type="button" className="mas" onClick={() => agregar()}>+ Agregar línea</button>
@@ -577,92 +607,6 @@ export default function ConciliarEstado({
           </div>
         </section>
 
-        {activas.length > 0 && (
-          <div className="cj-siguiente">
-            <button type="button" className="btn primario" onClick={() => setPaso("enlazar")}>Continuar: enlazar los movimientos →</button>
-          </div>
-        )}
-      </div>
-
-      {/* ----------------------------------------------------------- PASO 2 */}
-      <div hidden={paso !== "enlazar"} className="cj-paso">
-        {activas.length === 0 ? (
-          <div className="cj-vacio">
-            <b>Primero copie el estado de cuenta</b>
-            <span>Cuando tenga las líneas copiadas, aquí podrá enlazar cada cheque con su comprobante de pago, las transferencias y los depósitos.</span>
-            <button type="button" className="btn primario" onClick={() => setPaso("copiar")}>← Ir a copiar</button>
-          </div>
-        ) : (
-          <>
-            <div className="cj-herr">
-              {puede && <button type="button" className="btn primario" onClick={enlazarAutomatico}>✨ Enlazar automático</button>}
-              <div className="cj-filtro" role="group" aria-label="Mostrar">
-                <button type="button" className={!soloPendientes ? "activo" : ""} onClick={() => setSoloPendientes(false)}>Todos ({activas.length})</button>
-                <button type="button" className={soloPendientes ? "activo" : ""} onClick={() => setSoloPendientes(true)}>Pendientes ({activas.length - enlazadas})</button>
-              </div>
-            </div>
-            <p className="cj-guia">El cheque se busca por su número en los comprobantes de pago; la transferencia, por su monto; el ITF y el mantenimiento se marcan como gasto del banco. Revise cada uno y cambie lo que haga falta.</p>
-
-            <ul className="cj-movs">
-              {activas
-                .filter((x) => !soloPendientes || !x.l.enlace || faltaDe(x.l) !== null)
-                .map(({ l, i, tipo }) => {
-                  const cargo = aNum(l.cargo);
-                  const abono = aNum(l.abono);
-                  const sug = !l.enlace ? sugerir(l, candidatos, usados) : null;
-                  const cpsEnl = l.enlace?.tipo === "cp" ? idsEnlace(l.enlace).map((id) => infoCp.get(id)).filter(Boolean) as Candidatos["cps"] : [];
-                  const sumaCp = r2(cpsEnl.reduce((t, x) => t + x.monto, 0));
-                  const dif = cpsEnl.length && cargo !== null && !igual(sumaCp, cargo) ? sumaCp : null;
-                  const varios = cpsEnl.length > 1;
-                  return (
-                    <li key={i} className={`cj-mov${l.enlace ? (dif !== null ? " parcial" : " listo") : ""}`}>
-                      <div className="cj-mov-fecha"><b>{diaCorto(l.dia)}</b><small>#{i + 1}</small></div>
-                      <div className="cj-mov-dato">
-                        <b>{l.codigo || "—"}</b>
-                        <span>{ETIQUETA_TIPO[tipo]}</span>
-                      </div>
-                      <div className={`cj-mov-monto ${abono !== null ? "mas" : ""}`}>{abono !== null ? `+ ${fmt(abono)}` : cargo !== null ? `− ${fmt(cargo)}` : "—"}</div>
-                      <div className="cj-mov-enlace">
-                        {l.enlace ? (
-                          <>
-                            <span className={`cj-pill ${l.enlace.tipo}`}>{l.enlace.tipo === "banco" ? "Banco" : l.enlace.tipo === "cp" ? "Comprobante" : l.enlace.tipo === "transferencia" ? "Transferencia" : l.enlace.tipo === "ingresos" ? "Ingresos propios" : "Otro"}</span>
-                            {cpsEnl.length > 0 ? (
-                              <ul className="cj-cps">
-                                {cpsEnl.map((c) => (
-                                  <li key={c.id}><span><b>{c.codigo}</b> {c.beneficiario}</span><em>S/ {fmt(c.monto)}</em></li>
-                                ))}
-                                {varios && <li className="tot"><span>Suman</span><em>S/ {fmt(sumaCp)}</em></li>}
-                              </ul>
-                            ) : (
-                              <>
-                                <b className="cj-etq">{l.enlace.etiqueta}</b>
-                                {(l.enlace.extra ?? []).map((x) => <b key={x.id} className="cj-etq">{x.etiqueta}</b>)}
-                              </>
-                            )}
-                            {cpsEnl.length > 0 && cargo !== null && (dif === null
-                              ? <small className="cj-estado ok">✓ Cuadra con el banco · S/ {fmt(cargo)}</small>
-                              : <small className="cj-estado falta">⚠ {cargo > (dif as number) ? "Falta enlazar" : "Sobra"} S/ {fmt(Math.abs(r2(cargo - (dif as number))))} para llegar a S/ {fmt(cargo)}</small>)}
-                          </>
-                        ) : sug ? (
-                          <>
-                            <small className="cj-sug">Sugerido: <b>{[sug.enlace.etiqueta, ...(sug.enlace.extra ?? []).map((x) => x.etiqueta)].join(" + ")}</b></small>
-                          </>
-                        ) : (
-                          <small className="cj-pend">Sin enlazar</small>
-                        )}
-                      </div>
-                      <div className="cj-mov-acc">
-                        {puede && sug && !l.enlace && <button type="button" className="btn chico primario" onClick={() => ponEnlace(i, sug.enlace)}>Aceptar</button>}
-                        {puede && <button type="button" className="btn chico contorno" onClick={() => setEligiendo(i)}>{l.enlace ? "Cambiar" : "Elegir…"}</button>}
-                        {puede && l.enlace && <button type="button" className="te-quitar" onClick={() => ponEnlace(i, null)} aria-label="Quitar el enlace">×</button>}
-                      </div>
-                    </li>
-                  );
-                })}
-              {soloPendientes && activas.every((x) => x.l.enlace && faltaDe(x.l) === null) && <li className="cj-todo">✓ Todos los movimientos están enlazados</li>}
-            </ul>
-          </>
-        )}
       </div>
 
       {puede && (
@@ -673,6 +617,55 @@ export default function ConciliarEstado({
           </BotonConfirmar>
         </div>
       )}
+
+      {/* Hoja para el PDF: cada movimiento con lo que es (fuera de pantalla) */}
+      <div className="cj-pdf" aria-hidden="true">
+        <div className="cj-pdf-hoja">
+          <h2>{info.mcp}</h2>
+          <p>Estado de cuenta corriente · {info.banco}{info.cuenta ? ` · cuenta ${info.cuenta}` : ""} · {info.mes}</p>
+          <table>
+            <thead>
+              <tr><th>N°</th><th>Día</th><th>Codificación</th><th>Cargos</th><th>Abonos</th><th>Saldos</th><th>Qué es este movimiento</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>·</td><td>{isoAVista(cab.fecha_saldo_anterior)}</td><td><b>SALDO ANTERIOR</b></td><td /><td /><td className="m">{cab.saldo_anterior}</td><td /></tr>
+              {lineas.map((l, i) => {
+                if (tipoLinea(l) === "vacia") return null;
+                const cpsL = l.enlace?.tipo === "cp" ? (idsEnlace(l.enlace).map((id) => infoCp.get(id)).filter(Boolean) as Candidatos["cps"]) : [];
+                const falta = faltaDe(l);
+                return (
+                  <tr key={i}>
+                    <td>{i + 1}</td>
+                    <td>{isoAVista(l.dia)}</td>
+                    <td>{l.codigo}</td>
+                    <td className="m">{l.cargo}</td>
+                    <td className="m">{l.abono}</td>
+                    <td className="m">{l.saldo}</td>
+                    <td>
+                      {l.enlace ? (
+                        cpsL.length > 0 ? (
+                          <>
+                            {cpsL.map((c) => <div key={c.id}>{c.codigo} · {c.beneficiario}{c.concepto ? ` · ${c.concepto}` : ""} (S/ {fmt(c.monto)})</div>)}
+                            <small>{falta === null ? "Cuadra con el banco" : `Faltan S/ ${fmt(Math.abs(falta))} por enlazar`}</small>
+                          </>
+                        ) : (
+                          <div>{[l.enlace.etiqueta, ...(l.enlace.extra ?? []).map((x) => x.etiqueta)].join(" + ")}</div>
+                        )
+                      ) : (
+                        <small>Sin enlazar</small>
+                      )}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+          <p className="cj-pdf-pie">
+            Total del original: {cab.n_pdf} movimientos · cargos S/ {cab.cargos_pdf} · abonos S/ {cab.abonos_pdf} · saldo actual S/ {cab.saldo_pdf}.{" "}
+            Copiado en Sebaz: {calculo.n} movimientos · cargos S/ {fmt(calculo.totalCargos)} · abonos S/ {fmt(calculo.totalAbonos)}.
+          </p>
+        </div>
+      </div>
 
       <Elegir
         abierta={eligiendo !== null}

@@ -41,8 +41,6 @@ export default async function EstadosCuenta({ searchParams }: { searchParams: Pa
     const copia = hojas.length ? estadoCopia((extractos ?? []).find((e) => e.periodo === per)) : null;
     return { per, hojas, copia, futuro: per > hoy };
   });
-  const subidos = meses.filter((m) => m.hojas.length > 0).length;
-  const cuadrados = meses.filter((m) => m.copia === "cuadra").length;
 
   return (
     <>
@@ -61,58 +59,109 @@ export default async function EstadosCuenta({ searchParams }: { searchParams: Pa
       <Avisos ok={sp.ok} error={sp.error} />
       {error && <div className="aviso error">Los estados de cuenta aún no están activos: falta la actualización de la base de datos (ACTUALIZAR_BASE.sql). Avise a soporte.</div>}
 
-      <section className="ec-resumen" aria-label="Avance del año">
-        <div>
-          <b>{cuadrados} de {meses.filter((m) => !m.futuro).length} meses listos en {anio}</b>
-          <span>Listo = subido, copiado y cuadra con el original. {subidos} subido(s).</span>
-        </div>
-        <div className="ec-barra" aria-hidden="true"><div style={{ width: `${Math.round((cuadrados / Math.max(1, meses.filter((m) => !m.futuro).length)) * 100)}%` }} /></div>
-      </section>
-
-      <div className="ec-rejilla">
-        {meses.map((m) => {
-          const subido = m.hojas.length > 0;
-          const ultima = m.hojas[m.hojas.length - 1];
-          const nombre = nombrePeriodo(m.per).split(" ")[0];
-          // Un solo estado claro por mes
-          const est = !subido
-            ? { clase: m.futuro ? "futuro" : "vacio", texto: m.futuro ? "Aún no llega" : "Sin subir", ayuda: m.futuro ? "" : "Suba la foto o el PDF" }
-            : m.copia === "cuadra"
-              ? { clase: "listo", texto: "✓ Listo", ayuda: "Copiado y cuadra" }
-              : m.copia === "no_cuadra"
-                ? { clase: "mal", texto: "No cuadra", ayuda: "Revise lo copiado" }
-                : m.copia === "copiando"
-                  ? { clase: "falta", texto: "Casi listo", ayuda: "Faltan los totales del pie" }
-                  : { clase: "falta", texto: "Falta copiarlo", ayuda: "Ya está subido" };
-          return (
-            <article key={m.per} className={`ec-tarjeta ${est.clase}`}>
-              <header>
-                <b>{nombre}</b>
-                <span className="ec-pastilla">{est.texto}</span>
-              </header>
-              <p>{est.ayuda}{ultima ? <small> · {fechaHora(ultima.creado_en)}</small> : null}</p>
-              <div className="ec-accion">
-                {subido ? (
-                  <Link className={`btn ${m.copia === "cuadra" ? "contorno" : "primario"}`} href={`/contabilidad/estados-cuenta/conciliar?mes=${m.per}`}>
-                    {m.copia === "cuadra" ? "Abrir" : m.copia === "no_cuadra" ? "Revisar" : "Copiar"}
-                  </Link>
-                ) : (
-                  puede &&
-                  !m.futuro && (
-                    <VentanaFlotante boton="Subir" titulo={`Subir el estado de cuenta de ${nombrePeriodo(m.per)}`} accion={subirEstadoCuenta} textoGuardar="Subir y copiar" claseBoton="btn contorno">
-                      <div className="rejilla">
-                        <input type="hidden" name="periodo" value={m.per} />
-                        <CampoArchivoEstado />
-                      </div>
-                      <p className="pequeno tenue" style={{ margin: 0 }}>Al subirlo se abre la pantalla de dos caras: el original a la izquierda y la tabla para copiarlo a la derecha.</p>
-                    </VentanaFlotante>
-                  )
-                )}
+      {(() => {
+        const vencidos = meses.filter((m) => !m.futuro);
+        const listos = vencidos.filter((m) => m.copia === "cuadra").length;
+        const pendiente = vencidos.find((m) => m.hojas.length > 0 && m.copia !== "cuadra") ?? vencidos.find((m) => m.hojas.length === 0);
+        const nom = (per: string) => nombrePeriodo(per).split(" ")[0];
+        const subirBtn = (per: string, clase: string, texto: string) =>
+          puede ? (
+            <VentanaFlotante boton={texto} titulo={`Subir el estado de cuenta de ${nombrePeriodo(per)}`} accion={subirEstadoCuenta} textoGuardar="Subir y copiar" claseBoton={clase}>
+              <div className="rejilla">
+                <input type="hidden" name="periodo" value={per} />
+                <CampoArchivoEstado />
               </div>
-            </article>
-          );
-        })}
-      </div>
+              <p className="pequeno tenue" style={{ margin: 0 }}>Al subirlo se abre la pantalla de dos caras: el original a la izquierda y la tabla para copiarlo a la derecha.</p>
+            </VentanaFlotante>
+          ) : null;
+        return (
+          <>
+            <section className={`ec-hero${pendiente ? "" : " todo"}`} aria-label="Lo que toca ahora">
+              <div className="ec-hero-ic" aria-hidden="true">{pendiente ? (pendiente.hojas.length > 0 ? "✍️" : "📄") : "🎉"}</div>
+              <div className="ec-hero-txt">
+                <span>{pendiente ? "Le toca ahora" : "¡Todo al día!"}</span>
+                <b>
+                  {!pendiente
+                    ? `Los ${vencidos.length} meses de ${anio} están listos`
+                    : pendiente.hojas.length === 0
+                      ? `Suba el estado de cuenta de ${nom(pendiente.per)}`
+                      : pendiente.copia === "no_cuadra"
+                        ? `Revise ${nom(pendiente.per)}: lo copiado no cuadra`
+                        : `Copie el estado de cuenta de ${nom(pendiente.per)}`}
+                </b>
+                <small>
+                  {!pendiente
+                    ? "Cada mes está subido, copiado y cuadra con el original."
+                    : pendiente.hojas.length === 0
+                      ? "Tome una foto o suba el PDF que le dio el banco."
+                      : pendiente.copia === "no_cuadra"
+                        ? "Compare los totales del pie del original con lo que escribió."
+                        : "Ya está subido. Falta escribir cada línea y comprobar que cuadra."}
+                </small>
+              </div>
+              {pendiente && (pendiente.hojas.length > 0
+                ? <Link className="btn grande ec-hero-btn" href={`/contabilidad/estados-cuenta/conciliar?mes=${pendiente.per}`}>{pendiente.copia === "no_cuadra" ? "Revisar" : "Copiar ahora"} →</Link>
+                : subirBtn(pendiente.per, "btn grande ec-hero-btn", "Subir ahora"))}
+              <div className="ec-hero-prog">
+                <b>{listos}</b><span>de {vencidos.length} listos</span>
+                <div className="ec-barra" aria-hidden="true"><div style={{ width: `${Math.round((listos / Math.max(1, vencidos.length)) * 100)}%` }} /></div>
+              </div>
+            </section>
+
+            <div className="ec-pasos-guia" aria-hidden="true">
+              <span><i>1</i> Subir la foto o PDF</span>
+              <span><i>2</i> Copiar las líneas</span>
+              <span><i>3</i> Comprobar que cuadra</span>
+            </div>
+
+            <div className="ec-lista2">
+              {meses.map((m) => {
+                const subido = m.hojas.length > 0;
+                const ultima = m.hojas[m.hojas.length - 1];
+                const p1 = subido;
+                const p2 = m.copia === "copiando" || m.copia === "cuadra" || m.copia === "no_cuadra";
+                const p3 = m.copia === "cuadra";
+                const frase = m.futuro
+                  ? "Aún no llega este mes"
+                  : !subido
+                    ? "Todavía no se sube"
+                    : m.copia === "cuadra"
+                      ? "Copiado y cuadra con el original"
+                      : m.copia === "no_cuadra"
+                        ? "Copiado, pero no cuadra: revise"
+                        : m.copia === "copiando"
+                          ? "Copiando: faltan los totales del pie"
+                          : "Subido: falta copiarlo";
+                return (
+                  <div key={m.per} className={`ec-fila ${m.futuro ? "futuro" : p3 ? "listo" : m.copia === "no_cuadra" ? "mal" : subido ? "en-curso" : "vacio"}`}>
+                    <div className="ec-sello" aria-hidden="true">{nom(m.per).slice(0, 3)}</div>
+                    <div className="ec-fila-txt">
+                      <b>{nom(m.per)}</b>
+                      <span>{frase}{ultima ? ` · subido ${fechaHora(ultima.creado_en)}` : ""}</span>
+                    </div>
+                    {!m.futuro && (
+                      <ol className="ec-tracker" aria-label="Avance">
+                        <li className={p1 ? "ok" : ""}><i>{p1 ? "✓" : "1"}</i><span>Subido</span></li>
+                        <li className={p2 ? "ok" : ""}><i>{p2 ? "✓" : "2"}</i><span>Copiado</span></li>
+                        <li className={p3 ? "ok" : m.copia === "no_cuadra" ? "mal" : ""}><i>{p3 ? "✓" : m.copia === "no_cuadra" ? "✗" : "3"}</i><span>Cuadra</span></li>
+                      </ol>
+                    )}
+                    <div className="ec-accion">
+                      {m.futuro ? null : subido ? (
+                        <Link className={`btn ${p3 ? "contorno" : "primario"}`} href={`/contabilidad/estados-cuenta/conciliar?mes=${m.per}`}>
+                          {p3 ? "Abrir" : m.copia === "no_cuadra" ? "Revisar" : "Copiar"}
+                        </Link>
+                      ) : (
+                        subirBtn(m.per, "btn contorno", "Subir")
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </>
+        );
+      })()}
     </>
   );
 }

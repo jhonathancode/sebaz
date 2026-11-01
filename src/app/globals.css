@@ -3507,3 +3507,6 @@ label.opcion:has(input:checked) { border-color: var(--primario); background: lin
 .visor-titulo { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
 .visor-x { flex: none; width: 36px; height: 36px; border-radius: 50%; border: 0; background: var(--panel-2); color: var(--texto); font-size: 22px; line-height: 1; cursor: pointer; display: grid; place-items: center; transition: background .15s, color .15s; }
 .visor-x:hover { background: var(--rojo-fondo); color: var(--rojo); }
+/* Enlace correcto: azul (lo positivo va en azul) */
+.te-chip.ok { background: linear-gradient(135deg, #1d4fb8, #3b82f6); color: #fff; box-shadow: 0 6px 12px -6px rgba(37, 99, 235, .8); }
+.te-chip.pend:hover { border-color: #2563eb; color: #2563eb; }

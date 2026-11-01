@@ -125,7 +125,7 @@ export default async function Contabilidad({ searchParams }: { searchParams: Par
                   const pasos = [
                     { ok: d.hayDatosIniciales, t: `Saldo inicial de ${anio}`, d: d.hayDatosIniciales ? "Ya está registrado" : "Cuánto dinero había en el banco y en caja al empezar", href: enlace("datos"), b: "Registrar" },
                     { ok: sinTransferenciaMes.length === 0, t: `Transferencia de ${nombrePeriodo(mes)}`, d: sinTransferenciaMes.length === 0 ? "Ya está registrada" : `Falta la de ${sinTransferenciaMes.map((f) => f.municipalidad.replace(/^municipalidad (distrital|provincial) de /i, "")).join(" y ")}`, href: enlace("datos"), b: "Registrar" },
-                    { ok: !!extracto, t: "Estado de cuenta del banco", d: extracto ? "Ya está copiado" : "Súbalo y cópielo para comparar con el banco", href: `/contabilidad/estados-cuenta/conciliar?mes=${mes}`, b: "Subir y copiar" },
+                    { ok: !!extracto, t: "Estado de cuenta del banco", d: extracto ? "Ya está anotado" : "Súbalo y anote sus movimientos para comparar con el banco", href: `/contabilidad/estados-cuenta/conciliar?mes=${mes}`, b: "Subir y copiar" },
                   ];
                   const faltan = pasos.filter((x) => !x.ok).length;
                   return (
@@ -187,10 +187,10 @@ export default async function Contabilidad({ searchParams }: { searchParams: Par
                       <div className="cs-veredicto mal">⚠ No cuadra: hay una diferencia de S/ {soles(Math.abs(diferencia!))}. Revise los movimientos en la conciliación.</div>
                     )
                   ) : (
-                    <div className="cs-veredicto pend">Aún no se puede comparar: falta copiar el estado de cuenta de {nombrePeriodo(mes)}.</div>
+                    <div className="cs-veredicto pend">Aún no se puede comparar: falta anotar los movimientos del estado de cuenta de {nombrePeriodo(mes)}.</div>
                   )}
                   <div className="ini-acciones">
-                    <Link className="btn primario" href={`/contabilidad/estados-cuenta/conciliar?mes=${mes}`}>{extracto ? "Ver o corregir el estado de cuenta" : "Subir y copiar el estado de cuenta"}</Link>
+                    <Link className="btn primario" href={`/contabilidad/estados-cuenta/conciliar?mes=${mes}`}>{extracto ? "Ver o corregir el estado de cuenta" : "Subir y anotar el estado de cuenta"}</Link>
                     <Link className="btn" href={enlace("conciliacion")}>Ver cheques en tránsito</Link>
                   </div>
                 </section>

@@ -132,7 +132,7 @@ export async function guardarTranscripcion(fd: FormData) {
     if (nuevos.length) {
       const { error: eCobro } = await supabase.from("cheques_cobrados").insert(nuevos);
       if (!eCobro) marcados = nuevos.length;
-      else volver(destino, "error", `Se guardó la copia, pero no se pudieron marcar los cheques como cobrados: ${mensajeError(eCobro)}`);
+      else volver(destino, "error", `Se guardó lo anotado, pero no se pudieron marcar los cheques como cobrados: ${mensajeError(eCobro)}`);
     }
   }
   const enlazadas = lineas.filter((l) => l.enlace).length;

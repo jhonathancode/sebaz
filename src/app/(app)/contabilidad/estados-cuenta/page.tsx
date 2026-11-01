@@ -10,7 +10,7 @@ import { subirEstadoCuenta } from "./acciones";
 type Linea = { cargo: number | null; abono: number | null };
 const igual = (a: number, b: number) => Math.abs(a - b) < 0.005;
 
-/** Compara lo copiado con los totales y el saldo impresos en el PDF. */
+/** Compara lo anotado con los totales y el saldo impresos en el PDF. */
 function estadoCopia(e: { saldo_anterior: number | null; total_cargos_pdf: number | null; total_abonos_pdf: number | null; saldo_actual_pdf: number | null; lineas: unknown } | undefined) {
   const lineas = ((e?.lineas as Linea[] | null) ?? []).filter((l) => l.cargo !== null || l.abono !== null);
   if (!e || lineas.length === 0) return "sin_copiar" as const;
@@ -66,12 +66,12 @@ export default async function EstadosCuenta({ searchParams }: { searchParams: Pa
         const nom = (per: string) => nombrePeriodo(per).split(" ")[0];
         const subirBtn = (per: string, clase: string, texto: string) =>
           puede ? (
-            <VentanaFlotante boton={texto} titulo={`Subir el estado de cuenta de ${nombrePeriodo(per)}`} accion={subirEstadoCuenta} textoGuardar="Subir y copiar" claseBoton={clase}>
+            <VentanaFlotante boton={texto} titulo={`Subir el estado de cuenta de ${nombrePeriodo(per)}`} accion={subirEstadoCuenta} textoGuardar="Subir y anotar" claseBoton={clase}>
               <div className="rejilla">
                 <input type="hidden" name="periodo" value={per} />
                 <CampoArchivoEstado />
               </div>
-              <p className="pequeno tenue" style={{ margin: 0 }}>Al subirlo se abre la pantalla de dos caras: el original a la izquierda y la tabla para copiarlo a la derecha.</p>
+              <p className="pequeno tenue" style={{ margin: 0 }}>Al subirlo se abre la pantalla de dos caras: el original a la izquierda y la tabla donde anota sus movimientos a la derecha.</p>
             </VentanaFlotante>
           ) : null;
         return (
@@ -86,12 +86,12 @@ export default async function EstadosCuenta({ searchParams }: { searchParams: Pa
                     : pendiente.hojas.length === 0
                       ? `Suba el estado de cuenta de ${nom(pendiente.per)}`
                       : pendiente.copia === "no_cuadra"
-                        ? `Revise ${nom(pendiente.per)}: lo copiado no cuadra`
-                        : `Copie el estado de cuenta de ${nom(pendiente.per)}`}
+                        ? `Revise ${nom(pendiente.per)}: lo anotado no cuadra`
+                        : `Anote los movimientos de ${nom(pendiente.per)}`}
                 </b>
                 <small>
                   {!pendiente
-                    ? "Cada mes está subido, copiado y cuadra con el original."
+                    ? "Cada mes está subido, anotado y cuadra con el original."
                     : pendiente.hojas.length === 0
                       ? "Tome una foto o suba el PDF que le dio el banco."
                       : pendiente.copia === "no_cuadra"
@@ -100,7 +100,7 @@ export default async function EstadosCuenta({ searchParams }: { searchParams: Pa
                 </small>
               </div>
               {pendiente && (pendiente.hojas.length > 0
-                ? <Link className="btn grande ec-hero-btn" href={`/contabilidad/estados-cuenta/conciliar?mes=${pendiente.per}`}>{pendiente.copia === "no_cuadra" ? "Revisar" : "Copiar ahora"} →</Link>
+                ? <Link className="btn grande ec-hero-btn" href={`/contabilidad/estados-cuenta/conciliar?mes=${pendiente.per}`}>{pendiente.copia === "no_cuadra" ? "Revisar" : "Anotar ahora"} →</Link>
                 : subirBtn(pendiente.per, "btn grande ec-hero-btn", "Subir ahora"))}
               <div className="ec-hero-prog">
                 <b>{listos}</b><span>de {vencidos.length} listos</span>
@@ -110,7 +110,7 @@ export default async function EstadosCuenta({ searchParams }: { searchParams: Pa
 
             <div className="ec-pasos-guia" aria-hidden="true">
               <span><i>1</i> Subir la foto o PDF</span>
-              <span><i>2</i> Copiar las líneas</span>
+              <span><i>2</i> Anotar los movimientos</span>
               <span><i>3</i> Comprobar que cuadra</span>
             </div>
 
@@ -126,12 +126,12 @@ export default async function EstadosCuenta({ searchParams }: { searchParams: Pa
                   : !subido
                     ? "Todavía no se sube"
                     : m.copia === "cuadra"
-                      ? "Copiado y cuadra con el original"
+                      ? "Anotado y cuadra con el original"
                       : m.copia === "no_cuadra"
-                        ? "Copiado, pero no cuadra: revise"
+                        ? "Anotado, pero no cuadra: revise"
                         : m.copia === "copiando"
-                          ? "Copiando: faltan los totales del pie"
-                          : "Subido: falta copiarlo";
+                          ? "Anotando: faltan los totales del pie"
+                          : "Subido: faltan anotar los movimientos";
                 return (
                   <div key={m.per} className={`ec-fila ${m.futuro ? "futuro" : p3 ? "listo" : m.copia === "no_cuadra" ? "mal" : subido ? "en-curso" : "vacio"}`}>
                     <div className="ec-sello" aria-hidden="true">{nom(m.per).slice(0, 3)}</div>
@@ -142,14 +142,14 @@ export default async function EstadosCuenta({ searchParams }: { searchParams: Pa
                     {!m.futuro && (
                       <ol className="ec-tracker" aria-label="Avance">
                         <li className={p1 ? "ok" : ""}><i>{p1 ? "✓" : "1"}</i><span>Subido</span></li>
-                        <li className={p2 ? "ok" : ""}><i>{p2 ? "✓" : "2"}</i><span>Copiado</span></li>
+                        <li className={p2 ? "ok" : ""}><i>{p2 ? "✓" : "2"}</i><span>Anotado</span></li>
                         <li className={p3 ? "ok" : m.copia === "no_cuadra" ? "mal" : ""}><i>{p3 ? "✓" : m.copia === "no_cuadra" ? "✗" : "3"}</i><span>Cuadra</span></li>
                       </ol>
                     )}
                     <div className="ec-accion">
                       {m.futuro ? null : subido ? (
                         <Link className={`btn ${p3 ? "contorno" : "primario"}`} href={`/contabilidad/estados-cuenta/conciliar?mes=${m.per}`}>
-                          {p3 ? "Abrir" : m.copia === "no_cuadra" ? "Revisar" : "Copiar"}
+                          {p3 ? "Abrir" : m.copia === "no_cuadra" ? "Revisar" : "Anotar"}
                         </Link>
                       ) : (
                         subirBtn(m.per, "btn contorno", "Subir")

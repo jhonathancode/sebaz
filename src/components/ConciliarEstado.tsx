@@ -455,7 +455,7 @@ export default function ConciliarEstado({
   const todoCuadra = conDato.length === checks.length && conDato.every((c) => igual(c.pdf!, c.sist!));
   const malas = calculo.filas.filter((f) => f.estado === "mal").length;
   const cuadra = todoCuadra && malas === 0;
-  /** Qué total del original todavía no coincide con lo copiado (para decirlo claro). */
+  /** Qué total del original todavía no coincide con lo anotado (para decirlo claro). */
   const faltas = checks
     .filter((c) => c.pdf !== null && c.sist !== null && !igual(c.pdf, c.sist))
     .map((c) => {
@@ -742,7 +742,7 @@ export default function ConciliarEstado({
           </table>
           <p className="cj-pdf-pie">
             Total del original: {cab.n_pdf} movimientos · cargos S/ {cab.cargos_pdf} · abonos S/ {cab.abonos_pdf} · saldo actual S/ {cab.saldo_pdf}.{" "}
-            Copiado en Sebaz: {calculo.n} movimientos · cargos S/ {fmt(calculo.totalCargos)} · abonos S/ {fmt(calculo.totalAbonos)}.
+            Anotado en Sebaz: {calculo.n} movimientos · cargos S/ {fmt(calculo.totalCargos)} · abonos S/ {fmt(calculo.totalAbonos)}.
           </p>
         </div>
       </div>

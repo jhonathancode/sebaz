@@ -239,6 +239,7 @@ export default function Menu({ items, abajo = [], mcp, panel }: { items: ItemMen
             <div className="lm-mcp-texto">
               <strong>{mcp.nombre}</strong>
               <span>RUC {mcp.ruc ?? "pendiente"}</span>
+              <em className="lm-modulo">Módulo de Tesorería</em>
             </div>
           </div>
         )}

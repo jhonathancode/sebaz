@@ -12,6 +12,7 @@ import { APP_NOMBRE, logoMcp } from "@/lib/formato";
 import { tieneModulo } from "@/lib/modulos";
 import { supabaseServidor } from "@/lib/supabase/server";
 import type { Aviso } from "@/lib/notificaciones";
+import { rendicionesAtrasadas, type Pendiente } from "@/lib/pendientes";
 import { abrirAviso, marcarTodasLeidas } from "./mensajes/acciones";
 
 async function salir() {
@@ -59,6 +60,16 @@ export default async function MarcoApp({ children }: { children: React.ReactNode
       hayBandeja = true;
       avisos = (data ?? []) as Aviso[];
       sinLeer = count ?? 0;
+    }
+  }
+
+  // Pendientes que no son mensajes (ej. rendición del mes pasado sin armar): también van en la campana
+  let pendientes: Pendiente[] = [];
+  if (ctx.mcp && !ctx.esSuperadmin && tieneModulo(ctx.mcp, "rendicion")) {
+    try {
+      pendientes = await rendicionesAtrasadas(await supabaseServidor(), ctx.mcp.id, ctx.fuentes);
+    } catch {
+      pendientes = [];
     }
   }
 
@@ -130,7 +141,7 @@ export default async function MarcoApp({ children }: { children: React.ReactNode
           </span>
         </div>
         <div className="acciones">
-          {hayBandeja && <Bandeja avisos={avisos} sinLeer={sinLeer} abrir={abrirAviso} marcarTodas={marcarTodasLeidas} />}
+          {(hayBandeja || pendientes.length > 0) && <Bandeja avisos={avisos} sinLeer={sinLeer} pendientes={pendientes} abrir={abrirAviso} marcarTodas={marcarTodasLeidas} />}
           <BotonTema inicial={tema === "dark" || tema === "light" ? tema : null} />
           <MenuUsuario
             nombre={ctx.nombre}

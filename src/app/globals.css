@@ -3562,3 +3562,8 @@ label.opcion:has(input:checked) { border-color: var(--primario); background: lin
 .mover-radio { display: flex; align-items: center; gap: 10px; padding: 12px 14px; border-radius: 14px; border: 1px solid var(--borde); background: var(--panel-2); font-weight: 700; cursor: pointer; }
 .mover-radio:has(input:checked) { border-color: var(--primario); background: var(--primario-fondo); color: var(--primario-texto); }
 .mover-pie { display: flex; justify-content: flex-end; gap: 8px; margin-top: 4px; }
+/* Resumen anual: control del voucher por mes */
+.res-vo { display: inline-block; padding: 3px 12px; border-radius: 99px; font-size: 12.5px; font-weight: 800; white-space: nowrap; border: 1px solid var(--borde-fuerte); background: var(--panel-2); }
+.res-vo.ok { color: #137a45; border-color: #82d3a6; background: color-mix(in srgb, #2fa56a 14%, var(--panel)); }
+.res-vo.falta { color: var(--ambar); border-color: var(--ambar-borde); background: var(--ambar-fondo); }
+.res-vo.sobra { color: var(--rojo); border-color: color-mix(in srgb, var(--rojo) 40%, transparent); background: color-mix(in srgb, var(--rojo) 10%, var(--panel)); }

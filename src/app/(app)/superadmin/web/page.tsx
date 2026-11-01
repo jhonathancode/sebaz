@@ -19,7 +19,7 @@ export default async function WebAdmin({ searchParams }: { searchParams: ParamsA
       <div className="cab-vista">
         <div>
           <h1>Sitio web</h1>
-          <div className="sub">{aj?.dominio ? aj.dominio : "Aún sin dominio configurado"} · Administre la web pública de {aj?.nombre_sitio ?? "Sebaz"}</div>
+          <div className="sub">{aj?.dominio ? aj.dominio : "Aún sin dominio configurado"} · Administre la web pública de {aj?.nombre_sitio ?? "Zebaz"}</div>
         </div>
         <span className="espacio" />
         <Link className="btn contorno" href="/sitio" target="_blank">Ver la web</Link>

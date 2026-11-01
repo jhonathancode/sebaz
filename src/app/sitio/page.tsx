@@ -27,7 +27,7 @@ export default async function Inicio() {
       <section className="sw-hero">
         <div className="sw-contenedor">
           <h1>{a.eslogan || "El orden de su municipalidad, sin papeleo"}</h1>
-          <p>Sebaz es el sistema de control para las municipalidades de centros poblados: gastos, caja chica, rendición y contabilidad en un solo lugar, con todo respaldado y auditado.</p>
+          <p>Zebaz es el sistema de control para las municipalidades de centros poblados: gastos, caja chica, rendición y contabilidad en un solo lugar, con todo respaldado y auditado.</p>
           <div className="sw-hero-acciones">
             <Link className="sw-boton" href={boton}>{a.boton_menu_texto || "Ingresar al sistema"}</Link>
             {wa ? <a className="sw-boton suave" href={wa} target="_blank" rel="noopener noreferrer">Escribirnos por WhatsApp</a> : <Link className="sw-boton suave" href={base}>Leer el blog</Link>}
@@ -85,7 +85,7 @@ export default async function Inicio() {
         <div className="sw-cta">
           <div>
             <h2>¿Lista su MCP para trabajar con orden?</h2>
-            <p>Hablemos y le mostramos Sebaz con los datos de su municipalidad.</p>
+            <p>Hablemos y le mostramos Zebaz con los datos de su municipalidad.</p>
           </div>
           {wa ? <a className="sw-boton" href={wa} target="_blank" rel="noopener noreferrer">Escribir por WhatsApp</a> : <Link className="sw-boton" href={boton}>{a.boton_menu_texto || "Ingresar"}</Link>}
         </div>

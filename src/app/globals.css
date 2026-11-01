@@ -2496,3 +2496,107 @@ details.cj-guia p { margin: 8px 0 0; line-height: 1.7; }
 .ini-col .saludo { background: none; border: 0; border-radius: 0; box-shadow: none; margin: 0; padding: 2px 4px 0; }
 .ini-col .saludo h1 { font-size: 26px; line-height: 1.15; letter-spacing: -.01em; margin: 0 0 4px; }
 .ini-col .saludo .tenue { font-size: 13.5px; }
+/* Contabilidad · resumen en lenguaje simple */
+.cc-selector .cc-mes { padding-block: 8px; min-height: 0; }
+.cs-pasos { border: 1px solid var(--ambar-borde); background: var(--ambar-fondo); border-radius: 18px; padding: 16px 20px; }
+.cs-pasos.listo { border-color: color-mix(in srgb, #2fa56a 40%, var(--borde)); background: color-mix(in srgb, #2fa56a 8%, var(--panel)); }
+.cs-pasos-cab { display: flex; flex-direction: column; gap: 2px; margin-bottom: 10px; }
+.cs-pasos-cab b { font-size: 16px; color: var(--ambar); }
+.cs-pasos.listo .cs-pasos-cab b { color: #137a45; }
+.cs-pasos-cab span { font-size: 13px; color: var(--suave); }
+.cs-pasos ol { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.cs-pasos li { display: flex; align-items: center; gap: 14px; padding: 10px 12px; border-radius: 12px; background: var(--panel); border: 1px solid var(--borde); }
+.cs-pasos li i { flex: none; width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; font-style: normal; font-weight: 800; font-size: 13px; background: var(--ambar); color: #fff; }
+.cs-pasos li.hecho i { background: #2fa56a; }
+.cs-pasos li div { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+.cs-pasos li div b { font-size: 14px; }
+.cs-pasos li div small { color: var(--tenue); font-size: 12.5px; }
+.cs-pasos li.hecho { opacity: .75; }
+.cs-cifras { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+@media (max-width: 900px) { .cs-cifras { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.cs-cifra { display: flex; flex-direction: column; gap: 4px; padding: 16px 18px; border-radius: 18px; background: var(--panel); border: 1px solid var(--borde); }
+.cs-cifra span { font-size: 13px; font-weight: 700; color: var(--suave); }
+.cs-cifra b { font-size: 26px; letter-spacing: -.01em; font-variant-numeric: tabular-nums; }
+.cs-cifra small { font-size: 12px; color: var(--tenue); }
+.cs-cifra.azul { background: linear-gradient(135deg, #1f55c9, #2f6fe0); border: 0; color: #fff; }
+.cs-cifra.azul span, .cs-cifra.azul small { color: rgba(255, 255, 255, .85); }
+.cs-cifra.mas b { color: var(--primario-texto); }
+.cs-cifra.menos b { color: var(--rojo); }
+.cs-cuadra { border: 1px solid var(--borde); background: var(--panel); border-radius: 18px; padding: 18px 20px; display: flex; flex-direction: column; gap: 12px; }
+.cs-cuadra h2 { margin: 0; font-size: 17px; }
+.cs-cuenta { display: flex; flex-direction: column; }
+.cs-cuenta > div { display: flex; justify-content: space-between; gap: 14px; padding: 10px 0; border-top: 1px solid var(--linea); font-size: 14px; }
+.cs-cuenta > div:first-child { border-top: 0; }
+.cs-cuenta .op { color: var(--suave); }
+.cs-cuenta .tot { font-weight: 800; background: var(--panel-2); margin: 0 -10px; padding-inline: 10px; border-radius: 8px; border-top: 0; }
+.cs-cuenta b { font-variant-numeric: tabular-nums; white-space: nowrap; }
+.cs-veredicto { padding: 12px 14px; border-radius: 12px; font-weight: 700; font-size: 14px; }
+.cs-veredicto.ok { background: color-mix(in srgb, #2fa56a 12%, var(--panel)); color: #137a45; border: 1px solid #82d3a6; }
+.cs-veredicto.mal { background: color-mix(in srgb, var(--rojo) 9%, var(--panel)); color: var(--rojo); border: 1px solid color-mix(in srgb, var(--rojo) 35%, transparent); }
+.cs-veredicto.pend { background: var(--panel-2); color: var(--suave); border: 1px dashed var(--borde-fuerte); }
+.cs-mas { border: 1px solid var(--borde); border-radius: 18px; background: var(--panel); padding: 4px 16px; }
+.cs-mas > summary { cursor: pointer; padding: 12px 2px; font-weight: 700; font-size: 14px; color: var(--primario-texto); }
+.cs-mas[open] > summary { border-bottom: 1px solid var(--linea); margin-bottom: 12px; }
+.cs-mas .ini-panel { margin-bottom: 14px; }
+:root[data-theme="dark"] .cs-cuenta .tot { background: var(--panel-2); }
+/* Estados de cuenta: tarjetas por mes */
+.ec-resumen { display: flex; flex-direction: column; gap: 8px; padding: 14px 18px; border-radius: 16px; background: var(--panel); border: 1px solid var(--borde); margin-bottom: 14px; }
+.ec-resumen b { font-size: 15px; }
+.ec-resumen span { display: block; font-size: 12.5px; color: var(--tenue); margin-top: 2px; }
+.ec-barra { height: 8px; border-radius: 99px; background: var(--pista, var(--panel-2)); overflow: hidden; }
+.ec-barra > div { height: 100%; border-radius: 99px; background: #2fa56a; }
+.ec-rejilla { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 12px; }
+.ec-tarjeta { display: flex; flex-direction: column; gap: 6px; padding: 16px 16px 14px; border-radius: 18px; background: var(--panel); border: 1px solid var(--borde); box-shadow: inset 0 4px 0 var(--borde-fuerte); }
+.ec-tarjeta header { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.ec-tarjeta header b { font-size: 18px; }
+.ec-tarjeta p { margin: 0; font-size: 12.5px; color: var(--tenue); min-height: 34px; }
+.ec-tarjeta p small { font-size: 11px; }
+.ec-pastilla { font-size: 11.5px; font-weight: 800; padding: 3px 10px; border-radius: 99px; background: var(--panel-2); color: var(--suave); white-space: nowrap; }
+.ec-tarjeta .ec-accion .btn { width: 100%; justify-content: center; }
+.ec-tarjeta .ec-accion > * { width: 100%; }
+.ec-tarjeta.listo { box-shadow: inset 0 4px 0 #2fa56a; background: color-mix(in srgb, #2fa56a 5%, var(--panel)); }
+.ec-tarjeta.listo .ec-pastilla { background: #d6f5e3; color: #0b5d33; }
+.ec-tarjeta.falta { box-shadow: inset 0 4px 0 #e0a030; }
+.ec-tarjeta.falta .ec-pastilla { background: var(--ambar-fondo); color: var(--ambar); }
+.ec-tarjeta.mal { box-shadow: inset 0 4px 0 var(--rojo); }
+.ec-tarjeta.mal .ec-pastilla { background: color-mix(in srgb, var(--rojo) 12%, var(--panel)); color: var(--rojo); }
+.ec-tarjeta.vacio { box-shadow: inset 0 4px 0 var(--borde-fuerte); }
+.ec-tarjeta.futuro { opacity: .45; }
+:root[data-theme="dark"] .ec-tarjeta.listo .ec-pastilla { background: color-mix(in srgb, #2fa56a 24%, transparent); color: #8de3b4; }
+/* Inicio con vida: entradas suaves y efectos al pasar el mouse */
+@keyframes ini-subir { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+@keyframes ini-dibujar { from { stroke-dashoffset: 1; } to { stroke-dashoffset: 0; } }
+@keyframes ini-crecer { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+@keyframes ini-brillo { 0% { box-shadow: 0 0 0 0 rgba(47, 111, 224, .45); } 100% { box-shadow: 0 0 0 12px rgba(47, 111, 224, 0); } }
+.ini-col > *, .ini-dos > .ini-col > .ini-panel, .ini-dos > .ini-panel, .ini-hero { animation: ini-subir .5s cubic-bezier(.2, .7, .2, 1) both; }
+.ini-col > *:nth-child(2) { animation-delay: .06s; }
+.ini-col > *:nth-child(3) { animation-delay: .12s; }
+.ini-col > *:nth-child(4) { animation-delay: .18s; }
+.ini-col > *:nth-child(5) { animation-delay: .24s; }
+.ini-panel { transition: transform .22s cubic-bezier(.2, .7, .2, 1), box-shadow .22s, border-color .22s; }
+.ini-panel:hover { transform: translateY(-4px); box-shadow: 0 22px 40px -26px rgba(37, 99, 235, .55); border-color: color-mix(in srgb, var(--primario) 45%, var(--borde)); }
+.ini-hero { transition: transform .22s cubic-bezier(.2, .7, .2, 1), box-shadow .22s; }
+.ini-hero:hover { transform: translateY(-3px) scale(1.005); box-shadow: 0 26px 46px -24px rgba(29, 79, 184, .75); }
+.ini-hero-boton { transition: transform .15s, box-shadow .15s, background .15s; }
+.ini-hero-boton:hover { transform: translateY(-2px); box-shadow: 0 10px 20px -10px rgba(0, 0, 0, .45); }
+.ini-hero-pasos > * { transition: transform .15s; }
+.ini-hero-pasos > *:hover { transform: scale(1.18); }
+.ini-linea { stroke-dasharray: 1; stroke-dashoffset: 0; animation: ini-dibujar 1.3s ease-out both; }
+.ini-curva path[fill] { animation: ini-subir .9s ease-out .3s both; }
+.ini-punto { transform-box: fill-box; transform-origin: center; animation: ini-brillo 1.8s ease-out infinite; transition: r .15s; }
+.ini-curva:hover .ini-linea { stroke-width: 4; transition: stroke-width .2s; }
+.ini-curva .ini-punto:hover { r: 7; }
+.apilada > div, .ini-barra > div, .pista > div { transform-origin: left center; animation: ini-crecer .9s cubic-bezier(.2, .7, .2, 1) .15s both; }
+.apilada { transition: transform .2s; }
+.ini-rend-fila { transition: background .18s, padding .18s, transform .18s; border-radius: 12px; }
+.ini-rend-fila:hover { background: var(--panel-2); transform: translateX(4px); }
+.ini-lineas > div { transition: background .15s, padding .15s; border-radius: 8px; }
+.ini-lineas > div:hover { background: var(--primario-fondo); padding-left: 8px; padding-right: 8px; }
+.ini-trio > div { transition: transform .18s, background .18s; border-radius: 12px; }
+.ini-trio > div:hover { transform: translateY(-3px); background: var(--primario-fondo); }
+.ini-datos > *, .ini-acciones .btn { transition: transform .15s, box-shadow .15s; }
+.ini-acciones .btn:hover { transform: translateY(-2px); box-shadow: 0 10px 18px -12px rgba(37, 99, 235, .7); }
+@media (prefers-reduced-motion: reduce) {
+  .ini-col > *, .ini-hero, .ini-linea, .ini-punto, .apilada > div, .ini-barra > div, .pista > div, .ini-curva path[fill] { animation: none !important; }
+  .ini-panel:hover, .ini-hero:hover, .ini-rend-fila:hover, .ini-trio > div:hover { transform: none; }
+}

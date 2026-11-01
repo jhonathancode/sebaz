@@ -3567,3 +3567,7 @@ label.opcion:has(input:checked) { border-color: var(--primario); background: lin
 .res-vo.ok { color: #137a45; border-color: #82d3a6; background: color-mix(in srgb, #2fa56a 14%, var(--panel)); }
 .res-vo.falta { color: var(--ambar); border-color: var(--ambar-borde); background: var(--ambar-fondo); }
 .res-vo.sobra { color: var(--rojo); border-color: color-mix(in srgb, var(--rojo) 40%, transparent); background: color-mix(in srgb, var(--rojo) 10%, var(--panel)); }
+/* Visor: botón cerrar arriba a la derecha, en la misma línea del título */
+.visor-cab { flex-direction: row !important; align-items: flex-start; justify-content: space-between; }
+.visor-titulo { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.visor-x { margin-left: auto; }

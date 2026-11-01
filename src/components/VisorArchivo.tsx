@@ -67,7 +67,6 @@ export default function VisorArchivo({ url, descarga, nombre, tipo, titulo }: { 
           )}
         </div>
         <div className="visor-pie">
-          <button type="button" className="btn contorno" onClick={cerrar}>Cerrar</button>
           <span className="espacio" />
           <a className="btn" href={descarga} download={nombre}>Descargar</a>
           <button type="button" className="btn primario" onClick={imprimir} disabled={!src}>Imprimir</button>

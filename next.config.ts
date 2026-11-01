@@ -4,6 +4,10 @@ const nextConfig: NextConfig = {
   poweredByHeader: false,
   // Los documentos de respaldo de los relevos se suben por formulario (Vercel admite hasta 4,5 MB por envío)
   experimental: { serverActions: { bodySizeLimit: "4.5mb" } },
+  // La dirección «/inicio» ya no se usa: el inicio está en la raíz
+  async redirects() {
+    return [{ source: "/inicio", destination: "/", permanent: false }];
+  },
   async headers() {
     return [
       {

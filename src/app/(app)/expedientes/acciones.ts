@@ -690,7 +690,7 @@ export async function copiarPagosFijos() {
   const catalogo = await cargarCatalogoPagosFijos(supabase, ctx.mcp.id);
   if (catalogo.length > 0) {
     const pendientes = catalogo.filter((p) => !p.pagados.includes(periodo));
-    if (pendientes.length === 0) volver("/inicio", "ok", "Los pagos fijos de este mes ya están registrados.");
+    if (pendientes.length === 0) volver("/", "ok", "Los pagos fijos de este mes ya están registrados.");
     const [a, m] = periodo.split("-").map(Number);
     const mesTexto = `${MESES[m - 1].toUpperCase()} ${a}`;
     let hechos = 0;
@@ -701,20 +701,20 @@ export async function copiarPagosFijos() {
         .insert({ mcp_id: ctx.mcp.id, tipo: "pago_fijo", descripcion: conceptoSeRequiere(texto), fuente_id: p.fuente_id, clasificador: p.clasificador, pago_fijo_id: p.id, mes_pagado: periodo })
         .select("id")
         .single();
-      if (error || !nuevo) volver("/inicio", "error", `Se registraron ${hechos}. Falló «${p.concepto}»: ${mensajeError(error)}`);
+      if (error || !nuevo) volver("/", "error", `Se registraron ${hechos}. Falló «${p.concepto}»: ${mensajeError(error)}`);
       const { error: e2 } = await supabase.from("expediente_items").insert({
         mcp_id: ctx.mcp.id, expediente_id: nuevo.id, item: 1, cantidad: 1, unidad: p.unidad || "MES", descripcion: texto, precio_unitario: p.monto,
       });
-      if (e2) volver("/inicio", "error", `Se registró «${p.concepto}» sin su monto: ${mensajeError(e2)}`);
+      if (e2) volver("/", "error", `Se registró «${p.concepto}» sin su monto: ${mensajeError(e2)}`);
       hechos++;
     }
-    revalidatePath("/inicio");
+    revalidatePath("/");
     revalidatePath("/expedientes");
     volver("/expedientes?estado=borrador", "ok", `Se registraron ${hechos} pago(s) fijo(s) de ${mesTexto.toLowerCase()}, en borrador. Revíselos y envíelos al alcalde para su aprobación.`);
   }
 
   const { anterior, faltan } = await estadoPagosFijos(supabase, ctx.mcp.id, periodo);
-  if (faltan.length === 0) volver("/inicio", "ok", "Los pagos fijos de este mes ya están registrados.");
+  if (faltan.length === 0) volver("/", "ok", "Los pagos fijos de este mes ya están registrados.");
 
   let copiados = 0;
   for (const p of faltan) {
@@ -737,7 +737,7 @@ export async function copiarPagosFijos() {
       })
       .select("id")
       .single();
-    if (error || !nuevo) volver("/inicio", "error", `Se copiaron ${copiados}. Falló «${p.descripcion}»: ${mensajeError(error)}`);
+    if (error || !nuevo) volver("/", "error", `Se copiaron ${copiados}. Falló «${p.descripcion}»: ${mensajeError(error)}`);
     if (items?.length) {
       const { error: e2 } = await supabase.from("expediente_items").insert(
         items.map((it, n) => ({
@@ -750,11 +750,11 @@ export async function copiarPagosFijos() {
           expediente_id: nuevo.id,
         })),
       );
-      if (e2) volver("/inicio", "error", `Se copió «${p.descripcion}» sin sus ítems: ${mensajeError(e2)}`);
+      if (e2) volver("/", "error", `Se copió «${p.descripcion}» sin sus ítems: ${mensajeError(e2)}`);
     }
     copiados++;
   }
-  revalidatePath("/inicio");
+  revalidatePath("/");
   revalidatePath("/expedientes");
   volver(
     "/expedientes?estado=borrador",

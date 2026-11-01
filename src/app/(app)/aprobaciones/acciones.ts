@@ -47,7 +47,7 @@ export async function aprobarEnBloque(fd: FormData) {
   revalidatePath("/aprobaciones");
   revalidatePath("/expedientes");
   revalidatePath("/comprobantes");
-  revalidatePath("/inicio");
+  revalidatePath("/");
   const partes = [`Se aprobaron ${aprobados} documento(s).`];
   if (generados) partes.push(`Se generaron y aprobaron ${generados} comprobante(s) de pago de pagos fijos: ya pueden entrar en la rendición.`);
   if (errores.length) partes.push(`No se pudieron aprobar ${errores.length}: ${errores[0]}`);

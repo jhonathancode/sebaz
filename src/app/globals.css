@@ -3499,3 +3499,6 @@ label.opcion:has(input:checked) { border-color: var(--primario); background: lin
 .columnas.en-pila { display: block; }
 .columnas.en-pila > .principal { width: 100%; margin-bottom: 14px; }
 .columnas.en-pila > .lateral { width: 100%; }
+/* Al entrar a Expedientes, Rendición y listas no hay animación de entrada ni zoom: todo aparece quieto */
+.filas .fila, .kpis .kpi, .kpi, .doc-paso .ic, .doc-conciliado, .doc-cheque, .muni-tab, .cp-sel.marcable, .cp-acum, .f-chip, .rend-cuadro { animation: none !important; }
+.kpi, .filas .fila, .muni-tab { opacity: 1; transform: none; }

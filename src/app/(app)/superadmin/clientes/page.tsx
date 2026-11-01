@@ -81,7 +81,7 @@ export default async function Superadmin({ searchParams }: { searchParams: Param
             <label className="campo">Provincia<input name="provincia" defaultValue="Chanchamayo" /></label>
             <label className="campo">Departamento<input name="departamento" defaultValue="Junín" /></label>
             <label className="campo">Municipalidad distrital<input name="muni_distrito" defaultValue="Municipalidad Distrital de Perené" /></label>
-            <label className="campo">Monto mensual del distrito S/<input name="monto_distrito" inputMode="decimal" defaultValue="7080" /></label>
+            <label className="campo">Monto mensual del distrito S/<input name="monto_distrito" inputMode="decimal" defaultValue="7080.00" /></label>
             <label className="campo">
               Formato del distrito
               <select name="formato_distrito" defaultValue="perene">
@@ -91,7 +91,7 @@ export default async function Superadmin({ searchParams }: { searchParams: Param
               </select>
             </label>
             <label className="campo">Municipalidad provincial<input name="muni_provincia" defaultValue="Municipalidad Provincial de Chanchamayo" /></label>
-            <label className="campo">Monto mensual de la provincia S/<input name="monto_provincia" inputMode="decimal" defaultValue="2675" /></label>
+            <label className="campo">Monto mensual de la provincia S/<input name="monto_provincia" inputMode="decimal" defaultValue="2675.00" /></label>
             <label className="campo">
               Formato de la provincia
               <select name="formato_provincia" defaultValue="chanchamayo">

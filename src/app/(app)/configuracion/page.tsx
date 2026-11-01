@@ -9,7 +9,7 @@ import VentanaFlotante from "@/components/VentanaFlotante";
 import { nombreFuente } from "@/components/formularios/CamposRequerimiento";
 import { cargarCatalogoPagosFijos, type PagoFijoCatalogo } from "@/lib/pagosFijos";
 import { contextoMcp, tiene } from "@/lib/contexto";
-import { fechaHora, nombrePeriodo, periodoActual, soles, urlLogo } from "@/lib/formato";
+import { fechaHora, nombrePeriodo, periodoActual, monto2, soles, urlLogo } from "@/lib/formato";
 import { supabaseServidor } from "@/lib/supabase/server";
 import { cerrarMes, guardarCapitulo1, guardarDatosMcp, guardarDiaLimite, reabrirMes, subirLogo, guardarPagoFijo, alternarPagoFijo, guardarExigirPin } from "./acciones";
 
@@ -34,7 +34,7 @@ export default async function Configuracion({ searchParams }: { searchParams: Pa
       <label className="campo">A quién se paga<input name="beneficiario" defaultValue={p?.beneficiario ?? ""} placeholder="Nombre completo" /></label>
       <label className="campo">DNI o RUC<input name="beneficiario_doc" inputMode="numeric" maxLength={11} defaultValue={p?.beneficiario_doc ?? ""} /></label>
       <AutoDocumento doc="beneficiario_doc" nombre="beneficiario" />
-      <label className="campo">Monto mensual S/<input name="monto" required inputMode="decimal" defaultValue={p ? String(p.monto) : ""} placeholder="0.00" /></label>
+      <label className="campo">Monto mensual S/<input name="monto" required inputMode="decimal" defaultValue={p ? monto2(p.monto) : ""} placeholder="0.00" /></label>
       <label className="campo">
         Se paga con
         <select name="fuente_id" defaultValue={p?.fuente_id ?? ctx.fuentes[0]?.id}>

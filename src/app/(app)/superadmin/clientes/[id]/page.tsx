@@ -5,7 +5,7 @@ import BotonConfirmar from "@/components/BotonConfirmar";
 import Motivo from "@/components/Motivo";
 import VentanaFlotante from "@/components/VentanaFlotante";
 import { NOMBRE_ROL, obtenerContexto, type Rol } from "@/lib/contexto";
-import { fecha, fechaHora, hoyISO, soles } from "@/lib/formato";
+import { fecha, fechaHora, hoyISO, monto2, soles } from "@/lib/formato";
 import { MODULOS, modulosDe } from "@/lib/modulos";
 import { estadoCliente, mensual } from "@/lib/superadmin";
 import { supabaseServicio, supabaseServidor } from "@/lib/supabase/server";
@@ -151,7 +151,7 @@ export default async function Cliente({ params, searchParams }: { params: Promis
                       <option value="anual">Anual</option>
                     </select>
                   </label>
-                  <label className="campo">Precio pactado S/<input name="precio" inputMode="decimal" defaultValue={String(s.precio)} /></label>
+                  <label className="campo">Precio pactado S/<input name="precio" inputMode="decimal" defaultValue={monto2(s.precio)} /></label>
                   <label className="campo">Vence el<input type="date" name="vence_el" defaultValue={s.vence_el} required /></label>
                   <label className="campo">Días de gracia<input type="number" name="dias_gracia" min={0} max={60} defaultValue={s.dias_gracia} /></label>
                 </div>

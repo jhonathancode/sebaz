@@ -30,7 +30,7 @@ export default function CamposComprobanteDirecto({ fuentes, chequeSugerido = "" 
         <label className="campo ancho">Concepto<input name="concepto" required placeholder="Pago de dieta de regidor, mes de octubre 2026" /></label>
         <div className="ancho"><SugerenciaConcepto campo="concepto" tambienItem={false} /></div>
         <label className="campo">Importe S/<input name="importe" required inputMode="decimal" /></label>
-        <label className="campo">Deducciones S/<input name="deducciones" inputMode="decimal" defaultValue="0" /></label>
+        <label className="campo">Deducciones S/<input name="deducciones" inputMode="decimal" defaultValue="0.00" /></label>
         <label className="campo">
           Partida
           <select name="partida" defaultValue="2.3 Bienes y servicios">

@@ -30,7 +30,7 @@ export default function CamposEditarComprobante({ id, c }: { id: string; c: Comp
           </select>
         </label>
         <label className="campo">N° del documento<input name="sustento_numero" defaultValue={c.sustento_numero ?? ""} placeholder="Ej.: F001-45" /></label>
-        <label className="campo">Deducciones S/<input name="deducciones" defaultValue={c.deducciones} inputMode="decimal" /></label>
+        <label className="campo">Deducciones S/<input name="deducciones" defaultValue={Number(c.deducciones ?? 0).toFixed(2)} inputMode="decimal" /></label>
         <SelectFuncion valor={c.funcion && c.categoria ? `${c.funcion}|${c.categoria}` : ""} />
         <label className="campo">
           Partida

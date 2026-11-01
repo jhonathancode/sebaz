@@ -6,7 +6,7 @@ import Motivo from "@/components/Motivo";
 import VentanaFlotante from "@/components/VentanaFlotante";
 import { contextoMcp, tiene } from "@/lib/contexto";
 import { cargarContabilidad, chequesEnTransito, libro, libroDiario, matriz, MESES_CORTOS, nombreRubro } from "@/lib/contabilidad";
-import { fecha, hoyISO, nombrePeriodo, periodoActual, soles } from "@/lib/formato";
+import { fecha, hoyISO, nombrePeriodo, periodoActual, monto2, soles } from "@/lib/formato";
 import { supabaseServidor } from "@/lib/supabase/server";
 import { anularTransferencia, guardarExtracto, guardarSaldoInicial, marcarCobrados, registrarTransferencia } from "./acciones";
 
@@ -350,7 +350,7 @@ export default async function Contabilidad({ searchParams }: { searchParams: Par
             {puede && (
               <form action={guardarExtracto} style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                 <input type="hidden" name="mes" value={mes} />
-                <label className="campo">Saldo del extracto al cierre del mes S/<input name="saldo_extracto" inputMode="decimal" required defaultValue={extracto ? String(extracto.saldo_extracto) : ""} /></label>
+                <label className="campo">Saldo del extracto al cierre del mes S/<input name="saldo_extracto" inputMode="decimal" required defaultValue={extracto ? monto2(extracto.saldo_extracto) : ""} /></label>
                 <label className="campo">Observación<input name="observacion" defaultValue={extracto?.observacion ?? ""} placeholder="Opcional" /></label>
                 <BotonConfirmar className="btn primario" pregunta="¿Guardar el saldo del extracto?" textoConfirmar="Sí, guardar">Guardar saldo del extracto</BotonConfirmar>
               </form>
@@ -406,8 +406,8 @@ export default async function Contabilidad({ searchParams }: { searchParams: Par
                 <input type="hidden" name="mes" value={mes} />
                 <span className="pequeno tenue">Saldos al 1 de enero de {anio} (o al empezar a usar el sistema). Salen del extracto bancario y del arqueo de caja.</span>
                 <div className="rejilla-2">
-                  <label className="campo">Banco S/<input name="saldo_banco" inputMode="decimal" defaultValue={String(d.saldoBancoInicial)} disabled={!puede} /></label>
-                  <label className="campo">Caja (efectivo) S/<input name="saldo_caja" inputMode="decimal" defaultValue={String(d.saldoCajaInicial)} disabled={!puede} /></label>
+                  <label className="campo">Banco S/<input name="saldo_banco" inputMode="decimal" defaultValue={monto2(d.saldoBancoInicial)} disabled={!puede} /></label>
+                  <label className="campo">Caja (efectivo) S/<input name="saldo_caja" inputMode="decimal" defaultValue={monto2(d.saldoCajaInicial)} disabled={!puede} /></label>
                 </div>
                 <label className="campo">Observación<input name="observacion" placeholder="Ej.: según extracto al 31/12" disabled={!puede} /></label>
                 {puede && <BotonConfirmar className="btn primario" pregunta="¿Guardar el saldo inicial?" textoConfirmar="Sí, guardar">Guardar saldo inicial</BotonConfirmar>}
@@ -432,7 +432,7 @@ export default async function Contabilidad({ searchParams }: { searchParams: Par
                       </label>
                       <label className="campo">Mes que corresponde<input type="month" name="periodo" defaultValue={mes} required /></label>
                       <label className="campo">Fecha del abono<input type="date" name="fecha" defaultValue={hoyISO()} required /></label>
-                      <label className="campo">Monto S/<input name="monto" inputMode="decimal" required defaultValue={String(sinTransferenciaMes[0]?.monto_mensual ?? transferencias[0]?.monto_mensual ?? "")} /></label>
+                      <label className="campo">Monto S/<input name="monto" inputMode="decimal" required defaultValue={monto2(sinTransferenciaMes[0]?.monto_mensual ?? transferencias[0]?.monto_mensual ?? "")} /></label>
                       <label className="campo">N° de operación<input name="documento" placeholder="Según el extracto" /></label>
                     </div>
                   </VentanaFlotante>

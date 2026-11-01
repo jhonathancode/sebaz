@@ -1,7 +1,7 @@
 import Avisos, { type ParamsAviso } from "@/components/Avisos";
 import VentanaFlotante from "@/components/VentanaFlotante";
 import { obtenerContexto } from "@/lib/contexto";
-import { soles } from "@/lib/formato";
+import { monto2, soles } from "@/lib/formato";
 import { supabaseServidor } from "@/lib/supabase/server";
 import { guardarPlan } from "../acciones";
 
@@ -12,8 +12,8 @@ function Campos({ p }: { p?: Plan }) {
     <div className="rejilla-2">
       {p && <input type="hidden" name="id" value={p.id} />}
       <label className="campo">Nombre del plan<input name="nombre" required defaultValue={p?.nombre ?? ""} placeholder="Ej.: Plan MCP, Plan completo" /></label>
-      <label className="campo">Precio mensual S/<input name="precio_mensual" inputMode="decimal" required defaultValue={p ? String(p.precio_mensual) : ""} /></label>
-      <label className="campo">Precio anual S/ (opcional)<input name="precio_anual" inputMode="decimal" defaultValue={p?.precio_anual != null ? String(p.precio_anual) : ""} /></label>
+      <label className="campo">Precio mensual S/<input name="precio_mensual" inputMode="decimal" required defaultValue={p ? monto2(p.precio_mensual) : ""} /></label>
+      <label className="campo">Precio anual S/ (opcional)<input name="precio_anual" inputMode="decimal" defaultValue={p?.precio_anual != null ? monto2(p.precio_anual) : ""} /></label>
       <label className="campo">
         Estado
         <select name="activo" defaultValue={p?.activo === false ? "0" : "1"}>

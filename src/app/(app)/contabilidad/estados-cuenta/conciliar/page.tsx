@@ -13,6 +13,8 @@ import { anularEstadoCuenta, subirEstadoCuenta } from "../acciones";
 import { guardarTranscripcion } from "./acciones";
 
 const aTexto = (n: number | string | null | undefined) => (n === null || n === undefined ? "" : String(n));
+/** Montos con miles y 2 decimales, como se ven en el estado de cuenta: 2250 → «2,250.00». */
+const aMonto = (n: number | string | null | undefined) => (n === null || n === undefined || n === "" ? "" : Number(n).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
 
 export default async function Conciliar({ searchParams }: { searchParams: ParamsAviso }) {
   const sp = await searchParams;
@@ -57,17 +59,17 @@ export default async function Conciliar({ searchParams }: { searchParams: Params
   const cabInicial: CabeceraExtracto = {
     fecha_corte: aTexto(ext?.fecha_corte),
     fecha_saldo_anterior: aTexto(ext?.fecha_saldo_anterior),
-    saldo_anterior: aTexto(ext?.saldo_anterior),
+    saldo_anterior: aMonto(ext?.saldo_anterior),
     n_pdf: aTexto(ext?.n_movimientos_pdf),
-    cargos_pdf: aTexto(ext?.total_cargos_pdf),
-    abonos_pdf: aTexto(ext?.total_abonos_pdf),
-    saldo_pdf: aTexto(ext?.saldo_actual_pdf),
+    cargos_pdf: aMonto(ext?.total_cargos_pdf),
+    abonos_pdf: aMonto(ext?.total_abonos_pdf),
+    saldo_pdf: aMonto(ext?.saldo_actual_pdf),
   };
   const lineasInicial: LineaExtracto[] = ((ext?.lineas as { codigo: string; cargo: number | null; abono: number | null; saldo: number | null; dia: string | null; enlace?: Enlace | null }[] | null) ?? []).map((l) => ({
     codigo: l.codigo ?? "",
-    cargo: aTexto(l.cargo),
-    abono: aTexto(l.abono),
-    saldo: aTexto(l.saldo),
+    cargo: aMonto(l.cargo),
+    abono: aMonto(l.abono),
+    saldo: aMonto(l.saldo),
     dia: l.dia ?? "",
     enlace: l.enlace ?? null,
   }));

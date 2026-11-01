@@ -1,4 +1,7 @@
 import Link from "next/link";
+import { Suspense } from "react";
+import BotonAbrirRequerimiento from "@/components/BotonAbrirRequerimiento";
+import NuevoRequerimientoInicio from "@/components/NuevoRequerimientoInicio";
 import BotonConfirmar from "@/components/BotonConfirmar";
 import Estado from "@/components/Estado";
 import CurvaIngresos from "@/components/CurvaIngresos";
@@ -212,6 +215,11 @@ export default async function Inicio() {
 
   return (
     <>
+      {tiene(ctx, "alcalde", "admin") && (
+        <Suspense fallback={null}>
+          <NuevoRequerimientoInicio />
+        </Suspense>
+      )}
 
 
       {faltaConfigurar && tiene(ctx, "admin") && (
@@ -244,7 +252,9 @@ export default async function Inicio() {
                 <span key={p.titulo} className={p.hecho ? "hecho" : i === pasoActual ? "actual" : undefined}>{p.hecho ? "✓" : i + 1}</span>
               ))}
             </div>
-            {siguiente && <Link className="ini-hero-boton" href={siguiente.href}>{siguiente.accion}</Link>}
+            {siguiente && (siguiente.href === "/expedientes?nuevo=1" && tiene(ctx, "alcalde", "admin")
+              ? <BotonAbrirRequerimiento className="ini-hero-boton">{siguiente.accion}</BotonAbrirRequerimiento>
+              : <Link className="ini-hero-boton" href={siguiente.href}>{siguiente.accion}</Link>)}
           </section>
 
 

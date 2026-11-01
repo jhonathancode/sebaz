@@ -121,7 +121,7 @@ export default async function Expedientes({ searchParams }: { searchParams: Para
   // Vista de pendientes: lo que aún no se rinde ni se paga, lo del mes actual y lo pagado que falta conciliar
   const todos = modo === "mes"
     ? todosBase
-    : todosBase.filter((e) => e.estado === "borrador" || e.estado === "aprobado" || e.fecha >= `${hoyP}-01` || sinConciliarExp(e));
+    : todosBase.filter((e) => e.estado === "borrador" || e.estado === "aprobado" || e.estado === "anulado" || e.fecha >= `${hoyP}-01` || sinConciliarExp(e));
   const conc = sp.conc === "si" || sp.conc === "no" ? sp.conc : "";
   const nConciliados = todos.filter((e) => e.estado !== "anulado" && conciliadoExp(e.id)).length;
   const nSinConciliar = todos.filter(sinConciliarExp).length;

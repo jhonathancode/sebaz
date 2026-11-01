@@ -3515,3 +3515,38 @@ label.opcion:has(input:checked) { border-color: var(--primario); background: lin
 .filas .fila:hover, .filas .fila.conciliada:hover { background: color-mix(in srgb, #2563eb 7%, var(--panel)); box-shadow: inset 4px 0 0 #2563eb; transform: none; }
 .fila:hover .f-desc > a { color: var(--primario-texto); }
 .filas .fila.anulada:hover { background: transparent; box-shadow: none; }
+/* ============ Almacén: diseño moderno del sistema ============ */
+.alm { display: flex; flex-direction: column; gap: 14px; }
+.alm .alm-kpis .tarjeta { padding: 14px 18px; gap: 2px; border-radius: 18px; border-left: 5px solid var(--primario-claro); background: linear-gradient(120deg, var(--primario-fondo), var(--panel) 80%); text-decoration: none; color: inherit; transition: box-shadow .18s, border-color .18s; }
+.alm .alm-kpis .tarjeta:hover { box-shadow: 0 16px 28px -22px rgba(37, 99, 235, .6); }
+.alm .alm-kpis .tarjeta .valor { font-size: 26px; font-weight: 800; }
+.alm .alm-kpis .tarjeta.k-azul { border-left-color: #2563eb; }
+.alm .alm-kpis .tarjeta.k-verde { border-left-color: #2fa56a; background: linear-gradient(120deg, color-mix(in srgb, #2fa56a 10%, var(--panel)), var(--panel) 80%); }
+.alm .alm-kpis .tarjeta.k-gris { border-left-color: #64748b; background: linear-gradient(120deg, color-mix(in srgb, #64748b 10%, var(--panel)), var(--panel) 80%); }
+.alm .alm-kpis .tarjeta.k-rojo { border-left-color: var(--rojo); background: linear-gradient(120deg, color-mix(in srgb, var(--rojo) 9%, var(--panel)), var(--panel) 80%); }
+/* Pestañas como selector redondeado (sin flechas de desplazamiento) */
+.alm .pestanas { display: inline-flex; width: fit-content; max-width: 100%; gap: 4px; padding: 5px; border-radius: 16px; background: var(--panel); border: 1px solid var(--borde); overflow-x: auto; scrollbar-width: none; }
+.alm .pestanas::-webkit-scrollbar { display: none; }
+.alm .pestanas a { padding: 9px 18px; border-radius: 12px; border: 0; font-weight: 700; font-size: 14px; color: var(--suave); box-shadow: none; transition: background .15s, color .15s; }
+.alm .pestanas a:hover { background: var(--primario-fondo); color: var(--primario-texto); }
+.alm .pestanas a.activo { background: linear-gradient(120deg, #1d4fb8, #3b82f6); color: #fff; box-shadow: 0 10px 18px -10px rgba(37, 99, 235, .85); }
+/* Barra de filtros */
+.alm .barra { border-radius: 16px; background: var(--panel); border: 1px solid var(--borde); padding: 12px 14px; }
+/* Cuadro con banda azul */
+.alm .alm-marco { border: 1px solid color-mix(in srgb, var(--primario) 26%, var(--borde)); border-radius: 22px; overflow: hidden; background: var(--panel); box-shadow: 0 26px 48px -36px rgba(29, 79, 184, .6); }
+.alm-banda { display: flex; align-items: center; justify-content: space-between; gap: 8px 16px; flex-wrap: wrap; padding: 16px 20px; color: #fff; background: linear-gradient(120deg, #1d4fb8 0%, #3b82f6 100%); }
+.alm-banda b { font-size: 19px; letter-spacing: .01em; }
+.alm-banda span { font-size: 13.5px; font-weight: 700; padding: 4px 12px; border-radius: 99px; background: rgba(255, 255, 255, .2); }
+.alm .tabla th { background: color-mix(in srgb, var(--primario) 11%, var(--panel)); color: var(--primario-texto); font-size: 12px; letter-spacing: .05em; text-transform: uppercase; border-color: color-mix(in srgb, var(--primario) 18%, var(--borde)); }
+.alm .tabla td { border-color: color-mix(in srgb, var(--primario) 10%, var(--borde)); padding-block: 11px; }
+.alm .tabla tbody tr:nth-child(even) td { background: color-mix(in srgb, var(--primario) 3%, transparent); }
+.alm .tabla tbody tr:hover td { background: color-mix(in srgb, var(--primario) 9%, var(--panel)); }
+.alm .tabla td a:not(.btn) { font-weight: 700; color: var(--primario-texto); text-decoration: none; }
+.alm .tabla tfoot th { background: color-mix(in srgb, var(--primario) 9%, var(--panel)); color: var(--primario-texto); }
+/* Stock en pastillas */
+.alm-stock { display: inline-block; min-width: 34px; text-align: center; padding: 3px 12px; border-radius: 99px; font-weight: 800; font-variant-numeric: tabular-nums; }
+.alm-stock.ok { background: var(--primario-fondo); color: var(--primario-texto); border: 1px solid var(--primario-claro); }
+.alm-stock.cero { background: var(--panel-2); color: var(--tenue); border: 1px dashed var(--borde-fuerte); }
+.alm-stock.bajo { background: color-mix(in srgb, var(--rojo) 12%, var(--panel)); color: var(--rojo); border: 1px solid color-mix(in srgb, var(--rojo) 40%, transparent); }
+.alm-reponer { margin-left: 8px; font-size: 11px; font-weight: 800; letter-spacing: .05em; text-transform: uppercase; color: var(--rojo); }
+@media (max-width: 760px) { .alm .pestanas { width: 100%; } .alm .pestanas a { flex: 1 1 auto; text-align: center; padding-inline: 10px; } .alm-banda b { font-size: 16px; } }

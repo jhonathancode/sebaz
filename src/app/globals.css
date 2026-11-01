@@ -2390,3 +2390,24 @@ details.cj-guia p { margin: 8px 0 0; line-height: 1.7; }
 .te-tabla tfoot .cj-atajos button:hover { background: var(--primario); border-color: var(--primario); color: #fff; }
 .te-tabla tfoot .cj-atajos span { margin-left: 6px; }
 .cj-paso { display: flex; flex-direction: column; gap: 14px; }
+/* Copiar el estado de cuenta: se ve como la hoja del banco (líneas verticales y horizontales) */
+.cj .te-tabla-marco { background: var(--panel); border: 1px solid color-mix(in srgb, var(--texto) 40%, transparent); border-radius: 6px; padding: 0; overflow-x: auto; box-shadow: 0 10px 26px -20px rgba(15, 23, 42, .55); }
+.cj .te-tabla { table-layout: fixed; min-width: 860px; border-collapse: collapse; font-family: ui-monospace, "Courier New", monospace; }
+.cj .te-tabla th, .cj .te-tabla td { border: 1px solid color-mix(in srgb, var(--texto) 32%, transparent); }
+.cj .te-tabla thead th { background: color-mix(in srgb, var(--texto) 5%, var(--panel)); color: var(--texto); font-family: inherit; font-size: 11.5px; font-weight: 800; letter-spacing: .03em; text-transform: uppercase; padding: 8px 6px; line-height: 1.25; }
+.cj .te-tabla th:nth-child(1), .cj .te-tabla td:nth-child(1) { width: 38px; }
+.cj .te-tabla th:nth-child(2) { width: 170px; }
+.cj .te-tabla th:nth-child(3), .cj .te-tabla th:nth-child(4), .cj .te-tabla th:nth-child(5) { width: 112px; }
+.cj .te-tabla th:nth-child(6) { width: 140px; }
+.cj .te-tabla th:nth-child(7) { width: 104px; }
+.cj .te-tabla th:nth-child(8) { width: 104px; }
+.cj .te-tabla th:nth-child(9), .cj .te-tabla td:nth-child(9) { width: 36px; }
+.cj .te-tabla td input { border-radius: 0; font-family: inherit; font-size: 14px; padding: 8px 10px; min-height: 42px; width: 100%; box-sizing: border-box; text-overflow: clip; }
+.cj .te-tabla td input.m { text-align: right; }
+.cj .te-tabla td:nth-child(6) input { text-align: center; letter-spacing: .02em; }
+.cj .te-tabla td.n { font-family: inherit; background: color-mix(in srgb, var(--texto) 3%, var(--panel)); }
+.cj .te-tabla .te-previo td { background: color-mix(in srgb, var(--texto) 3%, var(--panel)); }
+.cj .te-tabla td.te-va { text-align: right; font-family: inherit; white-space: nowrap; }
+.cj .te-tabla td.te-enl { text-align: center; }
+.cj .te-tabla tfoot td { border: 0; border-top: 1px solid color-mix(in srgb, var(--texto) 32%, transparent); background: var(--panel-2); }
+.cj .te-tabla tr.mal td { background: color-mix(in srgb, var(--rojo) 8%, var(--panel)); }

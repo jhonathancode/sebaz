@@ -2,7 +2,6 @@ import Link from "next/link";
 import BotonConfirmar from "@/components/BotonConfirmar";
 import Estado from "@/components/Estado";
 import CurvaIngresos from "@/components/CurvaIngresos";
-import { FUNCIONES } from "@/lib/catalogos";
 import { contextoMcp, tiene } from "@/lib/contexto";
 import {
   codigoCP,
@@ -72,20 +71,14 @@ export default async function Inicio() {
   ]);
   const catalogo = await cargarCatalogoPagosFijos(supabase, mcpId);
   const faltanCatalogo = catalogo.filter((p) => !p.pagados.includes(periodo));
-  // Bienes por reponer (si el almacén ya está activo)
-  const { data: stockBajo } = await supabase.from("almacen_stock").select("bien_id, stock, stock_minimo").eq("mcp_id", mcpId).gt("stock_minimo", 0);
-  const porReponer = (stockBajo ?? []).filter((b) => Number(b.stock) <= Number(b.stock_minimo)).length;
-
   const lista = cps ?? [];
   const transferencias = ctx.fuentes.filter((f) => f.tipo !== "propios");
   const cpPorAprobar = lista.filter((c) => c.estado === "borrador").length;
   const cpSinCheque = lista.filter((c) => c.estado === "aprobado" && !c.cheque).length;
-  const caja = (cajas ?? []).length ? { monto_fondo: (cajas ?? []).reduce((t, c) => t + Number(c.monto_fondo), 0) } : undefined;
   const gastadoCaja = (cajas ?? []).reduce(
     (t, c) => t + (c.caja_chica_gastos as { monto: number; anulado: boolean }[]).filter((g) => !g.anulado).reduce((s, g) => s + Number(g.monto), 0),
     0,
   );
-  const alcalde = tiene(ctx, "alcalde");
   const delMes = lista.filter((c) => c.fecha >= desde);
   const rendicionDe = (fuente: string, p: string) => (rendiciones ?? []).find((r) => r.fuente_id === fuente && r.periodo === p);
 
@@ -193,16 +186,6 @@ export default async function Inicio() {
   const cheques = delMes.filter((c) => c.cheque && idsTransfer.has(c.fuente_id ?? ""));
   const girado = cheques.reduce((s, c) => s + Number(c.importe), 0);
 
-  // ---- Gastos por función (para el informe de Chanchamayo)
-  const porFuncion = FUNCIONES.map((f) => ({
-    nombre: f.funcion,
-    total: delMes.filter((c) => c.funcion === f.funcion).reduce((s, c) => s + Number(c.importe), 0),
-  }));
-  const sinFuncion = delMes.filter((c) => !c.funcion).reduce((s, c) => s + Number(c.importe), 0);
-  if (sinFuncion) porFuncion.push({ nombre: "Sin función asignada", total: sinFuncion });
-  const conGasto = porFuncion.filter((f) => f.total > 0);
-  const maxFuncion = Math.max(1, ...conGasto.map((f) => f.total));
-
   // ---- 6. Documentos listos para imprimir
   const documentos = [
     ...(ultimosExp ?? []).map((x) => ({
@@ -232,12 +215,6 @@ export default async function Inicio() {
   const mesActual = nombrePeriodo(periodo).split(" ")[0];
   const mesAnterior = nombrePeriodo(anterior).split(" ")[0];
   const puedeRegistrar = tiene(ctx, "admin", "tesorero", "contador");
-
-  const pendientes = [
-    { n: reqPorAprobar ?? 0, t: "Requerimientos por aprobar", d: alcalde ? "Esperan su aprobación" : "Esperan la aprobación del alcalde", href: "/aprobaciones" },
-    { n: cpPorAprobar, t: "Comprobantes de pago por aprobar", d: "Están en borrador", href: "/comprobantes?estado=borrador" },
-    { n: cpSinCheque, t: "Comprobantes sin cheque", d: "Sin cheque no entran en la rendición", href: "/comprobantes?estado=aprobado" },
-  ];
 
   const siguiente = pasoActual >= 0 ? pasos[pasoActual] : null;
   const quedaBanco = recibido - girado;
@@ -417,41 +394,6 @@ export default async function Inicio() {
           </div>
         </section>
 
-                <section className="ini-panel" aria-label="Pendientes">
-          <div className="ini-panel-cab"><span>Pendientes</span></div>
-          <ul className="pendientes">
-            {pendientes.map((p) => (
-              <li key={p.t}>
-                <Link href={p.href}>
-                  <span className={`cuenta ${p.n > 0 ? "alerta" : "ok"}`}>{p.n}</span>
-                  <span className="texto">{p.t}<small>{p.d}</small></span>
-                  <span className="flecha" aria-hidden="true">›</span>
-                </Link>
-              </li>
-            ))}
-            {porReponer > 0 && tieneModulo(ctx.mcp, "almacen") && (
-              <li>
-                <Link href="/almacen?filtro=minimo">
-                  <span className="cuenta alerta">{porReponer}</span>
-                  <span className="texto">Bienes por reponer<small>Llegaron a su stock mínimo en el almacén</small></span>
-                  <span className="flecha" aria-hidden="true">›</span>
-                </Link>
-              </li>
-            )}
-            {tieneModulo(ctx.mcp, "caja_chica") && (
-            <li>
-              <Link href="/caja-chica">
-                <span className={`cuenta ${caja ? "ok" : "alerta"}`}>{caja ? "✓" : "!"}</span>
-                <span className="texto">
-                  Caja chica
-                  <small>{caja ? `Saldo S/ ${soles(Number(caja.monto_fondo) - gastadoCaja)} de S/ ${soles(caja.monto_fondo)}` : "Aún no se abre el fondo del mes"}</small>
-                </span>
-                <span className="flecha" aria-hidden="true">›</span>
-              </Link>
-            </li>
-            )}
-          </ul>
-        </section>
 
         </div>
 
@@ -526,29 +468,6 @@ export default async function Inicio() {
             </div>
           </section>
 
-<section className="ini-panel" aria-label="Gastos del mes por función">
-          <div className="ini-panel-cab">
-            Gastos del mes por función
-            <span className="tenue pequeno">S/ {soles(delMes.reduce((s, c) => s + Number(c.importe), 0))}</span>
-          </div>
-          <div>
-            {conGasto.length === 0 ? (
-              <span className="tenue">Aún no hay comprobantes de pago este mes.</span>
-            ) : (
-              <div className="barras">
-                {conGasto.map((f) => (
-                  <div key={f.nombre} className="fila" title={`${f.nombre}: S/ ${soles(f.total)}`}>
-                    <span className={f.nombre.startsWith("Sin función") ? "falta" : undefined}>{f.nombre}</span>
-                    <span className="monto">{soles(f.total)}</span>
-                    <div className="pista" aria-hidden="true">
-                      <div style={{ width: `${(f.total / maxFuncion) * 100}%`, background: f.nombre.startsWith("Sin función") ? "var(--ambar-borde)" : undefined }} />
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        </section>
         </div>
       </div>
 

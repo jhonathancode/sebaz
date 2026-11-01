@@ -50,7 +50,6 @@ export default async function Inicio() {
   const periodo = periodoActual();
   const anterior = periodoAnterior(periodo);
   const { desde, hasta } = rangoPeriodo(periodo);
-  const rangoAnt = rangoPeriodo(anterior);
   const mcpId = ctx.mcp.id;
 
   const [
@@ -93,15 +92,6 @@ export default async function Inicio() {
     const limite = fechaLimite(periodo, f.dia_limite);
     return { f, listo, tramite, transferencia, falta, limite, dias: diasHasta(limite), rendicion: rendicionDe(f.id, periodo) };
   }).filter((t) => t.transferencia > 0 || t.listo + t.tramite > 0 || t.rendicion);
-
-  // ---- 3. Rendiciones del mes pasado que aún no se arman
-  const atrasadas = transferencias
-    .map((f) => {
-      const sinRendir = lista.filter((c) => c.fuente_id === f.id && c.estado !== "rendido" && c.fecha >= rangoAnt.desde && c.fecha <= rangoAnt.hasta);
-      const limite = fechaLimite(anterior, f.dia_limite);
-      return { f, monto: sinRendir.reduce((s, c) => s + Number(c.importe), 0), n: sinRendir.length, limite, dias: diasHasta(limite) };
-    })
-    .filter((a) => a.n > 0 && !rendicionDe(a.f.id, anterior));
 
   // ---- 4. El mes en 3 pasos
   const totalFalta = tarjetas.reduce((s, t) => s + Math.max(0, t.falta), 0);
@@ -222,14 +212,6 @@ export default async function Inicio() {
 
   return (
     <>
-      {(tieneModulo(ctx.mcp, "rendicion") ? atrasadas : []).map((a) => (
-        <div key={a.f.id} className={`aviso ${a.dias < 0 ? "error" : "alerta"} aviso-accion`}>
-          <span>
-            <strong>Falta la rendición de {mesAnterior} a {a.f.municipalidad}.</strong> Tiene {a.n} comprobante(s) por S/ {soles(a.monto)} sin rendir. Fecha límite: {fechaLarga(a.limite)} ({cuentaRegresiva(a.dias)}).
-          </span>
-          <Link className="btn chico primario" href={`/rendicion?fuente=${a.f.id}&mes=${anterior}`}>Armar rendición de {mesAnterior}</Link>
-        </div>
-      ))}
 
 
       {faltaConfigurar && tiene(ctx, "admin") && (

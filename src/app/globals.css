@@ -3606,3 +3606,8 @@ label.opcion:has(input:checked) { border-color: var(--primario); background: lin
   .cc-excel th, .cc-excel td { white-space: nowrap; }
   .cc-excel td.concepto, .cc-excel td:nth-child(6) { white-space: normal; min-width: 150px; }
 }
+/* Pendientes en la campana */
+.aviso-item.nt-pend { text-decoration: none; color: inherit; display: flex; }
+.aviso-item.nt-pend .nt-ico { background: var(--ambar-fondo); color: var(--ambar); border: 1px solid var(--ambar-borde); }
+.aviso-item.nt-pend.vencido .nt-ico { background: color-mix(in srgb, var(--rojo) 12%, var(--panel)); color: var(--rojo); border-color: color-mix(in srgb, var(--rojo) 40%, transparent); }
+.aviso-item.nt-pend .nt-etq { font-weight: 800; }

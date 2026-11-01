@@ -3612,3 +3612,11 @@ label.opcion:has(input:checked) { border-color: var(--primario); background: lin
 .aviso-item.nt-pend.vencido .nt-ico { background: color-mix(in srgb, var(--rojo) 12%, var(--panel)); color: var(--rojo); border-color: color-mix(in srgb, var(--rojo) 40%, transparent); }
 .aviso-item.nt-pend .nt-etq { font-weight: 800; }
 .ini-hero-boton { border: 0; cursor: pointer; font-family: inherit; }
+
+/* Anulados: se leen completos (sin tachar); se distinguen por la franja roja, el tinte y la etiqueta «Anulado» */
+.fila.anulada { opacity: 1; position: relative; background: color-mix(in srgb, var(--rojo) 5%, var(--panel)); box-shadow: inset 4px 0 0 var(--rojo); }
+.fila.anulada .f-titulo, .fila.anulada .f-desc a, .fila.anulada .f-monto, .fila.anulada .doc-paso, .fila.anulada .doc-cheque { text-decoration: none !important; }
+.fila.anulada .f-desc .f-titulo, .fila.anulada .f-desc > a:first-child { color: color-mix(in srgb, var(--texto) 78%, var(--rojo)); }
+.fila.anulada .f-monto { color: var(--tenue); }
+.fila.anulada .doc-paso { filter: saturate(.55); }
+.tabla tbody tr.anulado .tachar { text-decoration: none; color: var(--tenue); }

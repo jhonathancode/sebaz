@@ -2478,3 +2478,10 @@ details.cj-guia p { margin: 8px 0 0; line-height: 1.7; }
 .cj-estado.ok { color: #137a45; }
 .cj-estado.falta { color: var(--ambar); }
 :root[data-theme="dark"] .cj-estado.ok { color: #8de3b4; }
+.f-chip.verde { border-color: #82d3a6; color: #137a45; background: #eefaf3; }
+.f-chip.verde.activo { background: #2fa56a; border-color: #2fa56a; color: #fff; }
+.f-chip.verde.activo .n { background: rgba(255, 255, 255, .25); color: #fff; }
+.f-chip.ambar { border-color: var(--ambar-borde); color: var(--ambar); background: var(--ambar-fondo); }
+.f-chip.ambar.activo { background: #e0a030; border-color: #e0a030; color: #fff; }
+.f-chip.ambar.activo .n { background: rgba(255, 255, 255, .25); color: #fff; }
+:root[data-theme="dark"] .f-chip.verde { background: color-mix(in srgb, #2fa56a 18%, transparent); color: #8de3b4; border-color: #2fa56a; }

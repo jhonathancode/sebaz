@@ -73,7 +73,48 @@ export default async function Expedientes({ searchParams }: { searchParams: Para
     ...e,
     monto: (e.expediente_items as { total: number; anulado: boolean }[]).filter((i) => !i.anulado).reduce((s, i) => s + Number(i.total), 0),
   }));
-  const filas = estado ? todos.filter((e) => e.estado === estado) : todos;
+  // Conciliación con el banco de todos los del mes (para poder filtrar): un cheque está conciliado si figura cobrado
+  // o si su estado de cuenta guardado enlaza comprobantes que suman lo que cobró el banco.
+  const idsTodos = todos.map((e) => e.id);
+  const { data: cpsAll } = idsTodos.length
+    ? await supabase.from("comprobantes_pago").select("id, expediente_id, cheque, estado, creado_en, importe, deducciones").in("expediente_id", idsTodos)
+    : { data: [] as { id: string; expediente_id: string; cheque: string | null; estado: string; creado_en: string; importe: number; deducciones: number | null }[] };
+  const cpVigente = new Map<string, { id: string; cheque: string | null }>();
+  [...(cpsAll ?? [])].sort((a, b) => b.creado_en.localeCompare(a.creado_en)).forEach((c) => {
+    if (c.estado !== "anulado" && !cpVigente.has(c.expediente_id)) cpVigente.set(c.expediente_id, { id: c.id, cheque: c.cheque });
+  });
+  const idsCp = Array.from(cpVigente.values()).map((c) => c.id);
+  const conciliadosCp = new Set<string>();
+  if (idsCp.length) {
+    const { data: cobV } = await supabase.from("cheques_cobrados").select("comprobante_id").eq("anulado", false).in("comprobante_id", idsCp);
+    (cobV ?? []).forEach((c) => conciliadosCp.add(c.comprobante_id));
+    const { data: exts } = await supabase.from("extractos_transcritos").select("lineas");
+    const montoDe = new Map((cpsAll ?? []).map((c) => [c.id, Math.round((Number(c.importe) - Number(c.deducciones ?? 0)) * 100) / 100]));
+    type L = { cargo?: number | null; enlace?: { tipo?: string; id?: string; extra?: { id: string }[] } | null };
+    const todas = (exts ?? []).flatMap((e) => (e.lineas ?? []) as L[]);
+    const faltan = Array.from(new Set(todas.flatMap((l) => (l.enlace?.tipo === "cp" && l.enlace.id ? [l.enlace.id, ...(l.enlace.extra ?? []).map((x) => x.id)] : [])))).filter((id) => !montoDe.has(id));
+    if (faltan.length) {
+      const { data: otros } = await supabase.from("comprobantes_pago").select("id, importe, deducciones").in("id", faltan);
+      (otros ?? []).forEach((c) => montoDe.set(c.id as string, Math.round((Number(c.importe) - Number(c.deducciones ?? 0)) * 100) / 100));
+    }
+    for (const l of todas) {
+      if (l.enlace?.tipo !== "cp" || !l.enlace.id || l.cargo == null) continue;
+      const ids = [l.enlace.id, ...(l.enlace.extra ?? []).map((x) => x.id)];
+      if (!ids.every((id) => montoDe.has(id))) continue;
+      const suma = Math.round(ids.reduce((t, id) => t + (montoDe.get(id) ?? 0), 0) * 100) / 100;
+      if (Math.abs(suma - Number(l.cargo)) < 0.005) ids.forEach((id) => conciliadosCp.add(id));
+    }
+  }
+  const conciliadoExp = (id: string) => {
+    const c = cpVigente.get(id);
+    return !!c && conciliadosCp.has(c.id);
+  };
+  /** Pagado con cheque pero aún sin pasar por el estado de cuenta del banco. */
+  const sinConciliarExp = (e: { id: string; estado: string }) => e.estado !== "anulado" && !!cpVigente.get(e.id)?.cheque && !conciliadoExp(e.id);
+  const conc = sp.conc === "si" || sp.conc === "no" ? sp.conc : "";
+  const nConciliados = todos.filter((e) => e.estado !== "anulado" && conciliadoExp(e.id)).length;
+  const nSinConciliar = todos.filter(sinConciliarExp).length;
+  const filas = todos.filter((e) => (!estado || e.estado === estado) && (conc === "" || (conc === "si" ? e.estado !== "anulado" && conciliadoExp(e.id) : sinConciliarExp(e))));
   const cuenta = (v: string) => (v ? todos.filter((e) => e.estado === v).length : todos.length);
   const vigentes = todos.filter((e) => e.estado !== "anulado");
   const totalMes = vigentes.reduce((s, e) => s + e.monto, 0);
@@ -107,30 +148,6 @@ export default async function Expedientes({ searchParams }: { searchParams: Para
     supabase.from("comprobantes_pago").select("id, expediente_id, numero, origen, cheque, estado, creado_en, importe, deducciones").in("expediente_id", idsQ),
     supabase.from("notas_entrada").select("id, expediente_id, numero, anio, anulado, creado_en").in("expediente_id", idsQ),
   ]);
-  const idsCp = (cpsV ?? []).map((c) => c.id as string);
-  const { data: cobV } = idsCp.length ? await supabase.from("cheques_cobrados").select("comprobante_id").eq("anulado", false).in("comprobante_id", idsCp) : { data: [] as { comprobante_id: string }[] };
-  const conciliados = new Set((cobV ?? []).map((c) => c.comprobante_id));
-  // También cuenta como conciliado un cheque enlazado en un estado de cuenta guardado cuyos comprobantes suman lo que cobró el banco
-  if (idsCp.length) {
-    const { data: exts } = await supabase.from("extractos_transcritos").select("lineas");
-    const montoDe = new Map((cpsV ?? []).map((c) => [c.id as string, Math.round((Number(c.importe) - Number(c.deducciones ?? 0)) * 100) / 100]));
-    type L = { cargo?: number | null; enlace?: { tipo?: string; id?: string; extra?: { id: string }[] } | null };
-    const todas = (exts ?? []).flatMap((e) => ((e.lineas ?? []) as L[]));
-    const faltan = Array.from(new Set(todas.flatMap((l) => (l.enlace?.tipo === "cp" && l.enlace.id ? [l.enlace.id, ...(l.enlace.extra ?? []).map((x) => x.id)] : [])))).filter((id) => !montoDe.has(id));
-    if (faltan.length) {
-      const { data: otros } = await supabase.from("comprobantes_pago").select("id, importe, deducciones").in("id", faltan);
-      (otros ?? []).forEach((c) => montoDe.set(c.id as string, Math.round((Number(c.importe) - Number(c.deducciones ?? 0)) * 100) / 100));
-    }
-    for (const l of todas) {
-      {
-        if (l.enlace?.tipo !== "cp" || !l.enlace.id || l.cargo == null) continue;
-        const ids = [l.enlace.id, ...(l.enlace.extra ?? []).map((x) => x.id)];
-        if (!ids.every((id) => montoDe.has(id))) continue;
-        const suma = Math.round(ids.reduce((t, id) => t + (montoDe.get(id) ?? 0), 0) * 100) / 100;
-        if (Math.abs(suma - Number(l.cargo)) < 0.005) ids.forEach((id) => conciliados.add(id));
-      }
-    }
-  }
   const elegir = <T extends { creado_en: string }>(xs: T[] | null | undefined, vigente: (x: T) => boolean) => {
     const orden = [...(xs ?? [])].sort((a, b) => b.creado_en.localeCompare(a.creado_en));
     return orden.find(vigente) ?? orden[0] ?? null;
@@ -150,13 +167,13 @@ export default async function Expedientes({ searchParams }: { searchParams: Para
       comprobante: cp ? codigoCP(cp.numero, cp.origen) : null,
       cheque: cp?.cheque ?? null,
       hayCp: !!cp,
-      conciliado: !!cp && conciliados.has(cp.id as string),
+      conciliado: conciliadoExp(e.id),
       nea: n ? { id: n.id as string, texto: `NEA ${num3(n.numero)}-${n.anio}` } : null,
     };
   };
   const numeros = Array.from({ length: totalPaginas }, (_, i) => i + 1).filter((n) => n === 1 || n === totalPaginas || Math.abs(n - pagina) <= 2);
   const enlace = (cambios: Record<string, string>) => {
-    const p = new URLSearchParams({ mes: periodo, estado, tipo, q, ...cambios });
+    const p = new URLSearchParams({ mes: periodo, estado, tipo, q, conc, ...cambios });
     [...p.keys()].forEach((k) => !p.get(k) && p.delete(k));
     return `/expedientes?${p.toString()}`;
   };
@@ -171,6 +188,7 @@ export default async function Expedientes({ searchParams }: { searchParams: Para
         <form className="selector-mes" method="get">
           <input type="hidden" name="estado" value={estado} />
           <input type="hidden" name="tipo" value={tipo} />
+          <input type="hidden" name="conc" value={conc} />
           <input type="month" name="mes" defaultValue={periodo} aria-label="Mes" />
           <button className="btn chico" type="submit">Ver</button>
         </form>
@@ -254,11 +272,18 @@ export default async function Expedientes({ searchParams }: { searchParams: Para
             <Link key={v} className={`f-chip${tipo === v ? " activo" : ""}`} href={enlace({ tipo: v })}>{t}</Link>
           ))}
         </div>
+        <div className="grupo" role="group" aria-label="Conciliación con el banco">
+          <span className="grupo-et">Banco</span>
+          <Link className={`f-chip${conc === "" ? " activo" : ""}`} href={enlace({ conc: "" })}>Todos</Link>
+          <Link className={`f-chip verde${conc === "si" ? " activo" : ""}`} href={enlace({ conc: "si" })}>✓ Conciliados <span className="n">{nConciliados}</span></Link>
+          <Link className={`f-chip ambar${conc === "no" ? " activo" : ""}${nSinConciliar > 0 ? " aviso" : ""}`} href={enlace({ conc: "no" })}>⚠ Sin conciliar <span className="n">{nSinConciliar}</span></Link>
+        </div>
         <form className="buscador" method="get" role="search">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><circle cx="11" cy="11" r="7" /><path d="m20 20-3.5-3.5" /></svg>
           <input type="hidden" name="mes" value={periodo} />
           <input type="hidden" name="estado" value={estado} />
           <input type="hidden" name="tipo" value={tipo} />
+          <input type="hidden" name="conc" value={conc} />
           <input name="q" defaultValue={q} placeholder="Buscar por descripción…" aria-label="Buscar" />
           <button className="btn chico" type="submit">Buscar</button>
         </form>

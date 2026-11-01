@@ -2485,3 +2485,10 @@ details.cj-guia p { margin: 8px 0 0; line-height: 1.7; }
 .f-chip.ambar.activo { background: #e0a030; border-color: #e0a030; color: #fff; }
 .f-chip.ambar.activo .n { background: rgba(255, 255, 255, .25); color: #fff; }
 :root[data-theme="dark"] .f-chip.verde { background: color-mix(in srgb, #2fa56a 18%, transparent); color: #8de3b4; border-color: #2fa56a; }
+.lateral-menu ul button.lm-padre { display: flex; align-items: center; gap: 12px; width: calc(100% - 20px); margin: 1px 10px; padding: 10px 12px; border: 0; border-radius: 8px; background: transparent; color: var(--suave); font: inherit; font-weight: 500; cursor: pointer; text-align: left; }
+.lateral-menu ul button.lm-padre svg { flex: none; color: var(--tenue); }
+.lateral-menu ul button.lm-padre:hover { background: var(--panel-2); color: var(--texto); }
+.lateral-menu ul button.lm-padre.activo { background: var(--primario-fondo); color: var(--primario-texto); font-weight: 700; box-shadow: inset 3px 0 0 var(--primario); }
+.lateral-menu ul button.lm-padre.activo svg { color: var(--primario); }
+.lateral-menu ul button.lm-padre .lm-flecha-sub { margin-left: auto; transition: transform .15s; }
+.lateral-menu ul button.lm-padre .lm-flecha-sub.abierta { transform: rotate(180deg); }

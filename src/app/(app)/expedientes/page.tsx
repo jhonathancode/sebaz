@@ -23,7 +23,7 @@ const DOC_DE_FASE: Record<string, { clave: string; corto: string }> = {
   conformidad: { clave: "conformidad", corto: "Conformidad" },
   comprobante: { clave: "comprobante", corto: "Comprobante" },
 };
-const TIPOS: Record<string, string> = { compra: "Compra de bienes", servicio: "Servicio externo", pago_fijo: "Pago fijo" };
+const TIPOS: Record<string, string> = { compra: "Compra de bienes", servicio: "Servicio externo", pago_fijo: "Pago fijo", caja_chica: "Caja chica" };
 const ESTADOS = [
   { v: "", t: "Todos" },
   { v: "borrador", t: "Por aprobar" },
@@ -280,7 +280,7 @@ export default async function Expedientes({ searchParams }: { searchParams: Para
         </div>
         <div className="grupo" role="group" aria-label="Tipo">
           <span className="grupo-et">Tipo</span>
-          {[["", "Todos"], ["compra", "Compra"], ["servicio", "Servicio"], ["pago_fijo", "Pago fijo"]].map(([v, t]) => (
+          {[["", "Todos"], ["compra", "Compra"], ["servicio", "Servicio"], ["pago_fijo", "Pago fijo"], ["caja_chica", "Caja chica"]].map(([v, t]) => (
             <Link key={v} className={`f-chip${tipo === v ? " activo" : ""}`} href={enlace({ tipo: v })}>{t}</Link>
           ))}
         </div>

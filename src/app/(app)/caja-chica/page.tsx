@@ -14,7 +14,7 @@ import { codigoCP, fecha, hoyISO, nombrePeriodo, periodoActual, soles } from "@/
 const MES_CORTO = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Set", "Oct", "Nov", "Dic"];
 import { CORRELATIVO, proximoNumero } from "@/lib/numeracion";
 import { supabaseServidor } from "@/lib/supabase/server";
-import { abrirCaja, agregarGasto, anularGasto, cambiarCheque, editarGasto, liquidarCaja } from "./acciones";
+import { solicitarFondo, agregarGasto, anularGasto, cambiarCheque, editarGasto, liquidarCaja } from "./acciones";
 
 const NOMBRE_SUSTENTO = Object.fromEntries(SUSTENTOS.map((s) => [s.codigo, s.nombre]));
 
@@ -102,11 +102,24 @@ export default async function CajaChica({ searchParams }: { searchParams: Params
     .eq("activo", true);
 
   const abierta = caja?.estado === "abierta";
+  // Requerimientos de apertura de este mes que aún esperan aprobación
+  const { data: pedidos } = await supabase
+    .from("expedientes")
+    .select("id, numero, anio")
+    .eq("mcp_id", ctx.mcp.id)
+    .eq("tipo", "caja_chica")
+    .eq("caja_periodo", periodo)
+    .eq("fuente_id", fuenteId ?? "")
+    .eq("estado", "borrador");
+  const expedienteCaja = caja?.expediente_id
+    ? (await supabase.from("expedientes").select("id, numero, anio").eq("id", caja.expediente_id).maybeSingle()).data
+    : null;
   const cp = caja?.comprobantes_pago as unknown as { id: string; numero: number; origen: string; estado: string } | null;
 
   const cuadra = !!caja && Math.round(saldo * 100) === 0;
   const formAbrir = (boton: string, clase: string) => (
-    <VentanaFlotante boton={boton} titulo="Abrir el fondo de caja chica" accion={abrirCaja} textoGuardar="Abrir fondo" claseBoton={clase}>
+    <VentanaFlotante boton={boton} titulo="Pedir el fondo de caja chica" accion={solicitarFondo} textoGuardar="Registrar requerimiento" claseBoton={clase} pin>
+      <p className="pequeno tenue" style={{ margin: "0 0 10px" }}>Se registra el requerimiento de apertura (expediente). {tiene(ctx, "alcalde", "admin") ? "Como usted aprueba, la caja se abre de una vez." : "Cuando el alcalde lo apruebe, la caja chica se abre sola."}</p>
       <input type="hidden" name="periodo" value={periodo} />
       <input type="hidden" name="fuente_id" value={fuenteId} />
       <div className="rejilla-2">
@@ -241,7 +254,7 @@ export default async function CajaChica({ searchParams }: { searchParams: Params
                       <td className="num">{r ? (Math.round((r.fondo - r.gastado) * 100) === 0 ? "✓ cuadra" : soles(r.fondo - r.gastado)) : "—"}</td>
                       <td className="num">{r ? r.n : "—"}</td>
                       <td>{r ? <Estado valor={r.estado} /> : <span className="tenue">Sin fondo</span>}</td>
-                      <td><Link className="btn chico contorno" href={enlace({ mes: per, vista: "mes" })}>{r ? "Ver" : puede ? "Abrir fondo" : "Ver"}</Link></td>
+                      <td><Link className="btn chico contorno" href={enlace({ mes: per, vista: "mes" })}>{r ? "Ver" : puede ? "Pedir fondo" : "Ver"}</Link></td>
                     </tr>
                   );
                 })}
@@ -273,7 +286,16 @@ export default async function CajaChica({ searchParams }: { searchParams: Params
               </Link>
             ))}
           <span className="espacio" />
-          {puede && formAbrir("+ Abrir otra caja chica", "btn chico contorno")}
+          {puede && formAbrir("+ Pedir otra caja chica", "btn chico contorno")}
+        </div>
+      )}
+
+      {(pedidos ?? []).length > 0 && (
+        <div className="aviso alerta aviso-accion">
+          <span>
+            <strong>Fondo solicitado, falta la aprobación del alcalde.</strong> Cuando se apruebe el requerimiento {(pedidos ?? []).map((x) => `${String(x.numero).padStart(3, "0")}-${x.anio}`).join(", ")}, la caja chica se abre sola.
+          </span>
+          <Link className="btn chico primario" href={`/expedientes/${pedidos![0].id}`}>Ver requerimiento</Link>
         </div>
       )}
 
@@ -284,9 +306,9 @@ export default async function CajaChica({ searchParams }: { searchParams: Params
             <div style={{ display: "flex", flexDirection: "column", gap: 4, flex: 1 }}>
               <span className="k-et">Caja chica de {nombrePeriodo(periodo)}</span>
               <span className="k-val">Aún no se abre el fondo</span>
-              <span className="k-det">Ábralo con el monto que se retiró (normalmente S/ 2,000 de la transferencia) y el responsable.</span>
+              <span className="k-det">La caja se abre desde un requerimiento (expediente): pida el fondo con el monto, el cheque y el responsable (normalmente S/ 2,000 de la transferencia).</span>
             </div>
-            {formAbrir("Abrir fondo del mes", "btn primario grande")}
+            {formAbrir("Pedir fondo del mes", "btn primario grande")}
           </div>
         ) : (
           <div className="aviso info">No hay fondo de caja chica abierto este mes.</div>
@@ -302,7 +324,7 @@ export default async function CajaChica({ searchParams }: { searchParams: Params
               </tr>
             </thead>
             <tbody>
-              <tr><td colSpan={9} className="cc-vacio">Aún no se abre el fondo de {nombrePeriodo(periodo)}. Ábralo para empezar a registrar los gastos.</td></tr>
+              <tr><td colSpan={9} className="cc-vacio">Aún no se abre el fondo de {nombrePeriodo(periodo)}. Pida el fondo para empezar a registrar los gastos.</td></tr>
             </tbody>
             <tfoot>
               <tr><td colSpan={7} className="m">Total gastado</td><td className="m">S/ 0.00</td><td className="acc"></td></tr>
@@ -320,7 +342,7 @@ export default async function CajaChica({ searchParams }: { searchParams: Params
             <div className="kpi">
               <span className="k-et">Fondo</span>
               <span className="k-val">S/ {soles(fondo)}</span>
-              <span className="k-det">Responsable: {(caja.perfiles as { nombre: string } | null)?.nombre}</span>
+              <span className="k-det">Responsable: {(caja.perfiles as { nombre: string } | null)?.nombre}{expedienteCaja && <> · <Link href={`/expedientes/${expedienteCaja.id}`}>Expediente {String(expedienteCaja.numero).padStart(3, "0")}-{expedienteCaja.anio}</Link></>}</span>
             </div>
             <div className="kpi">
               <span className="k-et">Gastado</span>

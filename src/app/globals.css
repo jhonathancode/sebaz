@@ -3584,3 +3584,25 @@ label.opcion:has(input:checked) { border-color: var(--primario); background: lin
 .lm-modulo { display: block; margin-top: 6px; font-style: normal; font-size: 10.5px; font-weight: 800; letter-spacing: .09em; text-transform: uppercase; color: var(--primario-texto); }
 .lm-modulo::before { content: ""; display: block; width: 28px; height: 2px; margin: 0 auto 6px; border-radius: 2px; background: linear-gradient(90deg, #2563eb, #60a5fa); }
 :root[data-menu="oculto"] .lm-modulo { display: none; }
+
+/* ===== Móvil: ajustes de limpieza (chips, barras de desplazamiento, tablas) ===== */
+/* Barras de desplazamiento finas y discretas en todo el sistema */
+.tabla-marco, .cc-excel-marco, .te-tabla-marco, .filtros .grupo, .doc-nav, .pestanas, .vista-pestanas { scrollbar-width: thin; scrollbar-color: color-mix(in srgb, var(--primario) 45%, transparent) transparent; }
+.tabla-marco::-webkit-scrollbar, .cc-excel-marco::-webkit-scrollbar, .te-tabla-marco::-webkit-scrollbar { height: 6px; }
+.tabla-marco::-webkit-scrollbar-thumb, .cc-excel-marco::-webkit-scrollbar-thumb, .te-tabla-marco::-webkit-scrollbar-thumb { background: color-mix(in srgb, var(--primario) 40%, transparent); border-radius: 99px; }
+.tabla-marco::-webkit-scrollbar-track, .cc-excel-marco::-webkit-scrollbar-track, .te-tabla-marco::-webkit-scrollbar-track { background: transparent; }
+@media (max-width: 760px) {
+  /* Filtros: se acomodan en varias líneas, sin barra de desplazamiento */
+  .filtros { gap: 8px; }
+  .filtros .grupo { flex-wrap: wrap; overflow: visible; padding-bottom: 0; }
+  /* Los documentos del expediente (con cheque y «Conciliado») se parten en líneas */
+  .doc-par { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 6px; max-width: 100%; }
+  .doc-cheque, .doc-conciliado { margin-left: 0; font-size: 11.5px; padding: 3px 10px; white-space: normal; }
+  .doc-pasos { max-width: 100%; }
+  /* Caja chica: selector de fondo en columnas iguales */
+  .cc-selector .cc-fuentes { display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); }
+  .cc-selector .cc-fuente { white-space: normal; }
+  /* Tablas tipo Excel: no parten las palabras, se deslizan de lado */
+  .cc-excel th, .cc-excel td { white-space: nowrap; }
+  .cc-excel td.concepto, .cc-excel td:nth-child(6) { white-space: normal; min-width: 150px; }
+}

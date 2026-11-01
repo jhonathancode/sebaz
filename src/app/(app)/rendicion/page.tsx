@@ -6,6 +6,7 @@ import { contextoMcp, tiene } from "@/lib/contexto";
 import { codigoCP, fecha, nombrePeriodo, periodoActual, rangoPeriodo, soles } from "@/lib/formato";
 import { supabaseServidor } from "@/lib/supabase/server";
 import { generarRendicion } from "./acciones";
+import { etiquetaFuente, montoDelMes, tocaEnMes } from "@/lib/fuentes";
 
 export default async function Rendicion({ searchParams }: { searchParams: ParamsAviso }) {
   const sp = await searchParams;
@@ -37,7 +38,8 @@ export default async function Rendicion({ searchParams }: { searchParams: Params
   const resumen = municipalidades.map((f) => {
     const r = (delMes ?? []).find((x) => x.fuente_id === f.id);
     const listos = (cps ?? []).filter((c) => c.fuente_id === f.id && c.estado === "aprobado" && c.cheque).reduce((s, c) => s + Number(c.importe), 0);
-    return { f, r, listos, pct: Number(f.monto_mensual) ? Math.min(100, Math.round((listos / Number(f.monto_mensual)) * 100)) : 0 };
+    const esperado = montoDelMes(f, periodo);
+    return { f, r, listos, pct: esperado ? Math.min(100, Math.round((listos / esperado) * 100)) : 0 };
   });
 
   let filas: FilaCP[] = [];
@@ -89,8 +91,8 @@ export default async function Rendicion({ searchParams }: { searchParams: Params
         {resumen.map(({ f, r, listos, pct }) => (
           <Link key={f.id} role="tab" aria-selected={f.id === fuente.id} className={`muni-tab${f.id === fuente.id ? " activo" : ""}`} href={`/rendicion?mes=${periodo}&fuente=${f.id}`}>
             <div className="m-cab">
-              <span className="m-nom">{f.tipo === "distrito" ? "Distrito" : "Provincia"} · {f.municipalidad.replace(/^municipalidad (distrital|provincial) de /i, "")}</span>
-              <span className="m-monto">S/ {soles(f.monto_mensual)}</span>
+              <span className="m-nom">{etiquetaFuente(f)} · {f.municipalidad.replace(/^municipalidad (distrital|provincial) de /i, "")}</span>
+              <span className="m-monto">{tocaEnMes(f, periodo) ? `S/ ${soles(f.monto_mensual)}` : "Sin transferencia"}</span>
             </div>
             <div className="k-barra"><div style={{ width: `${r ? 100 : pct}%` }} /></div>
             <span className="m-det">
@@ -113,7 +115,7 @@ export default async function Rendicion({ searchParams }: { searchParams: Params
       ) : (
         <SelectorRendicion
           filas={filas}
-          transferencia={Number(fuente.monto_mensual)}
+          transferencia={montoDelMes(fuente, periodo)}
           municipalidad={fuente.municipalidad}
           accion={generarRendicion}
           ocultos={{ periodo, fuente_id: fuente.id }}

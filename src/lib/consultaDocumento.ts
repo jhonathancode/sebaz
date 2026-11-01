@@ -2,7 +2,7 @@ import { supabaseServicio } from "./supabase/server";
 
 export type DatosDocumento =
   | { tipo: "dni"; documento: string; nombre: string }
-  | { tipo: "ruc"; documento: string; nombre: string; direccion: string | null; estado: string | null; condicion: string | null };
+  | { tipo: "ruc"; documento: string; nombre: string; direccion: string | null; estado: string | null; condicion: string | null; distrito?: string | null; provincia?: string | null; departamento?: string | null };
 
 export type Resultado = { ok: true; datos: DatosDocumento; cache: boolean } | { ok: false; codigo: "no_configurado" | "invalido" | "no_existe" | "no_disponible"; mensaje: string };
 
@@ -52,7 +52,7 @@ export async function consultarDocumento(documento: string): Promise<Resultado> 
   const datos: DatosDocumento =
     tipo === "dni"
       ? { tipo, documento: doc, nombre: texto(d.nombre_completo) ?? "" }
-      : { tipo, documento: doc, nombre: texto(d.nombre_o_razon_social) ?? "", direccion: texto(d.direccion), estado: texto(d.estado), condicion: texto(d.condicion) };
+      : { tipo, documento: doc, nombre: texto(d.nombre_o_razon_social) ?? "", direccion: texto(d.direccion), estado: texto(d.estado), condicion: texto(d.condicion), distrito: texto(d.distrito), provincia: texto(d.provincia), departamento: texto(d.departamento) };
   if (!datos.nombre) return { ok: false, codigo: "no_existe", mensaje: "No se encontró nombre para ese número. Escriba los datos a mano." };
 
   try {

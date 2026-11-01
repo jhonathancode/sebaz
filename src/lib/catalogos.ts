@@ -84,3 +84,21 @@ export const CAMPOS_CAPITULO1_LARGOS = [
   { clave: "limitaciones", titulo: "1.3 Limitaciones para alcanzar los objetivos" },
   { clave: "medidas", titulo: "1.4 Medidas tomadas para superar las limitaciones" },
 ];
+
+/** Bancos donde las MCP suelen tener su cuenta. El primero es el predeterminado. */
+export const BANCOS = [
+  "Banco de la Nación",
+  "Banco de Crédito del Perú (BCP)",
+  "BBVA",
+  "Interbank",
+  "Scotiabank",
+  "Mibanco",
+  "BanBif",
+  "Banco Pichincha",
+  "Caja Huancayo",
+  "Caja Arequipa",
+  "Caja Piura",
+  "Caja Cusco",
+  "Caja Trujillo",
+  "Otro banco",
+] as const;

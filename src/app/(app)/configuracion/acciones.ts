@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { CAMPOS_CAPITULO1, CAMPOS_CAPITULO1_LARGOS } from "@/lib/catalogos";
+import { BANCOS, CAMPOS_CAPITULO1, CAMPOS_CAPITULO1_LARGOS } from "@/lib/catalogos";
 import { contextoMcp, tiene } from "@/lib/contexto";
 import { mensajeError, numero, texto, volver } from "@/lib/acciones";
 import { supabaseServidor } from "@/lib/supabase/server";
@@ -21,6 +21,7 @@ export async function guardarDatosMcp(fd: FormData) {
       provincia: texto(fd, "provincia"),
       departamento: texto(fd, "departamento"),
       banco_cuenta: texto(fd, "banco_cuenta"),
+      ...((BANCOS as readonly string[]).includes(texto(fd, "banco_nombre") ?? "") ? { banco_nombre: texto(fd, "banco_nombre") } : {}),
     })
     .eq("id", ctx.mcp.id);
   if (error) volver("/configuracion", "error", mensajeError(error));
@@ -145,4 +146,93 @@ export async function alternarPagoFijo(fd: FormData) {
   if (error) volver("/configuracion#pagos-fijos", "error", mensajeError(error));
   revalidatePath("/configuracion");
   volver("/configuracion#pagos-fijos", "ok", activo ? "Pago fijo activado." : "Pago fijo desactivado: ya no saldrá en los requerimientos.");
+}
+
+// ---------------------------------------------------------------------
+// Cuentas bancarias adicionales
+// ---------------------------------------------------------------------
+export async function agregarCuentaBancaria(fd: FormData) {
+  const ctx = await contextoMcp();
+  const supabase = await supabaseServidor();
+  const banco = texto(fd, "banco") ?? "";
+  const numero = (texto(fd, "numero") ?? "").replace(/\s/g, "");
+  if (!(BANCOS as readonly string[]).includes(banco)) volver("/configuracion?seccion=identidad", "error", "Elija un banco de la lista.");
+  if (numero.length < 6) volver("/configuracion?seccion=identidad", "error", "Escriba el número de cuenta (mínimo 6 dígitos).");
+  const { error } = await supabase.from("cuentas_bancarias").insert({ mcp_id: ctx.mcp.id, banco, numero, alias: texto(fd, "alias") });
+  if (error) volver("/configuracion?seccion=identidad", "error", /cuentas_bancarias/i.test(error.message) ? "Falta la actualización de la base (ACTUALIZAR_BASE.sql). Avise a soporte." : /duplicate|unique/i.test(error.message) ? "Esa cuenta ya está registrada." : mensajeError(error));
+  revalidatePath("/configuracion");
+  volver("/configuracion?seccion=identidad", "ok", "Cuenta bancaria agregada.");
+}
+
+/** Nada se borra: la cuenta se desactiva. */
+export async function desactivarCuentaBancaria(fd: FormData) {
+  const ctx = await contextoMcp();
+  const supabase = await supabaseServidor();
+  const { error } = await supabase.from("cuentas_bancarias").update({ activo: false }).eq("id", texto(fd, "id")!).eq("mcp_id", ctx.mcp.id);
+  if (error) volver("/configuracion?seccion=identidad", "error", mensajeError(error));
+  revalidatePath("/configuracion");
+  volver("/configuracion?seccion=identidad", "ok", "Cuenta quitada de la lista.");
+}
+
+// ---------------------------------------------------------------------
+// Fuentes de ingresos: municipalidades u otras instituciones que transfieren
+// ---------------------------------------------------------------------
+const FRECUENCIAS_OK = ["mensual", "trimestral", "semestral", "anual"];
+function datosFuente(fd: FormData) {
+  const monto = numero(fd, "monto");
+  const frecuencia = texto(fd, "frecuencia") ?? "mensual";
+  const mesInicio = numero(fd, "mes_inicio") ?? 1;
+  const dia = numero(fd, "dia_limite") ?? 10;
+  const documento = (texto(fd, "documento") ?? "").replace(/\D/g, "");
+  return { monto, frecuencia, mesInicio, dia, documento };
+}
+const SEC = "/configuracion?seccion=dinero";
+
+export async function guardarFuente(fd: FormData) {
+  const ctx = await contextoMcp();
+  const supabase = await supabaseServidor();
+  const id = texto(fd, "fuente_id")!;
+  const { monto, frecuencia, mesInicio, dia, documento } = datosFuente(fd);
+  if (monto === null || monto < 0) volver(SEC, "error", "Escriba el monto de cada transferencia.");
+  if (!FRECUENCIAS_OK.includes(frecuencia)) volver(SEC, "error", "Elija cada cuánto llega la transferencia.");
+  if (mesInicio < 1 || mesInicio > 12) volver(SEC, "error", "El mes de inicio debe estar entre enero y diciembre.");
+  if (dia < 1 || dia > 28) volver(SEC, "error", "El día límite debe estar entre 1 y 28.");
+  if (documento && documento.length !== 8 && documento.length !== 11) volver(SEC, "error", "El DNI tiene 8 dígitos y el RUC 11.");
+  const nombre = texto(fd, "municipalidad");
+  const { error } = await supabase
+    .from("fuentes")
+    .update({ monto_mensual: monto, frecuencia, mes_inicio: mesInicio, dia_limite: dia, documento: documento || null, ...(nombre ? { municipalidad: nombre } : {}) })
+    .eq("id", id)
+    .eq("mcp_id", ctx.mcp.id)
+    .neq("tipo", "propios");
+  if (error) volver(SEC, "error", /frecuencia|mes_inicio|documento/i.test(error.message) ? "Falta la actualización de la base (ACTUALIZAR_BASE.sql). Avise a soporte." : mensajeError(error));
+  revalidatePath("/", "layout");
+  volver(SEC, "ok", "Fuente guardada.");
+}
+
+export async function agregarFuente(fd: FormData) {
+  const ctx = await contextoMcp();
+  const supabase = await supabaseServidor();
+  const { monto, frecuencia, mesInicio, dia, documento } = datosFuente(fd);
+  const nombre = texto(fd, "municipalidad");
+  if (!nombre) volver(SEC, "error", "Escriba el nombre de la institución que transfiere.");
+  if (monto === null || monto <= 0) volver(SEC, "error", "Escriba el monto de cada transferencia.");
+  if (!FRECUENCIAS_OK.includes(frecuencia)) volver(SEC, "error", "Elija cada cuánto llega la transferencia.");
+  if (mesInicio < 1 || mesInicio > 12) volver(SEC, "error", "El mes de inicio debe estar entre enero y diciembre.");
+  if (dia < 1 || dia > 28) volver(SEC, "error", "El día límite debe estar entre 1 y 28.");
+  if (documento && documento.length !== 8 && documento.length !== 11) volver(SEC, "error", "El DNI tiene 8 dígitos y el RUC 11.");
+  const { error } = await supabase.from("fuentes").insert({ mcp_id: ctx.mcp.id, tipo: "otra", municipalidad: nombre, monto_mensual: monto, formato: "general", frecuencia, mes_inicio: mesInicio, dia_limite: dia, documento: documento || null });
+  if (error) volver(SEC, "error", /fuentes_tipo_check|frecuencia|mes_inicio|documento/i.test(error.message) ? "Falta la actualización de la base (ACTUALIZAR_BASE.sql). Avise a soporte." : mensajeError(error));
+  revalidatePath("/", "layout");
+  volver(SEC, "ok", "Fuente de ingresos agregada.");
+}
+
+/** Nada se borra: la fuente se desactiva (solo las agregadas aquí). */
+export async function desactivarFuente(fd: FormData) {
+  const ctx = await contextoMcp();
+  const supabase = await supabaseServidor();
+  const { error } = await supabase.from("fuentes").update({ activo: false }).eq("id", texto(fd, "fuente_id")!).eq("mcp_id", ctx.mcp.id).eq("tipo", "otra");
+  if (error) volver(SEC, "error", mensajeError(error));
+  revalidatePath("/", "layout");
+  volver(SEC, "ok", "Fuente desactivada. Lo ya registrado se conserva.");
 }

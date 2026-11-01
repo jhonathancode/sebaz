@@ -8,6 +8,7 @@ import { codigoCP, fecha, nombrePeriodo, periodoActual, rangoPeriodo, soles } fr
 import { supabaseServidor } from "@/lib/supabase/server";
 import { siguienteCheque } from "@/lib/pagosFijos";
 import { crearComprobanteDirecto } from "./acciones";
+import { etiquetaFuente } from "@/lib/fuentes";
 
 const ORIGEN: Record<string, string> = { expediente: "Expediente", caja_chica: "Caja chica", directo: "Directo" };
 
@@ -91,7 +92,7 @@ export default async function Comprobantes({ searchParams }: { searchParams: Par
                   <td style={{ fontWeight: 600 }}>{codigoCP(c.numero, c.origen)}</td>
                   <td>{fecha(c.fecha)}</td>
                   <td>{ORIGEN[c.origen]}</td>
-                  <td>{f?.tipo === "distrito" ? "Distrito" : f?.tipo === "provincia" ? "Provincia" : "Ingresos propios"}</td>
+                  <td>{f ? etiquetaFuente(f) : "Ingresos propios"}</td>
                   <td>{c.beneficiario}</td>
                   <td className="envolver tachar">{c.concepto}</td>
                   <td>{c.cheque ?? <span className="falta">Pendiente</span>}</td>

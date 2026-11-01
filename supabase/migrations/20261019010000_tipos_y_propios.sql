@@ -49,7 +49,7 @@ alter table fuentes add constraint fuentes_tipo_check check (tipo in ('distrito'
 
 insert into fuentes (mcp_id, tipo, municipalidad, monto_mensual, formato)
 select id, 'propios', 'Ingresos propios (recursos directamente recaudados)', 0, 'general' from mcps
-on conflict (mcp_id, tipo) do nothing;
+on conflict do nothing;
 
 -- Toda MCP nueva nace con su fuente de ingresos propios
 create or replace function crear_fuente_propios() returns trigger
@@ -57,7 +57,7 @@ language plpgsql security definer set search_path = public as $$
 begin
   insert into fuentes (mcp_id, tipo, municipalidad, monto_mensual, formato)
   values (new.id, 'propios', 'Ingresos propios (recursos directamente recaudados)', 0, 'general')
-  on conflict (mcp_id, tipo) do nothing;
+  on conflict do nothing;
   return new;
 end $$;
 drop trigger if exists mcps_fuente_propios on mcps;

@@ -19,6 +19,7 @@ import { tieneModulo } from "@/lib/modulos";
 import { cargarCatalogoPagosFijos, estadoPagosFijos } from "@/lib/pagosFijos";
 import { supabaseServidor } from "@/lib/supabase/server";
 import { copiarPagosFijos } from "../expedientes/acciones";
+import { etiquetaFuente, montoDelMes } from "@/lib/fuentes";
 
 function saludo() {
   const h = Number(new Date().toLocaleString("en-US", { timeZone: "America/Lima", hour: "numeric", hour12: false }));
@@ -87,11 +88,11 @@ export default async function Inicio() {
     const deLaFuente = lista.filter((c) => c.fuente_id === f.id && c.estado !== "rendido");
     const listo = deLaFuente.filter((c) => c.estado === "aprobado" && c.cheque).reduce((s, c) => s + Number(c.importe), 0);
     const tramite = deLaFuente.filter((c) => !(c.estado === "aprobado" && c.cheque)).reduce((s, c) => s + Number(c.importe), 0);
-    const transferencia = Number(f.monto_mensual);
+    const transferencia = montoDelMes(f, periodo);
     const falta = Math.round((transferencia - listo - tramite) * 100) / 100;
     const limite = fechaLimite(periodo, f.dia_limite);
     return { f, listo, tramite, transferencia, falta, limite, dias: diasHasta(limite), rendicion: rendicionDe(f.id, periodo) };
-  });
+  }).filter((t) => t.transferencia > 0 || t.listo + t.tramite > 0 || t.rendicion);
 
   // ---- 3. Rendiciones del mes pasado que aún no se arman
   const atrasadas = transferencias
@@ -274,7 +275,7 @@ export default async function Inicio() {
             return (
               <Link key={f.id} className="ini-rend-fila" href={rendicion ? `/rendicion/${rendicion.id}` : `/rendicion?fuente=${f.id}`} style={{ gap: 10 }}>
                 <div className="tarjeta-cab">
-                  <span className="etiqueta">{f.tipo === "distrito" ? "Distrito" : "Provincia"} · {f.municipalidad}</span>
+                  <span className="etiqueta">{etiquetaFuente(f)} · {f.municipalidad}</span>
                   {rendicion ? <Estado valor={rendicion.estado} /> : <span className={`plazo ${dias < 0 ? "vencido" : dias <= 5 ? "cerca" : ""}`}>Hasta el {fechaLarga(limite)} · {cuentaRegresiva(dias)}</span>}
                 </div>
                 {rendicion ? (

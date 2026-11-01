@@ -5,7 +5,12 @@ export type Enlace = {
   id?: string;
   periodo?: string;
   etiqueta?: string;
+  /** Otros comprobantes pagados con el mismo cheque (un cheque que cubre varios expedientes). */
+  extra?: { id: string; etiqueta: string }[];
 };
+
+/** Todos los ids de comprobante de un enlace (el principal y los demás del mismo cheque). */
+export const idsEnlace = (e?: Enlace | null): string[] => (e ? [...(e.id ? [e.id] : []), ...(e.extra ?? []).map((x) => x.id)] : []);
 
 export type LineaExtracto = { codigo: string; cargo: string; abono: string; saldo: string; dia: string; enlace?: Enlace | null };
 
@@ -51,8 +56,17 @@ export function sugerir(l: LineaExtracto, c: Candidatos, usados: Set<string>): S
   if (t === "comision") return { enlace: { tipo: "banco", etiqueta: "Mantenimiento o comisión del banco" } };
   if (t === "cheque") {
     const n = soloDigitos(l.codigo);
-    const cp = c.cps.find((x) => !usados.has(x.id) && soloDigitos(x.cheque) === n) ?? c.cps.find((x) => !usados.has(x.id) && soloDigitos(x.cheque).endsWith(n.slice(-6)) && n.length >= 6);
-    if (cp) return { enlace: { tipo: "cp", id: cp.id, etiqueta: `${cp.codigo} · ${cp.beneficiario}` }, aviso: cargo !== null && !igual(cargo, cp.monto) ? `El comprobante es por S/ ${fmt(cp.monto)} y el banco cobró S/ ${fmt(cargo)}` : undefined };
+    const libres = c.cps.filter((x) => !usados.has(x.id));
+    const exactos = libres.filter((x) => soloDigitos(x.cheque) === n);
+    const mismos = exactos.length ? exactos : n.length >= 6 ? libres.filter((x) => soloDigitos(x.cheque).endsWith(n.slice(-6))) : [];
+    if (mismos.length) {
+      const suma = r2(mismos.reduce((t, x) => t + x.monto, 0));
+      const etq = (x: (typeof mismos)[number]) => `${x.codigo} · ${x.beneficiario}`;
+      return {
+        enlace: { tipo: "cp", id: mismos[0].id, etiqueta: etq(mismos[0]), ...(mismos.length > 1 ? { extra: mismos.slice(1).map((x) => ({ id: x.id, etiqueta: etq(x) })) } : {}) },
+        aviso: cargo !== null && !igual(cargo, suma) ? `Los comprobantes suman S/ ${fmt(suma)} y el banco cobró S/ ${fmt(cargo)}` : undefined,
+      };
+    }
     return null;
   }
   if (t === "transferencia" || t === "abono") {

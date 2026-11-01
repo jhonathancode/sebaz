@@ -370,6 +370,13 @@ export default function ConciliarEstado({
   const todoCuadra = conDato.length === checks.length && conDato.every((c) => igual(c.pdf!, c.sist!));
   const malas = calculo.filas.filter((f) => f.estado === "mal").length;
   const cuadra = todoCuadra && malas === 0;
+  /** Qué total del original todavía no coincide con lo copiado (para decirlo claro). */
+  const faltas = checks
+    .filter((c) => c.pdf !== null && c.sist !== null && !igual(c.pdf, c.sist))
+    .map((c) => {
+      const d = r2(c.pdf! - c.sist!);
+      return { t: c.t, txt: c.clave === "s" ? `difiere en S/ ${fmt(Math.abs(d))}` : `${d > 0 ? "faltan" : "sobran"} ${c.f(Math.abs(d))}`, falta: d > 0 };
+    });
 
   // Enlaces
   const activas = lineas.map((l, i) => ({ l, i, tipo: tipoLinea(l) })).filter((x) => x.tipo !== "vacia");
@@ -420,7 +427,13 @@ export default function ConciliarEstado({
 
       <header className="cj-resumen" role="status">
         <div className={`cj-sello ${cuadra ? "ok" : ""}`}>
-          <b>{cuadra ? "✓ Cuadra con el estado de cuenta" : `Aún no cuadra${malas ? ` · ${malas} saldo(s) del día no coinciden` : ""}`}</b>
+          <b>{cuadra ? "✓ Cuadra con el estado de cuenta" : "Aún no cuadra con el original"}</b>
+          {!cuadra && (faltas.length > 0 || malas > 0) && (
+            <span className="cj-faltas">
+              {faltas.map((f) => <i key={f.t}>{f.t}: {f.txt}</i>)}
+              {malas > 0 && <i className="rojo">{malas} saldo(s) del día no coinciden</i>}
+            </span>
+          )}
           <span>
             {calculo.n} movimiento(s) · cargos S/ {fmt(calculo.totalCargos)} · abonos S/ {fmt(calculo.totalAbonos)}
             {calculo.saldoFinal !== null && <> · saldo S/ {fmt(calculo.saldoFinal)}</>}
@@ -523,10 +536,10 @@ export default function ConciliarEstado({
                     <div className="cj-atajos">
                       <button type="button" className="mas" onClick={() => agregar()}>+ Agregar línea</button>
                       <span>Rápido:</span>
-                      <button type="button" onClick={() => agregar("", "codigo")}>Cheque</button>
-                      <button type="button" onClick={() => agregar("IMPT/ITF", "cargo")}>IMPT/ITF</button>
-                      <button type="button" onClick={() => agregar("MANUTEN.", "cargo")}>MANUTEN.</button>
-                      <button type="button" onClick={() => agregar("TI ", "abono")}>TI (abono)</button>
+                      <button type="button" className="q-cheque" onClick={() => agregar("", "codigo")}>Cheque</button>
+                      <button type="button" className="q-itf" onClick={() => agregar("IMPT/ITF", "cargo")}>IMPT/ITF</button>
+                      <button type="button" className="q-mant" onClick={() => agregar("MANUTEN.", "cargo")}>MANUTEN.</button>
+                      <button type="button" className="q-ti" onClick={() => agregar("TI ", "abono")}>TI (abono)</button>
                     </div>
                   )}
                 </td>
@@ -613,10 +626,22 @@ export default function ConciliarEstado({
                         {l.enlace ? (
                           <>
                             <span className={`cj-pill ${l.enlace.tipo}`}>{l.enlace.tipo === "banco" ? "Banco" : l.enlace.tipo === "cp" ? "Comprobante" : l.enlace.tipo === "transferencia" ? "Transferencia" : l.enlace.tipo === "ingresos" ? "Ingresos propios" : "Otro"}</span>
-                            <b className="cj-etq">{l.enlace.etiqueta}</b>
-                            {(l.enlace.extra ?? []).map((x) => <b key={x.id} className="cj-etq">{x.etiqueta}</b>)}
-                            {varios && dif === null && <small className="cj-ok-suma">✓ Un cheque, {cpsEnl.length} comprobantes: suman S/ {fmt(sumaCp)}, cuadra con el banco</small>}
-                            {dif !== null && <small className="cj-alerta">{(varios ? `Los ${cpsEnl.length} comprobantes suman S/ ${fmt(dif)}` : `El comprobante es por S/ ${fmt(dif)}`) + (cargo !== null ? ` · ${cargo > dif ? "falta enlazar" : "sobra"} S/ ${fmt(Math.abs(r2(cargo - dif)))}` : "")}</small>}
+                            {cpsEnl.length > 0 ? (
+                              <ul className="cj-cps">
+                                {cpsEnl.map((c) => (
+                                  <li key={c.id}><span><b>{c.codigo}</b> {c.beneficiario}</span><em>S/ {fmt(c.monto)}</em></li>
+                                ))}
+                                {varios && <li className="tot"><span>Suman</span><em>S/ {fmt(sumaCp)}</em></li>}
+                              </ul>
+                            ) : (
+                              <>
+                                <b className="cj-etq">{l.enlace.etiqueta}</b>
+                                {(l.enlace.extra ?? []).map((x) => <b key={x.id} className="cj-etq">{x.etiqueta}</b>)}
+                              </>
+                            )}
+                            {cpsEnl.length > 0 && cargo !== null && (dif === null
+                              ? <small className="cj-estado ok">✓ Cuadra con el banco · S/ {fmt(cargo)}</small>
+                              : <small className="cj-estado falta">⚠ {cargo > (dif as number) ? "Falta enlazar" : "Sobra"} S/ {fmt(Math.abs(r2(cargo - (dif as number))))} para llegar a S/ {fmt(cargo)}</small>)}
                           </>
                         ) : sug ? (
                           <>

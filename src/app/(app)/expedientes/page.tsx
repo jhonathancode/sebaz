@@ -376,9 +376,6 @@ export default async function Expedientes({ searchParams }: { searchParams: Para
                             {dd.cheque ? `Cheque ${dd.cheque}` : "Sin cheque"}
                           </span>
                         )}
-                        {p === "comprobante" && dd.conciliado && (
-                          <span className="doc-conciliado" title="El cheque ya figura cobrado en el estado de cuenta del banco">✓ Conciliado con el banco</span>
-                        )}
                       </span>
                     );
                   })}

@@ -3571,3 +3571,12 @@ label.opcion:has(input:checked) { border-color: var(--primario); background: lin
 .visor-cab { flex-direction: row !important; align-items: flex-start; justify-content: space-between; }
 .visor-titulo { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
 .visor-x { margin-left: auto; }
+/* Segunda municipalidad (Provincia): azul acero suave en lugar de plomo */
+.muni-tab:nth-child(2) { border-color: color-mix(in srgb, #3b6ea5 28%, var(--borde)); background: linear-gradient(135deg, color-mix(in srgb, #3b6ea5 10%, var(--panel)), var(--panel) 75%); }
+.muni-tab:nth-child(2)::before { background: linear-gradient(180deg, #3b6ea5, #8fb4dc); }
+.muni-tab:nth-child(2) .m-monto { color: #2f5d8f; }
+.muni-tab:nth-child(2) .k-barra > div { background: linear-gradient(90deg, #3b6ea5, #8fb4dc); box-shadow: 0 0 10px rgba(59, 110, 165, .4); }
+.muni-tab:nth-child(2).activo { border-color: #3b6ea5; box-shadow: 0 22px 40px -26px rgba(59, 110, 165, .7), 0 0 0 4px color-mix(in srgb, #3b6ea5 14%, transparent); }
+.muni-tab:nth-child(2):hover { border-color: #3b6ea5; box-shadow: 0 16px 28px -22px rgba(59, 110, 165, .6); }
+:root[data-theme="dark"] .muni-tab:nth-child(2) .m-monto { color: #9cc3ea; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .muni-tab:nth-child(2) .m-monto { color: #9cc3ea; } }

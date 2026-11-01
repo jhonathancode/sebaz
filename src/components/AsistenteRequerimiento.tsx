@@ -98,6 +98,16 @@ export default function AsistenteRequerimiento({
   const ref = useRef<HTMLDialogElement>(null);
   const form = useRef<HTMLFormElement>(null);
   const cuerpo = useRef<HTMLDivElement>(null);
+  // Al abrir, la ventana siempre empieza arriba (el cursor en un campo de abajo no debe llevarla hasta allá)
+  const mostrar = () => {
+    const d = ref.current;
+    if (!d || d.open) return;
+    d.showModal();
+    const arriba = () => cuerpo.current?.scrollTo({ top: 0 });
+    arriba();
+    requestAnimationFrame(arriba);
+    window.setTimeout(arriba, 80);
+  };
   const [, repintar] = useReducer((n: number) => n + 1, 0);
   const [paso, setPaso] = useState<Paso>("form");
   const [aviso, setAviso] = useState<string | null>(null);
@@ -109,14 +119,14 @@ export default function AsistenteRequerimiento({
 
   // Abrir: desde el botón, desde la dirección (?nuevo=1) o desde el menú lateral
   useEffect(() => {
-    if (abierta && ref.current && !ref.current.open) ref.current.showModal();
+    if (abierta) mostrar();
   }, [abierta]);
   useEffect(() => {
     if (!eventoAbrir) return;
     const abrir = (e: Event) => {
       const d = (e as CustomEvent<{ tomado?: boolean } | undefined>).detail;
       if (d && typeof d === "object") d.tomado = true;
-      if (ref.current && !ref.current.open) ref.current.showModal();
+      mostrar();
     };
     window.addEventListener(eventoAbrir, abrir);
     return () => window.removeEventListener(eventoAbrir, abrir);
@@ -274,7 +284,7 @@ export default function AsistenteRequerimiento({
   return (
     <>
       {boton && (
-        <button type="button" className={`${claseBoton} no-imprimir`} onClick={() => ref.current?.showModal()}>
+        <button type="button" className={`${claseBoton} no-imprimir`} onClick={mostrar}>
           {boton}
         </button>
       )}

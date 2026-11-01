@@ -48,8 +48,11 @@ export default function VisorArchivo({ url, descarga, nombre, tipo, titulo }: { 
       <button type="button" className="btn chico contorno" onClick={abrir}>Ver</button>
       <dialog ref={dialogo} className="visor" onClick={(e) => e.target === dialogo.current && cerrar()}>
         <div className="visor-cab">
-          <strong>{titulo}</strong>
-          <span className="tenue pequeno">{nombre}</span>
+          <div className="visor-titulo">
+            <strong>{titulo}</strong>
+            <span className="tenue pequeno">{nombre}</span>
+          </div>
+          <button type="button" className="visor-x" onClick={cerrar} aria-label="Cerrar" title="Cerrar (Esc)">×</button>
         </div>
         <div className="visor-cuerpo">
           {estado === "cargando" && <p className="tenue">Abriendo el archivo…</p>}

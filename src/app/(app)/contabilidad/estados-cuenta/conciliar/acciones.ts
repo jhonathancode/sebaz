@@ -89,10 +89,14 @@ export async function guardarTranscripcion(fd: FormData) {
     if (nuevos.length) {
       const { error: eCobro } = await supabase.from("cheques_cobrados").insert(nuevos);
       if (!eCobro) marcados = nuevos.length;
+      else volver(destino, "error", `Se guardó la copia, pero no se pudieron marcar los cheques como cobrados: ${mensajeError(eCobro)}`);
     }
   }
   const enlazadas = lineas.filter((l) => l.enlace).length;
+  const conCheque = lineas.filter((l) => l.enlace?.tipo === "cp").length;
+  const sinCuadrar = conCheque - new Set(cobros.map((c) => c.id)).size > 0 && cobros.length < lineas.filter((l) => l.enlace?.tipo === "cp").length ? " Los cheques que no cuadran con sus comprobantes quedan pendientes y no se marcan «Conciliado»." : "";
   revalidatePath(RUTA);
   revalidatePath("/contabilidad");
-  volver(destino, "ok", `Guardado: ${lineas.length} línea(s), ${enlazadas} enlazada(s)${marcados ? ` y ${marcados} cheque(s) marcados como cobrados` : ""}.`);
+  revalidatePath("/expedientes");
+  volver(destino, "ok", `Guardado: ${lineas.length} línea(s), ${enlazadas} enlazada(s)${marcados ? ` y ${marcados} cheque(s) marcados como cobrados (salen «Conciliado» en Expedientes)` : ""}.${sinCuadrar}`);
 }

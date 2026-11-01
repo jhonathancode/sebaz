@@ -2363,3 +2363,28 @@ a.ini-kpi:hover { border-color: var(--primario-claro); }
 .cj-ok-suma { color: var(--primario-texto); font-weight: 700; font-size: 12px; }
 .te-enlazado.parcial { background: var(--ambar-fondo); color: var(--ambar); border: 1px solid var(--ambar-borde); }
 .cj-mov.parcial { background: var(--ambar-fondo); border-color: var(--ambar-borde); }
+.cj-singuardar { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; padding: 10px 14px; border-radius: 12px; background: var(--ambar-fondo); border: 1px solid var(--ambar-borde); color: var(--ambar); font-size: 13px; }
+.cj-singuardar span { color: var(--suave); }
+/* Copiar el estado de cuenta: más limpio */
+details.cj-guia { font-size: 12.5px; color: var(--tenue); }
+details.cj-guia summary { cursor: pointer; list-style: none; }
+details.cj-guia summary::-webkit-details-marker { display: none; }
+details.cj-guia summary span { color: var(--primario-texto); font-weight: 700; }
+details.cj-guia p { margin: 8px 0 0; line-height: 1.7; }
+.cj-corte { display: inline-flex; align-items: center; gap: 10px; font-size: 13px; font-weight: 600; color: var(--suave); }
+.cj-corte input { width: 140px; }
+.te-tabla-marco { padding: 4px 8px 8px; }
+.te-tabla th { font-size: 11px; font-weight: 700; text-transform: none; letter-spacing: 0; padding: 10px 6px; }
+.te-tabla td input { min-height: 44px; }
+.te-tabla td.te-va { padding: 0 10px !important; font-size: 12px; }
+.te-tabla td.te-va i { font-style: normal; font-weight: 800; margin-right: 5px; }
+.te-tabla td.te-va.ok i { color: var(--primario-texto); }
+.te-tabla td.te-va.mal, .te-tabla td.te-va.mal i { color: var(--rojo); }
+.te-tabla .te-previo td { border-top: 0; color: var(--tenue); }
+.te-tabla .te-fijo { font-size: 12px; font-weight: 700; letter-spacing: .04em; color: var(--tenue); padding-left: 8px; }
+.te-tabla tfoot .cj-atajos { padding: 4px 2px; }
+.te-tabla tfoot .cj-atajos button { background: transparent; border: 1px solid var(--borde); color: var(--suave); padding: 5px 12px; }
+.te-tabla tfoot .cj-atajos button.mas { background: var(--primario-fondo); border-color: transparent; color: var(--primario-texto); }
+.te-tabla tfoot .cj-atajos button:hover { background: var(--primario); border-color: var(--primario); color: #fff; }
+.te-tabla tfoot .cj-atajos span { margin-left: 6px; }
+.cj-paso { display: flex; flex-direction: column; gap: 14px; }

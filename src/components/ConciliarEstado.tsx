@@ -50,6 +50,23 @@ function vistaAIso(texto: string, ref: string): string {
   return Number.isNaN(f.getTime()) || f.toISOString().slice(0, 10) !== iso ? "" : iso;
 }
 
+/** Pone las barras solas mientras se escribe: «24» → «24/», «2402» → «24/02/», «24021993» → «24/02/1993». */
+function autoBarras(raw: string, anterior: string): string {
+  if (/^\d{4}-/.test(raw)) return raw;
+  const borrando = raw.length < anterior.length;
+  let partes: string[];
+  if (raw.includes("/") || raw.includes("-")) partes = raw.split(/[/-]/).slice(0, 3).map((p) => p.replace(/\D/g, ""));
+  else {
+    const d = raw.replace(/\D/g, "").slice(0, 8);
+    partes = [d.slice(0, 2)];
+    if (d.length > 2) partes.push(d.slice(2, 4));
+    if (d.length > 4) partes.push(d.slice(4));
+  }
+  partes = partes.map((p, i) => p.slice(0, i === 2 ? 4 : 2));
+  const out = partes.map((p, i) => (i < partes.length - 1 && p.length === 1 ? `0${p}` : p)).join("/");
+  return !borrando && partes.length < 3 && partes[partes.length - 1].length === 2 ? `${out}/` : out;
+}
+
 /** Campo de fecha que se escribe rápido: «6» → día 6 del mes del estado de cuenta; «0602» → 06/02. */
 function CampoDia({ valor, refFecha, onCambio, ...resto }: { valor: string; refFecha: string; onCambio: (iso: string) => void } & Omit<React.InputHTMLAttributes<HTMLInputElement>, "value" | "onChange" | "ref">) {
   const [texto, setTexto] = useState(isoAVista(valor));
@@ -64,7 +81,7 @@ function CampoDia({ valor, refFecha, onCambio, ...resto }: { valor: string; refF
       inputMode="numeric"
       placeholder="dd/mm/aaaa"
       onFocus={(e) => { setEditando(true); e.currentTarget.select(); }}
-      onChange={(e) => setTexto(e.target.value)}
+      onChange={(e) => setTexto((ant) => autoBarras(e.target.value, ant))}
       onBlur={() => {
         setEditando(false);
         const iso = texto.trim() === "" ? "" : vistaAIso(texto, refFecha);
@@ -233,6 +250,7 @@ export default function ConciliarEstado({
   const [eligiendo, setEligiendo] = useState<number | null>(null);
   const cuerpo = useRef<HTMLTableSectionElement>(null);
   const tocado = useRef(false);
+  const [sucio, setSucio] = useState(false);
 
   // Si se cierra la ventana a medias, lo escrito se recupera (solo en este equipo, hasta guardar)
   useEffect(() => {
@@ -253,6 +271,7 @@ export default function ConciliarEstado({
   }, [clave, lineasInicial.length]);
   useEffect(() => {
     if (!tocado.current) return;
+    setSucio(true);
     try {
       localStorage.setItem(clave, JSON.stringify({ cab, lineas }));
     } catch {
@@ -419,32 +438,26 @@ export default function ConciliarEstado({
         </button>
         <button type="button" role="tab" aria-selected={paso === "enlazar"} className={paso === "enlazar" ? "activo" : ""} onClick={() => setPaso("enlazar")}>
           <i>2</i> Enlazar con lo registrado
-          {activas.length > 0 && <small>{enlazadas}/{activas.length}</small>}
         </button>
       </div>
-      {borradorLocal && <p className="cj-aviso">Se recuperó lo que había escrito sin guardar en este equipo.</p>}
+      {(sucio || borradorLocal) && (
+        <div className="cj-singuardar" role="status">
+          <b>● Cambios sin guardar</b>
+          <span>{borradorLocal && !sucio ? "Se recuperó lo escrito en este equipo. " : ""}Hasta que pulse <b>Guardar</b>, los expedientes no salen como «Conciliado».</span>
+        </div>
+      )}
 
       {/* ----------------------------------------------------------- PASO 1 */}
       <div hidden={paso !== "copiar"} className="cj-paso">
-        <p className="cj-guia">
-          Escriba cada línea como está en el original. <kbd>Tab</kbd> pasa a la siguiente casilla y <kbd>Enter</kbd> baja a la línea de abajo. En «Día» basta el número (<kbd>6</kbd> = día 6) o <kbd>0602</kbd> para 06/02.
-        </p>
+        <details className="cj-guia">
+          <summary>Escriba cada línea como está en el original <span>· ver atajos</span></summary>
+          <p><kbd>Tab</kbd> pasa a la siguiente casilla y <kbd>Enter</kbd> baja a la línea de abajo. En «Día» las barras salen solas: <kbd>6</kbd> = día 6 del mes, <kbd>0602</kbd> = 06/02.</p>
+        </details>
 
-        <fieldset disabled={!puede} className="cj-bar">
-          <label className="campo">
-            Estado de cuenta al
-            <CampoDia valor={cab.fecha_corte} refFecha={refFecha} onCambio={(v) => ponCab("fecha_corte", v)} />
-          </label>
-          {puede && (
-            <div className="cj-atajos">
-              <span>Agregar línea:</span>
-              <button type="button" onClick={() => agregar("", "codigo")}>+ Cheque</button>
-              <button type="button" onClick={() => agregar("IMPT/ITF", "cargo")}>+ IMPT/ITF</button>
-              <button type="button" onClick={() => agregar("MANUTEN.", "cargo")}>+ MANUTEN.</button>
-              <button type="button" onClick={() => agregar("TI ", "abono")}>+ TI (abono)</button>
-            </div>
-          )}
-        </fieldset>
+        <label className="cj-corte">
+          Estado de cuenta al
+          <CampoDia valor={cab.fecha_corte} refFecha={refFecha} onCambio={(v) => ponCab("fecha_corte", v)} disabled={!puede} />
+        </label>
 
         <div className="te-tabla-marco">
           <table className="te-tabla">
@@ -457,7 +470,6 @@ export default function ConciliarEstado({
                 <th>Saldos</th>
                 <th>Día</th>
                 <th title="Lo que va la cuenta hasta esta línea">Va en</th>
-                <th aria-label="Comprobación" />
                 <th aria-label="Enlace" />
                 <th aria-label="Quitar" />
               </tr>
@@ -491,10 +503,8 @@ export default function ConciliarEstado({
                     <td><input {...comunes("abono")} className="m" inputMode="decimal" value={l.abono} onChange={(e) => ponLinea(i, "abono", e.target.value)} onBlur={(e) => ponLinea(i, "abono", darFormato(e.target.value))} aria-label={`Línea ${i + 1}: abono`} /></td>
                     <td><input {...comunes("saldo")} className="m" inputMode="decimal" value={l.saldo} onChange={(e) => ponLinea(i, "saldo", e.target.value)} onBlur={(e) => ponLinea(i, "saldo", darFormato(e.target.value))} aria-label={`Línea ${i + 1}: saldo`} /></td>
                     <td><CampoDia {...comunes("dia")} valor={l.dia} refFecha={refFecha} onCambio={(v) => ponLinea(i, "dia", v)} aria-label={`Línea ${i + 1}: día`} /></td>
-                    <td className="te-va">{f.corrida !== null ? fmt(f.corrida) : ""}</td>
-                    <td className="te-chk">
-                      {f.estado === "ok" && <span className="si" title="El saldo coincide con lo que va la cuenta">✓</span>}
-                      {f.estado === "mal" && <span className="no" title={`Debería ser ${f.corrida !== null ? fmt(f.corrida) : "—"}`}>✗</span>}
+                    <td className={`te-va${f.estado === "ok" ? " ok" : f.estado === "mal" ? " mal" : ""}`} title={f.estado === "mal" ? `El saldo del banco no coincide: debería ser ${f.corrida !== null ? fmt(f.corrida) : "—"}` : f.estado === "ok" ? "El saldo coincide con lo que va la cuenta" : undefined}>
+                      {f.estado === "ok" && <i>✓</i>}{f.estado === "mal" && <i>✗</i>}{f.corrida !== null ? fmt(f.corrida) : ""}
                     </td>
                     <td className="te-enl">
                       {l.enlace && (faltaDe(l) === null
@@ -508,7 +518,18 @@ export default function ConciliarEstado({
             </tbody>
             <tfoot>
               <tr>
-                <td colSpan={10}>{puede && <button type="button" className="btn chico contorno" onClick={() => agregar()}>+ Agregar línea</button>}</td>
+                <td colSpan={9}>
+                  {puede && (
+                    <div className="cj-atajos">
+                      <button type="button" className="mas" onClick={() => agregar()}>+ Agregar línea</button>
+                      <span>Rápido:</span>
+                      <button type="button" onClick={() => agregar("", "codigo")}>Cheque</button>
+                      <button type="button" onClick={() => agregar("IMPT/ITF", "cargo")}>IMPT/ITF</button>
+                      <button type="button" onClick={() => agregar("MANUTEN.", "cargo")}>MANUTEN.</button>
+                      <button type="button" onClick={() => agregar("TI ", "abono")}>TI (abono)</button>
+                    </div>
+                  )}
+                </td>
               </tr>
             </tfoot>
           </table>

@@ -354,7 +354,15 @@ export default function ConciliarEstado({
 
   // Enlaces
   const activas = lineas.map((l, i) => ({ l, i, tipo: tipoLinea(l) })).filter((x) => x.tipo !== "vacia");
-  const enlazadas = activas.filter((x) => x.l.enlace).length;
+  /** Diferencia que falta enlazar (cheque cuyos comprobantes no suman lo que cobró el banco); null si está completo. */
+  const faltaDe = (l: LineaExtracto): number | null => {
+    if (l.enlace?.tipo !== "cp") return null;
+    const cargo = aNum(l.cargo);
+    if (cargo === null) return null;
+    const suma = r2(idsEnlace(l.enlace).reduce((t, id) => t + (candidatos.cps.find((c) => c.id === id)?.monto ?? 0), 0));
+    return igual(suma, cargo) ? null : r2(cargo - suma);
+  };
+  const enlazadas = activas.filter((x) => x.l.enlace && faltaDe(x.l) === null).length;
   const pctEnlace = activas.length ? Math.round((enlazadas / activas.length) * 100) : 0;
   const usados = useMemo(() => new Set(lineas.flatMap((l) => idsEnlace(l.enlace))), [lineas]);
   const infoCp = useMemo(() => new Map(candidatos.cps.map((c) => [c.id, c])), [candidatos.cps]);
@@ -489,7 +497,9 @@ export default function ConciliarEstado({
                       {f.estado === "mal" && <span className="no" title={`Debería ser ${f.corrida !== null ? fmt(f.corrida) : "—"}`}>✗</span>}
                     </td>
                     <td className="te-enl">
-                      {l.enlace && <span className="te-enlazado" title={l.enlace.etiqueta}>🔗 Enlazado</span>}
+                      {l.enlace && (faltaDe(l) === null
+                        ? <span className="te-enlazado" title={l.enlace.etiqueta}>🔗 Enlazado</span>
+                        : <span className="te-enlazado parcial" title="Los comprobantes no suman lo que cobró el banco">⚠ Falta S/ {fmt(Math.abs(faltaDe(l) as number))}</span>)}
                     </td>
                     <td>{puede && <button type="button" className="te-quitar" onClick={() => quitar(i)} aria-label={`Quitar la línea ${i + 1}`}>×</button>}</td>
                   </tr>
@@ -561,7 +571,7 @@ export default function ConciliarEstado({
 
             <ul className="cj-movs">
               {activas
-                .filter((x) => !soloPendientes || !x.l.enlace)
+                .filter((x) => !soloPendientes || !x.l.enlace || faltaDe(x.l) !== null)
                 .map(({ l, i, tipo }) => {
                   const cargo = aNum(l.cargo);
                   const abono = aNum(l.abono);
@@ -571,7 +581,7 @@ export default function ConciliarEstado({
                   const dif = cpsEnl.length && cargo !== null && !igual(sumaCp, cargo) ? sumaCp : null;
                   const varios = cpsEnl.length > 1;
                   return (
-                    <li key={i} className={`cj-mov${l.enlace ? " listo" : ""}`}>
+                    <li key={i} className={`cj-mov${l.enlace ? (dif !== null ? " parcial" : " listo") : ""}`}>
                       <div className="cj-mov-fecha"><b>{diaCorto(l.dia)}</b><small>#{i + 1}</small></div>
                       <div className="cj-mov-dato">
                         <b>{l.codigo || "—"}</b>
@@ -585,7 +595,7 @@ export default function ConciliarEstado({
                             <b className="cj-etq">{l.enlace.etiqueta}</b>
                             {(l.enlace.extra ?? []).map((x) => <b key={x.id} className="cj-etq">{x.etiqueta}</b>)}
                             {varios && dif === null && <small className="cj-ok-suma">✓ Un cheque, {cpsEnl.length} comprobantes: suman S/ {fmt(sumaCp)}, cuadra con el banco</small>}
-                            {dif !== null && <small className="cj-alerta">{varios ? `Los ${cpsEnl.length} comprobantes suman S/ ${fmt(dif)}` : `El comprobante es por S/ ${fmt(dif)}`}</small>}
+                            {dif !== null && <small className="cj-alerta">{(varios ? `Los ${cpsEnl.length} comprobantes suman S/ ${fmt(dif)}` : `El comprobante es por S/ ${fmt(dif)}`) + (cargo !== null ? ` · ${cargo > dif ? "falta enlazar" : "sobra"} S/ ${fmt(Math.abs(r2(cargo - dif)))}` : "")}</small>}
                           </>
                         ) : sug ? (
                           <>
@@ -603,7 +613,7 @@ export default function ConciliarEstado({
                     </li>
                   );
                 })}
-              {soloPendientes && activas.every((x) => x.l.enlace) && <li className="cj-todo">✓ Todos los movimientos están enlazados</li>}
+              {soloPendientes && activas.every((x) => x.l.enlace && faltaDe(x.l) === null) && <li className="cj-todo">✓ Todos los movimientos están enlazados</li>}
             </ul>
           </>
         )}

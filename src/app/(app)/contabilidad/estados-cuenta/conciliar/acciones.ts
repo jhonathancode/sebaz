@@ -71,7 +71,17 @@ export async function guardarTranscripcion(fd: FormData) {
   if (error) volver(destino, "error", /extractos_transcritos/i.test(error.message) ? "Falta la actualización de la base (ACTUALIZAR_BASE.sql). Avise a soporte." : mensajeError(error));
   // Los cheques enlazados con un comprobante quedan marcados como cobrados (con la fecha del banco)
   let marcados = 0;
-  const cobros = lineas.filter((l) => l.enlace?.tipo === "cp" && l.enlace.id && l.dia).flatMap((l) => [l.enlace!.id as string, ...((l.enlace as { extra?: { id: string }[] }).extra ?? []).map((x) => x.id)].map((id) => ({ id, dia: l.dia as string })));
+  const idsCp = Array.from(new Set(lineas.flatMap((l) => (l.enlace?.tipo === "cp" ? [l.enlace.id as string, ...((l.enlace as { extra?: { id: string }[] }).extra ?? []).map((x) => x.id)] : []).filter(Boolean))));
+  const { data: cpsMonto } = idsCp.length ? await supabase.from("comprobantes_pago").select("id, importe, deducciones").in("id", idsCp) : { data: [] as { id: string; importe: number; deducciones: number | null }[] };
+  const montoCp = new Map((cpsMonto ?? []).map((c) => [c.id, Math.round((Number(c.importe) - Number(c.deducciones ?? 0)) * 100) / 100]));
+  // Solo se marcan como cobrados los cheques cuyos comprobantes suman lo que cobró el banco
+  const cobros = lineas
+    .filter((l) => l.enlace?.tipo === "cp" && l.enlace.id && l.dia)
+    .flatMap((l) => {
+      const ids = [l.enlace!.id as string, ...((l.enlace as { extra?: { id: string }[] }).extra ?? []).map((x) => x.id)];
+      const suma = Math.round(ids.reduce((t, id) => t + (montoCp.get(id) ?? 0), 0) * 100) / 100;
+      return l.cargo !== null && Math.abs(suma - l.cargo) < 0.005 ? ids.map((id) => ({ id, dia: l.dia as string })) : [];
+    });
   if (cobros.length) {
     const { data: ya } = await supabase.from("cheques_cobrados").select("comprobante_id").eq("mcp_id", ctx.mcp.id).eq("anulado", false).in("comprobante_id", cobros.map((c) => c.id));
     const existentes = new Set((ya ?? []).map((x) => x.comprobante_id));

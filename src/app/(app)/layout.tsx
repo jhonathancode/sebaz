@@ -13,7 +13,7 @@ import { tieneModulo } from "@/lib/modulos";
 import { supabaseServidor } from "@/lib/supabase/server";
 import type { Aviso } from "@/lib/notificaciones";
 import { rendicionesAtrasadas, type Pendiente } from "@/lib/pendientes";
-import { abrirAviso, marcarTodasLeidas } from "./mensajes/acciones";
+import { abrirAviso, dejarPendiente, marcarLeida, marcarTodasLeidas } from "./mensajes/acciones";
 
 async function salir() {
   "use server";
@@ -141,7 +141,7 @@ export default async function MarcoApp({ children }: { children: React.ReactNode
           </span>
         </div>
         <div className="acciones">
-          {(hayBandeja || pendientes.length > 0) && <Bandeja avisos={avisos} sinLeer={sinLeer} pendientes={pendientes} abrir={abrirAviso} marcarTodas={marcarTodasLeidas} />}
+          {(hayBandeja || pendientes.length > 0) && <Bandeja avisos={avisos} sinLeer={sinLeer} pendientes={pendientes} abrir={abrirAviso} marcarLeida={marcarLeida} dejarPendiente={dejarPendiente} marcarTodas={marcarTodasLeidas} />}
           <BotonTema inicial={tema === "dark" || tema === "light" ? tema : null} />
           <MenuUsuario
             nombre={ctx.nombre}

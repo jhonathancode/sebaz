@@ -3682,3 +3682,43 @@ label.opcion:has(input:checked) { border-color: var(--primario); background: lin
 .lm-mcp-texto .lm-modulo-ico svg { display: block; }
 .lm-mcp-texto .lm-modulo-txt { display: block; font-size: 14px; line-height: 30px; font-weight: 600; letter-spacing: .02em; text-transform: uppercase; color: #fff; white-space: nowrap; }
 .lm-mcp-texto .lm-modulo-txt b { font-size: inherit; font-weight: 800; color: #fff; }
+
+/* ===== Cuadros más sobrios: el azul se usa de acento, no de relleno ===== */
+/* Tablas tipo Excel (caja chica, ingresos, etc.) */
+.cc-excel-marco { background: var(--panel); border: 1px solid var(--borde); border-radius: 16px; overflow: hidden; box-shadow: 0 10px 28px -22px rgba(15, 23, 42, .35); }
+.cc-excel caption { background: var(--panel); color: var(--texto); text-shadow: none; text-align: left; font-size: 17px; font-weight: 800; letter-spacing: .02em; padding: 16px 20px; border-bottom: 1px solid var(--borde); box-shadow: inset 5px 0 0 var(--primario); }
+.cc-excel th { background: var(--panel-2); color: var(--suave); border-color: var(--linea); font-size: 11.5px; font-weight: 800; letter-spacing: .07em; padding: 10px; }
+.cc-excel td { border-color: var(--linea); }
+.cc-excel tbody tr:nth-child(even) td { background: transparent; }
+.cc-excel tbody tr:hover td { background: color-mix(in srgb, var(--primario) 5%, var(--panel)); }
+.cc-excel tfoot td { background: var(--panel-2); color: var(--texto); font-size: 14px; border-color: var(--linea); }
+.cc-excel tfoot td.m, .cc-excel tfoot td.num { color: var(--primario-texto); }
+/* Almacén */
+.alm .alm-marco { border: 1px solid var(--borde); border-radius: 16px; box-shadow: 0 10px 28px -22px rgba(15, 23, 42, .35); }
+.alm-banda { background: var(--panel); color: var(--texto); border-bottom: 1px solid var(--borde); box-shadow: inset 5px 0 0 var(--primario); padding: 15px 20px; }
+.alm-banda b { font-size: 17px; letter-spacing: .02em; }
+.alm-banda span { background: var(--primario-fondo); color: var(--primario-texto); font-size: 12.5px; }
+.alm .tabla th { background: var(--panel-2); color: var(--suave); font-size: 11.5px; letter-spacing: .07em; border-color: var(--linea); }
+.alm .tabla td { border-color: var(--linea); }
+.alm .tabla tbody tr:nth-child(even) td { background: transparent; }
+.alm .tabla tbody tr:hover td { background: color-mix(in srgb, var(--primario) 5%, var(--panel)); }
+.alm .tabla tfoot th { background: var(--panel-2); color: var(--texto); }
+/* Tarjetas de resumen: fondo limpio y solo una franja de color a la izquierda */
+.cc-selector ~ .tarjetas .tarjeta, .alm .alm-kpis .tarjeta { background: var(--panel) !important; border-left-width: 4px; box-shadow: none; }
+.cc-selector ~ .tarjetas .tarjeta:nth-child(4), .alm .alm-kpis .tarjeta.k-gris { border-left-color: #6f9fd0; }
+.cc-selector ~ .tarjetas .tarjeta:nth-child(n), .alm .alm-kpis .tarjeta { border-color: var(--borde); }
+.alm .alm-kpis .tarjeta.k-azul { border-left-color: #2563eb; }
+.alm .alm-kpis .tarjeta.k-verde { border-left-color: #2fa56a; }
+.alm .alm-kpis .tarjeta.k-rojo { border-left-color: var(--rojo); }
+.cc-selector ~ .tarjetas .tarjeta:nth-child(1) { border-left-color: var(--primario); }
+.cc-selector ~ .tarjetas .tarjeta:nth-child(2) { border-left-color: #e0a030; }
+.cc-selector ~ .tarjetas .tarjeta:nth-child(3) { border-left-color: #2fa56a; }
+@media (max-width: 760px) { .cc-excel caption { font-size: 15px; padding: 13px 14px; } }
+
+/* Módulo de Tesorería: efecto al apuntar (brillo que cruza y resplandor), sin zoom */
+.lm-mcp-texto .lm-modulo { position: relative; overflow: hidden; background-size: 200% 100%; background-position: 0 0; transition: background-position .5s ease, box-shadow .25s ease, filter .25s ease; }
+.lm-mcp-texto .lm-modulo::after { content: ""; position: absolute; top: 0; bottom: 0; left: -60%; width: 45%; background: linear-gradient(100deg, transparent, rgba(255, 255, 255, .38), transparent); transform: skewX(-18deg); transition: left .7s ease; pointer-events: none; }
+.lm-mcp-texto .lm-modulo:hover { background-position: 100% 0; box-shadow: 0 16px 28px -10px rgba(37, 99, 235, .9), 0 0 0 3px rgba(96, 165, 250, .35); filter: brightness(1.06); }
+.lm-mcp-texto .lm-modulo:hover::after { left: 120%; }
+.lm-mcp-texto .lm-modulo-ico { transition: background .25s ease; }
+.lm-mcp-texto .lm-modulo:hover .lm-modulo-ico { background: rgba(255, 255, 255, .34); }

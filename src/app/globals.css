@@ -3664,3 +3664,5 @@ label.opcion:has(input:checked) { border-color: var(--primario); background: lin
 .caja-enlace.cerrada { background: linear-gradient(120deg, #3b6ea5, #6f9fd0); }
 .caja-enlace.sin { background: var(--ambar-fondo); color: var(--ambar); border: 1px dashed var(--ambar-borde); box-shadow: none; }
 .fila .f-desc a.caja-enlace { color: #fff; }
+/* La etiqueta de caja chica se ajusta a su texto (no se estira a todo el ancho) */
+.fila .f-desc a.caja-enlace, .fila .f-desc .caja-enlace { display: inline-flex; width: fit-content; max-width: 100%; overflow: visible; margin-top: 8px; padding: 3px 11px; font-size: 11px; border-radius: 999px; line-height: 1.4; }

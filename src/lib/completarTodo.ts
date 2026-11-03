@@ -12,6 +12,8 @@ const hoyLima = () => new Date().toLocaleDateString("en-CA", { timeZone: "Americ
 export type OpcionesCompletar = {
   /** Se ejecuta después de la conformidad y antes del comprobante (por ejemplo, la entrada al almacén). Devuelve un error o null. */
   antesComprobante?: () => Promise<string | null>;
+  /** Fecha de cada documento (si falta, la de hoy). */
+  fechas?: { orden?: string | null; conformidad?: string | null; comprobante?: string | null };
   /** Función del gasto del comprobante («Función|Categoría»). */
   funcionCategoria?: string | null;
 };
@@ -35,12 +37,16 @@ export async function completarTodo(supabase: Cliente, mcpId: string, mcpNombre:
   if (!cot) return null;
   const prov = cot.proveedores as unknown as { razon_social: string; num_doc: string } | null;
   const fecha = hoyLima();
+  const valida = (f?: string | null) => (f && /^\d{4}-\d{2}-\d{2}$/.test(f) ? f : fecha);
+  const fechaOrden = valida(opciones.fechas?.orden);
+  const fechaConf = valida(opciones.fechas?.conformidad);
+  const fechaCp = valida(opciones.fechas?.comprobante);
   const tipoOrden = e.tipo === "compra" ? "compra" : "servicio";
   const [funcion, categoria] = (opciones.funcionCategoria ?? "").split("|");
 
   const { data: ordenYa } = await supabase.from("ordenes").select("id").eq("expediente_id", e.id).eq("anulado", false).maybeSingle();
   if (!ordenYa) {
-    const { error } = await supabase.from("ordenes").insert({ mcp_id: mcpId, expediente_id: e.id, tipo: tipoOrden, fecha, proveedor_id: cot.proveedor_id, concepto: conceptoSinSeRequiere(e.descripcion), monto: cot.monto });
+    const { error } = await supabase.from("ordenes").insert({ mcp_id: mcpId, expediente_id: e.id, tipo: tipoOrden, fecha: fechaOrden, proveedor_id: cot.proveedor_id, concepto: conceptoSinSeRequiere(e.descripcion), monto: cot.monto });
     if (error) return null;
     await supabase.from("expedientes").update({ fase: "orden" }).eq("id", e.id);
   }
@@ -49,7 +55,7 @@ export async function completarTodo(supabase: Cliente, mcpId: string, mcpNombre:
   const { data: confYa } = await supabase.from("conformidades").select("id").eq("expediente_id", e.id).eq("anulado", false).maybeSingle();
   if (!confYa) {
     const texto = `Mediante la presente se le comunica la CONFORMIDAD por ${conceptoSinSeRequiere(e.descripcion).toLowerCase()}, a cargo de ${prov?.razon_social ?? ""}, a favor de la ${mcpNombre}.`;
-    const { error } = await supabase.from("conformidades").insert({ mcp_id: mcpId, expediente_id: e.id, fecha, texto });
+    const { error } = await supabase.from("conformidades").insert({ mcp_id: mcpId, expediente_id: e.id, fecha: fechaConf, texto });
     if (error) return `Orden de ${tipoOrden} emitida, pero no se pudo emitir la conformidad.`;
     await supabase.from("expedientes").update({ fase: "conformidad" }).eq("id", e.id);
   }
@@ -72,7 +78,7 @@ export async function completarTodo(supabase: Cliente, mcpId: string, mcpNombre:
     .from("comprobantes_pago")
     .insert({
       mcp_id: mcpId,
-      fecha,
+      fecha: fechaCp,
       origen: "expediente",
       expediente_id: e.id,
       fuente_id: e.fuente_id,

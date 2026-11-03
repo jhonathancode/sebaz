@@ -3722,3 +3722,10 @@ label.opcion:has(input:checked) { border-color: var(--primario); background: lin
 .lm-mcp-texto .lm-modulo:hover::after { left: 120%; }
 .lm-mcp-texto .lm-modulo-ico { transition: background .25s ease; }
 .lm-mcp-texto .lm-modulo:hover .lm-modulo-ico { background: rgba(255, 255, 255, .34); }
+
+/* Fecha del expediente, arriba del requerimiento */
+.fecha-exp { display: flex; align-items: center; gap: 12px 18px; flex-wrap: wrap; padding: 12px 16px; margin-bottom: 12px; border-radius: 16px; border: 1px solid var(--borde); border-left: 5px solid var(--primario); background: var(--panel); }
+.fecha-exp-campo { margin: 0; flex: none; }
+.fecha-exp-et { font-size: 11px; font-weight: 800; letter-spacing: .07em; text-transform: uppercase; color: var(--primario-texto); }
+.fecha-exp input[type="date"] { font-weight: 700; min-width: 170px; }
+.fecha-exp p { margin: 0; flex: 1 1 260px; }

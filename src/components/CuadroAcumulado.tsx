@@ -1,4 +1,4 @@
-import { soles } from "@/lib/formato";
+import { MESES, soles } from "@/lib/formato";
 
 export type FilaAcumulada = { fecha: string; monto: number; celdas: string[] };
 
@@ -10,9 +10,18 @@ export default function CuadroAcumulado({ titulo, cabeceras, filas, nota, mesRes
   const ordenadas = [...filas].sort((a, b) => a.fecha.localeCompare(b.fecha));
   let acumulado = 0;
   let n = 0;
+  const mesesPresentes = Array.from(new Set(ordenadas.map((f) => Number(f.fecha.slice(5, 7)) - 1))).sort((a, b) => a - b);
   const total = ordenadas.reduce((s, f) => s + f.monto, 0);
   const columnas = cabeceras.length + 3;
   return (
+    <>
+    {mesesPresentes.length > 0 && (
+      <div className="acum-leyenda" aria-label="Color de cada mes">
+        {mesesPresentes.map((m) => (
+          <span key={m} className={`acum-chip acum-m${m}${mesResaltado && Number(mesResaltado.slice(5, 7)) - 1 === m ? " sel" : ""}`}>{MESES[m]}</span>
+        ))}
+      </div>
+    )}
     <div className="cc-excel-marco acum-marco">
       <table className="cc-excel">
         <caption>{titulo}</caption>
@@ -36,7 +45,7 @@ export default function CuadroAcumulado({ titulo, cabeceras, filas, nota, mesRes
             acumulado = Math.round((acumulado + f.monto) * 100) / 100;
             n += 1;
             return (
-              <tr key={n} className={f.fecha.startsWith(mesResaltado ?? "no") ? "acum-mes-actual" : undefined}>
+              <tr key={n} className={`acum-m${Number(f.fecha.slice(5, 7)) - 1}`}>
                 <td className="c">{n}</td>
                 {f.celdas.map((c, i) => (
                   <td key={i}>{c}</td>
@@ -57,5 +66,6 @@ export default function CuadroAcumulado({ titulo, cabeceras, filas, nota, mesRes
       </table>
       {nota && <p className="pequeno tenue acum-nota">{nota}</p>}
     </div>
+    </>
   );
 }

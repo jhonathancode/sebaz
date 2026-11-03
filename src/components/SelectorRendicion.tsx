@@ -18,6 +18,12 @@ export type FilaCP = {
   propio?: boolean;
 };
 
+const MOTIVOS_DESTINO = [
+  "LA MUNICIPALIDAD SOLICITÓ ESTE GASTO",
+  "LA OTRA MUNICIPALIDAD TIENE SALDO PARA ESTE GASTO",
+  "SE ELIGIÓ MAL LA FUENTE AL REGISTRAR EL GASTO",
+  "CAMBIO DE FINANCIAMIENTO INDICADO POR LA ALCALDÍA",
+];
 const fmt = (n: number) => n.toLocaleString("es-PE", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
 /**
@@ -44,6 +50,8 @@ export default function SelectorRendicion({
   destinos?: { id: string; nombre: string }[];
 }) {
   const [mover, setMover] = useState<FilaCP | null>(null);
+  const [motivoLista, setMotivoLista] = useState(MOTIVOS_DESTINO[0]);
+  const [motivoOtro, setMotivoOtro] = useState("");
   const disponibles = filas.filter((f) => f.disponible);
   const [marcados, setMarcados] = useState<Set<string>>(() => new Set());
 
@@ -208,7 +216,16 @@ export default function SelectorRendicion({
               ))}
             </div>
             <label className="mover-et" htmlFor="mover-motivo">Motivo del cambio</label>
-            <input id="mover-motivo" name="motivo" required minLength={5} style={{ textTransform: "uppercase" }} placeholder="EJ. LA PROVINCIA PIDIÓ ESTE GASTO" autoComplete="off" />
+            <select id="mover-motivo" value={motivoLista} onChange={(e) => setMotivoLista(e.target.value)}>
+              {MOTIVOS_DESTINO.map((m) => (
+                <option key={m} value={m}>{m}</option>
+              ))}
+              <option value="OTRO">OTRO MOTIVO (ESCRIBIRLO)</option>
+            </select>
+            {motivoLista === "OTRO" && (
+              <input value={motivoOtro} onChange={(e) => setMotivoOtro(e.target.value.toUpperCase())} required minLength={5} placeholder="ESCRIBA EL MOTIVO" autoComplete="off" style={{ textTransform: "uppercase" }} />
+            )}
+            <input type="hidden" name="motivo" value={motivoLista === "OTRO" ? motivoOtro : motivoLista} />
             <p className="pequeno tenue">Pasa de {municipalidad} a la otra municipalidad. Queda registrado en auditoría.</p>
             <div className="mover-pie">
               <button type="button" className="btn contorno" onClick={() => setMover(null)}>Cancelar</button>

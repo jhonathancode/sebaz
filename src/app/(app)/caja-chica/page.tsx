@@ -14,7 +14,7 @@ import { codigoCP, fecha, hoyISO, nombrePeriodo, periodoActual, soles } from "@/
 const MES_CORTO = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Set", "Oct", "Nov", "Dic"];
 import { CORRELATIVO, proximoNumero } from "@/lib/numeracion";
 import { supabaseServidor } from "@/lib/supabase/server";
-import { solicitarFondo, agregarGasto, anularGasto, cambiarCheque, editarGasto, liquidarCaja } from "./acciones";
+import { enlazarExpediente, solicitarFondo, agregarGasto, anularGasto, cambiarCheque, editarGasto, liquidarCaja } from "./acciones";
 
 const NOMBRE_SUSTENTO = Object.fromEntries(SUSTENTOS.map((s) => [s.codigo, s.nombre]));
 
@@ -111,6 +111,22 @@ export default async function CajaChica({ searchParams }: { searchParams: Params
     .eq("caja_periodo", periodo)
     .eq("fuente_id", fuenteId ?? "")
     .eq("estado", "borrador");
+  // Expedientes ya hechos de caja chica (con comprobante y cheque) que aún no abren ninguna caja
+  const { data: cpsCandidatos } = puede && !caja
+    ? await supabase
+        .from("comprobantes_pago")
+        .select("id, expediente_id, cheque, importe, fuente_id, expedientes!inner(numero, anio, descripcion, estado)")
+        .eq("mcp_id", ctx.mcp.id)
+        .eq("origen", "expediente")
+        .neq("estado", "anulado")
+        .not("cheque", "is", null)
+        .ilike("expedientes.descripcion", "%caja chica%")
+    : { data: null };
+  const { data: yaEnlazados } = cpsCandidatos?.length
+    ? await supabase.from("cajas_chicas").select("expediente_id").eq("mcp_id", ctx.mcp.id).neq("estado", "anulada").not("expediente_id", "is", null)
+    : { data: [] as { expediente_id: string }[] };
+  const usados = new Set((yaEnlazados ?? []).map((c) => c.expediente_id));
+  const candidatos = (cpsCandidatos ?? []).filter((c) => c.expediente_id && !usados.has(c.expediente_id) && (c.expedientes as unknown as { estado: string }).estado !== "anulado");
   const expedienteCaja = caja?.expediente_id
     ? (await supabase.from("expedientes").select("id, numero, anio").eq("id", caja.expediente_id).maybeSingle()).data
     : null;
@@ -308,7 +324,41 @@ export default async function CajaChica({ searchParams }: { searchParams: Params
               <span className="k-val">Aún no se abre el fondo</span>
               <span className="k-det">La caja se abre desde un requerimiento (expediente): pida el fondo con el monto, el cheque y el responsable (normalmente S/ 2,000 de la transferencia).</span>
             </div>
-            {formAbrir("Pedir fondo del mes", "btn primario grande")}
+            <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+              {candidatos.length > 0 && (
+                <VentanaFlotante boton="Enlazar un expediente ya hecho" titulo="Abrir la caja con un expediente existente" accion={enlazarExpediente} textoGuardar="Enlazar y abrir caja" claseBoton="btn contorno grande">
+                  <input type="hidden" name="periodo" value={periodo} />
+                  <input type="hidden" name="fuente_id" value={fuenteId} />
+                  <p className="pequeno tenue" style={{ margin: "0 0 10px" }}>La caja de {nombrePeriodo(periodo)} se abre con el monto y el cheque del comprobante de pago de ese expediente.</p>
+                  <div className="rejilla-2">
+                    <label className="campo">
+                      Expediente
+                      <select name="expediente_id" required defaultValue={candidatos[0].expediente_id}>
+                        {candidatos.map((c) => {
+                          const e = c.expedientes as unknown as { numero: number; anio: number; descripcion: string };
+                          return (
+                            <option key={c.id} value={c.expediente_id}>
+                              {String(e.numero).padStart(3, "0")}-{e.anio} · {e.descripcion} · S/ {soles(c.importe)} · cheque {c.cheque}
+                            </option>
+                          );
+                        })}
+                      </select>
+                    </label>
+                    <label className="campo">
+                      Responsable del fondo
+                      <select name="responsable_id" required>
+                        {(responsables ?? []).map((r) => (
+                          <option key={r.user_id + r.rol} value={r.user_id}>
+                            {(r.perfiles as unknown as { nombre: string } | null)?.nombre}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                  </div>
+                </VentanaFlotante>
+              )}
+              {formAbrir("Pedir fondo del mes", "btn primario grande")}
+            </div>
           </div>
         ) : (
           <div className="aviso info">No hay fondo de caja chica abierto este mes.</div>

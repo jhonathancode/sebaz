@@ -518,7 +518,7 @@ export default async function CajaChica({ searchParams }: { searchParams: Params
               <div style={{ display: "flex", flexDirection: "column", gap: 4, flex: 1, minWidth: 240 }}>
                 <span className="k-et">Cerrar (liquidar) la caja chica</span>
                 <span className="k-det">
-                  Se genera un comprobante de pago por lo gastado, con la relación de gastos, y entra en la rendición como una sola línea.
+                  {caja?.expediente_id ? "El comprobante de pago es el del expediente del fondo: al cerrar no se genera otro. Se liquida con la relación de gastos." : "Se genera un comprobante de pago por lo gastado, con la relación de gastos, y entra en la rendición como una sola línea."}
                   {!cuadra && saldo > 0 && ` Aún no se gastó todo el fondo (faltan S/ ${soles(saldo)}): igual puede cerrarla y se le preguntará antes.`}
                 </span>
               </div>
@@ -530,7 +530,7 @@ export default async function CajaChica({ searchParams }: { searchParams: Params
                   className="btn primario grande"
                   disabled={vigentes.length === 0}
                   pregunta={cuadra ? "¿Está seguro de cerrar la caja chica?" : `¿Cerrar la caja chica con S/ ${soles(gastado)} de S/ ${soles(fondo)}?`}
-                  detalle={cuadra ? `Se generará el comprobante de pago por S/ ${soles(gastado)}. Cerrada, ya no admite gastos ni cambios.` : `No se gastó todo el fondo: faltan S/ ${soles(saldo)}. Se generará el comprobante de pago solo por S/ ${soles(gastado)}. Cerrada, ya no admite gastos ni cambios.`}
+                  detalle={caja.expediente_id ? `Se liquida con la relación de gastos (S/ ${soles(gastado)} de S/ ${soles(fondo)}). No se genera otro comprobante de pago: se rinde el del expediente. Cerrada, ya no admite gastos ni cambios.` : cuadra ? `Se generará el comprobante de pago por S/ ${soles(gastado)}. Cerrada, ya no admite gastos ni cambios.` : `No se gastó todo el fondo: faltan S/ ${soles(saldo)}. Se generará el comprobante de pago solo por S/ ${soles(gastado)}. Cerrada, ya no admite gastos ni cambios.`}
                   textoConfirmar="Sí, cerrar caja chica"
                 >
                   Cerrar caja chica

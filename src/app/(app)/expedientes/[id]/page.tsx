@@ -177,7 +177,7 @@ export default async function Expediente({ params, searchParams }: { params: Par
             ? [{ id: "almacen", titulo: "Almacén (NEA)", detalle: nea ? `NEA ${num3(nea.numero)}-${nea.anio}` : sinAlmacen ? "No pasa por almacén" : "Pendiente", hecho: !!nea || !!sinAlmacen }]
             : []),
         ]),
-    ...(cajaFondo ? [] : [{ id: "comprobante", titulo: "Comprobante de pago", detalle: cp ? codigoCP(cp.numero, cp.origen) : "Pendiente", hecho: !!cp && cp.estado !== "borrador" }]),
+    { id: "comprobante", titulo: "Comprobante de pago", detalle: cp ? codigoCP(cp.numero, cp.origen) : "Pendiente", hecho: !!cp && cp.estado !== "borrador" },
   ];
   // En un expediente anulado, cada documento que existió se muestra como anulado (no como pendiente)
   const existieron: Record<string, boolean> = {
@@ -189,7 +189,7 @@ export default async function Expediente({ params, searchParams }: { params: Par
     comprobante: (cps ?? []).length > 0,
   };
   pasos.forEach((p) => (p.existio = !!existieron[p.id]));
-  const actual = pasos.find((p) => !p.hecho)?.id ?? (cajaFondo ? "requerimiento" : "comprobante");
+  const actual = pasos.find((p) => !p.hecho)?.id ?? "comprobante";
   const listos = pasos.filter((p) => p.hecho).length;
   // Terminado de verdad: comprobante aprobado y con cheque (o ya rendido)
   const terminado = !!cp && cp.estado !== "borrador" && (!!cp.cheque || cp.estado === "rendido");
@@ -226,10 +226,10 @@ export default async function Expediente({ params, searchParams }: { params: Par
             ? `El alcalde lo devolvió por: ${e.motivo_devolucion}. Corríjalo con «Corregir requerimiento» (abajo) y avísele para que lo apruebe.`
             : "Avísele al alcalde: cuando lo apruebe podrá seguir con el siguiente paso.",
         };
-  } else if (cajaFondo) {
+  } else if (cajaFondo && cp) {
     sigue = {
-      texto: cajaVinculada ? "La caja chica de este requerimiento ya está abierta." : "Requerimiento aprobado: la caja chica se abre sola.",
-      ayuda: "Los gastos se anotan en Caja chica, y al cerrar el mes se liquida y sale el comprobante de pago por lo gastado.",
+      texto: cajaVinculada ? "Este es el comprobante de pago de la caja chica." : "Comprobante de pago del fondo generado.",
+      ayuda: "Los gastos se anotan en Caja chica. Al cerrar el mes se liquida con la relación de gastos, sin generar otro comprobante de pago.",
       accion: cajaVinculada ? <Link className="btn primario grande" href={`/caja-chica?mes=${cajaVinculada.periodo}&fuente=${cajaVinculada.fuente_id}&caja=${cajaVinculada.id}`}>Ir a la caja chica</Link> : undefined,
     };
   } else if (completoFijo && !elegida) {
@@ -418,7 +418,7 @@ export default async function Expediente({ params, searchParams }: { params: Par
           { clave: "orden", nombre: e.tipo === "compra" ? "Orden de compra" : "Orden de servicio", listo: !!orden },
           { clave: "conformidad", nombre: "Memorando de conformidad", listo: !!conformidad },
         ]),
-    ...(cajaFondo ? [] : [{ clave: "comprobante", nombre: "Comprobante de pago", listo: !!cp }]),
+    { clave: "comprobante", nombre: "Comprobante de pago", listo: !!cp },
   ].filter((d) => d.listo);
   // Expediente anulado: todos sus documentos siguen disponibles, con el sello ANULADO
   const docs = anulado ? listaDocumentos(datosDoc).filter((x) => x.listo).map((x) => ({ clave: x.clave as string, nombre: x.nombre, listo: true })) : docsBase;

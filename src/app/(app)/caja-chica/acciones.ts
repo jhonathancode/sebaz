@@ -61,7 +61,7 @@ export async function solicitarFondo(fd: FormData) {
     const { error: eA } = await supabase.from("expedientes").update({ estado: "aprobado" }).eq("id", exp.id);
     if (!eA) {
       const { data: caja } = await supabase.from("cajas_chicas").select("id").eq("expediente_id", exp.id).maybeSingle();
-      volver(ruta(periodo, fuente, caja?.id), "ok", "Requerimiento aprobado y fondo de caja chica abierto.");
+      volver(ruta(periodo, fuente, caja?.id), "ok", "Requerimiento aprobado y caja chica abierta. Falta generar el comprobante de pago del expediente (con el cheque): ese es el que se rinde.");
     }
   }
   volver(`/expedientes/${exp.id}`, "ok", "Requerimiento de caja chica registrado. Cuando el alcalde lo apruebe, la caja chica se abre sola.");

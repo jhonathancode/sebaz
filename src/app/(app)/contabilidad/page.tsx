@@ -9,10 +9,12 @@ import { cargarContabilidad, chequesEnTransito, libro, libroDiario, matriz, MESE
 import { fecha, hoyISO, nombrePeriodo, periodoActual, monto2, soles } from "@/lib/formato";
 import { supabaseServidor } from "@/lib/supabase/server";
 import { tocaEnMes } from "@/lib/fuentes";
+import CuadroAcumulado, { type FilaAcumulada } from "@/components/CuadroAcumulado";
 import { anularTransferencia, guardarExtracto, guardarSaldoInicial, marcarCobrados, registrarTransferencia } from "./acciones";
 
 const VISTAS = [
   { v: "resumen", t: "Resumen" },
+  { v: "acumulado", t: "Acumulado del año" },
   { v: "bancos", t: "Libro Bancos" },
   { v: "caja", t: "Libro Caja" },
   { v: "ejecucion", t: "Ejecución" },
@@ -277,6 +279,61 @@ export default async function Contabilidad({ searchParams }: { searchParams: Par
           </section>
         );
       })()}
+
+      {/* ---------------------------------------------- ACUMULADO */}
+      {ver === "acumulado" && (await (async () => {
+        const cuadro = ["ingresos", "comprobantes", "caja"].includes(sp.cuadro ?? "") ? sp.cuadro! : "ingresos";
+        const nombreFuente = (id: string) => {
+          const f = ctx.fuentes.find((x) => x.id === id);
+          return !f ? "" : f.tipo === "propios" ? "Ingresos propios" : f.municipalidad.replace(/^municipalidad (distrital|provincial) de /i, "");
+        };
+        let cabeceras: string[] = [];
+        let filas: FilaAcumulada[] = [];
+        let titulo = "";
+        let nota = "";
+        if (cuadro === "ingresos") {
+          titulo = `Ingresos propios ${anio} · acumulado`;
+          cabeceras = ["N° recibo", "Fecha", "Rubro", "Pagador", "Concepto"];
+          filas = d.ingresos.map((i) => ({ fecha: i.fecha, monto: i.monto, celdas: [String(i.numero).padStart(4, "0"), fecha(i.fecha), nombreRubro(i.rubro), i.pagador, i.concepto] }));
+          nota = "Se arma solo con cada recibo de ingresos propios emitido; los anulados no cuentan.";
+        } else if (cuadro === "comprobantes") {
+          titulo = `Comprobantes de pago ${anio} · acumulado`;
+          cabeceras = ["N° CP", "Fecha", "Cheque", "Beneficiario", "Concepto", "Pagado con"];
+          filas = d.cps.map((c) => ({ fecha: c.fecha, monto: c.importe, celdas: [c.codigo, fecha(c.fecha), c.cheque ?? "—", c.beneficiario, c.concepto, nombreFuente(c.fuente_id)] }));
+          nota = "Se arma solo con cada comprobante de pago aprobado o rendido (los anulados y los borradores no cuentan).";
+        } else {
+          titulo = `Caja chica ${anio} · acumulado`;
+          cabeceras = ["Caja", "Fecha", "Sustento", "Razón social", "Concepto"];
+          const { data: gastos } = await supabase
+            .from("caja_chica_gastos")
+            .select("id, fecha, concepto, sustento_tipo, sustento_numero, razon_social, monto, cajas_chicas(periodo, numero)")
+            .eq("mcp_id", ctx.mcp.id)
+            .eq("anulado", false)
+            .gte("fecha", `${anio}-01-01`)
+            .lte("fecha", `${anio}-12-31`)
+            .order("fecha");
+          filas = (gastos ?? []).map((g) => {
+            const c = g.cajas_chicas as unknown as { periodo: string; numero: number } | null;
+            return { fecha: g.fecha, monto: Number(g.monto), celdas: [c ? `${MESES_CORTOS[Number(c.periodo.slice(5, 7)) - 1]} · ${c.numero}` : "", fecha(g.fecha), `${g.sustento_tipo}${g.sustento_numero ? ` ${g.sustento_numero}` : ""}`, g.razon_social, g.concepto] };
+          });
+          nota = "Se arma solo con cada gasto anotado en la caja chica; los anulados no cuentan.";
+        }
+        const pestanas = [
+          { v: "ingresos", t: "Ingresos propios" },
+          { v: "comprobantes", t: "Comprobantes de pago" },
+          { v: "caja", t: "Caja chica" },
+        ];
+        return (
+          <>
+            <div className="acum-pestanas" role="tablist" aria-label="Cuadro acumulado">
+              {pestanas.map((x) => (
+                <Link key={x.v} role="tab" aria-selected={cuadro === x.v} className={`acum-pestana${cuadro === x.v ? " activa" : ""}`} href={`/contabilidad?ver=acumulado&cuadro=${x.v}&mes=${mes}`}>{x.t}</Link>
+              ))}
+            </div>
+            <CuadroAcumulado titulo={titulo} cabeceras={cabeceras} filas={filas} nota={nota} mesResaltado={mes} />
+          </>
+        );
+      })())}
 
       {/* ---------------------------------------------- EJECUCIÓN */}
       {ver === "ejecucion" && (

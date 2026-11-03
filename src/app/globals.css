@@ -3780,3 +3780,16 @@ label.opcion:has(input:checked) { border-color: var(--primario); background: lin
 /* Línea del estado de cuenta con concepto pero sin monto */
 .te-tabla tr.sin-monto td { background: color-mix(in srgb, #e0a030 10%, var(--panel)); }
 .te-sin-monto { display: inline-block; padding: 3px 8px; border-radius: 8px; border: 1px dashed var(--ambar-borde); background: var(--ambar-fondo); color: var(--ambar); font-size: 10.5px; font-weight: 800; letter-spacing: .03em; white-space: nowrap; }
+
+/* Cuadros acumulados del año */
+.acum-pestanas { display: inline-flex; flex-wrap: wrap; gap: 4px; padding: 5px; border-radius: 16px; background: var(--panel); border: 1px solid var(--borde); width: fit-content; max-width: 100%; }
+.acum-pestana { padding: 8px 16px; border-radius: 12px; font-weight: 700; font-size: 14px; color: var(--suave); text-decoration: none; transition: background .15s, color .15s; }
+.acum-pestana:hover { background: var(--primario-fondo); color: var(--primario-texto); }
+.acum-pestana.activa { background: linear-gradient(120deg, #1d4fb8, #3b82f6); color: #fff; }
+.acum-marco .cc-excel td { text-transform: none; }
+.acum-marco .cc-excel td.c { color: var(--tenue); width: 1%; }
+.acum-marco .cc-excel .acum-corre { color: var(--primario-texto); }
+.acum-marco .cc-excel tr.acum-sub td { background: var(--panel-2); font-weight: 800; font-size: 12.5px; color: var(--suave); border-top: 1px solid var(--borde-fuerte); }
+.acum-marco .cc-excel tr.acum-sub td.m { color: var(--texto); }
+.acum-marco .cc-excel tr.acum-mes-actual td { background: color-mix(in srgb, var(--primario) 4%, var(--panel)); }
+.acum-nota { margin: 0; padding: 10px 16px 12px; border-top: 1px solid var(--linea); }

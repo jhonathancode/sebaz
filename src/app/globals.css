@@ -3776,3 +3776,7 @@ label.opcion:has(input:checked) { border-color: var(--primario); background: lin
 .cj .te-tabla thead th { overflow-wrap: normal; word-break: normal; }
 .cj .te-tabla th:nth-child(2) { min-width: 150px; }
 .cj .te-tabla .te-fijo { white-space: nowrap; }
+
+/* Línea del estado de cuenta con concepto pero sin monto */
+.te-tabla tr.sin-monto td { background: color-mix(in srgb, #e0a030 10%, var(--panel)); }
+.te-sin-monto { display: inline-block; padding: 3px 8px; border-radius: 8px; border: 1px dashed var(--ambar-borde); background: var(--ambar-fondo); color: var(--ambar); font-size: 10.5px; font-weight: 800; letter-spacing: .03em; white-space: nowrap; }

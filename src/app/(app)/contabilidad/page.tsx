@@ -9,6 +9,7 @@ import { cargarContabilidad, chequesEnTransito, libro, libroDiario, matriz, MESE
 import { fecha, hoyISO, nombrePeriodo, periodoActual, monto2, soles } from "@/lib/formato";
 import { supabaseServidor } from "@/lib/supabase/server";
 import { tocaEnMes } from "@/lib/fuentes";
+import BotonPdf from "@/components/BotonPdf";
 import CuadroAcumulado, { type FilaAcumulada } from "@/components/CuadroAcumulado";
 import { anularTransferencia, guardarExtracto, guardarSaldoInicial, marcarCobrados, registrarTransferencia } from "./acciones";
 
@@ -329,6 +330,10 @@ export default async function Contabilidad({ searchParams }: { searchParams: Par
               {pestanas.map((x) => (
                 <Link key={x.v} role="tab" aria-selected={cuadro === x.v} className={`acum-pestana${cuadro === x.v ? " activa" : ""}`} href={`/contabilidad?ver=acumulado&cuadro=${x.v}&mes=${mes}`}>{x.t}</Link>
               ))}
+            </div>
+            <div className="acum-herr">
+              <a className="btn contorno" href={`/exportar/contabilidad?ver=acumulado&cuadro=${cuadro}&mes=${mes}`}>⬇ Descargar Excel</a>
+              <BotonPdf nombre={`${titulo.replace(/·/g, "-")}`} selector=".acum-marco" texto="⬇ Descargar PDF" className="btn contorno" horizontal />
             </div>
             <CuadroAcumulado titulo={titulo} cabeceras={cabeceras} filas={filas} nota={nota} mesResaltado={mes} />
           </>

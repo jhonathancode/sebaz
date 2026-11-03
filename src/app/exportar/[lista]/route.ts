@@ -289,6 +289,47 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ list
           filas,
           totales: ["TOTALES", null, "Saldo final", l.entradas, l.salidas, l.final],
         };
+      } else if (ver === "acumulado") {
+        const cuadro = ["ingresos", "comprobantes", "caja"].includes(sp.get("cuadro") ?? "") ? sp.get("cuadro")! : "ingresos";
+        const nombreFuente = (id: string) => {
+          const f = ctx.fuentes.find((x) => x.id === id);
+          return !f ? "" : f.tipo === "propios" ? "Ingresos propios" : f.municipalidad;
+        };
+        let titulo = "";
+        let cols: Columna[] = [];
+        let regs: { fecha: string; monto: number; celdas: (string | null)[] }[] = [];
+        if (cuadro === "ingresos") {
+          titulo = `Ingresos propios ${anio} · acumulado`;
+          cols = [{ titulo: "N° recibo", ancho: 11 }, { titulo: "Fecha", ancho: 12 }, { titulo: "Rubro", ancho: 26 }, { titulo: "Pagador", ancho: 30 }, { titulo: "Concepto", ancho: 44 }];
+          regs = d.ingresos.map((i) => ({ fecha: i.fecha, monto: i.monto, celdas: [String(i.numero).padStart(4, "0"), fechaPe(i.fecha), nombreRubro(i.rubro), i.pagador, i.concepto] }));
+        } else if (cuadro === "comprobantes") {
+          titulo = `Comprobantes de pago ${anio} · acumulado`;
+          cols = [{ titulo: "N° CP", ancho: 11 }, { titulo: "Fecha", ancho: 12 }, { titulo: "Cheque", ancho: 14 }, { titulo: "Beneficiario", ancho: 32 }, { titulo: "Concepto", ancho: 44 }, { titulo: "Pagado con", ancho: 30 }];
+          regs = d.cps.map((c) => ({ fecha: c.fecha, monto: c.importe, celdas: [c.codigo, fechaPe(c.fecha), c.cheque, c.beneficiario, c.concepto, nombreFuente(c.fuente_id)] }));
+        } else {
+          titulo = `Caja chica ${anio} · acumulado`;
+          cols = [{ titulo: "Caja", ancho: 12 }, { titulo: "Fecha", ancho: 12 }, { titulo: "Sustento", ancho: 18 }, { titulo: "Razón social", ancho: 32 }, { titulo: "Concepto", ancho: 44 }];
+          const { data: gastos } = await supabase
+            .from("caja_chica_gastos")
+            .select("fecha, concepto, sustento_tipo, sustento_numero, razon_social, monto, cajas_chicas(periodo, numero)")
+            .eq("mcp_id", mcpId).eq("anulado", false).gte("fecha", `${anio}-01-01`).lte("fecha", `${anio}-12-31`).order("fecha");
+          regs = (gastos ?? []).map((g) => {
+            const c = g.cajas_chicas as unknown as { periodo: string; numero: number } | null;
+            return { fecha: g.fecha, monto: Number(g.monto), celdas: [c ? `${MESES_CORTOS[Number(c.periodo.slice(5, 7)) - 1]} · ${c.numero}` : "", fechaPe(g.fecha), `${g.sustento_tipo}${g.sustento_numero ? ` ${g.sustento_numero}` : ""}`, g.razon_social, g.concepto] };
+          });
+        }
+        regs.sort((x, y) => x.fecha.localeCompare(y.fecha));
+        let acum = 0;
+        const filas: (string | number | null)[][] = regs.map((r, i) => {
+          acum = Math.round((acum + r.monto) * 100) / 100;
+          return [i + 1, ...r.celdas, r.monto, acum];
+        });
+        hoja = {
+          titulo,
+          columnas: [{ titulo: "N°", ancho: 6 }, ...cols, { titulo: "Monto S/", ancho: 14, tipo: "monto" }, { titulo: "Acumulado S/", ancho: 16, tipo: "monto" }],
+          filas,
+          totales: ["TOTAL", ...cols.map(() => null), acum, acum],
+        };
       } else if (ver === "diario") {
         const filas: (string | number | null)[][] = [];
         libroDiario(d, mes).forEach((a, i) => {
@@ -373,7 +414,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ list
   }
 
   const buffer = await libro.xlsx.writeBuffer();
-  const nombre = `${lista}-${lista === "kardex" || lista === "rendicion" ? "detalle" : mes}.xlsx`;
+  const nombre = `${lista}-${lista === "kardex" || lista === "rendicion" ? "detalle" : lista === "contabilidad" && sp.get("ver") === "acumulado" ? `acumulado-${sp.get("cuadro") ?? "ingresos"}-${mes.slice(0, 4)}` : mes}.xlsx`;
   return new NextResponse(buffer as ArrayBuffer, {
     headers: {
       "Content-Type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",

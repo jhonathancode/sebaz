@@ -3793,3 +3793,5 @@ label.opcion:has(input:checked) { border-color: var(--primario); background: lin
 .acum-marco .cc-excel tr.acum-sub td.m { color: var(--texto); }
 .acum-marco .cc-excel tr.acum-mes-actual td { background: color-mix(in srgb, var(--primario) 4%, var(--panel)); }
 .acum-nota { margin: 0; padding: 10px 16px 12px; border-top: 1px solid var(--linea); }
+.acum-herr { display: flex; gap: 8px; flex-wrap: wrap; margin: 4px 0 2px; }
+html.pdf-captura .acum-nota { display: none; }

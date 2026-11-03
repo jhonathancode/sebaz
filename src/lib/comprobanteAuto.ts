@@ -21,6 +21,7 @@ export async function comprobanteAutomatico(
   expedienteId: string,
   cheque: string,
   aprobar = false,
+  fecha?: string | null,
 ): Promise<string | null> {
   const { data: e } = await supabase
     .from("expedientes")
@@ -39,7 +40,7 @@ export async function comprobanteAutomatico(
   const numeroCheque = e.cheque_previsto || cheque;
   const { data: cp, error } = await supabase.from("comprobantes_pago").insert({
     mcp_id: mcpId,
-    fecha: new Date().toLocaleDateString("en-CA", { timeZone: "America/Lima" }),
+    fecha: fecha && /^\d{4}-\d{2}-\d{2}$/.test(fecha) ? fecha : new Date().toLocaleDateString("en-CA", { timeZone: "America/Lima" }),
     origen: "expediente",
     expediente_id: e.id,
     fuente_id: e.fuente_id,

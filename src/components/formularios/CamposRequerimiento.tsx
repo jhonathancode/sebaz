@@ -59,6 +59,13 @@ export default function CamposRequerimiento({ fuentes, valores, pagosFijos, cheq
   return (
     <>
             {!valores && <ReinicioPorTipo fuenteInicial={fuentePorDefecto} clasificadorInicial="2.3 Bienes y servicios" />}
+      <div className="fecha-exp">
+        <label className="campo fecha-exp-campo">
+          <span className="fecha-exp-et">Fecha del expediente</span>
+          <input type="date" name="fecha" defaultValue={valores?.fecha ?? hoyISO()} required />
+        </label>
+        <p className="pequeno tenue">Viene con la fecha de hoy; cámbiela solo si el expediente es de otro día. Los documentos saldrán con esa fecha, y cada uno se puede ajustar al generarlo.</p>
+      </div>
       <fieldset className="pregunta">
         <legend>¿Qué tipo de gasto es?</legend>
         <div className="opciones compacta opciones-tipo">
@@ -117,12 +124,8 @@ export default function CamposRequerimiento({ fuentes, valores, pagosFijos, cheq
       {!valores && proveedores && modo !== "asistente" && <CompletarTodo proveedores={proveedores} />}
 
       <details className="pregunta mas-datos">
-        <summary>Datos para el formato (fecha, área, meta, específica del gasto)</summary>
+        <summary>Datos para el formato (área, meta, específica del gasto)</summary>
         <div className="rejilla" style={{ marginTop: 10 }}>
-          <label className="campo">
-            Fecha
-            <input type="date" name="fecha" defaultValue={valores?.fecha ?? hoyISO()} required />
-          </label>
           <label className="campo">
             Área que lo pide
             <input name="area_usuaria" defaultValue={valores?.area_usuaria ?? ""} placeholder="Tesorería, alcaldía, regiduría..." />

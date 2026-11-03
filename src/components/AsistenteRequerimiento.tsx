@@ -102,6 +102,9 @@ export default function AsistenteRequerimiento({
   const mostrar = () => {
     const d = ref.current;
     if (!d || d.open) return;
+    // La fecha del expediente vuelve a ser la de hoy si nadie la cambió (la página pudo quedar abierta desde ayer)
+    const campoFecha = form.current?.elements.namedItem("fecha");
+    if (campoFecha instanceof HTMLInputElement && campoFecha.dataset.tocada !== "1") campoFecha.value = new Date().toLocaleDateString("en-CA", { timeZone: "America/Lima" });
     d.showModal();
     const arriba = () => cuerpo.current?.scrollTo({ top: 0 });
     arriba();
@@ -115,6 +118,8 @@ export default function AsistenteRequerimiento({
   const [salir, setSalir] = useState(false);
   const [sucio, setSucio] = useState(false);
   const [ciclo, setCiclo] = useState(0);
+  // Fecha propia de cada documento (si no se toca, sigue a la del expediente)
+  const [fechasDoc, setFechasDoc] = useState<Record<string, string>>({});
   const [pf, setPf] = useState<PagoFijoInfo>(null);
 
   // Abrir: desde el botón, desde la dirección (?nuevo=1) o desde el menú lateral
@@ -143,7 +148,9 @@ export default function AsistenteRequerimiento({
     if (!f) return;
     // Se repinta un instante después: si fuera de inmediato, React borraría lo que se está escribiendo en los campos controlados
     let espera: number | undefined;
-    const alCambiar = () => {
+    const alCambiar = (e: Event) => {
+      const t = e.target;
+      if (t instanceof HTMLInputElement && t.name === "fecha") t.dataset.tocada = "1";
       window.clearTimeout(espera);
       espera = window.setTimeout(() => {
         setSucio(true);
@@ -160,6 +167,13 @@ export default function AsistenteRequerimiento({
   }, []);
 
   const L = leer(form.current);
+  const fd = (k: string) => fechasDoc[k] ?? L.fecha;
+  const campoFecha = (clave: string, etiqueta: string) => (
+    <label className="campo" style={{ maxWidth: 260 }}>
+      {etiqueta}
+      <input type="date" name={`fecha_${clave}`} value={fd(clave)} onChange={(e) => setFechasDoc((v) => ({ ...v, [clave]: e.target.value }))} required />
+    </label>
+  );
   const ordenTipo = L.tipo === "compra" ? "compra" : "servicio";
   const pasos: Paso[] =
     L.tipo === "pago_fijo"
@@ -191,6 +205,7 @@ export default function AsistenteRequerimiento({
     setSucio(false);
     setPf(null);
     setCiclo((c) => c + 1);
+    setFechasDoc({});
     window.dispatchEvent(new CustomEvent("sebaz:pago-fijo", { detail: null }));
     ref.current?.close();
   }
@@ -331,6 +346,7 @@ export default function AsistenteRequerimiento({
               <fieldset className="pregunta">
                 <legend>Proveedor</legend>
                 <CamposProveedor proveedores={proveedores} prefijo="asist" opcional />
+                <div style={{ marginTop: 10 }}>{campoFecha("orden", "Fecha de la orden")}</div>
                 <label className="campo" style={{ marginTop: 10, maxWidth: 320 }}>
                   Plazo para entregar
                   <input name="plazo" placeholder="Ej.: 3 días, 1 mes" />
@@ -343,17 +359,23 @@ export default function AsistenteRequerimiento({
               hoja(
                 <Orden
                   mcp={mcp}
-                  d={{ ...dBase, orden: { numero: numOrden, anio: L.anio, fecha: L.fecha, plazo: L.g("plazo") || null, concepto, tipo: ordenTipo, tipo_proceso: "Adjudicación directa", monto: L.total, proveedores: proveedor } } as unknown as DatosExpediente}
+                  d={{ ...dBase, orden: { numero: numOrden, anio: L.anio, fecha: fd("orden"), plazo: L.g("plazo") || null, concepto, tipo: ordenTipo, tipo_proceso: "Adjudicación directa", monto: L.total, proveedores: proveedor } } as unknown as DatosExpediente}
                 />,
               )}
 
+            <div style={{ display: paso === "conf" ? undefined : "none" }} key={`f${ciclo}`}>
+              <fieldset className="pregunta">
+                <legend>Fecha del memorando de conformidad</legend>
+                {campoFecha("conf", "Fecha de la conformidad")}
+              </fieldset>
+            </div>
             {paso === "conf" &&
               hoja(
                 <Memorando
                   mcp={mcp}
                   tesorero={tesorero}
                   cargo={cargo}
-                  d={{ ...dBase, orden: { tipo: ordenTipo }, conformidad: { memorando_numero: proximos.memorando, anio: L.anio, fecha: L.fecha, texto: textoConformidad } } as unknown as DatosExpediente}
+                  d={{ ...dBase, orden: { tipo: ordenTipo }, conformidad: { memorando_numero: proximos.memorando, anio: L.anio, fecha: fd("conf"), texto: textoConformidad } } as unknown as DatosExpediente}
                 />,
               )}
 
@@ -361,6 +383,7 @@ export default function AsistenteRequerimiento({
             <div style={{ display: paso === "alm" ? undefined : "none" }} key={`a${ciclo}`}>
               <fieldset className="pregunta">
                 <legend>Almacén</legend>
+                <div style={{ marginBottom: 10 }}>{campoFecha("alm", "Fecha de la entrada al almacén")}</div>
                 <div className="opciones compacta opciones-dinero opciones-dos">
                   <label className="opcion"><input type="radio" name="almacen" value="nea" defaultChecked /><span className="opcion-titulo">Sí, entran al almacén (NEA)</span><span className="opcion-texto">Quedan en stock y se entregan con PECOSA</span></label>
                   <label className="opcion definir"><input type="radio" name="almacen" value="sin" /><span className="opcion-titulo">No pasan por almacén</span><span className="opcion-texto">Se consumen de inmediato (ej.: combustible)</span></label>
@@ -381,7 +404,7 @@ export default function AsistenteRequerimiento({
                   n={{
                     numero: proximos.nea,
                     anio: L.anio,
-                    fecha: L.fecha,
+                    fecha: fd("alm"),
                     origen: "compra",
                     proveedor: proveedor.razon_social || null,
                     documento_ref: L.g("sustento_numero") || null,
@@ -411,6 +434,7 @@ export default function AsistenteRequerimiento({
               <fieldset className="pregunta">
                 <legend>Comprobante de pago</legend>
                 <div className="rejilla-2">
+                  {campoFecha("comp", "Fecha del comprobante")}
                   <label className="campo">
                     Documento que entregó
                     <select name="sustento_tipo" defaultValue={L.tipo === "pago_fijo" ? "REC" : "FAC"}>
@@ -434,7 +458,7 @@ export default function AsistenteRequerimiento({
                   mcp={mcp}
                   c={{
                     numero: proximos.comprobante,
-                    fecha: L.fecha,
+                    fecha: fd("comp"),
                     beneficiario: proveedor.razon_social,
                     beneficiario_doc: proveedor.num_doc || null,
                     concepto,

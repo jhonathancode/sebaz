@@ -230,7 +230,7 @@ export async function registrarExpedienteCompleto(fd: FormData): Promise<{ error
   if (tipo === "pago_fijo" && !pagoFijo) {
     aviso = "Requerimiento aprobado. Siga con los documentos de este gasto.";
   } else if (tipo === "pago_fijo" && !completoFijo) {
-    const usado = await comprobanteAutomatico(supabase, ctx.mcp.id, id, chequePrevisto ?? chequeSiguiente, true);
+    const usado = await comprobanteAutomatico(supabase, ctx.mcp.id, id, chequePrevisto ?? chequeSiguiente, true, texto(fd, "fecha_comp"));
     if (usado === null) return fallo("No se pudo generar el comprobante de pago del pago fijo.");
     aviso = `Pago fijo registrado, con su comprobante de pago aprobado${usado ? ` (cheque N° ${usado})` : ""}.`;
   } else {
@@ -247,7 +247,7 @@ export async function registrarExpedienteCompleto(fd: FormData): Promise<{ error
             const { data: prov } = proveedorId ? await supabase.from("proveedores").select("razon_social").eq("id", proveedorId).maybeSingle() : { data: null };
             const { error } = await supabase.rpc("emitir_nea", {
               p_mcp: ctx.mcp.id,
-              p_fecha: hoy,
+              p_fecha: /^\d{4}-\d{2}-\d{2}$/.test(texto(fd, "fecha_alm") ?? "") ? texto(fd, "fecha_alm") : hoy,
               p_origen: "compra",
               p_expediente: id,
               p_proveedor: prov?.razon_social ?? null,
@@ -258,7 +258,7 @@ export async function registrarExpedienteCompleto(fd: FormData): Promise<{ error
             return error ? `no se pudo registrar la entrada al almacén (${mensajeError(error)})` : null;
           }
         : undefined;
-    const resultado = await completarTodo(supabase, ctx.mcp.id, ctx.mcp.nombre, id, chequeSiguiente, { antesComprobante: entrarAlmacen, funcionCategoria: texto(fd, "categoria_funcion") });
+    const resultado = await completarTodo(supabase, ctx.mcp.id, ctx.mcp.nombre, id, chequeSiguiente, { antesComprobante: entrarAlmacen, funcionCategoria: texto(fd, "categoria_funcion"), fechas: { orden: texto(fd, "fecha_orden"), conformidad: texto(fd, "fecha_conf"), comprobante: texto(fd, "fecha_comp") } });
     if (hasta === "todo") {
       const { data: cps } = await supabase.from("comprobantes_pago").select("id").eq("expediente_id", id).eq("estado", "aprobado").limit(1);
       if (!cps || cps.length === 0) return fallo(resultado ?? "No se pudo generar el comprobante de pago.");

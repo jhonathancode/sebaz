@@ -628,7 +628,7 @@ export async function generarComprobante(fd: FormData) {
   let beneficiarioDoc: string | null;
   let concepto: string;
   let importe: number;
-  if (exp.tipo === "pago_fijo" && !exp.flujo_completo) {
+  if ((exp.tipo === "pago_fijo" && !exp.flujo_completo) || exp.tipo === "caja_chica") {
     // Pago fijo simple (dietas): sin orden; el beneficiario se escribe aquí y el monto es el del requerimiento.
     beneficiario = texto(fd, "beneficiario");
     beneficiarioDoc = (texto(fd, "beneficiario_doc") ?? "").replace(/\D/g, "") || null;

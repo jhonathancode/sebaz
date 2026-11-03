@@ -762,3 +762,25 @@ export async function copiarPagosFijos() {
     `Se copiaron ${copiados} pago(s) fijo(s) del mes pasado, en borrador. Revise los montos y envíelos al alcalde para su aprobación.`,
   );
 }
+
+/** Cambia la fecha de un documento ya creado: exige motivo (queda registrado con la fecha anterior y la nueva). */
+export async function cambiarFechaDocumento(fd: FormData) {
+  const ctx = await contextoMcp();
+  const supabase = await supabaseServidor();
+  const expediente = texto(fd, "expediente_id")!;
+  const destino = ruta(expediente);
+  await exigirPin(ctx.userId, fd, destino);
+  const nueva = texto(fd, "fecha") ?? "";
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(nueva)) volver(destino, "error", "Elija la nueva fecha.");
+  const { error } = await supabase.rpc("cambiar_fecha_documento", {
+    p_tipo: texto(fd, "tipo"),
+    p_id: texto(fd, "id"),
+    p_fecha: nueva,
+    p_motivo: (texto(fd, "motivo") ?? "").toUpperCase(),
+  });
+  if (error) volver(destino, "error", mensajeError(error));
+  revalidatePath("/expedientes");
+  revalidatePath("/comprobantes");
+  revalidatePath("/almacen");
+  volver(destino, "ok", "Fecha cambiada. Quedó registrado el motivo, la fecha anterior y quién lo hizo.");
+}

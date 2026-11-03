@@ -168,11 +168,15 @@ export default function AsistenteRequerimiento({
 
   const L = leer(form.current);
   const fd = (k: string) => fechasDoc[k] ?? L.fecha;
-  const campoFecha = (clave: string, etiqueta: string) => (
-    <label className="campo" style={{ maxWidth: 260 }}>
-      {etiqueta}
-      <input type="date" name={`fecha_${clave}`} value={fd(clave)} onChange={(e) => setFechasDoc((v) => ({ ...v, [clave]: e.target.value }))} required />
-    </label>
+  /** Barra de fecha del documento que se está viendo (se puede cambiar; si no, sigue a la del expediente). */
+  const barraFecha = (clave: string, etiqueta: string) => (
+    <div className="fecha-doc-barra">
+      <label>
+        <span className="fecha-exp-et">{etiqueta}</span>
+        <input type="date" value={fd(clave)} onChange={(e) => setFechasDoc((v) => ({ ...v, [clave]: e.target.value }))} required />
+      </label>
+      <span className="pequeno tenue">Viene con la fecha del expediente; cámbiela si este documento es de otro día.</span>
+    </div>
   );
   const ordenTipo = L.tipo === "compra" ? "compra" : "servicio";
   const pasos: Paso[] =
@@ -339,14 +343,36 @@ export default function AsistenteRequerimiento({
               {children}
             </div>
 
-            {paso === "req" && hoja(<Requerimiento d={dBase} mcp={mcp} />)}
+            {paso === "req" && (
+              <>
+                <div className="fecha-doc-barra">
+                  <label>
+                    <span className="fecha-exp-et">Fecha del requerimiento (del expediente)</span>
+                    <input
+                      type="date"
+                      value={L.fecha}
+                      onChange={(e) => {
+                        const campo = form.current?.elements.namedItem("fecha");
+                        if (campo instanceof HTMLInputElement) {
+                          campo.value = e.target.value;
+                          campo.dataset.tocada = "1";
+                          campo.dispatchEvent(new Event("input", { bubbles: true }));
+                        }
+                      }}
+                      required
+                    />
+                  </label>
+                  <span className="pequeno tenue">Cambiarla aquí cambia la fecha del expediente y, con ella, la de los demás documentos.</span>
+                </div>
+                {hoja(<Requerimiento d={dBase} mcp={mcp} />)}
+              </>
+            )}
 
             {/* Proveedor */}
             <div style={{ display: paso === "prov" ? undefined : "none" }} key={`p${ciclo}`}>
               <fieldset className="pregunta">
                 <legend>Proveedor</legend>
                 <CamposProveedor proveedores={proveedores} prefijo="asist" opcional />
-                <div style={{ marginTop: 10 }}>{campoFecha("orden", "Fecha de la orden")}</div>
                 <label className="campo" style={{ marginTop: 10, maxWidth: 320 }}>
                   Plazo para entregar
                   <input name="plazo" placeholder="Ej.: 3 días, 1 mes" />
@@ -355,6 +381,7 @@ export default function AsistenteRequerimiento({
               </fieldset>
             </div>
 
+            {paso === "orden" && barraFecha("orden", "Fecha de la orden")}
             {paso === "orden" &&
               hoja(
                 <Orden
@@ -363,12 +390,7 @@ export default function AsistenteRequerimiento({
                 />,
               )}
 
-            <div style={{ display: paso === "conf" ? undefined : "none" }} key={`f${ciclo}`}>
-              <fieldset className="pregunta">
-                <legend>Fecha del memorando de conformidad</legend>
-                {campoFecha("conf", "Fecha de la conformidad")}
-              </fieldset>
-            </div>
+            {paso === "conf" && barraFecha("conf", "Fecha de la conformidad")}
             {paso === "conf" &&
               hoja(
                 <Memorando
@@ -383,7 +405,6 @@ export default function AsistenteRequerimiento({
             <div style={{ display: paso === "alm" ? undefined : "none" }} key={`a${ciclo}`}>
               <fieldset className="pregunta">
                 <legend>Almacén</legend>
-                <div style={{ marginBottom: 10 }}>{campoFecha("alm", "Fecha de la entrada al almacén")}</div>
                 <div className="opciones compacta opciones-dinero opciones-dos">
                   <label className="opcion"><input type="radio" name="almacen" value="nea" defaultChecked /><span className="opcion-titulo">Sí, entran al almacén (NEA)</span><span className="opcion-texto">Quedan en stock y se entregan con PECOSA</span></label>
                   <label className="opcion definir"><input type="radio" name="almacen" value="sin" /><span className="opcion-titulo">No pasan por almacén</span><span className="opcion-texto">Se consumen de inmediato (ej.: combustible)</span></label>
@@ -396,6 +417,7 @@ export default function AsistenteRequerimiento({
                 )}
               </fieldset>
             </div>
+            {paso === "alm" && L.g("almacen") !== "sin" && barraFecha("alm", "Fecha de la entrada al almacén")}
             {paso === "alm" &&
               L.g("almacen") !== "sin" &&
               hoja(
@@ -434,7 +456,6 @@ export default function AsistenteRequerimiento({
               <fieldset className="pregunta">
                 <legend>Comprobante de pago</legend>
                 <div className="rejilla-2">
-                  {campoFecha("comp", "Fecha del comprobante")}
                   <label className="campo">
                     Documento que entregó
                     <select name="sustento_tipo" defaultValue={L.tipo === "pago_fijo" ? "REC" : "FAC"}>
@@ -452,6 +473,7 @@ export default function AsistenteRequerimiento({
                 </div>
               </fieldset>
             </div>
+            {paso === "comp" && barraFecha("comp", "Fecha del comprobante de pago")}
             {paso === "comp" &&
               hoja(
                 <FormatoComprobante
@@ -472,6 +494,9 @@ export default function AsistenteRequerimiento({
                 />,
               )}
 
+            {["orden", "conf", "alm", "comp"].map((k) => (
+              <input key={k} type="hidden" name={`fecha_${k}`} value={fd(k)} />
+            ))}
             <input type="hidden" name="hasta" value={paso === "conf" ? "orden" : "todo"} />
           </div>
 

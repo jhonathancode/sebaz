@@ -483,7 +483,10 @@ export default function ConciliarEstado({
     });
 
   // Enlaces
-  const activas = lineas.map((l, i) => ({ l, i, tipo: tipoLinea(l) })).filter((x) => x.tipo !== "vacia");
+  /** Línea con concepto pero sin cargo ni abono: no es un movimiento y no se puede enlazar. */
+  const sinMonto = (l: LineaExtracto) => tipoLinea(l) !== "vacia" && aNum(l.cargo) === null && aNum(l.abono) === null;
+  const activas = lineas.map((l, i) => ({ l, i, tipo: tipoLinea(l) })).filter((x) => x.tipo !== "vacia" && !sinMonto(x.l));
+  const lineasSinMonto = lineas.map((l, i) => (sinMonto(l) ? i + 1 : 0)).filter(Boolean);
   /** Diferencia que falta enlazar (cheque cuyos comprobantes no suman lo que cobró el banco); null si está completo. */
   const faltaDe = (l: LineaExtracto): number | null => {
     if (l.enlace?.tipo !== "cp") return null;
@@ -502,7 +505,7 @@ export default function ConciliarEstado({
     setLineas((ls) => {
       const ocupados = new Set(ls.flatMap((l) => idsEnlace(l.enlace)));
       return ls.map((l) => {
-        if (l.enlace || tipoLinea(l) === "vacia") return l;
+        if (l.enlace || tipoLinea(l) === "vacia" || sinMonto(l)) return l;
         const s = sugerir(l, candidatos, ocupados);
         if (!s) return l;
         idsEnlace(s.enlace).forEach((x) => ocupados.add(x));
@@ -592,6 +595,12 @@ export default function ConciliarEstado({
           <BotonPdf nombre={`Estado de cuenta ${info.mes} conciliado`} selector=".cj-pdf-hoja" texto="⬇ Descargar PDF" className="btn contorno" horizontal />
         </div>
 
+        {lineasSinMonto.length > 0 && (
+          <div className="aviso alerta" role="status">
+            <strong>{lineasSinMonto.length === 1 ? `La línea ${lineasSinMonto[0]} tiene concepto pero no monto.` : `Las líneas ${lineasSinMonto.join(", ")} tienen concepto pero no monto.`}</strong> Escriba el cargo o el abono; mientras tanto no se pueden enlazar ni cuentan como movimientos.
+          </div>
+        )}
+
         <div className="te-tabla-marco">
           <table className="te-tabla">
             <thead>
@@ -630,7 +639,7 @@ export default function ConciliarEstado({
                 const comunes = (col: Col) => ({ "data-r": i, "data-c": col, disabled: !puede, onKeyDown: (e: React.KeyboardEvent<HTMLInputElement>) => mover(e, i, col) });
                 return (
                   <Fragment key={i}>
-                  <tr className={f.estado === "mal" ? "mal" : undefined}>
+                  <tr className={sinMonto(l) ? "sin-monto" : f.estado === "mal" ? "mal" : undefined}>
                     <td className="n">{i + 1}</td>
                     <td><input {...comunes("codigo")} value={l.codigo} onChange={(e) => ponLinea(i, "codigo", e.target.value)} placeholder="86106449 · IMPT/ITF · TI 1721" aria-label={`Línea ${i + 1}: codificación`} /></td>
                     <td><input {...comunes("cargo")} className="m" inputMode="decimal" value={l.cargo} onChange={(e) => ponLinea(i, "cargo", e.target.value)} onBlur={(e) => ponLinea(i, "cargo", darFormato(e.target.value))} aria-label={`Línea ${i + 1}: cargo`} /></td>
@@ -641,7 +650,8 @@ export default function ConciliarEstado({
                       {f.estado === "ok" && <i>✓</i>}{f.estado === "mal" && <i>✗</i>}{f.corrida !== null ? fmt(f.corrida) : ""}
                     </td>
                     <td className="te-enl">
-                      {tipoLinea(l) !== "vacia" && (() => {
+                      {sinMonto(l) && <span className="te-sin-monto" title="Escriba el cargo o el abono de esta línea: sin monto no se puede enlazar">Falta monto</span>}
+                      {tipoLinea(l) !== "vacia" && !sinMonto(l) && (() => {
                         const falta = faltaDe(l);
                         const clase = !l.enlace ? "pend" : falta !== null ? "falta" : "ok";
                         const titulo = !l.enlace ? "Sin enlazar: pulse para enlazar" : falta !== null ? `Falta S/ ${fmt(Math.abs(falta))} por enlazar: pulse para ver` : "Enlazado y cuadra: pulse para ver con qué";
@@ -710,8 +720,8 @@ export default function ConciliarEstado({
 
       {puede && (
         <div className="cj-pie">
-          <span>Al guardar, los cheques enlazados quedan marcados como cobrados en la conciliación.</span>
-          <BotonConfirmar className="btn primario grande" pregunta="¿Guardar el estado de cuenta?" detalle="Se guardan las líneas, los totales y los enlaces. Los cheques enlazados con fecha se marcan como cobrados." textoConfirmar="Sí, guardar">
+          <span>{lineasSinMonto.length > 0 ? "Complete el monto de las líneas marcadas (o quite la línea) para poder guardar." : "Al guardar, los cheques enlazados quedan marcados como cobrados en la conciliación."}</span>
+          <BotonConfirmar disabled={lineasSinMonto.length > 0} className="btn primario grande" pregunta="¿Guardar el estado de cuenta?" detalle="Se guardan las líneas, los totales y los enlaces. Los cheques enlazados con fecha se marcan como cobrados." textoConfirmar="Sí, guardar">
             Guardar
           </BotonConfirmar>
         </div>

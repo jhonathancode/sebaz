@@ -94,6 +94,8 @@ export async function guardarTranscripcion(fd: FormData) {
     dia: fechaIso(l.dia),
     enlace: limpiarEnlace(l.enlace),
   }));
+  const sinMonto = lineas.map((l, i) => (l.codigo && l.cargo === null && l.abono === null ? i + 1 : 0)).filter(Boolean);
+  if (sinMonto.length) volver(destino, "error", `${sinMonto.length === 1 ? "La línea" : "Las líneas"} ${sinMonto.join(", ")} ${sinMonto.length === 1 ? "tiene" : "tienen"} concepto pero no monto: escriba el cargo o el abono, o quite la línea.`);
   const supabase = await supabaseServidor();
   const { error } = await supabase.from("extractos_transcritos").upsert(
     {

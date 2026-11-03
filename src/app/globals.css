@@ -3729,3 +3729,18 @@ label.opcion:has(input:checked) { border-color: var(--primario); background: lin
 .fecha-exp-et { font-size: 11px; font-weight: 800; letter-spacing: .07em; text-transform: uppercase; color: var(--primario-texto); }
 .fecha-exp input[type="date"] { font-weight: 700; min-width: 170px; }
 .fecha-exp p { margin: 0; flex: 1 1 260px; }
+
+/* Fechas de los documentos del expediente */
+.fechas-docs .panel-cuerpo { display: flex; flex-direction: column; gap: 4px; }
+.fecha-doc-fila { display: grid; grid-template-columns: 1fr auto auto; align-items: center; gap: 12px; padding: 8px 0; border-bottom: 1px solid var(--linea); }
+.fecha-doc-fila:last-of-type { border-bottom: 0; }
+.fd-nombre { font-weight: 600; }
+.fd-fecha { font-variant-numeric: tabular-nums; }
+.fecha-doc-historial { margin-top: 10px; padding-top: 10px; border-top: 1px dashed var(--borde-fuerte); display: flex; flex-direction: column; gap: 5px; }
+@media (max-width: 560px) { .fecha-doc-fila { grid-template-columns: 1fr auto; } .fecha-doc-fila > :nth-child(3) { grid-column: 1 / -1; } }
+
+/* Barra de fecha sobre cada documento del asistente */
+.fecha-doc-barra { display: flex; align-items: center; gap: 10px 16px; flex-wrap: wrap; padding: 10px 16px; margin-bottom: 12px; border-radius: 14px; border: 1px solid var(--borde); border-left: 5px solid var(--primario); background: var(--panel); }
+.fecha-doc-barra label { display: flex; flex-direction: column; gap: 4px; margin: 0; }
+.fecha-doc-barra input[type="date"] { font-weight: 700; min-width: 170px; }
+.fecha-doc-barra > span.pequeno { flex: 1 1 240px; }

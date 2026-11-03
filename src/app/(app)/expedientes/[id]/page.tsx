@@ -28,6 +28,7 @@ import {
   anularRegistro,
   asignarFuente,
   cambiarEstadoExpediente,
+  cambiarFechaDocumento,
   copiarExpediente,
   editarRequerimiento,
   elegirCotizacion,
@@ -115,6 +116,12 @@ export default async function Expediente({ params, searchParams }: { params: Par
     proximoNumero(supabase, ctx.mcp.id, CORRELATIVO.comprobante, anioNum),
   ]);
   if (!e) notFound();
+  // Cambios de fecha ya hechos (si la base aún no tiene la actualización, simplemente no hay)
+  const { data: cambiosFecha } = await supabase
+    .from("cambios_fecha")
+    .select("id, documento, fecha_anterior, fecha_nueva, motivo, creado_en, creado_por")
+    .eq("expediente_id", id)
+    .order("creado_en", { ascending: false });
 
   // Lo que depende del expediente: nombres del historial y el beneficiario del pago fijo, también a la vez
   const pagoFijoId = (e as { pago_fijo_id?: string | null }).pago_fijo_id ?? null;
@@ -911,6 +918,54 @@ export default async function Expediente({ params, searchParams }: { params: Par
           </div>
         </section>
       </div>
+
+      {(() => {
+        const docsFecha = [
+          { tipo: "expediente", id: e.id as string, nombre: "Requerimiento / expediente", fecha: e.fecha as string | null },
+          ...(orden ? [{ tipo: "orden", id: orden.id as string, nombre: nombreOrden === "orden de compra" ? "Orden de compra" : "Orden de servicio", fecha: orden.fecha as string | null }] : []),
+          ...(conformidad ? [{ tipo: "conformidad", id: conformidad.id as string, nombre: "Memorando de conformidad", fecha: conformidad.fecha as string | null }] : []),
+          ...(nea ? [{ tipo: "nea", id: nea.id as string, nombre: "Entrada al almacén (NEA)", fecha: (nea as { fecha?: string | null }).fecha ?? null }] : []),
+          ...(cp ? [{ tipo: "comprobante", id: cp.id as string, nombre: "Comprobante de pago", fecha: cp.fecha as string | null }] : []),
+        ].filter((d) => d.fecha);
+        const puedeFecha = tiene(ctx, "admin", "tesorero", "alcalde") && !anulado && !bloqueadoGestion && e.estado !== "rendido";
+        const quien = (uid: string | null) => (uid ? usuarios.get(uid) ?? "" : "");
+        return (
+          <section className="panel fechas-docs">
+            <div className="panel-cab">Fechas de los documentos</div>
+            <div className="panel-cuerpo">
+              {docsFecha.map((d) => (
+                <div key={d.id} className="fecha-doc-fila">
+                  <span className="fd-nombre">{d.nombre}</span>
+                  <b className="fd-fecha">{fecha(d.fecha)}</b>
+                  {puedeFecha && (
+                    <VentanaFlotante boton="Cambiar fecha" titulo={`Cambiar la fecha · ${d.nombre}`} accion={cambiarFechaDocumento} textoGuardar="Cambiar fecha" claseBoton="btn chico contorno" pin>
+                      <input type="hidden" name="tipo" value={d.tipo} />
+                      <input type="hidden" name="id" value={d.id} />
+                      <input type="hidden" name="expediente_id" value={id} />
+                      <p className="pequeno tenue" style={{ margin: "0 0 10px" }}>Fecha actual: <b>{fecha(d.fecha)}</b>. El cambio queda registrado con el motivo, la fecha anterior y quién lo hizo. Debe ser del mismo año del documento.</p>
+                      <div className="rejilla-2">
+                        <label className="campo">Nueva fecha<input type="date" name="fecha" defaultValue={d.fecha ?? undefined} required /></label>
+                        <label className="campo">Motivo del cambio<input name="motivo" required minLength={10} placeholder="EJ. SE EMITIÓ CON FECHA ERRADA" autoComplete="off" style={{ textTransform: "uppercase" }} /></label>
+                      </div>
+                    </VentanaFlotante>
+                  )}
+                </div>
+              ))}
+              {(cambiosFecha ?? []).length > 0 && (
+                <div className="fecha-doc-historial">
+                  <b>Cambios de fecha registrados</b>
+                  {(cambiosFecha ?? []).map((c) => (
+                    <div key={c.id} className="pequeno">
+                      <span className="tenue">{fechaHora(c.creado_en)}</span> · {c.documento}: {fecha(c.fecha_anterior)} → <b>{fecha(c.fecha_nueva)}</b> · Motivo: {c.motivo}
+                      {quien(c.creado_por) ? <span className="tenue"> · {quien(c.creado_por)}</span> : null}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </section>
+        );
+      })()}
 
       <details className="panel historial-plegable">
         <summary className="panel-cab">Historial del expediente</summary>

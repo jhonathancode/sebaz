@@ -67,6 +67,23 @@ export async function solicitarFondo(fd: FormData) {
   volver(`/expedientes/${exp.id}`, "ok", "Requerimiento de caja chica registrado. Cuando el alcalde lo apruebe, la caja chica se abre sola.");
 }
 
+/** Enlaza un expediente ya hecho (con comprobante y cheque) a la caja chica del mes. */
+export async function enlazarExpediente(fd: FormData) {
+  await contextoMcp();
+  const supabase = await supabaseServidor();
+  const periodo = texto(fd, "periodo")!;
+  const fuente = texto(fd, "fuente_id")!;
+  const expediente = texto(fd, "expediente_id");
+  const responsable = texto(fd, "responsable_id");
+  if (!expediente) volver(ruta(periodo, fuente), "error", "Elija el expediente que abre esta caja chica.");
+  if (!responsable) volver(ruta(periodo, fuente), "error", "Elija al responsable del fondo.");
+  const { data, error } = await supabase.rpc("enlazar_caja_expediente", { p_expediente: expediente, p_periodo: periodo, p_responsable: responsable });
+  if (error) volver(ruta(periodo, fuente), "error", mensajeError(error));
+  revalidatePath("/caja-chica");
+  revalidatePath("/expedientes");
+  volver(ruta(periodo, fuente, data as string), "ok", "Listo: la caja chica quedó abierta con el monto y el cheque del expediente.");
+}
+
 export async function agregarGasto(fd: FormData) {
   const ctx = await contextoMcp();
   const supabase = await supabaseServidor();

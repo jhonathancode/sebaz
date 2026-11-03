@@ -3769,3 +3769,10 @@ label.opcion:has(input:checked) { border-color: var(--primario); background: lin
 /* Caja chica: tarjetas de resumen limpias (solo la franja de color) */
 .cc-selector ~ .kpis .kpi { background: var(--panel) !important; box-shadow: none; border-left-width: 4px !important; }
 .cc-selector ~ .kpis .kpi:nth-child(4) { border-left-color: #6f9fd0; }
+
+/* Hoja del estado de cuenta: la columna «Codificación» nunca se aplasta; si no cabe, se desliza de lado */
+.cj .te-tabla-marco { overflow-x: auto; }
+.cj .te-tabla { min-width: 800px; }
+.cj .te-tabla thead th { overflow-wrap: normal; word-break: normal; }
+.cj .te-tabla th:nth-child(2) { min-width: 150px; }
+.cj .te-tabla .te-fijo { white-space: nowrap; }

@@ -612,13 +612,13 @@ export default function ConciliarEstado({
                 <td className="n">·</td>
                 <td className="te-fijo">SALDO ANTERIOR</td>
                 <td />
-                <td>
-                  <CampoDia valor={cab.fecha_saldo_anterior} refFecha={refFecha} onCambio={(v) => ponCab("fecha_saldo_anterior", v)} disabled={!puede} aria-label="Fecha del saldo anterior" />
-                </td>
+                <td />
                 <td>
                   <input className="m" inputMode="decimal" value={cab.saldo_anterior} disabled={!puede} onChange={(e) => ponCab("saldo_anterior", e.target.value)} onBlur={(e) => ponCab("saldo_anterior", darFormato(e.target.value))} placeholder="4,835.19" aria-label="Saldo anterior" />
                 </td>
-                <td />
+                <td>
+                  <CampoDia valor={cab.fecha_saldo_anterior} refFecha={refFecha} onCambio={(v) => ponCab("fecha_saldo_anterior", v)} disabled={!puede} aria-label="Fecha del saldo anterior" />
+                </td>
                 <td className="te-va" />
                 <td />
                 <td />

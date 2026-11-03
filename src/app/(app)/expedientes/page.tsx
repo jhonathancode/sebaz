@@ -152,13 +152,15 @@ export default async function Expedientes({ searchParams }: { searchParams: Para
   // Números de los documentos de cada expediente visible (orden, conformidad, comprobante, cheque, NEA)
   const idsVis = visibles.map((e) => e.id);
   const idsQ = idsVis.length ? idsVis : ["00000000-0000-0000-0000-000000000000"];
-  const [{ data: ordsV }, { data: confV }, { data: cotsV }, { data: cpsV }, { data: neasV }] = await Promise.all([
+  const [{ data: ordsV }, { data: confV }, { data: cotsV }, { data: cpsV }, { data: neasV }, { data: cajasV }] = await Promise.all([
     supabase.from("ordenes").select("expediente_id, tipo, numero, anio, anulado, creado_en").in("expediente_id", idsQ),
     supabase.from("conformidades").select("expediente_id, memorando_numero, anio, anulado, creado_en").in("expediente_id", idsQ),
     supabase.from("cotizaciones").select("expediente_id, anulado").in("expediente_id", idsQ),
     supabase.from("comprobantes_pago").select("id, expediente_id, numero, origen, cheque, estado, creado_en, importe, deducciones").in("expediente_id", idsQ),
     supabase.from("notas_entrada").select("id, expediente_id, numero, anio, anulado, creado_en").in("expediente_id", idsQ),
+    supabase.from("cajas_chicas").select("id, expediente_id, periodo, fuente_id, numero, estado").in("expediente_id", idsQ).neq("estado", "anulada"),
   ]);
+  const cajaDe = new Map((cajasV ?? []).map((c) => [c.expediente_id as string, c]));
   const elegir = <T extends { creado_en: string }>(xs: T[] | null | undefined, vigente: (x: T) => boolean) => {
     const orden = [...(xs ?? [])].sort((a, b) => b.creado_en.localeCompare(a.creado_en));
     return orden.find(vigente) ?? orden[0] ?? null;
@@ -380,6 +382,19 @@ export default async function Expedientes({ searchParams }: { searchParams: Para
                     );
                   })}
                 </div>
+                {(() => {
+                  const caja = cajaDe.get(e.id);
+                  const esCaja = e.tipo === "caja_chica" || /caja chica/i.test(e.descripcion);
+                  if (caja) {
+                    return (
+                      <Link className={`caja-enlace${caja.estado === "liquidada" ? " cerrada" : ""}`} href={`/caja-chica?mes=${caja.periodo}&fuente=${caja.fuente_id}&caja=${caja.id}`} title="Abrir esta caja chica">
+                        ▣ ENLAZADO A CAJA CHICA · {nombrePeriodo(caja.periodo).split(" ")[0].toUpperCase()} {caja.periodo.slice(0, 4)} · {caja.estado === "liquidada" ? "CERRADA" : "ABIERTA"}
+                      </Link>
+                    );
+                  }
+                  if (esCaja && e.estado !== "anulado") return <span className="caja-enlace sin" title="Este expediente es de caja chica pero aún no abre ninguna caja">⚠ SIN ENLAZAR A CAJA CHICA</span>;
+                  return null;
+                })()}
               </div>
               <div className="f-monto">
                 S/ {soles(e.monto)}

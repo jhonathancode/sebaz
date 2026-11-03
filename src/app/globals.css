@@ -3795,3 +3795,24 @@ label.opcion:has(input:checked) { border-color: var(--primario); background: lin
 .acum-nota { margin: 0; padding: 10px 16px 12px; border-top: 1px solid var(--linea); }
 .acum-herr { display: flex; gap: 8px; flex-wrap: wrap; margin: 4px 0 2px; }
 html.pdf-captura .acum-nota { display: none; }
+
+/* Cada mes con su color suave (para distinguirlos en el acumulado) */
+.acum-m0 { --mc: #3b82f6; }
+.acum-m1 { --mc: #14b8a6; }
+.acum-m2 { --mc: #f59e0b; }
+.acum-m3 { --mc: #22c55e; }
+.acum-m4 { --mc: #0ea5e9; }
+.acum-m5 { --mc: #84cc16; }
+.acum-m6 { --mc: #06b6d4; }
+.acum-m7 { --mc: #f97316; }
+.acum-m8 { --mc: #10b981; }
+.acum-m9 { --mc: #eab308; }
+.acum-m10 { --mc: #0891b2; }
+.acum-m11 { --mc: #60a5fa; }
+.acum-marco .cc-excel tbody tr[class*="acum-m"] td { background: color-mix(in srgb, var(--mc) 13%, var(--panel)); }
+.acum-marco .cc-excel tbody tr[class*="acum-m"]:hover td { background: color-mix(in srgb, var(--mc) 22%, var(--panel)); }
+.acum-leyenda { display: flex; flex-wrap: wrap; gap: 6px; margin: 2px 0 8px; }
+.acum-chip { padding: 3px 12px; border-radius: 99px; font-size: 12px; font-weight: 700; color: var(--texto); background: color-mix(in srgb, var(--mc) 18%, var(--panel)); border: 1px solid color-mix(in srgb, var(--mc) 40%, var(--borde)); }
+.acum-chip.sel { box-shadow: 0 0 0 2px color-mix(in srgb, var(--mc) 55%, transparent); }
+html.pdf-captura .acum-marco .cc-excel tbody tr[class*="acum-m"] td { background: color-mix(in srgb, var(--mc) 16%, #fff) !important; }
+.acum-chip { text-transform: capitalize; }

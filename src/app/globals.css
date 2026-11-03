@@ -3657,3 +3657,10 @@ label.opcion:has(input:checked) { border-color: var(--primario); background: lin
 /* Bandeja: las opciones se ven siempre, sin tocar el aviso */
 .aviso-fila .aviso-item { cursor: default; }
 .aviso-acciones { padding-top: 0; }
+
+/* Expedientes de caja chica: enlace con la caja */
+.caja-enlace { display: inline-flex; align-items: center; gap: 6px; margin-top: 8px; padding: 4px 12px; border-radius: 8px; background: linear-gradient(120deg, #1d4fb8, #3b82f6); color: #fff; font-size: 11.5px; font-weight: 800; letter-spacing: .04em; text-decoration: none; box-shadow: 0 6px 12px -8px rgba(29, 79, 184, .8); }
+.caja-enlace:hover { color: #fff; filter: brightness(1.06); }
+.caja-enlace.cerrada { background: linear-gradient(120deg, #3b6ea5, #6f9fd0); }
+.caja-enlace.sin { background: var(--ambar-fondo); color: var(--ambar); border: 1px dashed var(--ambar-borde); box-shadow: none; }
+.fila .f-desc a.caja-enlace { color: #fff; }

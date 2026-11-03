@@ -3755,3 +3755,17 @@ label.opcion:has(input:checked) { border-color: var(--primario); background: lin
 .ini-trio { grid-template-columns: repeat(auto-fit, minmax(118px, 1fr)); }
 .ini-trio b { overflow-wrap: anywhere; }
 @media (max-width: 760px) { .ini-hero-boton { width: 100%; text-align: center; } }
+
+/* ===== Móvil: selector de meses de Caja chica y filtros de Ingresos ===== */
+@media (max-width: 760px) {
+  .cc-selector .cc-anio { width: 100%; justify-content: space-between; }
+  .cc-selector .cc-anio b { flex: 1; }
+  .cc-selector .cc-meses { flex: 1 1 100%; min-width: 0; }
+  .barra.barra-ing { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; align-items: end; }
+  .barra.barra-ing > label.campo { min-width: 0; flex: none; grid-column: span 1; }
+  .barra.barra-ing > label.campo:last-of-type { grid-column: 1 / -1; }
+  .barra.barra-ing > .btn { width: 100%; justify-content: center; text-align: center; }
+}
+/* Caja chica: tarjetas de resumen limpias (solo la franja de color) */
+.cc-selector ~ .kpis .kpi { background: var(--panel) !important; box-shadow: none; border-left-width: 4px !important; }
+.cc-selector ~ .kpis .kpi:nth-child(4) { border-left-color: #6f9fd0; }

@@ -284,7 +284,7 @@ export default async function Ingresos({ searchParams }: { searchParams: ParamsA
 
       <div className="columnas en-pila">
         <div className="principal">
-          <form className="barra" method="get">
+          <form className="barra barra-ing" method="get">
             <input type="hidden" name="vista" value="mes" />
             <input type="hidden" name="mes" value={periodo} />
             <label className="campo">

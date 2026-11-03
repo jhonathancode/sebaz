@@ -3744,3 +3744,14 @@ label.opcion:has(input:checked) { border-color: var(--primario); background: lin
 .fecha-doc-barra label { display: flex; flex-direction: column; gap: 4px; margin: 0; }
 .fecha-doc-barra input[type="date"] { font-weight: 700; min-width: 170px; }
 .fecha-doc-barra > span.pequeno { flex: 1 1 240px; }
+
+/* ===== Inicio: se acomoda al ancho disponible (sin textos apretados) ===== */
+.ini-hero { display: flex; flex-wrap: wrap; align-items: center; gap: 14px 22px; }
+.ini-hero-texto { flex: 1 1 280px; min-width: 0; }
+.ini-hero-pasos { flex: none; }
+.ini-hero-boton { flex: none; }
+.ini-dos { grid-template-columns: repeat(auto-fit, minmax(min(100%, 470px), 1fr)); }
+.ini-panel-cab { flex-wrap: wrap; }
+.ini-trio { grid-template-columns: repeat(auto-fit, minmax(118px, 1fr)); }
+.ini-trio b { overflow-wrap: anywhere; }
+@media (max-width: 760px) { .ini-hero-boton { width: 100%; text-align: center; } }

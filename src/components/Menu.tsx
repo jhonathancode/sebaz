@@ -239,19 +239,16 @@ export default function Menu({ items, abajo = [], mcp, panel }: { items: ItemMen
             <div className="lm-mcp-texto">
               <strong>{mcp.nombre}</strong>
               <span>RUC {mcp.ruc ?? "pendiente"}</span>
-              <span className="lm-modulo" title="Módulo de Tesorería">
-                <span className="lm-modulo-ico" aria-hidden="true">
+              <div className="lm-modulo" title="Módulo de Tesorería">
+                <div className="lm-modulo-ico" aria-hidden="true">
                   <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <rect x="3" y="6" width="18" height="13" rx="3" />
                     <path d="M3 10h18" />
                     <path d="M16 15h2" />
                   </svg>
-                </span>
-                <span className="lm-modulo-txt">
-                  <small>Módulo</small>
-                  <b>Tesorería</b>
-                </span>
-              </span>
+                </div>
+                <div className="lm-modulo-txt">Módulo <b>Tesorería</b></div>
+              </div>
             </div>
           </div>
         )}

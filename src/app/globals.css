@@ -4038,3 +4038,7 @@ html.pdf-captura .sf-faltan { display: none; }
 .hoja.sf .sf-totret > span { padding: 5px 10px; }
 .hoja.sf .sf-totret > b { padding: 5px 6px; border-left: var(--sfb); text-align: right; }
 .hoja.sf :where(div, span, b, i, th, td):not(.sf-faltan, .sf-faltan *) { color: #000; }
+/* Importes centrados en su columna */
+.hoja.sf .sf-parcial, .hoja.sf .sf-total-col,
+.hoja.sf .sf-pat-cuerpo > span:nth-child(2), .hoja.sf .sf-pat-cuerpo > span:nth-child(4),
+.hoja.sf .sf-ret-cuerpo > span:last-child { justify-content: center; text-align: center; }

@@ -120,7 +120,7 @@ export default async function Aprobaciones({ searchParams }: { searchParams: Par
           )}
 
           {puede && (
-            <div className="kpi azul" style={{ flexDirection: "row", alignItems: "center", gap: 14, flexWrap: "wrap", position: "sticky", bottom: 12 }}>
+            <div className="kpi azul barra-aprobar">
               <span style={{ flex: 1 }} className="k-det">
                 Se aprueba lo marcado. Los pagos fijos de la lista generan solos su comprobante de pago, que luego se aprueba aquí mismo. Para quitar uno, desmárquelo.
               </span>

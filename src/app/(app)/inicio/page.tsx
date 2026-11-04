@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Suspense } from "react";
+import InicioAlcalde from "@/components/InicioAlcalde";
 import BotonAbrirRequerimiento from "@/components/BotonAbrirRequerimiento";
 import NuevoRequerimientoInicio from "@/components/NuevoRequerimientoInicio";
 import UltimosExpedientes from "@/components/UltimosExpedientes";
@@ -46,6 +47,11 @@ export default async function Inicio() {
   const anterior = periodoAnterior(periodo);
   const { desde, hasta } = rangoPeriodo(periodo);
   const mcpId = ctx.mcp.id;
+
+  // El alcalde (sin otro cargo de trabajo) ve un inicio corto: solo lo que espera su aprobación
+  if (tiene(ctx, "alcalde") && !tiene(ctx, "admin", "tesorero", "contador")) {
+    return <InicioAlcalde mcpId={mcpId} saludo={saludo()} nombre={ctx.nombre.split(/\s+/)[0]} />;
+  }
 
   const [
     { data: cps },
@@ -180,8 +186,10 @@ export default async function Inicio() {
   const siguiente = pasoActual >= 0 ? pasos[pasoActual] : null;
   const quedaBanco = recibido - girado;
 
+  const hayFijosPendientes = catalogo.length > 0 ? faltanCatalogo.length > 0 : fijos.faltan.length > 0;
+
   return (
-    <>
+    <div className="ini-pagina">
       {tiene(ctx, "alcalde", "admin") && (
         <Suspense fallback={null}>
           <NuevoRequerimientoInicio />
@@ -196,6 +204,7 @@ export default async function Inicio() {
       )}
 
 
+      <input type="checkbox" id="ini-mas" className="ini-mas-chk" aria-label="Ver el resto del resumen" />
       <div className="ini-dos">
         <div className="ini-col">
           <section className="saludo">
@@ -231,8 +240,17 @@ export default async function Inicio() {
               <div className="ini-rend">
           {tarjetas.map(({ f, listo, tramite, transferencia, falta, limite, dias, rendicion }) => {
             const base = Math.max(transferencia, listo + tramite, 1);
+            const avance = rendicion ? 100 : Math.max(0, Math.min(100, ((listo + tramite) / Math.max(transferencia, 1)) * 100));
             return (
-              <Link key={f.id} className="ini-rend-fila" href={rendicion ? `/rendicion/${rendicion.id}` : `/rendicion?fuente=${f.id}`} style={{ gap: 10 }}>
+              <div key={f.id} className="ini-rend-item">
+              <input type="checkbox" id={`rend-${f.id}`} className="plg-chk" aria-label={`Ver el detalle de ${etiquetaFuente(f)}`} />
+              <label htmlFor={`rend-${f.id}`} className="plg-resumen">
+                <span className="plg-tit">{etiquetaFuente(f)}</span>
+                <span className={`plg-val${falta < 0 ? " mal" : ""}`}>{rendicion ? "Rendición generada" : falta > 0 ? `Faltan S/ ${soles(falta)}` : falta < 0 ? "Gastado de más" : "✓ Completo"}</span>
+                <svg className="plg-flecha" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6" /></svg>
+                <span className="plg-barra" aria-hidden="true"><i style={{ width: `${avance}%` }} /></span>
+              </label>
+              <Link className="ini-rend-fila" href={rendicion ? `/rendicion/${rendicion.id}` : `/rendicion?fuente=${f.id}`} style={{ gap: 10 }}>
                 <div className="tarjeta-cab">
                   <span className="etiqueta">{etiquetaFuente(f)} · {f.municipalidad}</span>
                   {rendicion ? <Estado valor={rendicion.estado} /> : <span className={`plazo ${dias < 0 ? "vencido" : dias <= 5 ? "cerca" : ""}`}>Hasta el {fechaLarga(limite)} · {cuentaRegresiva(dias)}</span>}
@@ -275,6 +293,7 @@ export default async function Inicio() {
                   </>
                 )}
               </Link>
+              </div>
             );
           })}
               </div>
@@ -282,7 +301,7 @@ export default async function Inicio() {
           )}
 
                 {/* 1. Pagos fijos del mes */}
-        <section className="ini-panel" aria-label="Pagos fijos del mes">
+        <section className={`ini-panel${hayFijosPendientes ? "" : " ini-extra"}`} aria-label="Pagos fijos del mes">
           <div className="ini-panel-cab">
             Pagos fijos de {mesActual}
             <span className="tenue pequeno">Dietas y personal</span>
@@ -359,7 +378,7 @@ export default async function Inicio() {
 
         <div className="ini-col">
           {tieneModulo(ctx.mcp, "ingresos") && (
-            <section className="ini-panel" aria-label="Ingresos propios por mes">
+            <section className="ini-panel ini-extra" aria-label="Ingresos propios por mes">
               <div className="ini-panel-cab">
                 <span>Ingresos propios por mes</span>
                 <Link href="/ingresos?vista=anio">Resumen del año →</Link>
@@ -382,7 +401,7 @@ export default async function Inicio() {
           )}
 
           {tieneModulo(ctx.mcp, "caja_chica") && (
-            <section className="ini-panel" aria-label="Caja chica">
+            <section className="ini-panel ini-extra" aria-label="Caja chica">
               <div className="ini-panel-cab">
                 <span>Caja chica · cómo va el cuadre</span>
                 {chequesCaja && <small>cheque {chequesCaja}</small>}
@@ -414,7 +433,7 @@ export default async function Inicio() {
             </section>
           )}
 
-          <section className="ini-panel" aria-label="Cuenta del banco">
+          <section className="ini-panel ini-extra" aria-label="Cuenta del banco">
             <div className="ini-panel-cab">
               <span>Cuenta del {ctx.mcp.banco_nombre || "Banco de la Nación"}</span>
               {ctx.mcp.banco_cuenta && <small>N° {ctx.mcp.banco_cuenta}</small>}
@@ -431,8 +450,10 @@ export default async function Inicio() {
         </div>
       </div>
 
+      <label htmlFor="ini-mas" className="ini-mas-boton"><span className="ini-mas-mas">Ver más resumen</span><span className="ini-mas-menos">Ver menos</span></label>
+
       {/* 6. Últimos expedientes */}
-      <section className="ini-panel" aria-label="Últimos expedientes">
+      <section className="ini-panel ini-extra" aria-label="Últimos expedientes">
         <div className="ini-panel-cab">
           <span>Últimos expedientes</span>
           <Link href="/expedientes">Ver todos →</Link>
@@ -441,6 +462,6 @@ export default async function Inicio() {
           <UltimosExpedientes />
         </Suspense>
       </section>
-    </>
+    </div>
   );
 }

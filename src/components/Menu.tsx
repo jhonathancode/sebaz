@@ -140,7 +140,7 @@ const ICONOS: Record<string, React.ReactNode> = {
   ),
 };
 
-function Icono({ href }: { href: string }) {
+export function Icono({ href }: { href: string }) {
   return (
     <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="square" strokeLinejoin="miter" aria-hidden="true">
       {ICONOS[href] ?? <circle cx="12" cy="12" r="8" />}

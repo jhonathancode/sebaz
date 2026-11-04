@@ -10,10 +10,11 @@ import VentanaFlotante from "@/components/VentanaFlotante";
 import { nombreFuente } from "@/components/formularios/CamposRequerimiento";
 import { cargarCatalogoPagosFijos, type PagoFijoCatalogo } from "@/lib/pagosFijos";
 import { NUMERACIONES, proximoNumero } from "@/lib/numeracion";
+import { CAMPOS_CODIF, datosCPDe, faltantesCP, TIPO_OPERACION_BS, TIPO_OPERACION_OTRO } from "@/lib/datosCP";
 import { contextoMcp, tiene } from "@/lib/contexto";
 import { fechaHora, nombrePeriodo, periodoActual, monto2, soles, urlLogo } from "@/lib/formato";
 import { supabaseServidor } from "@/lib/supabase/server";
-import { agregarCuentaBancaria, agregarFuente, cerrarMes, desactivarCuentaBancaria, desactivarFuente, fijarNumeracion, guardarCapitulo1, guardarDatosMcp, guardarFuente, reabrirMes, subirLogo, guardarPagoFijo, alternarPagoFijo, guardarExigirPin } from "./acciones";
+import { agregarCuentaBancaria, agregarFuente, cerrarMes, desactivarCuentaBancaria, desactivarFuente, fijarNumeracion, guardarCapitulo1, guardarDatosCP, guardarDatosMcp, guardarFuente, reabrirMes, subirLogo, guardarPagoFijo, alternarPagoFijo, guardarExigirPin } from "./acciones";
 
 export default async function Configuracion({ searchParams }: { searchParams: ParamsAviso }) {
   const sp = await searchParams;
@@ -73,6 +74,7 @@ export default async function Configuracion({ searchParams }: { searchParams: Pa
     { ok: !!(m.distrito && m.provincia), t: "Distrito y provincia" },
     { ok: !!m.banco_cuenta, t: `Cuenta del ${m.banco_nombre}` },
     { ok: ctx.fuentes.length > 0, t: "Municipalidades que transfieren" },
+    { ok: ctx.fuentes.length > 0 && ctx.fuentes.every((f) => faltantesCP(m, f.id).length === 0), t: "Datos del comprobante de pago" },
     { ok: CAMPOS_CAPITULO1.some((c) => cap1[c.clave]), t: "Capítulo I: generalidades" },
     { ok: CAMPOS_CAPITULO1_LARGOS.some((c) => cap1[c.clave]), t: "Capítulo I: objetivos y limitaciones" },
   ];
@@ -85,6 +87,7 @@ export default async function Configuracion({ searchParams }: { searchParams: Pa
     { v: "pagos", t: "Pagos fijos" },
     { v: "dinero", t: "Dinero y plazos" },
     { v: "numeracion", t: "Numeración" },
+    { v: "comprobante", t: "Comprobante de pago" },
     { v: "seguridad", t: "Seguridad y cierre de mes" },
   ];
   const seccion = SECCIONES.some((x) => x.v === sp.seccion) ? (sp.seccion as string) : "identidad";
@@ -475,6 +478,61 @@ export default async function Configuracion({ searchParams }: { searchParams: Pa
           </div>
         </section>
       )}
+
+      {seccion === "comprobante" && (() => {
+        const dcp = datosCPDe(m);
+        return (
+          <section className="fu-seccion">
+            <div className="fu-cab">
+              <div>
+                <h2>Datos del comprobante de pago</h2>
+                <p>Se llenan una sola vez y salen en <b>todos</b> los comprobantes, los nuevos y los que ya hiciste. Así el comprobante sale completo, como el del SIAF.</p>
+              </div>
+            </div>
+            <div className="aviso info">
+              <b>¿Qué escribo?</b> Copie los códigos tal como los usa la municipalidad en su SIAF o en su POI/PIA. Un ejemplo de cómo se ve en un comprobante: <code>09 · 0002 · 1 · 0086 · 3000001 · 5001353 · 22 · 048 · 0109 · 00001 · 0070136</code>. Cada fuente de dinero (Perené, Chanchamayo, ingresos propios) puede llevar sus propios códigos. La <b>meta</b> se toma de cada requerimiento cuando la escribe; aquí queda la meta que se usa por defecto.
+            </div>
+            <form action={guardarDatosCP}>
+              <fieldset disabled={!puedeCambiar} style={{ border: 0, padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: 14 }}>
+                {ctx.fuentes.map((f) => {
+                  const cod = dcp.codif[f.id] ?? {};
+                  return (
+                    <article key={f.id} className="fu-card">
+                      <header className="fu-card-cab">
+                        <span className="fu-tipo">Codificación programática · {nombreFuente(f)}</span>
+                        <span className={`fu-pill ${faltantesCP(m, f.id).includes("codificación programática") ? "no" : "si"}`}>{faltantesCP(m, f.id).includes("codificación programática") ? "Sin llenar" : "Lista"}</span>
+                      </header>
+                      <div className="cp-codif-rej">
+                        {CAMPOS_CODIF.map((c) => (
+                          <label key={c.k} className="campo">
+                            {c.t}
+                            <input name={`cod_${f.id}_${c.k}`} defaultValue={cod[c.k] ?? ""} autoComplete="off" style={{ textTransform: "uppercase" }} />
+                          </label>
+                        ))}
+                      </div>
+                    </article>
+                  );
+                })}
+                <article className="fu-card">
+                  <header className="fu-card-cab">
+                    <span className="fu-tipo">Cuentas contables y forma de pago</span>
+                  </header>
+                  <div className="rejilla-2">
+                    <label className="campo">Cuenta del DEBE (contabilidad patrimonial)<input name="cuenta_debe" defaultValue={dcp.cuenta_debe} placeholder="Ej.: 2103.010101" autoComplete="off" /></label>
+                    <label className="campo">Cuenta del HABER<input name="cuenta_haber" defaultValue={dcp.cuenta_haber} placeholder="Ej.: 1101.1201" autoComplete="off" /></label>
+                    <label className="campo">CCI de la cuenta del banco<input name="cci" defaultValue={dcp.cci} inputMode="numeric" placeholder="20 dígitos" autoComplete="off" /></label>
+                    <span />
+                    <label className="campo">Tipo de operación · compras y servicios<input name="tipo_operacion_bs" defaultValue={dcp.tipo_operacion_bs === TIPO_OPERACION_BS ? "" : dcp.tipo_operacion_bs} placeholder={TIPO_OPERACION_BS} autoComplete="off" /></label>
+                    <label className="campo">Tipo de operación · pagos fijos y otros<input name="tipo_operacion_otro" defaultValue={dcp.tipo_operacion_otro === TIPO_OPERACION_OTRO ? "" : dcp.tipo_operacion_otro} placeholder={TIPO_OPERACION_OTRO} autoComplete="off" /></label>
+                  </div>
+                  <p className="pequeno tenue" style={{ margin: "6px 0 0" }}>La cuenta del banco y el banco salen de «Identidad». Si deja el tipo de operación vacío, se usa el que aparece en gris.</p>
+                </article>
+                {puedeCambiar && <button type="submit" className="btn primario grande" style={{ alignSelf: "flex-start" }}>Guardar datos del comprobante</button>}
+              </fieldset>
+            </form>
+          </section>
+        );
+      })()}
 
       {seccion === "numeracion" && (
         <section className="fu-seccion">

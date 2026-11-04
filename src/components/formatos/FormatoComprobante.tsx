@@ -1,5 +1,7 @@
 import MarcaAnulado from "@/components/MarcaAnulado";
 import type { Mcp } from "@/lib/contexto";
+import Link from "next/link";
+import { CAMPOS_CODIF, conceptoAmpliado, datosCPDe, faltantesCP, type ExtraCP } from "@/lib/datosCP";
 import { enLetras, soles } from "@/lib/formato";
 
 export type DatosCP = {
@@ -29,17 +31,29 @@ const ahora = () => {
  * codificación programática, estadística del objeto del gasto, contabilidad patrimonial, retenciones, uso del
  * tesorero, visación, forma de pago y recibí conforme.
  */
-export default function FormatoComprobante({ c, mcp, anulado }: { c: DatosCP; mcp: Mcp; anulado?: { motivo?: string | null; en?: string | null } | null }) {
+export default function FormatoComprobante({ c, mcp, anulado, extra }: { c: DatosCP; mcp: Mcp; anulado?: { motivo?: string | null; en?: string | null } | null; extra?: ExtraCP | null }) {
   const liquido = Number(c.importe) - Number(c.deducciones);
   const iniciales = (c.hecho_por ?? "").split(/\s+/).filter(Boolean).map((p) => p[0]).join("").toUpperCase();
   const [anio, mes, dia] = (c.fecha || "").split("-");
   const doc = (c.beneficiario_doc ?? "").replace(/\D/g, "");
   const imp = ahora();
+  const datos = datosCPDe(mcp);
+  const cod = (extra?.fuenteId ? datos.codif[extra.fuenteId] : undefined) ?? {};
+  const faltan = faltantesCP(mcp, extra?.fuenteId);
+  const tipoOperacion = extra?.tipoGasto === "compra" || extra?.tipoGasto === "servicio" ? datos.tipo_operacion_bs : extra?.tipoGasto ? datos.tipo_operacion_otro : datos.tipo_operacion_bs;
+  const hayDed = Number(c.deducciones) > 0;
   const lugar = [mcp.distrito && `DISTRITO DE ${mcp.distrito}`, mcp.provincia && `PROVINCIA DE ${mcp.provincia}`].filter(Boolean).join(" · ").toUpperCase();
 
   return (
     <div className="hoja sf">
       {anulado && <MarcaAnulado {...anulado} />}
+
+      {faltan.length > 0 && (
+        <div className="sf-faltan no-imprimir">
+          <b>Este comprobante aún no sale completo.</b> Falta en Configuración: {faltan.join(", ")}.{" "}
+          <Link href="/configuracion?seccion=comprobante">Completar ahora →</Link>
+        </div>
+      )}
 
       {/* Cabecera del sistema */}
       <div className="sf-sis">
@@ -87,15 +101,24 @@ export default function FormatoComprobante({ c, mcp, anulado }: { c: DatosCP; mc
       <div className="sf-marco">
         <div className="sf-sec sf-concepto">
           <div className="sf-cab">CONCEPTO</div>
-          <div className="sf-concepto-cuerpo">{c.concepto}</div>
+          <div className="sf-concepto-cuerpo">{conceptoAmpliado(c.concepto, c.cheque, extra)}</div>
         </div>
 
         {/* Codificación programática | Estadística del objeto del gasto */}
         <div className="sf-fila sf-alta">
           <div className="sf-sec sf-izq">
             <div className="sf-cab">CODIFICACION PROGRAMATICA</div>
-            <div className="sf-codif-cab">RB SEC F CP PRG PROD/PRY ACT/AI/OBR FN DIVF GRPF META FINAL</div>
-            <div className="sf-codif-fila">{c.funcional ?? ""}</div>
+            <div className="sf-codif-rej sf-codif-cab">
+              {CAMPOS_CODIF.map((x) => (
+                <span key={x.k}>{x.t}</span>
+              ))}
+            </div>
+            <div className="sf-codif-rej sf-codif-val">
+              {CAMPOS_CODIF.map((x) => (
+                <span key={x.k}>{x.k === "meta" ? (extra?.meta ? extra.meta.split(/\s+/)[0] : cod.meta) ?? "" : cod[x.k] ?? ""}</span>
+              ))}
+            </div>
+            <div className="sf-codif-fila">{c.funcional ? `FUNCIÓN: ${c.funcional.toUpperCase()}` : ""}</div>
           </div>
           <div className="sf-sec sf-der sf-estad">
             <div className="sf-cab">ESTADISTICA OBJETO DEL GASTO</div>
@@ -128,17 +151,17 @@ export default function FormatoComprobante({ c, mcp, anulado }: { c: DatosCP; mc
               <div className="sf-pat-ci"><span>CUENTA</span><span>IMPORTE</span><span>CUENTA</span><span>IMPORTE</span></div>
             </div>
             <div className="sf-pat-cuerpo">
-              <span />
+              <span>{datos.cuenta_debe}</span>
               <span className="sf-der-v">{M(c.importe)}</span>
-              <span />
+              <span>{datos.cuenta_haber}</span>
               <span className="sf-der-v">{M(c.importe)}</span>
             </div>
           </div>
           <div className="sf-sec sf-der sf-ret">
             <div className="sf-cab sf-cab-2"><span>RETENCIONES Y/O DEDUCCIONES</span><span>IMPORTE</span></div>
             <div className="sf-ret-cuerpo">
-              <span />
-              <span className="sf-der-v">{Number(c.deducciones) > 0 ? M(c.deducciones) : ""}</span>
+              <span>{hayDed ? "" : "NINGUNA"}</span>
+              <span className="sf-der-v">{hayDed ? M(c.deducciones) : "0.00"}</span>
             </div>
           </div>
         </div>
@@ -189,9 +212,9 @@ export default function FormatoComprobante({ c, mcp, anulado }: { c: DatosCP; mc
                 <div><span>BANCO</span><b>{mcp.banco_nombre ?? ""}</b></div>
                 <div><span>CTA CTE</span><b>{mcp.banco_cuenta ?? ""}</b></div>
                 <div><span>CHEQUE GIRADO</span><b>{c.cheque ?? ""}</b></div>
-                <div><span>CCI</span><b /></div>
+                <div><span>CCI</span><b>{datos.cci}</b></div>
                 <div className="sf-pago-tipo"><span>TIPO DE OPERACION</span></div>
-                <div className="sf-pago-tipo-v">GASTO</div>
+                <div className="sf-pago-tipo-v">{tipoOperacion}</div>
               </div>
             </div>
           </div>

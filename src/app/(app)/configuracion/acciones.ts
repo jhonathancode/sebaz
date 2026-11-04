@@ -6,6 +6,7 @@ import { contextoMcp, tiene } from "@/lib/contexto";
 import { mensajeError, numero, texto, volver } from "@/lib/acciones";
 import { supabaseServidor } from "@/lib/supabase/server";
 import { NUMERACIONES, ultimoEmitido } from "@/lib/numeracion";
+import { CAMPOS_CODIF } from "@/lib/datosCP";
 
 export async function guardarDatosMcp(fd: FormData) {
   const ctx = await contextoMcp();
@@ -260,4 +261,34 @@ export async function fijarNumeracion(fd: FormData) {
   if (error) volver(destino, "error", /fijar_correlativo|function/i.test(error.message) ? "Falta la actualización de la base (ACTUALIZAR_BASE.sql). Avise a soporte." : mensajeError(error));
   revalidatePath("/", "layout");
   volver(destino, "ok", `Listo: el próximo ${def.nombre.toLowerCase()} de ${anio} será el N° ${inicio}.`);
+}
+
+/** Datos fijos que completan el comprobante de pago: codificación por fuente, cuentas contables, CCI y tipo de operación. */
+export async function guardarDatosCP(fd: FormData) {
+  const ctx = await contextoMcp();
+  const supabase = await supabaseServidor();
+  const destino = "/configuracion?seccion=comprobante";
+  if (!tiene(ctx, "admin")) volver(destino, "error", "Solo el administrador puede cambiar estos datos.");
+  const limpio = (v: string | null | undefined) => (v ?? "").toUpperCase().replace(/\s+/g, " ").trim().slice(0, 80);
+  const codif: Record<string, Record<string, string>> = {};
+  for (const f of ctx.fuentes) {
+    const fila: Record<string, string> = {};
+    for (const c of CAMPOS_CODIF) {
+      const v = limpio(texto(fd, `cod_${f.id}_${c.k}`));
+      if (v) fila[c.k] = v;
+    }
+    if (Object.keys(fila).length) codif[f.id] = fila;
+  }
+  const datos = {
+    codif,
+    cuenta_debe: limpio(texto(fd, "cuenta_debe")),
+    cuenta_haber: limpio(texto(fd, "cuenta_haber")),
+    cci: limpio(texto(fd, "cci")),
+    tipo_operacion_bs: limpio(texto(fd, "tipo_operacion_bs")),
+    tipo_operacion_otro: limpio(texto(fd, "tipo_operacion_otro")),
+  };
+  const { error } = await supabase.from("mcps").update({ datos_cp: datos }).eq("id", ctx.mcp.id);
+  if (error) volver(destino, "error", /datos_cp|schema cache|column/i.test(error.message) ? "Falta la actualización de la base (ACTUALIZAR_BASE.sql). Avise a soporte." : mensajeError(error));
+  revalidatePath("/", "layout");
+  volver(destino, "ok", "Datos del comprobante guardados. Ya salen en todos los comprobantes, nuevos y anteriores.");
 }

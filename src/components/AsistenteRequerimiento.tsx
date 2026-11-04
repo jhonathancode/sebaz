@@ -12,6 +12,7 @@ import FormatoComprobante from "@/components/formatos/FormatoComprobante";
 import { FormatoNea } from "@/components/formatos/FormatosAlmacen";
 import { SUSTENTOS } from "@/lib/catalogos";
 import { num3, soles } from "@/lib/formato";
+import type { ExtraCP } from "@/lib/datosCP";
 import { conceptoSeRequiere, conceptoSinSeRequiere, resumenConcepto } from "@/lib/requerimiento";
 import type { Mcp, Fuente } from "@/lib/contexto";
 
@@ -486,6 +487,15 @@ export default function AsistenteRequerimiento({
                     cheque: L.g("cheque_previsto") || null,
                     hecho_por: hechoPor,
                   }}
+                  extra={{
+                    expediente: proximos.expediente ? `${num3(proximos.expediente)}-${L.anio}` : null,
+                    orden: numOrden ? `${ordenTipo === "compra" ? "O/C" : "O/S"} N° ${num3(numOrden)}-${L.anio}` : null,
+                    sustentoTipo: L.g("sustento_tipo") || null,
+                    sustentoNumero: L.g("sustento_numero") || null,
+                    meta: L.may("meta") || null,
+                    fuenteId: L.g("fuente_id") || L.g("fuente_final") || null,
+                    tipoGasto: L.tipo,
+                  } satisfies ExtraCP}
                 />,
               )}
 

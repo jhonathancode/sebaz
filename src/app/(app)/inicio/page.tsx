@@ -2,17 +2,16 @@ import Link from "next/link";
 import { Suspense } from "react";
 import BotonAbrirRequerimiento from "@/components/BotonAbrirRequerimiento";
 import NuevoRequerimientoInicio from "@/components/NuevoRequerimientoInicio";
+import UltimosExpedientes from "@/components/UltimosExpedientes";
 import BotonConfirmar from "@/components/BotonConfirmar";
 import Estado from "@/components/Estado";
 import CurvaIngresos from "@/components/CurvaIngresos";
 import { contextoMcp, tiene } from "@/lib/contexto";
 import {
-  codigoCP,
   diasHasta,
   fechaLarga,
   fechaLimite,
   nombrePeriodo,
-  num3,
   periodoActual,
   periodoAnterior,
   rangoPeriodo,
@@ -39,13 +38,6 @@ function cuentaRegresiva(dias: number) {
   return `venció hace ${-dias} día${dias === -1 ? "" : "s"}`;
 }
 
-const NOMBRE_FASE: Record<string, string> = {
-  requerimiento: "Requerimiento",
-  cotizacion: "Cuadro comparativo",
-  orden: "Orden",
-  conformidad: "Memorando de conformidad",
-  comprobante: "Comprobante de pago",
-};
 
 export default async function Inicio() {
   const ctx = await contextoMcp();
@@ -60,16 +52,12 @@ export default async function Inicio() {
     { count: reqPorAprobar },
     { data: rendiciones },
     { data: cajas },
-    { data: ultimosExp },
-    { data: ultimosCp },
     fijos,
   ] = await Promise.all([
     supabase.from("comprobantes_pago").select("id, estado, cheque, importe, fuente_id, fecha, funcion").eq("mcp_id", mcpId).in("estado", ["borrador", "aprobado", "rendido"]).lte("fecha", hasta),
     supabase.from("expedientes").select("id", { count: "exact", head: true }).eq("mcp_id", mcpId).eq("estado", "borrador"),
     supabase.from("rendiciones").select("id, fuente_id, estado, numero, anio, periodo").eq("mcp_id", mcpId).in("periodo", [periodo, anterior]).neq("estado", "anulada"),
     supabase.from("cajas_chicas").select("id, monto_fondo, estado, numero_cheque, caja_chica_gastos(monto, anulado, sustento_tipo)").eq("mcp_id", mcpId).eq("periodo", periodo).neq("estado", "anulada"),
-    supabase.from("expedientes").select("id, numero, anio, fecha, descripcion, estado, fase").eq("mcp_id", mcpId).neq("estado", "anulado").order("creado_en", { ascending: false }).limit(6),
-    supabase.from("comprobantes_pago").select("id, numero, origen, fecha, concepto, importe, estado, creado_en").eq("mcp_id", mcpId).neq("origen", "expediente").neq("estado", "anulado").order("creado_en", { ascending: false }).limit(3),
     estadoPagosFijos(supabase, mcpId, periodo),
   ]);
   const catalogo = await cargarCatalogoPagosFijos(supabase, mcpId);
@@ -179,28 +167,6 @@ export default async function Inicio() {
   const idsTransfer = new Set(transferencias.map((f) => f.id));
   const cheques = delMes.filter((c) => c.cheque && idsTransfer.has(c.fuente_id ?? ""));
   const girado = cheques.reduce((s, c) => s + Number(c.importe), 0);
-
-  // ---- 6. Documentos listos para imprimir
-  const documentos = [
-    ...(ultimosExp ?? []).map((x) => ({
-      clave: x.id,
-      titulo: `Expediente ${num3(x.numero)}-${x.anio}`,
-      detalle: x.descripcion,
-      ultimo: NOMBRE_FASE[x.fase] ?? "Requerimiento",
-      estado: x.estado,
-      ver: `/expedientes/${x.id}`,
-      imprimir: `/expedientes/${x.id}/documentos?doc=todo&imprimir=1`,
-    })),
-    ...(ultimosCp ?? []).map((x) => ({
-      clave: x.id,
-      titulo: codigoCP(x.numero, x.origen),
-      detalle: x.concepto,
-      ultimo: x.origen === "caja_chica" ? "Liquidación de caja chica" : "Comprobante de pago",
-      estado: x.estado,
-      ver: `/comprobantes/${x.id}`,
-      imprimir: `/comprobantes/${x.id}`,
-    })),
-  ].slice(0, 8);
 
   const hoy = new Date(new Date().toLocaleString("en-US", { timeZone: "America/Lima" }));
   const diasMes = new Date(hoy.getFullYear(), hoy.getMonth() + 1, 0).getDate() - hoy.getDate();
@@ -464,30 +430,15 @@ export default async function Inicio() {
         </div>
       </div>
 
-      {/* 6. Documentos listos para imprimir */}
-      <section className="ini-panel" aria-label="Documentos listos para imprimir">
-        <div className="ini-panel-cab"><span>Documentos listos para imprimir</span></div>
-        <div className="tabla-marco" style={{ border: "none", borderRadius: 0 }}>
-          <table className="tabla" style={{ minWidth: 640 }}>
-            <tbody>
-              {documentos.length === 0 && <tr><td className="tenue">Todavía no hay documentos. Empiece con un nuevo requerimiento.</td></tr>}
-              {documentos.map((d) => (
-                <tr key={d.clave}>
-                  <td style={{ fontWeight: 600 }}>{d.titulo}</td>
-                  <td className="envolver">{d.detalle}</td>
-                  <td className="tenue pequeno">Último: {d.ultimo}</td>
-                  <td><Estado valor={d.estado} /></td>
-                  <td>
-                    <div className="acciones-fila">
-                      <Link className="btn chico contorno" href={d.ver}>Ver</Link>
-                      <Link className="btn chico primario" href={d.imprimir}>Imprimir</Link>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+      {/* 6. Últimos expedientes */}
+      <section className="ini-panel" aria-label="Últimos expedientes">
+        <div className="ini-panel-cab">
+          <span>Últimos expedientes</span>
+          <Link href="/expedientes">Ver todos →</Link>
         </div>
+        <Suspense fallback={<div className="vacio tenue">Cargando…</div>}>
+          <UltimosExpedientes />
+        </Suspense>
       </section>
     </>
   );

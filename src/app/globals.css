@@ -3816,3 +3816,10 @@ html.pdf-captura .acum-nota { display: none; }
 .acum-chip.sel { box-shadow: 0 0 0 2px color-mix(in srgb, var(--mc) 55%, transparent); }
 html.pdf-captura .acum-marco .cc-excel tbody tr[class*="acum-m"] td { background: color-mix(in srgb, var(--mc) 16%, #fff) !important; }
 .acum-chip { text-transform: capitalize; }
+
+/* Menú contraído: nombre de la opción al apuntarla */
+.lm-etiqueta { position: fixed; z-index: 300; transform: translateY(-50%); padding: 7px 14px; border-radius: 10px; background: linear-gradient(120deg, #1d4fb8, #3b82f6); color: #fff; font-size: 13.5px; font-weight: 700; white-space: nowrap; pointer-events: none; box-shadow: 0 12px 24px -10px rgba(29, 79, 184, .8); animation: lm-etq .12s ease-out; }
+.lm-etiqueta::before { content: ""; position: absolute; left: -5px; top: 50%; width: 10px; height: 10px; background: #2563eb; transform: translateY(-50%) rotate(45deg); border-radius: 2px; }
+@keyframes lm-etq { from { opacity: 0; transform: translate(-6px, -50%); } to { opacity: 1; transform: translate(0, -50%); } }
+@media (prefers-reduced-motion: reduce) { .lm-etiqueta { animation: none; } }
+@media (max-width: 760px) { .lm-etiqueta { display: none; } }

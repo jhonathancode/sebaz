@@ -222,10 +222,28 @@ export default function Menu({ items, abajo = [], mcp, panel }: { items: ItemMen
     if (marco) marco.dataset.movil = "";
   }
 
+  // Con el menú contraído (solo íconos), al apuntar o enfocar una opción se muestra su nombre al costado
+  const [etiqueta, setEtiqueta] = useState<{ texto: string; x: number; y: number } | null>(null);
+  function mostrarEtiqueta(e: React.SyntheticEvent) {
+    const marco = document.querySelector<HTMLElement>(".marco-app");
+    if (marco?.dataset.menu !== "oculto") return setEtiqueta(null);
+    const el = (e.target as HTMLElement).closest<HTMLElement>("ul > li > a, ul > li > button.lm-padre, .lm-admin > summary, .lm-contraer");
+    if (!el) return setEtiqueta(null);
+    const texto = el.getAttribute("title") || el.querySelector("span")?.textContent || el.textContent || "";
+    if (!texto.trim()) return setEtiqueta(null);
+    const r = el.getBoundingClientRect();
+    setEtiqueta({ texto: texto.trim(), x: r.right + 10, y: r.top + r.height / 2 });
+  }
+
   return (
     <>
       <div className="lm-fondo" onClick={cerrar} aria-hidden="true" />
-      <nav className="lateral-menu no-imprimir" aria-label="Menú del sistema">
+      {etiqueta && (
+        <div className="lm-etiqueta" role="tooltip" style={{ left: etiqueta.x, top: etiqueta.y }}>
+          {etiqueta.texto}
+        </div>
+      )}
+      <nav className="lateral-menu no-imprimir" aria-label="Menú del sistema" onMouseOver={mostrarEtiqueta} onFocus={mostrarEtiqueta} onMouseLeave={() => setEtiqueta(null)} onBlur={() => setEtiqueta(null)} onClick={() => setEtiqueta(null)}>
         {mcp && (
           <div className="lm-mcp">
             <div className="lm-escudo">

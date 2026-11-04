@@ -172,8 +172,8 @@ export default async function Comprobante({ params, searchParams }: { params: P;
                   <BotonConfirmar className="btn primario grande" pregunta="¿Guardar este número de cheque?" detalle="El cheque se escribe una sola vez y ya no se puede cambiar." textoConfirmar="Sí, guardar cheque">Guardar cheque</BotonConfirmar>
                 </form>
               )}
-              {listo && !rendido && <Link className="btn contorno grande" href="/expedientes?nuevo=1">+ Nuevo expediente</Link>}
-              {listo && !rendido && <Link className="btn primario grande" href="/rendicion">Ir a la rendición</Link>}
+              {listo && !rendido && <Link className="btn contorno grande" href="/expedientes">Ver expedientes</Link>}
+              {listo && !rendido && <Link className="btn primario grande" href="/expedientes?nuevo=1">+ Nuevo expediente</Link>}
             </div>
           </div>
         </div>

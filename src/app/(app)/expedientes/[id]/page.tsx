@@ -409,8 +409,8 @@ export default async function Expediente({ params, searchParams }: { params: Par
       texto: "Todo listo. Este gasto ya puede entrar en la rendición del mes.",
       accion: (
         <div className="acciones-fila">
-          {puedeRegistrar && <Link className="btn contorno grande" href="/expedientes?nuevo=1">+ Nuevo expediente</Link>}
-          <Link className="btn primario grande" href="/rendicion">Ir a la rendición</Link>
+          <Link className={`btn ${puedeRegistrar ? "contorno" : "primario"} grande`} href="/expedientes">Ver expedientes</Link>
+          {puedeRegistrar && <Link className="btn primario grande" href="/expedientes?nuevo=1">+ Nuevo expediente</Link>}
         </div>
       ),
     };

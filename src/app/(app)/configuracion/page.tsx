@@ -10,7 +10,7 @@ import VentanaFlotante from "@/components/VentanaFlotante";
 import { nombreFuente } from "@/components/formularios/CamposRequerimiento";
 import { cargarCatalogoPagosFijos, type PagoFijoCatalogo } from "@/lib/pagosFijos";
 import { NUMERACIONES, proximoNumero } from "@/lib/numeracion";
-import { CAMPOS_CODIF, datosCPDe, faltantesCP, TIPO_OPERACION_BS, TIPO_OPERACION_OTRO } from "@/lib/datosCP";
+import { CAMPOS_CODIF, CODIF_FIJA, rubroSugerido, datosCPDe, faltantesCP, TIPO_OPERACION_BS, TIPO_OPERACION_OTRO } from "@/lib/datosCP";
 import { contextoMcp, tiene } from "@/lib/contexto";
 import { fechaHora, nombrePeriodo, periodoActual, monto2, soles, urlLogo } from "@/lib/formato";
 import { supabaseServidor } from "@/lib/supabase/server";
@@ -490,12 +490,12 @@ export default async function Configuracion({ searchParams }: { searchParams: Pa
               </div>
             </div>
             <div className="aviso info">
-              <b>¿Qué escribo?</b> Copie los códigos tal como los usa la municipalidad en su SIAF o en su POI/PIA. Un ejemplo de cómo se ve en un comprobante: <code>09 · 0002 · 1 · 0086 · 3000001 · 5001353 · 22 · 048 · 0109 · 00001 · 0070136</code>. Cada fuente de dinero (Perené, Chanchamayo, ingresos propios) puede llevar sus propios códigos. La <b>meta</b> se toma de cada requerimiento cuando la escribe; aquí queda la meta que se usa por defecto.
+              <b>Ya sugeridos:</b> RB (13 si el dinero viene de otra municipalidad, 09 si es ingreso propio), FN 03, DIVF 006 y GRPF 0010 (gestión administrativa, Clasificador Funcional del MEF) y las cuentas 2103.010101 / 1101.1201 (las de su modelo). Revíselos y pulse Guardar. <b>SEC, PROD, ACT, META y FINAL son propios de cada municipalidad</b>: se copian de su SIAF o POI. <b>¿Qué escribo?</b> Copie los códigos tal como los usa la municipalidad en su SIAF o en su POI/PIA. Un ejemplo de cómo se ve en un comprobante: <code>09 · 0002 · 1 · 0086 · 3000001 · 5001353 · 22 · 048 · 0109 · 00001 · 0070136</code>. Cada fuente de dinero (Perené, Chanchamayo, ingresos propios) puede llevar sus propios códigos. La <b>meta</b> se toma de cada requerimiento cuando la escribe; aquí queda la meta que se usa por defecto.
             </div>
             <form action={guardarDatosCP}>
               <fieldset disabled={!puedeCambiar} style={{ border: 0, padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: 14 }}>
                 {ctx.fuentes.map((f) => {
-                  const cod = dcp.codif[f.id] ?? {};
+                  const cod = { ...CODIF_FIJA, rb: rubroSugerido(f.tipo), ...(dcp.codif[f.id] ?? {}) };
                   return (
                     <article key={f.id} className="fu-card">
                       <header className="fu-card-cab">

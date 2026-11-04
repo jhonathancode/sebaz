@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import Bienvenida from "@/components/Bienvenida";
 import Bandeja from "@/components/Bandeja";
 import BotonTema from "@/components/BotonTema";
+import BarraInferior, { type PestanaInferior } from "@/components/BarraInferior";
 import Menu, { BotonMenu, type ItemMenu } from "@/components/Menu";
 import MenuUsuario, { type EnlaceMenu } from "@/components/MenuUsuario";
 import { COOKIE_MCP, obtenerContexto, tiene } from "@/lib/contexto";
@@ -98,6 +99,16 @@ export default async function MarcoApp({ children }: { children: React.ReactNode
       ? [{ href: "/soporte", texto: "Panel de soporte" }]
       : [];
 
+  // Barra de abajo (celular): inicio, gastos, lo que aprueba, ingresos o caja chica; el resto va en «Más»
+  const pestanas: PestanaInferior[] = [];
+  if (ctx.mcp && !ctx.esSuperadmin) {
+    pestanas.push({ href: "/", texto: "Inicio" });
+    if (tiene(ctx, "alcalde", "admin")) pestanas.push({ href: "/aprobaciones", texto: "Por aprobar", n: porAprobar });
+    pestanas.push({ href: "/expedientes", texto: "Gastos" });
+    if (tieneModulo(ctx.mcp, "ingresos") && pestanas.length < 4) pestanas.push({ href: "/ingresos", texto: "Ingresos" });
+    if (tieneModulo(ctx.mcp, "caja_chica") && pestanas.length < 4) pestanas.push({ href: "/caja-chica", texto: "Caja chica" });
+  }
+
   const enlaces: EnlaceMenu[] = [
     { href: "/mensajes", texto: "Mensajes", grupo: "cuenta" },
     { href: "/cuenta", texto: "Mi cuenta, clave y PIN", grupo: "cuenta" },
@@ -190,6 +201,7 @@ export default async function MarcoApp({ children }: { children: React.ReactNode
         )}
       </main>
       </div>
+      {pestanas.length > 0 && <BarraInferior pestanas={pestanas} />}
     </UsuarioProvider>
   );
 }

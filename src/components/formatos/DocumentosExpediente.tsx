@@ -1,7 +1,7 @@
 import Encabezado from "@/components/Encabezado";
 import MarcaAnulado, { MarcaAnuladaPagina } from "@/components/MarcaAnulado";
 import Firmas from "@/components/Firmas";
-import { extraDe } from "@/lib/datosCP";
+import { datosCPDe, extraDe } from "@/lib/datosCP";
 import FormatoComprobante from "@/components/formatos/FormatoComprobante";
 import type { Mcp } from "@/lib/contexto";
 import type { cargarExpediente, Proveedor } from "@/lib/documentos";
@@ -177,59 +177,138 @@ function Cotizaciones({ d, mcp }: { d: Datos; mcp: Mcp }) {
   );
 }
 
+/**
+ * Orden de compra / de servicio con la disposición del modelo: número en recuadro, datos del proveedor y
+ * condiciones, detalle con el monto en letras, afectación presupuestal, total, «facturar a nombre de», firmas y
+ * nota importante. Es la misma hoja para compra y servicio; solo cambia el título. Una sola hoja A4.
+ */
 export function Orden({ d, mcp }: { d: Datos; mcp: Mcp }) {
   const e = d.e!;
   const orden = d.orden!;
   const p = orden.proveedores as unknown as Proveedor | null;
+  const compra = orden.tipo === "compra";
+  const siglas = compra ? "O/C" : "O/S";
+  const imp = ahora();
+  const [anio, mes, dia] = (orden.fecha || "").slice(0, 10).split("-");
+  const monto = Number(orden.monto);
+  // Si la orden es por todo el requerimiento, cada ítem lleva su valor; si no, solo va el total
+  const sumaItems = d.items.reduce((s, i) => s + Number(i.total), 0);
+  const conValores = Math.abs(sumaItems - monto) < 0.005;
+  const cod = datosCPDe(mcp).codif[(e as { fuente_id?: string | null }).fuente_id ?? ""] ?? {};
+  const cadena = [cod.fn, cod.divf, cod.grpf, cod.prg, cod.prod, cod.act].filter(Boolean).join(".");
+  const ffrb = [cod.f, cod.rb].filter(Boolean).join(" - ");
+  const lugar = [mcp.distrito && `DISTRITO DE ${mcp.distrito}`, mcp.provincia && `PROVINCIA DE ${mcp.provincia}`].filter(Boolean).join(" · ").toUpperCase();
   return (
-    <div className="hoja">
+    <div className="hoja og">
       {d.anulado && <MarcaAnulado {...d.anulado} />}
-      <Encabezado
-        mcp={mcp}
-        titulo={`ORDEN DE ${orden.tipo === "compra" ? "COMPRA" : "SERVICIO"} N° ${num3(orden.numero)}-${orden.anio}`}
-        numero={`Fecha: ${fecha(orden.fecha)}`}
-      />
-      <table className="formato">
-        <thead><tr><th>1. Datos del proveedor</th><th>2. Condiciones generales</th></tr></thead>
-        <tbody>
-          <tr>
-            <td>
-              Señor(es): {p?.razon_social}<br />
-              Dirección: {p?.direccion ?? ""}<br />
-              RUC: {p?.num_doc} · Teléfono: {p?.telefono ?? ""}
-            </td>
-            <td>
-              Plazo de ejecución: {orden.plazo ?? ""}<br />
-              Tipo de proceso: {orden.tipo_proceso}<br />
-              Moneda: Nacional
-            </td>
-          </tr>
-          <tr><td colSpan={2}>Concepto: {orden.concepto}</td></tr>
-        </tbody>
-      </table>
-      <table className="formato">
-        <thead><tr><th>Cant.</th><th>Unid. med.</th><th>Descripción</th><th className="num">Precio total S/</th></tr></thead>
-        <tbody>
-          {d.items.map((i) => (
-            <tr key={i.id}><td>{Number(i.cantidad)}</td><td>{i.unidad}</td><td>{i.descripcion}</td><td className="num"></td></tr>
-          ))}
-          <tr><th colSpan={3}>TOTAL S/</th><th className="num">{soles(orden.monto)}</th></tr>
-        </tbody>
-      </table>
-      <table className="formato">
-        <thead><tr><th colSpan={4}>Afectación presupuestal</th></tr><tr><th>Meta</th><th>Fuente</th><th>Clasif. de gasto</th><th className="num">Monto S/</th></tr></thead>
-        <tbody><tr><td>{e.meta ?? ""}</td><td>Transferencia</td><td>{e.clasificador ?? ""}</td><td className="num">{soles(orden.monto)}</td></tr></tbody>
-      </table>
-      <table className="formato">
-        <tbody>
-          <tr><td>Comprobante a nombre de: <b>{mcp.nombre.toUpperCase()}</b> · RUC: {mcp.ruc ?? "________"}</td></tr>
-          <tr><td>Dirección: {mcp.direccion ?? ""}</td></tr>
-        </tbody>
-      </table>
-      <Firmas nombres={["ELABORADO POR", "ORDENACIÓN DEL SERVICIO · ALCALDE", "CONFORMIDAD DEL SERVICIO"]} />
-      <p className="pequeno">
-        NOTA IMPORTANTE: el proveedor debe adjuntar a su comprobante copia de esta orden. Esta orden es nula sin las firmas y sellos reglamentarios.
-      </p>
+
+      <div className="sf-sis">
+        <div>
+          <div>ZEBAZ - Módulo de Tesorería</div>
+          <div>{(mcp.nombre ?? "").toUpperCase()}{lugar ? ` · ${lugar}` : ""}{mcp.ruc ? ` · RUC ${mcp.ruc}` : ""}</div>
+        </div>
+        <div className="sf-sis-der" suppressHydrationWarning>
+          <div>Fecha : {imp.fecha}</div>
+          <div>Hora : {imp.hora}</div>
+          <div>Pag. : 1 de 1</div>
+        </div>
+      </div>
+
+      <div className="og-cab">
+        <div className="og-titulo">ORDEN DE {compra ? "COMPRA" : "SERVICIO"} N° <span className="og-caja">{num3(orden.numero)}-{orden.anio}</span></div>
+        <div className="og-fila-exp">
+          <span />
+          <div className="og-exp">N° Exp. SIAF : <span className="og-caja vacia" /></div>
+          <table className="og-fecha">
+            <thead><tr><th>Día</th><th>Mes</th><th>Año</th></tr></thead>
+            <tbody><tr><td>{dia}</td><td>{mes}</td><td>{anio}</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div className="og-ue">
+        <div><b>UNIDAD EJECUTORA</b><span>: {(mcp.nombre ?? "").toUpperCase()}</span></div>
+        <div><b>NRO. IDENTIFICACION</b><span>: {mcp.ruc ?? ""}</span></div>
+      </div>
+
+      <div className="og-caja2">
+        <div className="og-cols">
+          <div className="og-col">
+            <div className="og-cab2">1. DATOS DEL PROVEEDOR</div>
+            <div className="og-datos">
+              <div><b>Señor(es) :</b> {p?.razon_social}</div>
+              <div><b>Dirección :</b> {p?.direccion ?? ""}</div>
+              <div className="og-dos"><span><b>RUC :</b> {p?.num_doc}</span><span><b>Teléfono :</b> {p?.telefono ?? ""}</span></div>
+            </div>
+          </div>
+          <div className="og-col">
+            <div className="og-cab2">2. CONDICIONES GENERALES</div>
+            <div className="og-datos">
+              <div><b>N° Requerimiento :</b> {num3(e.numero)}-{e.anio}</div>
+              <div><b>Tipo de Proceso :</b> {orden.tipo_proceso}</div>
+              <div><b>Plazo de ejecución :</b> {orden.plazo ?? ""}</div>
+              <div><b>Moneda :</b> S/ (Nacional)</div>
+            </div>
+          </div>
+        </div>
+        <div className="og-concepto"><b>Concepto :</b> {orden.concepto}</div>
+      </div>
+
+      <div className="og-detalle">
+        <table className="og-items">
+          <colgroup><col style={{ width: "9%" }} /><col style={{ width: "13%" }} /><col /><col style={{ width: "16%" }} /></colgroup>
+          <thead>
+            <tr><th>Cant.</th><th>Unid. Med.</th><th>Descripción</th><th>Valor Total S/</th></tr>
+          </thead>
+          <tbody>
+            {d.items.map((i) => (
+              <tr key={i.id}><td>{Number(i.cantidad)}</td><td>{i.unidad}</td><td>{i.descripcion}</td><td className="der">{conValores ? soles(i.total) : ""}</td></tr>
+            ))}
+            <tr className="og-relleno"><td /><td /><td /><td /></tr>
+          </tbody>
+        </table>
+        <div className="og-letras">
+          <span className="og-ast" aria-hidden="true">{"* ".repeat(60)}</span>
+          <span>({enLetras(monto)})</span>
+          <span className="og-ast" aria-hidden="true">{"* ".repeat(60)}</span>
+        </div>
+      </div>
+
+      <div className="og-abajo">
+        <div className="og-afect">
+          <div className="og-cab2">AFECTACION PRESUPUESTAL</div>
+          <table>
+            <thead><tr><th>Meta / Mnemónico</th><th>Cadena Funcional</th><th>FF/Rb</th><th>Clasif. Gasto</th><th>Monto S/</th></tr></thead>
+            <tbody><tr><td>{cod.meta || e.meta || ""}</td><td>{cadena}</td><td>{ffrb}</td><td>{e.clasificador ?? ""}</td><td>{soles(monto)}</td></tr></tbody>
+          </table>
+        </div>
+        <div className="og-total"><b>TOTAL S/</b><span>{soles(monto)}</span></div>
+      </div>
+
+      <div className="og-fact">
+        <div><b>Facturar a nombre de :</b> {(mcp.nombre ?? "").toUpperCase()}</div>
+        <div className="og-dos"><span><b>Dirección :</b> {mcp.direccion ?? ""}</span><span><b>RUC :</b> {mcp.ruc ?? "________"}</span></div>
+      </div>
+
+      <div className="og-firmas">
+        <div><b>ELABORADO POR</b><span /></div>
+        <div><b>ORDENACIÓN DEL SERVICIO</b><span /><i>ALCALDE</i></div>
+        <div>
+          <b>CONFORMIDAD DEL SERVICIO</b><span />
+          <div className="og-fecha-firma"><em>Fecha</em><span>Día</span><span>Mes</span><span>Año</span></div>
+        </div>
+      </div>
+
+      <div className="og-nota">
+        <b>NOTA IMPORTANTE :</b>
+        <ul>
+          <li>El proveedor debe adjuntar a su comprobante copia de esta {siglas}.</li>
+          <li>Esta orden es nula sin las firmas y sellos reglamentarios o autorizados.</li>
+          <li>El contratista (proveedor) se obliga a cumplir las obligaciones que le corresponden, bajo sanción de quedar inhabilitado para contratar con el Estado en caso de incumplimiento.</li>
+        </ul>
+      </div>
+
+      <div className="og-pie"><span className="rq-sello"><LogoSebaz tamano={26} claro={false} /></span></div>
     </div>
   );
 }

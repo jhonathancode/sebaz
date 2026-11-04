@@ -4011,3 +4011,7 @@ html.pdf-captura .sf-faltan { display: none; }
 .hoja.sf .sf-codif-rej { grid-template-columns: 6% 8% 4% 6% 7% 13% 12% 5% 6% 6% 12% 15%; }
 .hoja.sf .sf-codif-val { font-size: 9.5px; } .hoja.sf .sf-codif-cab { font-size: 7px; }
 .hoja.sf .sf-cab-2 > span:last-child { letter-spacing: .02em; font-size: 8px; padding: 2px 0; }
+.hoja.sf .sf-firma-jefe, .hoja.sf .sf-visa > span { letter-spacing: 0; font-size: 8.5px; line-height: 1.25; white-space: nowrap; }
+.hoja.sf .sf-teso-cuerpo { min-height: 112px; }
+.hoja.sf .sf-visa { min-height: 100px; }
+.hoja.sf .sf-recibi-cuerpo { min-height: 100px; }

@@ -1,4 +1,3 @@
-import Encabezado from "@/components/Encabezado";
 import MarcaAnulado, { MarcaAnuladaPagina } from "@/components/MarcaAnulado";
 import Firmas from "@/components/Firmas";
 import { datosCPDe, extraDe } from "@/lib/datosCP";
@@ -31,7 +30,7 @@ export default function DocumentosExpediente({
     <>
       {d.anulado && <MarcaAnuladaPagina />}
       {mostrar("requerimiento") && <Requerimiento d={d} mcp={mcp} />}
-      {mostrar("cotizaciones") && d.cotizaciones.length > 0 && <Cotizaciones d={d} mcp={mcp} />}
+      {mostrar("cotizaciones") && d.cotizaciones.length > 0 && <Cotizaciones d={d} mcp={mcp} tesorero={tesorero} cargo={cargo} />}
       {mostrar("orden") && d.orden && <Orden d={d} mcp={mcp} tesorero={tesorero} cargo={cargo} />}
       {mostrar("conformidad") && d.conformidad && <Memorando d={d} mcp={mcp} tesorero={tesorero} cargo={cargo} />}
       {mostrar("comprobante") && d.cp && (
@@ -146,30 +145,113 @@ export function Requerimiento({ d, mcp }: { d: Datos; mcp: Mcp }) {
   );
 }
 
-function Cotizaciones({ d, mcp }: { d: Datos; mcp: Mcp }) {
+/**
+ * Cuadro comparativo de cotizaciones, con el mismo formato que el requerimiento y la orden: lo solicitado, las
+ * cotizaciones recibidas (una o varias), la decisión con el monto en letras y las firmas. Una sola hoja A4.
+ */
+function Cotizaciones({ d, mcp, tesorero, cargo }: { d: Datos; mcp: Mcp; tesorero?: string; cargo?: string }) {
   const e = d.e!;
+  const imp = ahora();
+  const lugar = [mcp.distrito && `DISTRITO DE ${mcp.distrito}`, mcp.provincia && `PROVINCIA DE ${mcp.provincia}`].filter(Boolean).join(" · ").toUpperCase();
+  const cots = d.cotizaciones.map((c) => ({ ...c, p: c.proveedores as unknown as { razon_social: string; num_doc: string } | null }));
+  const elegida = cots.find((c) => c.elegida);
+  const menor = cots.length ? Math.min(...cots.map((c) => Number(c.monto))) : 0;
+  const porMenor = !!elegida && cots.length > 1 && Number(elegida.monto) === menor;
   return (
-    <div className="hoja">
+    <div className="hoja rq cc">
       {d.anulado && <MarcaAnulado {...d.anulado} />}
-      <Encabezado mcp={mcp} titulo="CUADRO COMPARATIVO DE COTIZACIONES" numero={`Requerimiento N° ${num3(e.numero)}-${e.anio}`} />
-      <p style={{ margin: "12px 0 0" }}>Objeto: {conceptoSinSeRequiere(e.descripcion)}</p>
-      <table className="formato">
-        <thead>
-          <tr><th>N°</th><th>Proveedor</th><th>RUC / DNI</th><th>Plazo</th><th className="num">Monto S/</th><th>Resultado</th></tr>
-        </thead>
-        <tbody>
-          {d.cotizaciones.map((c, i) => {
-            const p = c.proveedores as unknown as { razon_social: string; num_doc: string } | null;
-            return (
-              <tr key={c.id}>
-                <td>{i + 1}</td><td>{p?.razon_social}</td><td>{p?.num_doc}</td><td>{c.plazo ?? ""}</td>
-                <td className="num">{soles(c.monto)}</td><td>{c.elegida ? "ELEGIDA" : ""}</td>
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
-      <Firmas nombres={["ELABORADO POR", "ALCALDE"]} />
+
+      <div className="sf-sis">
+        <div>
+          <div>ZEBAZ - Módulo de Tesorería</div>
+          <div>{(mcp.nombre ?? "").toUpperCase()}{lugar ? ` · ${lugar}` : ""}{mcp.ruc ? ` · RUC ${mcp.ruc}` : ""}</div>
+        </div>
+        <div className="sf-sis-der" suppressHydrationWarning>
+          <div>Fecha : {imp.fecha}</div>
+          <div>Hora : {imp.hora}</div>
+          <div>Pag. : 1 de 1</div>
+        </div>
+      </div>
+
+      <div className="sf-tit-fila">
+        <div>
+          <div className="sf-titulo">CUADRO COMPARATIVO DE COTIZACIONES</div>
+          <div className="sf-registro">
+            <span>REQUERIMIENTO N°</span> <b>{num3(e.numero)}-{e.anio}-MCP-{sufijo(mcp)}</b>
+          </div>
+        </div>
+        <table className="sf-num">
+          <thead>
+            <tr><th>REQUERIMIENTO</th><th>FECHA</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>{e.numero ? `${String(e.numero).padStart(4, "0")}-${e.anio}` : "—"}</td><td>{fecha(e.fecha)}</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div className="sf-linea"><span className="sf-et">UNIDAD ORGÁNICA</span><span className="sf-val">{e.area_usuaria ?? ""}</span></div>
+      <div className="sf-linea"><span className="sf-et">OBJETO</span><span className="sf-val">{conceptoSinSeRequiere(e.descripcion)}</span></div>
+
+      <div className="rq-marco cc-fijo">
+        <div className="sf-cab">LO SOLICITADO</div>
+        <div className="rq-cuerpo">
+          <table className="rq-items">
+            <colgroup><col style={{ width: "6%" }} /><col style={{ width: "13%" }} /><col style={{ width: "16%" }} /><col /></colgroup>
+            <thead>
+              <tr><th>IT</th><th>CANTIDAD</th><th>UNIDAD DE MEDIDA</th><th>DESCRIPCIÓN DETALLADA</th></tr>
+            </thead>
+            <tbody>
+              {d.items.map((i) => (
+                <tr key={i.id}><td>{i.item}</td><td>{Number(i.cantidad)}</td><td>{i.unidad}</td><td>{i.descripcion}</td></tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div className="rq-marco">
+        <div className="sf-cab">COTIZACIONES RECIBIDAS ({cots.length})</div>
+        <div className="rq-cuerpo">
+          <table className="rq-items">
+            <colgroup><col style={{ width: "6%" }} /><col /><col style={{ width: "17%" }} /><col style={{ width: "14%" }} /><col style={{ width: "15%" }} /><col style={{ width: "13%" }} /></colgroup>
+            <thead>
+              <tr><th>N°</th><th>PROVEEDOR</th><th>RUC / DNI</th><th>PLAZO</th><th>MONTO S/</th><th>RESULTADO</th></tr>
+            </thead>
+            <tbody>
+              {cots.map((c, i) => (
+                <tr key={c.id} className={c.elegida ? "cc-elegida" : ""}>
+                  <td>{i + 1}</td><td>{c.p?.razon_social}</td><td>{c.p?.num_doc}</td><td>{c.plazo ?? ""}</td>
+                  <td>S/ {soles(c.monto)}</td><td>{c.elegida ? "ELEGIDA" : ""}</td>
+                </tr>
+              ))}
+              <tr className="rq-relleno"><td /><td /><td /><td /><td /><td /></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {elegida && (
+        <>
+          <div className="sf-linea">
+            <span className="sf-et">DECISIÓN</span>
+            <span className="sf-val">
+              SE ELIGE LA COTIZACIÓN DE {elegida.p?.razon_social} ({elegida.p?.num_doc}) POR S/ {soles(elegida.monto)}{porMenor ? ", POR SER LA DE MENOR PRECIO" : ""}
+            </span>
+          </div>
+          <div className="sf-linea"><span className="sf-et">SON</span><span className="sf-val">{enLetras(Number(elegida.monto)).replace(/ SOLES$/, " NUEVOS SOLES")}</span></div>
+        </>
+      )}
+
+      <div className="rq-firmas">
+        <div><b>ELABORADO POR</b><span className="og-elab">{tesorero ? <><em>{tesorero.toUpperCase()}</em>{cargo ? <small>{cargo.toUpperCase()}</small> : null}</> : null}</span></div>
+        <div><b>V°B° ALCALDE</b><span /></div>
+      </div>
+
+      <div className="rq-pie">
+        <span />
+        <span className="rq-sello"><LogoSebaz tamano={26} claro={false} /></span>
+      </div>
     </div>
   );
 }

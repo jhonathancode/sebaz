@@ -137,26 +137,32 @@ export default async function Ingresos({ searchParams }: { searchParams: ParamsA
         {vista === "anio" && <BotonPdf nombre={`Ingresos propios ${anio}`} selector=".cc-excel-marco" texto="Descargar PDF" className="btn contorno" horizontal />}
         {vista === "mes" && <BotonPdf nombre={`Ingresos propios ${etiqueta}`} selector=".cc-excel-marco" texto="Descargar PDF" className="btn contorno" horizontal />}
         {puede && (
-          <VentanaFlotante boton="Nuevo recibo de ingreso" titulo={`Nuevo recibo de ingreso · N° ${String(siguiente).padStart(4, "0")}`} accion={emitirRecibo} textoGuardar="Emitir recibo" abierta={sp.nuevo === "1"} error={sp.nuevo === "1" ? sp.error : undefined}>
-            {tupa.procs.length > 0 && <BuscadorTupa procs={tupa.procs} modelo={tupa.modelo} fuente={tupa.fuente} />}
-            <div className="rejilla">
-              <label className="campo">Fecha<InputFecha name="fecha" defaultValue={hoyISO()} required /></label>
-              <label className="campo">
-                Rubro
-                <select name="rubro" defaultValue="servicio">
-                  {RUBROS_INGRESO.map((r) => (
-                    <option key={r.codigo} value={r.codigo}>{r.nombre}</option>
-                  ))}
-                </select>
-              </label>
-              <label className="campo">DNI o RUC del pagador<input name="pagador_doc" inputMode="numeric" maxLength={11} placeholder="8 u 11 dígitos" /></label>
-              <label className="campo">Nombre o razón social<input name="pagador_nombre" required /></label>
-              <CampoConceptoIngreso historial={(delAnio ?? []).map((r) => ({ rubro: r.rubro, concepto: r.concepto }))} />
-              <label className="campo">Monto S/<input name="monto" required inputMode="decimal" placeholder="0.00" /></label>
+          <VentanaFlotante boton="Nuevo recibo de ingreso" titulo={`Nuevo recibo de ingreso · N° ${String(siguiente).padStart(4, "0")}`} accion={emitirRecibo} textoGuardar="Emitir recibo" abierta={sp.nuevo === "1"} error={sp.nuevo === "1" ? sp.error : undefined} ancha={tupa.procs.length > 0}>
+            <div className={`rc-layout${tupa.procs.length > 0 ? "" : " sin-tupa"}`}>
+              <div className="rc-form">
+                <label className="campo s3">Fecha<InputFecha name="fecha" defaultValue={hoyISO()} required /></label>
+                <label className="campo s3">
+                  Rubro
+                  <select name="rubro" defaultValue="servicio">
+                    {RUBROS_INGRESO.map((r) => (
+                      <option key={r.codigo} value={r.codigo}>{r.nombre}</option>
+                    ))}
+                  </select>
+                </label>
+                <label className="campo s2">DNI o RUC<input name="pagador_doc" inputMode="numeric" maxLength={11} placeholder="8 u 11 dígitos" /></label>
+                <label className="campo s4">Nombre o razón social<input name="pagador_nombre" required /></label>
+                <CampoConceptoIngreso historial={(delAnio ?? []).map((r) => ({ rubro: r.rubro, concepto: r.concepto }))} />
+                <label className="campo s3 rc-monto">Monto S/<input name="monto" required inputMode="decimal" placeholder="0.00" /></label>
+                <p className="pequeno tenue rc-nota">
+                  El número lo pone el sistema. Un recibo emitido no se edita: si hay un error, se anula con motivo y se emite otro.
+                </p>
+              </div>
+              {tupa.procs.length > 0 && (
+                <aside className="rc-tupa" aria-label="TUPA">
+                  <BuscadorTupa procs={tupa.procs} modelo={tupa.modelo} fuente={tupa.fuente} />
+                </aside>
+              )}
             </div>
-            <p className="pequeno tenue" style={{ margin: 0 }}>
-              El número lo pone el sistema. Un recibo emitido no se edita: si hay un error, se anula con motivo y se emite otro.
-            </p>
           </VentanaFlotante>
         )}
       </div>

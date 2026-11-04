@@ -1,6 +1,7 @@
 import MarcaAnulado, { MarcaAnuladaPagina } from "@/components/MarcaAnulado";
 import { datosCPDe, extraDe } from "@/lib/datosCP";
 import FormatoComprobante from "@/components/formatos/FormatoComprobante";
+import { FormatoNea } from "@/components/formatos/FormatosAlmacen";
 import type { Mcp } from "@/lib/contexto";
 import type { cargarExpediente, Proveedor } from "@/lib/documentos";
 import LogoSebaz from "@/components/LogoSebaz";
@@ -32,11 +33,32 @@ export default function DocumentosExpediente({
       {mostrar("cotizaciones") && d.cotizaciones.length > 0 && <Cotizaciones d={d} mcp={mcp} tesorero={tesorero} cargo={cargo} />}
       {mostrar("orden") && d.orden && <Orden d={d} mcp={mcp} tesorero={tesorero} cargo={cargo} />}
       {mostrar("conformidad") && d.conformidad && <Memorando d={d} mcp={mcp} tesorero={tesorero} cargo={cargo} />}
+      {mostrar("nea") && d.nea && <FormatoNea mcp={mcp} n={neaDe(d)} />}
       {mostrar("comprobante") && d.cp && (
         <FormatoComprobante c={{ ...d.cp, hecho_por: (d.cp.perfiles as { nombre: string } | null)?.nombre }} mcp={mcp} extra={extraDe(d.cp, d.e, d.orden)} anulado={d.anulado ?? (d.cp.estado === "anulado" ? { motivo: d.cp.anulado_motivo, en: d.cp.anulado_en } : null)} />
       )}
     </>
   );
+}
+
+/** Datos de la NEA del expediente tal como los pide su formato. */
+function neaDe(d: Datos) {
+  const n = d.nea!;
+  type ItemNea = { item: number; cantidad: number; precio_unitario: number; almacen_bienes: { codigo: number; descripcion: string; unidad: string } };
+  const items = ((n.nota_entrada_items ?? []) as ItemNea[]).slice().sort((a, b) => a.item - b.item);
+  return {
+    numero: n.numero as number | null,
+    anio: n.anio as number,
+    fecha: n.fecha as string,
+    origen: n.origen as "compra" | "donacion" | "otro",
+    proveedor: (n.proveedor as string | null) ?? null,
+    documento_ref: (n.documento_ref as string | null) ?? null,
+    observacion: (n.observacion as string | null) ?? null,
+    orden: d.orden?.numero ? `O/C ${num3(d.orden.numero)}-${d.orden.anio}` : null,
+    expediente: d.e ? `Exp. ${num3(d.e.numero)}-${d.e.anio}` : null,
+    anulado: !!n.anulado,
+    items: items.map((i) => ({ ...i.almacen_bienes, cantidad: Number(i.cantidad), precio_unitario: Number(i.precio_unitario) })),
+  };
 }
 
 /** Sufijo abreviado de la municipalidad para los números de documento: «Puerto Yurinaki» → «PY». */

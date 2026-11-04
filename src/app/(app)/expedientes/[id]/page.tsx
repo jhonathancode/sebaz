@@ -48,7 +48,7 @@ import CamposEditarComprobante from "@/components/formularios/CamposEditarCompro
 type Params = Promise<{ id: string }>;
 
 /** Al elegir un paso arriba, el documento de abajo cambia al mismo. */
-const DOC_DE_PASO: Record<string, string> = { requerimiento: "requerimiento", cotizacion: "cotizaciones", orden: "orden", conformidad: "conformidad", comprobante: "comprobante" };
+const DOC_DE_PASO: Record<string, string> = { requerimiento: "requerimiento", cotizacion: "cotizaciones", orden: "orden", conformidad: "conformidad", almacen: "nea", comprobante: "comprobante" };
 type Busqueda = Promise<{ paso?: string; fase?: string; ok?: string; error?: string; editar?: string; ver?: string }>;
 
 const TIPO_GASTO: Record<string, string> = {
@@ -426,6 +426,7 @@ export default async function Expediente({ params, searchParams }: { params: Par
           { clave: "cotizaciones", nombre: "Cuadro comparativo", listo: cots.length > 0 && !completoFijo },
           { clave: "orden", nombre: e.tipo === "compra" ? "Orden de compra" : "Orden de servicio", listo: !!orden },
           { clave: "conformidad", nombre: "Memorando de conformidad", listo: !!conformidad },
+          { clave: "nea", nombre: "Entrada al almacén (NEA)", listo: !!nea },
         ]),
     { clave: "comprobante", nombre: "Comprobante de pago", listo: !!cp },
   ].filter((d) => d.listo);

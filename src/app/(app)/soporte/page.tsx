@@ -1,4 +1,5 @@
 import AutoDocumento from "@/components/AutoDocumento";
+import InputFecha from "@/components/InputFecha";
 import { cookies } from "next/headers";
 import BotonConfirmar from "@/components/BotonConfirmar";
 import Link from "next/link";
@@ -144,7 +145,7 @@ export default async function Soporte({ searchParams }: { searchParams: ParamsAv
                     </select>
                   </label>
                   <label className="campo">Cargo (como sale en documentos)<input name="cargo" placeholder="Tesorera" /></label>
-                  <label className="campo">Desde<input type="date" name="desde" defaultValue={hoyISO()} required /></label>
+                  <label className="campo">Desde<InputFecha name="desde" defaultValue={hoyISO()} required /></label>
                   <div style={{ display: "flex", alignItems: "flex-end" }}><BotonConfirmar pregunta="¿Crear este acceso?" textoConfirmar="Sí, crear">Crear acceso</BotonConfirmar></div>
                 </div>
               </form>
@@ -177,7 +178,7 @@ export default async function Soporte({ searchParams }: { searchParams: ParamsAv
                     </label>
                     <label className="campo">Correo de quien entra<input name="correo" type="email" required /></label>
                     <label className="campo">Nombre de quien entra<input name="nombre" /></label>
-                    <label className="campo">Fecha del acta<input type="date" name="fecha" defaultValue={hoyISO()} required /></label>
+                    <label className="campo">Fecha del acta<InputFecha name="fecha" defaultValue={hoyISO()} required /></label>
                     <label className="campo">
                       Documento de respaldo
                       <select name="documento_tipo" required defaultValue="resolucion">
@@ -255,7 +256,7 @@ export default async function Soporte({ searchParams }: { searchParams: ParamsAv
                       <option value="suspendida">Suspendida</option>
                     </select>
                   </label>
-                  <label className="campo">Prueba hasta<input type="date" name="prueba_hasta" defaultValue={elegida.prueba_hasta ?? ""} /></label>
+                  <label className="campo">Prueba hasta<InputFecha name="prueba_hasta" defaultValue={elegida.prueba_hasta ?? ""} /></label>
                   <BotonConfirmar className="btn" pregunta="¿Cambiar el estado de la MCP?" textoConfirmar="Sí, cambiar">Guardar estado</BotonConfirmar>
                 </div>
               </form>

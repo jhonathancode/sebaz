@@ -1,4 +1,5 @@
 import Link from "next/link";
+import InputFecha from "@/components/InputFecha";
 import Avisos, { type ParamsAviso } from "@/components/Avisos";
 import { obtenerContexto } from "@/lib/contexto";
 import { fecha, hoyISO, soles } from "@/lib/formato";
@@ -97,8 +98,8 @@ export default async function InicioSuperadmin({ searchParams }: { searchParams:
         <div className="panel-cab">Clientes captados por fechas</div>
         <div className="panel-cuerpo">
           <form method="get" className="barra" style={{ margin: 0 }}>
-            <label className="campo">Desde<input type="date" name="desde" defaultValue={desde} max={hoy} /></label>
-            <label className="campo">Hasta<input type="date" name="hasta" defaultValue={hasta} max={hoy} /></label>
+            <label className="campo">Desde<InputFecha name="desde" defaultValue={desde} max={hoy} /></label>
+            <label className="campo">Hasta<InputFecha name="hasta" defaultValue={hasta} max={hoy} /></label>
             <button className="btn primario" type="submit">Ver</button>
             <span className="espacio" />
             <div className="grupo">

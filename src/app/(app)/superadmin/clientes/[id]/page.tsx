@@ -1,4 +1,5 @@
 import Link from "next/link";
+import InputFecha from "@/components/InputFecha";
 import { notFound } from "next/navigation";
 import Avisos, { type ParamsAviso } from "@/components/Avisos";
 import BotonConfirmar from "@/components/BotonConfirmar";
@@ -57,7 +58,7 @@ export default async function Cliente({ params, searchParams }: { params: Promis
           <VentanaFlotante boton="+ Registrar pago" titulo={`Pago de ${m.nombre}`} accion={registrarPago} textoGuardar="Registrar pago" claseBoton="btn primario grande">
             <input type="hidden" name="mcp_id" value={id} />
             <div className="rejilla-2">
-              <label className="campo">Fecha del pago<input type="date" name="fecha" defaultValue={hoyISO()} required /></label>
+              <label className="campo">Fecha del pago<InputFecha name="fecha" defaultValue={hoyISO()} required /></label>
               <label className="campo">Meses que cubre<input type="number" name="meses" min={1} max={36} defaultValue={s.ciclo === "anual" ? 12 : 1} required /></label>
               <label className="campo">Monto S/<input name="monto" inputMode="decimal" required defaultValue={sugerido ? sugerido.toFixed(2) : ""} /></label>
               <label className="campo">
@@ -152,7 +153,7 @@ export default async function Cliente({ params, searchParams }: { params: Promis
                     </select>
                   </label>
                   <label className="campo">Precio pactado S/<input name="precio" inputMode="decimal" defaultValue={monto2(s.precio)} /></label>
-                  <label className="campo">Vence el<input type="date" name="vence_el" defaultValue={s.vence_el} required /></label>
+                  <label className="campo">Vence el<InputFecha name="vence_el" defaultValue={s.vence_el} required /></label>
                   <label className="campo">Días de gracia<input type="number" name="dias_gracia" min={0} max={60} defaultValue={s.dias_gracia} /></label>
                 </div>
                 <label className="campo">Notas<input name="notas" defaultValue={s.notas ?? ""} placeholder="Acuerdos, descuentos, contacto de pago..." /></label>

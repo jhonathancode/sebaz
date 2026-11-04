@@ -1,4 +1,5 @@
 import Link from "next/link";
+import InputFecha from "@/components/InputFecha";
 import BotonConfirmar from "@/components/BotonConfirmar";
 import BotonPdf from "@/components/BotonPdf";
 import EscalaA4 from "@/components/EscalaA4";
@@ -286,7 +287,7 @@ export default async function Expediente({ params, searchParams }: { params: Par
           <input type="hidden" name="expediente_id" value={id} />
           <p style={{ margin: 0 }}>Proveedor: <b>{prov(elegida?.proveedores)?.razon_social}</b> · Monto: <b>S/ {soles(elegida?.monto)}</b></p>
           <div className="rejilla-2">
-            <label className="campo">Fecha de la orden<input type="date" name="fecha" defaultValue={hoyISO()} required /></label>
+            <label className="campo">Fecha de la orden<InputFecha name="fecha" defaultValue={hoyISO()} required /></label>
             <label className="campo">Plazo para entregar<input name="plazo" placeholder="Ej.: 3 días, 1 mes" /></label>
           </div>
           <label className="campo">Concepto<input name="concepto" defaultValue={conceptoSinSeRequiere(e.descripcion)} /></label>
@@ -315,7 +316,7 @@ export default async function Expediente({ params, searchParams }: { params: Par
         </form>
         <VentanaFlotante boton="No, cambiar texto" titulo="Memorando de conformidad" accion={emitirConformidad} textoGuardar="Emitir memorando" claseBoton="btn peligro grande">
           <input type="hidden" name="expediente_id" value={id} />
-          <label className="campo">Fecha<input type="date" name="fecha" defaultValue={hoyISO()} required /></label>
+          <label className="campo">Fecha<InputFecha name="fecha" defaultValue={hoyISO()} required /></label>
           <label className="campo">
             Texto del memorando
             <textarea
@@ -355,7 +356,7 @@ export default async function Expediente({ params, searchParams }: { params: Par
                 <label className="campo">DNI o RUC<input name="beneficiario_doc" inputMode="numeric" maxLength={11} defaultValue={pagoFijo?.beneficiario_doc ?? ""} /></label>
               </>
             )}
-            <label className="campo">Fecha<input type="date" name="fecha" defaultValue={hoyISO()} required /></label>
+            <label className="campo">Fecha<InputFecha name="fecha" defaultValue={hoyISO()} required /></label>
             <label className="campo">
               Documento que entregó
               <select name="sustento_tipo" defaultValue={fijo ? "REC" : "FAC"}>
@@ -944,7 +945,7 @@ export default async function Expediente({ params, searchParams }: { params: Par
                       <input type="hidden" name="expediente_id" value={id} />
                       <p className="pequeno tenue" style={{ margin: "0 0 10px" }}>Fecha actual: <b>{fecha(d.fecha)}</b>. El cambio queda registrado con el motivo, la fecha anterior y quién lo hizo. Debe ser del mismo año del documento.</p>
                       <div className="rejilla-2">
-                        <label className="campo">Nueva fecha<input type="date" name="fecha" defaultValue={d.fecha ?? undefined} required /></label>
+                        <label className="campo">Nueva fecha<InputFecha name="fecha" defaultValue={d.fecha ?? undefined} required /></label>
                         <label className="campo">Motivo del cambio<input name="motivo" required minLength={10} placeholder="EJ. SE EMITIÓ CON FECHA ERRADA" autoComplete="off" style={{ textTransform: "uppercase" }} /></label>
                       </div>
                     </VentanaFlotante>

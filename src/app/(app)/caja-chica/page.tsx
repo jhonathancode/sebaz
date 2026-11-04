@@ -1,4 +1,5 @@
 import Link from "next/link";
+import InputFecha from "@/components/InputFecha";
 import Avisos, { type ParamsAviso } from "@/components/Avisos";
 import BotonConfirmar from "@/components/BotonConfirmar";
 import AutoDocumento from "@/components/AutoDocumento";
@@ -162,7 +163,7 @@ export default async function CajaChica({ searchParams }: { searchParams: Params
       <input type="hidden" name="periodo" value={periodo} />
       <input type="hidden" name="fuente_id" value={fuenteId} />
       <div className="rejilla">
-        <label className="campo">Fecha<input type="date" name="fecha" required defaultValue={hoyISO().startsWith(periodo) ? hoyISO() : `${periodo}-01`} /></label>
+        <label className="campo">Fecha<InputFecha name="fecha" required defaultValue={hoyISO().startsWith(periodo) ? hoyISO() : `${periodo}-01`} /></label>
         <label className="campo">
           Sustento
           <select name="sustento_tipo" defaultValue="DJ">
@@ -475,7 +476,7 @@ export default async function CajaChica({ searchParams }: { searchParams: Params
                                 <input type="hidden" name="periodo" value={periodo} />
                                 <input type="hidden" name="fuente_id" value={fuenteId} />
                                 <div className="rejilla">
-                                  <label className="campo">Fecha<input type="date" name="fecha" required defaultValue={g.fecha} /></label>
+                                  <label className="campo">Fecha<InputFecha name="fecha" required defaultValue={g.fecha} /></label>
                                   <label className="campo">
                                     Sustento
                                     <select name="sustento_tipo" defaultValue={g.sustento_tipo}>

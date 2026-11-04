@@ -1,4 +1,5 @@
 import Link from "next/link";
+import InputFecha from "@/components/InputFecha";
 import { Fragment } from "react";
 import Avisos, { type ParamsAviso } from "@/components/Avisos";
 import BotonConfirmar from "@/components/BotonConfirmar";
@@ -385,7 +386,7 @@ export default async function Contabilidad({ searchParams }: { searchParams: Par
                 </div>
                 {puede && (
                   <div className="panel-cuerpo" style={{ flexDirection: "row", alignItems: "flex-end", flexWrap: "wrap" }}>
-                    <label className="campo">Fecha de cobro (según extracto)<input type="date" name="fecha_cobro" defaultValue={hoyISO()} required /></label>
+                    <label className="campo">Fecha de cobro (según extracto)<InputFecha name="fecha_cobro" defaultValue={hoyISO()} required /></label>
                     <BotonConfirmar className="btn primario" pregunta="¿Marcar los cheques como cobrados?" detalle="Hágalo cuando el cheque aparezca cobrado en el extracto del banco." textoConfirmar="Sí, marcar">
                       Marcar los cheques seleccionados como cobrados
                     </BotonConfirmar>
@@ -494,7 +495,7 @@ export default async function Contabilidad({ searchParams }: { searchParams: Par
                         </select>
                       </label>
                       <label className="campo">Mes que corresponde<input type="month" name="periodo" defaultValue={mes} required /></label>
-                      <label className="campo">Fecha del abono<input type="date" name="fecha" defaultValue={hoyISO()} required /></label>
+                      <label className="campo">Fecha del abono<InputFecha name="fecha" defaultValue={hoyISO()} required /></label>
                       <label className="campo">Monto S/<input name="monto" inputMode="decimal" required defaultValue={monto2(sinTransferenciaMes[0]?.monto_mensual ?? transferencias[0]?.monto_mensual ?? "")} /></label>
                       <label className="campo">N° de operación<input name="documento" placeholder="Según el extracto" /></label>
                     </div>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
+import InputFecha from "@/components/InputFecha";
 import VistaPrevia from "@/components/VistaPrevia";
 import BotonConfirmar from "@/components/BotonConfirmar";
 import { FormatoPecosa, type DatosPecosa } from "@/components/formatos/FormatosAlmacen";
@@ -70,7 +71,7 @@ export default function FormularioPecosa({
         <div className="rejilla-2">
           <label className="campo">
             Fecha de entrega
-            <input type="date" name="fecha" defaultValue={hoyISO()} required />
+            <InputFecha name="fecha" defaultValue={hoyISO()} required />
           </label>
           <label className="campo">
             Área que recibe

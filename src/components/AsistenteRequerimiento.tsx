@@ -2,6 +2,7 @@
 
 import { useEffect, useReducer, useRef, useState } from "react";
 import BotonConfirmar from "@/components/BotonConfirmar";
+import InputFecha from "@/components/InputFecha";
 import EscalaA4 from "@/components/EscalaA4";
 import SelectFuncion from "@/components/SelectFuncion";
 import CamposProveedor, { type ProveedorConocido } from "@/components/formularios/CamposProveedor";
@@ -104,7 +105,9 @@ export default function AsistenteRequerimiento({
     if (!d || d.open) return;
     // La fecha del expediente vuelve a ser la de hoy si nadie la cambió (la página pudo quedar abierta desde ayer)
     const campoFecha = form.current?.elements.namedItem("fecha");
-    if (campoFecha instanceof HTMLInputElement && campoFecha.dataset.tocada !== "1") campoFecha.value = new Date().toLocaleDateString("en-CA", { timeZone: "America/Lima" });
+    if (campoFecha instanceof HTMLInputElement && campoFecha.dataset.tocada !== "1") {
+      campoFecha.dispatchEvent(new CustomEvent("zebaz:fecha", { detail: { valor: new Date().toLocaleDateString("en-CA", { timeZone: "America/Lima" }), silencioso: true } }));
+    }
     d.showModal();
     const arriba = () => cuerpo.current?.scrollTo({ top: 0 });
     arriba();
@@ -173,7 +176,7 @@ export default function AsistenteRequerimiento({
     <div className="fecha-doc-barra">
       <label>
         <span className="fecha-exp-et">{etiqueta}</span>
-        <input type="date" value={fd(clave)} onChange={(e) => setFechasDoc((v) => ({ ...v, [clave]: e.target.value }))} required />
+        <InputFecha value={fd(clave)} onChange={(valor) => setFechasDoc((v) => ({ ...v, [clave]: valor }))} required />
       </label>
       <span className="pequeno tenue">Viene con la fecha del expediente; cámbiela si este documento es de otro día.</span>
     </div>
@@ -348,17 +351,9 @@ export default function AsistenteRequerimiento({
                 <div className="fecha-doc-barra">
                   <label>
                     <span className="fecha-exp-et">Fecha del requerimiento (del expediente)</span>
-                    <input
-                      type="date"
+                    <InputFecha
                       value={L.fecha}
-                      onChange={(e) => {
-                        const campo = form.current?.elements.namedItem("fecha");
-                        if (campo instanceof HTMLInputElement) {
-                          campo.value = e.target.value;
-                          campo.dataset.tocada = "1";
-                          campo.dispatchEvent(new Event("input", { bubbles: true }));
-                        }
-                      }}
+                      onChange={(valor) => (form.current?.elements.namedItem("fecha") as HTMLElement | null)?.dispatchEvent(new CustomEvent("zebaz:fecha", { detail: { valor } }))}
                       required
                     />
                   </label>

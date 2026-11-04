@@ -1,4 +1,5 @@
 import Link from "next/link";
+import InputFecha from "@/components/InputFecha";
 import CampoConceptoIngreso from "@/components/formularios/CampoConceptoIngreso";
 import BotonPdf from "@/components/BotonPdf";
 import Avisos, { type ParamsAviso } from "@/components/Avisos";
@@ -134,7 +135,7 @@ export default async function Ingresos({ searchParams }: { searchParams: ParamsA
         {puede && (
           <VentanaFlotante boton="Nuevo recibo de ingreso" titulo={`Nuevo recibo de ingreso · N° ${String(siguiente).padStart(4, "0")}`} accion={emitirRecibo} textoGuardar="Emitir recibo" abierta={sp.nuevo === "1"} error={sp.nuevo === "1" ? sp.error : undefined}>
             <div className="rejilla">
-              <label className="campo">Fecha<input type="date" name="fecha" defaultValue={hoyISO()} required /></label>
+              <label className="campo">Fecha<InputFecha name="fecha" defaultValue={hoyISO()} required /></label>
               <label className="campo">
                 Rubro
                 <select name="rubro" defaultValue="servicio">
@@ -363,12 +364,12 @@ export default async function Ingresos({ searchParams }: { searchParams: ParamsA
                     <VentanaFlotante boton="+ Subir voucher" titulo="Subir voucher de depósito" accion={subirVoucher} textoGuardar="Guardar voucher" claseBoton="btn primario">
                       <div className="rejilla">
                         <CampoArchivoEstado etiqueta="Foto o PDF del voucher" multiple={false} ayuda="PDF o foto (JPG, PNG, WEBP); máximo 4 MB. Las fotos grandes se reducen solas." />
-                        <label className="campo">Fecha del depósito<input type="date" name="fecha" defaultValue={hoyISO().startsWith(periodo) ? hoyISO() : hasta} required /></label>
+                        <label className="campo">Fecha del depósito<InputFecha name="fecha" defaultValue={hoyISO().startsWith(periodo) ? hoyISO() : hasta} required /></label>
                         <label className="campo">Monto depositado S/<input name="monto" required inputMode="decimal" placeholder="0.00" /></label>
                         <label className="campo">N° de operación (opcional)<input name="numero_operacion" inputMode="numeric" placeholder="Sale en el voucher" /></label>
                         <label className="campo ancho">Nota (opcional)<input name="nota" placeholder="Ej.: recaudado de la primera semana" /></label>
-                        <label className="campo">Lo recaudado desde (opcional)<input type="date" name="desde" /></label>
-                        <label className="campo">hasta (opcional)<input type="date" name="hasta" /></label>
+                        <label className="campo">Lo recaudado desde (opcional)<InputFecha name="desde" /></label>
+                        <label className="campo">hasta (opcional)<InputFecha name="hasta" /></label>
                       </div>
                       <p className="pequeno tenue" style={{ margin: 0 }}>Puede subir uno o varios vouchers en el mes: el sistema los suma. Un voucher guardado no se borra; si hay un error se anula con motivo.</p>
                     </VentanaFlotante>

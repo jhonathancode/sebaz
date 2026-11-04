@@ -44,33 +44,61 @@ function sufijo(mcp: Mcp) {
   return mcp.nombre.replace(/municipalidad( del)?( centro poblado)?/i, "").trim().toUpperCase();
 }
 
+/** Tipo del pedido (B/S) como lo muestra el SIGA: compra → BIEN, servicio → SERVICIO. */
+function tipoPedido(tipo: string | null | undefined) {
+  if (tipo === "compra") return { bs: "BIEN", titulo: "PEDIDO DE COMPRA DE BIENES" };
+  if (tipo === "caja_chica") return { bs: "BIEN / SERVICIO", titulo: "PEDIDO DE BIENES Y SERVICIOS" };
+  return { bs: "SERVICIO", titulo: "PEDIDO DE SERVICIOS" };
+}
+
+/** Estado del pedido con los nombres del SIGA: Pendiente → Autorizado (o Anulado). */
+function estadoPedido(estado: string | null | undefined) {
+  if (estado === "anulado") return "ANULADO";
+  if (estado === "aprobado" || estado === "rendido") return "AUTORIZADO";
+  return "PENDIENTE";
+}
+
+/** Requerimiento con la disposición del pedido del SIGA: cabecera, detalle de ítems y firmas de VB y autorización. */
 export function Requerimiento({ d, mcp }: { d: Datos; mcp: Mcp }) {
   const e = d.e!;
   const total = d.items.reduce((s, i) => s + Number(i.total), 0);
+  const t = tipoPedido(e.tipo);
   return (
     <div className="hoja">
       {d.anulado && <MarcaAnulado {...d.anulado} />}
-      <Encabezado mcp={mcp} titulo={`CUADRO DE REQUERIMIENTO N° ${num3(e.numero)}-${e.anio}-MCP-${sufijo(mcp)}`} numero={`Fecha: ${fecha(e.fecha)}`} />
-      <table className="formato datos-cabecera">
+      <Encabezado mcp={mcp} titulo={`CUADRO DE REQUERIMIENTO N° ${num3(e.numero)}-${e.anio}-MCP-${sufijo(mcp)}`} numero={t.titulo} />
+      <table className="formato pedido-siga">
         <tbody>
-          <tr><th style={{ width: 220 }}>Concepto</th><td>{e.descripcion}</td></tr>
-          <tr><th>Unidad orgánica</th><td>{e.area_usuaria ?? ""}</td></tr>
-          <tr><th>Proyecto / actividad</th><td>{e.meta ?? ""}</td></tr>
-          <tr><th>Específica del gasto</th><td>{e.clasificador ?? ""}</td></tr>
+          <tr>
+            <th>N° pedido</th><td>{num3(e.numero)}-{e.anio}</td>
+            <th>Fecha</th><td>{fecha(e.fecha)}</td>
+          </tr>
+          <tr>
+            <th>B/S</th><td>{t.bs}</td>
+            <th>Estado</th><td>{estadoPedido(e.estado)}</td>
+          </tr>
+        </tbody>
+      </table>
+      <table className="formato pedido-siga datos-cabecera">
+        <tbody>
+          <tr><th>Centro de costo</th><td>{e.area_usuaria ?? ""}</td></tr>
+          <tr><th>Meta</th><td>{e.meta ?? ""}</td></tr>
+          <tr><th>Clasificador de gasto</th><td>{e.clasificador ?? ""}</td></tr>
+          <tr><th>Motivo</th><td>{e.descripcion}</td></tr>
         </tbody>
       </table>
       <table className="formato">
         <thead>
-          <tr><th>IT</th><th>Cantidad</th><th>Unidad de medida</th><th>Descripción detallada</th><th className="num">Unitario</th><th className="num">Total</th></tr>
+          <tr><th>Ítem</th><th>Descripción</th><th>Unidad de medida</th><th className="num">Cantidad</th><th className="num">Precio unitario</th><th className="num">Total</th></tr>
         </thead>
         <tbody>
           {d.items.map((i) => (
-            <tr key={i.id}><td>{i.item}</td><td>{Number(i.cantidad)}</td><td>{i.unidad}</td><td>{i.descripcion}</td><td className="num">{soles(i.precio_unitario)}</td><td className="num">{soles(i.total)}</td></tr>
+            <tr key={i.id}><td>{i.item}</td><td>{i.descripcion}</td><td>{i.unidad}</td><td className="num">{Number(i.cantidad)}</td><td className="num">{soles(i.precio_unitario)}</td><td className="num">{soles(i.total)}</td></tr>
           ))}
-          <tr><th colSpan={5}>TOTALES</th><th className="num">{soles(total)}</th></tr>
+          <tr><th colSpan={5}>TOTAL S/</th><th className="num">{soles(total)}</th></tr>
         </tbody>
       </table>
-      <Firmas nombres={["GERENCIA DE ADMINISTRACIÓN", "GERENCIA MUNICIPAL"]} />
+      <Firmas nombres={["ÁREA USUARIA · SOLICITANTE", "V°B° GERENCIA DE ADMINISTRACIÓN", "AUTORIZA · GERENCIA MUNICIPAL"]} />
     </div>
   );
 }

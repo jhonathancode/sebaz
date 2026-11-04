@@ -6,7 +6,7 @@ import FormatoComprobante from "@/components/formatos/FormatoComprobante";
 import type { Mcp } from "@/lib/contexto";
 import type { cargarExpediente, Proveedor } from "@/lib/documentos";
 import LogoSebaz from "@/components/LogoSebaz";
-import { enLetras, fecha, logoMcp, num3, soles } from "@/lib/formato";
+import { enLetras, fecha, num3, soles } from "@/lib/formato";
 import { conceptoSinSeRequiere } from "@/lib/requerimiento";
 
 export type DatosExpediente = Awaited<ReturnType<typeof cargarExpediente>>;
@@ -62,7 +62,6 @@ const ahora = () => {
 export function Requerimiento({ d, mcp }: { d: Datos; mcp: Mcp }) {
   const e = d.e!;
   const total = d.items.reduce((s, i) => s + Number(i.total), 0);
-  const logo = logoMcp(mcp);
   const imp = ahora();
   const [anio, mes, dia] = (e.fecha || "").slice(0, 10).split("-");
   const lugar = [mcp.distrito && `DISTRITO DE ${mcp.distrito}`, mcp.provincia && `PROVINCIA DE ${mcp.provincia}`].filter(Boolean).join(" · ").toUpperCase();
@@ -85,8 +84,6 @@ export function Requerimiento({ d, mcp }: { d: Datos; mcp: Mcp }) {
 
       <div className="sf-tit-fila">
         <div className="rq-tit">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          {logo && <img src={logo} alt="" />}
           <div>
             <div className="sf-titulo">CUADRO DE REQUERIMIENTO</div>
             <div className="sf-registro">

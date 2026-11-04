@@ -4207,9 +4207,32 @@ html.pdf-captura .sf-faltan { display: none; }
   .marco-app:has(.hoja.mc), .marco-app:has(.hoja.mc) > .ventana, .ventana:has(.hoja.mc), .mesa:has(.hoja.mc), .escala-a4-medida:has(.hoja.mc), .escala-a4:has(.hoja.mc), .escala-a4-interior:has(.hoja.mc) { min-height: 0 !important; height: auto !important; margin: 0 !important; padding: 0 !important; gap: 0 !important; border: 0 !important; box-shadow: none !important; display: block !important; overflow: visible !important; }
 }
 
-/* NEA: usa el formato del requerimiento y la orden, con tres firmas */
-.hoja.nea .rq-firmas { grid-template-columns: repeat(3, 1fr); margin-top: 10px; }
-.hoja.nea .rq-firmas > div { min-height: 130px; }
-.hoja.nea .rq-cuerpo { min-height: 240px; }
-.hoja.nea .rq-items td:nth-child(3) { text-align: left; }
-.hoja.nea .rq-entregar b { font-weight: 700; letter-spacing: .04em; }
+/* NEA: hoja A4 horizontal, con la disposición del modelo de nota de entrada de almacén */
+.hoja.rq.nea, .escala-a4-interior .hoja.rq.nea { width: 1123px !important; min-width: 1123px !important; max-width: 1123px !important; min-height: 794px; padding: 22px 36px 22px 44px; }
+.hoja.nea .sf-sis { margin-bottom: 2px; }
+.nh-cab { position: relative; display: flex; justify-content: center; margin: 6px 0 10px; }
+.nh-ent { text-align: center; }
+.nh-mun { font-size: 20px; font-weight: 700; letter-spacing: .01em; }
+.nh-alm { font-size: 17px; font-weight: 700; margin-top: 2px; }
+.nh-tit { font-size: 15px; font-weight: 700; margin-top: 4px; }
+.nh-num { position: absolute; right: 0; top: 6px; font-size: 17px; font-weight: 700; display: flex; align-items: center; gap: 8px; }
+.nh-num .og-caja { font-size: 16px; }
+.nh-info { width: 100%; border-collapse: collapse; border: var(--sfb); }
+.nh-info th, .nh-info td { border: var(--sfb); padding: 4px 10px; font-size: 12px; vertical-align: middle; }
+.nh-info th { width: 24%; text-align: right; font-weight: 700; font-size: 11.5px; }
+.nh-info td { text-transform: uppercase; }
+.hoja.nea .rq-marco { margin-top: 8px; }
+.hoja.nea .rq-cuerpo { min-height: 150px; }
+.nh-items thead th { font-weight: 700; font-size: 11px; letter-spacing: 0; padding: 6px 5px; }
+.nh-items tbody tr:not(.rq-relleno) td { border-bottom: var(--sfb); vertical-align: middle; padding: 6px 6px; }
+.nh-items td:nth-child(2) { text-align: left; }
+.nh-items .rq-relleno td { background-image: repeating-linear-gradient(to bottom, transparent 0, transparent 29px, #000 29px, #000 30px); }
+.hoja.nea .rq-firmas { grid-template-columns: repeat(3, 1fr); margin-top: 8px; }
+.hoja.nea .rq-firmas > div { min-height: 84px; }
+.hoja.nea .rq-pie { margin-top: 6px; }
+@page nea { size: A4 landscape; margin: 0; }
+@media print {
+  .hoja.rq.nea, .escala-a4-interior .hoja.rq.nea { page: nea; width: 297mm !important; min-width: 0 !important; max-width: none !important; min-height: 209mm !important; padding: 7mm 8mm 7mm 16mm !important; break-after: avoid; break-inside: avoid; margin: 0; }
+  body:has(.hoja.nea), html:has(.hoja.nea) { height: auto !important; min-height: 0 !important; overflow: visible !important; background: #fff !important; }
+  .marco-app:has(.hoja.nea), .marco-app:has(.hoja.nea) > .ventana, .ventana:has(.hoja.nea), .mesa:has(.hoja.nea), .escala-a4-medida:has(.hoja.nea), .escala-a4:has(.hoja.nea), .escala-a4-interior:has(.hoja.nea) { min-height: 0 !important; height: auto !important; margin: 0 !important; padding: 0 !important; gap: 0 !important; border: 0 !important; box-shadow: none !important; display: block !important; overflow: visible !important; }
+}

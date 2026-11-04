@@ -7,6 +7,7 @@ import Motivo from "@/components/Motivo";
 import { FormatoNea } from "@/components/formatos/FormatosAlmacen";
 import { contextoMcp, tiene } from "@/lib/contexto";
 import { fechaHora, num3 } from "@/lib/formato";
+import { conceptoSinSeRequiere } from "@/lib/requerimiento";
 import { supabaseServidor } from "@/lib/supabase/server";
 import { anularDocumentoAlmacen } from "../../acciones";
 
@@ -17,11 +18,11 @@ export default async function VerNea({ params, searchParams }: { params: Promise
   const supabase = await supabaseServidor();
   const { data: n } = await supabase
     .from("notas_entrada")
-    .select("*, expedientes(id, numero, anio, ordenes(numero, anio, anulado)), nota_entrada_items(item, cantidad, precio_unitario, almacen_bienes(codigo, descripcion, unidad))")
+    .select("*, expedientes(id, numero, anio, descripcion, area_usuaria, clasificador, ordenes(numero, anio, anulado)), nota_entrada_items(item, cantidad, precio_unitario, almacen_bienes(codigo, descripcion, unidad))")
     .eq("id", id)
     .single();
   if (!n) notFound();
-  const exp = n.expedientes as unknown as { id: string; numero: number; anio: number; ordenes: { numero: number; anio: number; anulado: boolean }[] } | null;
+  const exp = n.expedientes as unknown as { id: string; numero: number; anio: number; descripcion: string | null; area_usuaria: string | null; clasificador: string | null; ordenes: { numero: number; anio: number; anulado: boolean }[] } | null;
   const orden = exp?.ordenes?.find((o) => !o.anulado);
   type Item = { item: number; cantidad: number; precio_unitario: number; almacen_bienes: { codigo: number; descripcion: string; unidad: string } };
   const items = (n.nota_entrada_items as unknown as Item[]).sort((a, b) => a.item - b.item);
@@ -56,6 +57,9 @@ export default async function VerNea({ params, searchParams }: { params: Promise
             observacion: n.observacion,
             orden: orden ? `O/C ${num3(orden.numero)}-${orden.anio}` : null,
             expediente: exp ? `Exp. ${num3(exp.numero)}-${exp.anio}` : null,
+            motivo: exp?.descripcion ? conceptoSinSeRequiere(exp.descripcion) : null,
+            responsable: exp?.area_usuaria ?? null,
+            especifica: exp?.clasificador ?? null,
             anulado: n.anulado,
             items: items.map((i) => ({ ...i.almacen_bienes, cantidad: Number(i.cantidad), precio_unitario: Number(i.precio_unitario) })),
           }}

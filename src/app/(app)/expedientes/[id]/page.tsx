@@ -496,6 +496,9 @@ export default async function Expediente({ params, searchParams }: { params: Par
               observacion: null,
               orden: orden ? `O/C ${num3(orden.numero)}-${orden.anio}` : null,
               expediente: `Exp. ${num3(e.numero)}-${e.anio}`,
+              motivo: conceptoSinSeRequiere(e.descripcion),
+              responsable: e.area_usuaria ?? null,
+              especifica: e.clasificador ?? null,
               items: lista.map((i) => ({ descripcion: i.descripcion, unidad: i.unidad, cantidad: Number(i.cantidad), precio_unitario: Number(i.precio_unitario) })),
             }}
           />

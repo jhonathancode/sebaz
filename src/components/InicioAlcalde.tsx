@@ -1,4 +1,5 @@
 import Link from "next/link";
+import ActivarAvisos from "@/components/ActivarAvisos";
 import { codigoCP, fecha, num3, soles } from "@/lib/formato";
 import { supabaseServidor } from "@/lib/supabase/server";
 
@@ -33,6 +34,8 @@ export default async function InicioAlcalde({ mcpId, saludo, nombre }: { mcpId: 
           <div className="tenue">{total === 0 ? "No tiene nada pendiente" : `Tiene ${total} ${total === 1 ? "cosa" : "cosas"} esperando su aprobación`}</div>
         </div>
       </section>
+
+      <ActivarAvisos invitar />
 
       <section className="alc-hero" aria-label="Por aprobar">
         <span className="alc-et">{total === 0 ? "Todo al día" : "Por aprobar"}</span>

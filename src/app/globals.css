@@ -4026,3 +4026,14 @@ html.pdf-captura .sf-faltan { display: none; }
 .hoja.sf .sf-teso-cab > span { padding: 3px 8px; border-right: var(--sfb); }
 .hoja.sf .sf-teso-cab > span:last-child { border-right: 0; }
 .hoja.sf .sf-teso-cuerpo > span:first-child, .hoja.sf .sf-teso-cab > span:first-child { text-align: center; }
+/* Datos centrados verticalmente dentro de sus cuadros */
+.hoja.sf .sf-est-cuerpo > div { display: flex; align-items: center; }
+.hoja.sf .sf-clasif-v { justify-content: center; }
+.hoja.sf .sf-parcial, .hoja.sf .sf-total-col { justify-content: flex-end; }
+.hoja.sf .sf-pat-cuerpo > span, .hoja.sf .sf-ret-cuerpo > span, .hoja.sf .sf-teso-cuerpo > span:not(.sf-firma-jefe) { display: flex; align-items: center; }
+.hoja.sf .sf-pat-cuerpo > span:nth-child(1), .hoja.sf .sf-pat-cuerpo > span:nth-child(3), .hoja.sf .sf-teso-cuerpo > span:not(.sf-firma-jefe) { justify-content: center; }
+.hoja.sf .sf-pat-cuerpo > span:nth-child(2), .hoja.sf .sf-pat-cuerpo > span:nth-child(4), .hoja.sf .sf-ret-cuerpo > span:last-child { justify-content: flex-end; }
+.hoja.sf .sf-ret-cuerpo > span:first-child { justify-content: center; }
+.hoja.sf .sf-totret { display: grid; grid-template-columns: minmax(0, 1fr) 31%; padding: 0; align-items: stretch; }
+.hoja.sf .sf-totret > span { padding: 5px 10px; }
+.hoja.sf .sf-totret > b { padding: 5px 6px; border-left: var(--sfb); text-align: right; }

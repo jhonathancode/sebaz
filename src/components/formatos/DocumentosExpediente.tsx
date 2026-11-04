@@ -39,8 +39,17 @@ export default function DocumentosExpediente({
   );
 }
 
+/** Sufijo abreviado de la municipalidad para los números de documento: «Puerto Yurinaki» → «PY». */
 function sufijo(mcp: Mcp) {
-  return mcp.nombre.replace(/municipalidad( del)?( centro poblado)?/i, "").trim().toUpperCase();
+  const nombre = mcp.nombre
+    .replace(/municipalidad( del)?( centro poblado)?/i, "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .trim()
+    .toUpperCase();
+  const palabras = nombre.split(/\s+/).filter((w) => w && !/^(DE|DEL|Y)$/.test(w));
+  // Una sola palabra: sus tres primeras letras (KIVINAKI → KIV); varias: sus iniciales (PUERTO YURINAKI → PY)
+  return palabras.length > 1 ? palabras.map((w) => w[0]).join("") : (palabras[0] ?? nombre).slice(0, 3);
 }
 
 const ahora = () => {

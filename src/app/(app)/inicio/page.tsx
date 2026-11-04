@@ -53,14 +53,15 @@ export default async function Inicio() {
     { data: rendiciones },
     { data: cajas },
     fijos,
+    catalogo,
   ] = await Promise.all([
     supabase.from("comprobantes_pago").select("id, estado, cheque, importe, fuente_id, fecha, funcion").eq("mcp_id", mcpId).in("estado", ["borrador", "aprobado", "rendido"]).lte("fecha", hasta),
     supabase.from("expedientes").select("id", { count: "exact", head: true }).eq("mcp_id", mcpId).eq("estado", "borrador"),
     supabase.from("rendiciones").select("id, fuente_id, estado, numero, anio, periodo").eq("mcp_id", mcpId).in("periodo", [periodo, anterior]).neq("estado", "anulada"),
     supabase.from("cajas_chicas").select("id, monto_fondo, estado, numero_cheque, caja_chica_gastos(monto, anulado, sustento_tipo)").eq("mcp_id", mcpId).eq("periodo", periodo).neq("estado", "anulada"),
     estadoPagosFijos(supabase, mcpId, periodo),
+    cargarCatalogoPagosFijos(supabase, mcpId),
   ]);
-  const catalogo = await cargarCatalogoPagosFijos(supabase, mcpId);
   const faltanCatalogo = catalogo.filter((p) => !p.pagados.includes(periodo));
   const lista = cps ?? [];
   const transferencias = ctx.fuentes.filter((f) => f.tipo !== "propios");

@@ -60,7 +60,7 @@ export default async function Expedientes({ searchParams }: { searchParams: Para
   if (q) consulta = consulta.ilike("descripcion", `%${q}%`);
   if (tipo) consulta = consulta.eq("tipo", tipo);
   const anioNum = Number(hoyISO().slice(0, 4));
-  const [{ data: lista }, pagosFijos, chequeSugerido, cierres, atajos, { data: provData }, { data: tesoreroMiembro }, nExp, nOrdC, nOrdS, nMemo, nNea, nCp] = await Promise.all([
+  const [{ data: lista }, pagosFijos, chequeSugerido, cierres, atajos, { data: provData }, { data: tesoreroMiembro }, nExp, nOrdC, nOrdS, nMemo, nNea, nCp, { data: extsTodos }, { data: cobradosTodos }] = await Promise.all([
     consulta,
     cargarCatalogoPagosFijos(supabase, ctx.mcp.id),
     siguienteCheque(supabase, ctx.mcp.id),
@@ -74,6 +74,9 @@ export default async function Expedientes({ searchParams }: { searchParams: Para
     proximoNumero(supabase, ctx.mcp.id, CORRELATIVO.memorando, anioNum),
     proximoNumero(supabase, ctx.mcp.id, CORRELATIVO.nea, anioNum),
     proximoNumero(supabase, ctx.mcp.id, CORRELATIVO.comprobante, anioNum),
+    // Se piden desde ya, a la vez que lo demás (antes esperaban su turno)
+    supabase.from("extractos_transcritos").select("lineas"),
+    supabase.from("cheques_cobrados").select("comprobante_id").eq("anulado", false),
   ]);
 
   const todosBase = (lista ?? []).map((e) => ({
@@ -83,9 +86,18 @@ export default async function Expedientes({ searchParams }: { searchParams: Para
   // Conciliación con el banco de todos los del mes (para poder filtrar): un cheque está conciliado si figura cobrado
   // o si su estado de cuenta guardado enlaza comprobantes que suman lo que cobró el banco.
   const idsTodos = todosBase.map((e) => e.id);
-  const { data: cpsAll } = idsTodos.length
-    ? await supabase.from("comprobantes_pago").select("id, expediente_id, cheque, estado, creado_en, importe, deducciones").in("expediente_id", idsTodos)
-    : { data: [] as { id: string; expediente_id: string; cheque: string | null; estado: string; creado_en: string; importe: number; deducciones: number | null }[] };
+  const idsQ = idsTodos.length ? idsTodos : ["00000000-0000-0000-0000-000000000000"];
+  // Todo lo de los expedientes (comprobantes y demás documentos) se pide junto, en una sola vuelta
+  const [{ data: cpsAllRaw }, { data: ordsV }, { data: confV }, { data: cotsV }, { data: neasV }, { data: cajasV }] = await Promise.all([
+    supabase.from("comprobantes_pago").select("id, expediente_id, numero, origen, cheque, estado, creado_en, importe, deducciones").in("expediente_id", idsQ),
+    supabase.from("ordenes").select("expediente_id, tipo, numero, anio, anulado, creado_en").in("expediente_id", idsQ),
+    supabase.from("conformidades").select("expediente_id, memorando_numero, anio, anulado, creado_en").in("expediente_id", idsQ),
+    supabase.from("cotizaciones").select("expediente_id, anulado").in("expediente_id", idsQ),
+    supabase.from("notas_entrada").select("id, expediente_id, numero, anio, anulado, creado_en").in("expediente_id", idsQ),
+    supabase.from("cajas_chicas").select("id, expediente_id, periodo, fuente_id, numero, estado").in("expediente_id", idsQ).neq("estado", "anulada"),
+  ]);
+  const cpsAll = cpsAllRaw;
+  const cpsV = cpsAllRaw;
   const cpVigente = new Map<string, { id: string; cheque: string | null }>();
   [...(cpsAll ?? [])].sort((a, b) => b.creado_en.localeCompare(a.creado_en)).forEach((c) => {
     if (c.estado !== "anulado" && !cpVigente.has(c.expediente_id)) cpVigente.set(c.expediente_id, { id: c.id, cheque: c.cheque });
@@ -93,9 +105,9 @@ export default async function Expedientes({ searchParams }: { searchParams: Para
   const idsCp = Array.from(cpVigente.values()).map((c) => c.id);
   const conciliadosCp = new Set<string>();
   if (idsCp.length) {
-    const { data: cobV } = await supabase.from("cheques_cobrados").select("comprobante_id").eq("anulado", false).in("comprobante_id", idsCp);
-    (cobV ?? []).forEach((c) => conciliadosCp.add(c.comprobante_id));
-    const { data: exts } = await supabase.from("extractos_transcritos").select("lineas");
+    const propios = new Set(idsCp);
+    (cobradosTodos ?? []).forEach((c) => propios.has(c.comprobante_id) && conciliadosCp.add(c.comprobante_id));
+    const exts = extsTodos;
     const montoDe = new Map((cpsAll ?? []).map((c) => [c.id, Math.round((Number(c.importe) - Number(c.deducciones ?? 0)) * 100) / 100]));
     type L = { cargo?: number | null; enlace?: { tipo?: string; id?: string; extra?: { id: string }[] } | null };
     const todas = (exts ?? []).flatMap((e) => (e.lineas ?? []) as L[]);
@@ -149,17 +161,6 @@ export default async function Expedientes({ searchParams }: { searchParams: Para
   const totalPaginas = Math.max(1, Math.ceil(filas.length / POR_PAGINA));
   const pagina = Math.min(totalPaginas, Math.max(1, Math.floor(Number(sp.pag)) || 1));
   const visibles = filas.slice((pagina - 1) * POR_PAGINA, pagina * POR_PAGINA);
-  // Números de los documentos de cada expediente visible (orden, conformidad, comprobante, cheque, NEA)
-  const idsVis = visibles.map((e) => e.id);
-  const idsQ = idsVis.length ? idsVis : ["00000000-0000-0000-0000-000000000000"];
-  const [{ data: ordsV }, { data: confV }, { data: cotsV }, { data: cpsV }, { data: neasV }, { data: cajasV }] = await Promise.all([
-    supabase.from("ordenes").select("expediente_id, tipo, numero, anio, anulado, creado_en").in("expediente_id", idsQ),
-    supabase.from("conformidades").select("expediente_id, memorando_numero, anio, anulado, creado_en").in("expediente_id", idsQ),
-    supabase.from("cotizaciones").select("expediente_id, anulado").in("expediente_id", idsQ),
-    supabase.from("comprobantes_pago").select("id, expediente_id, numero, origen, cheque, estado, creado_en, importe, deducciones").in("expediente_id", idsQ),
-    supabase.from("notas_entrada").select("id, expediente_id, numero, anio, anulado, creado_en").in("expediente_id", idsQ),
-    supabase.from("cajas_chicas").select("id, expediente_id, periodo, fuente_id, numero, estado").in("expediente_id", idsQ).neq("estado", "anulada"),
-  ]);
   const cajaDe = new Map((cajasV ?? []).map((c) => [c.expediente_id as string, c]));
   const elegir = <T extends { creado_en: string }>(xs: T[] | null | undefined, vigente: (x: T) => boolean) => {
     const orden = [...(xs ?? [])].sort((a, b) => b.creado_en.localeCompare(a.creado_en));

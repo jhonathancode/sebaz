@@ -13,7 +13,7 @@ import type { Mcp } from "@/lib/contexto";
  */
 export type BaseVistaPrevia =
   | { tipo: "requerimiento" }
-  | { tipo: "orden"; d: DatosExpediente; ordenTipo: string; monto: number; proveedor: unknown }
+  | { tipo: "orden"; d: DatosExpediente; ordenTipo: string; monto: number; proveedor: unknown; tesorero?: string; cargo?: string }
   | { tipo: "conformidad"; d: DatosExpediente; tesorero: string; cargo: string }
   | { tipo: "comprobante"; beneficiario: string; beneficiario_doc: string | null; concepto: string; importe: number; partida: string | null; hecho_por: string }
   | { tipo: "comprobante_directo"; hecho_por: string }
@@ -46,7 +46,7 @@ function armar(base: BaseVistaPrevia, fd: FormData, mcp: Mcp): React.ReactNode {
         ...base.d,
         orden: { numero: null, anio, fecha, plazo: may(fd.get("plazo")) || null, concepto: may(fd.get("concepto")), tipo: base.ordenTipo, tipo_proceso: "Adjudicación directa", monto: base.monto, proveedores: base.proveedor },
       } as unknown as DatosExpediente;
-      return <Orden d={d} mcp={mcp} />;
+      return <Orden d={d} mcp={mcp} tesorero={base.tesorero} cargo={base.cargo} />;
     }
     case "conformidad": {
       const d = { ...base.d, conformidad: { memorando_numero: null, anio, fecha, texto: String(fd.get("texto") ?? "") } } as unknown as DatosExpediente;

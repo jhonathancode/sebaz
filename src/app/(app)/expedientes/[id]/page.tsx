@@ -457,6 +457,8 @@ export default async function Expediente({ params, searchParams }: { params: Par
         nodo: (
           <Orden
             mcp={ctx.mcp}
+            tesorero={nombreTesorero}
+            cargo={cargoTesorero}
             d={{ ...datosDoc, orden: { numero: numeroPrevio, anio: anioHoy, fecha: hoy, plazo: elegida.plazo, concepto: conceptoSinSeRequiere(e.descripcion), tipo: e.tipo === "compra" ? "compra" : "servicio", tipo_proceso: "Adjudicación directa", monto: elegida.monto, proveedores: elegida.proveedores } } as unknown as DatosExpediente}
           />
         ),

@@ -382,6 +382,8 @@ export default function AsistenteRequerimiento({
               hoja(
                 <Orden
                   mcp={mcp}
+                  tesorero={tesorero}
+                  cargo={cargo}
                   d={{ ...dBase, orden: { numero: numOrden, anio: L.anio, fecha: fd("orden"), plazo: L.g("plazo") || null, concepto, tipo: ordenTipo, tipo_proceso: "Adjudicación directa", monto: L.total, proveedores: proveedor } } as unknown as DatosExpediente}
                 />,
               )}

@@ -32,7 +32,7 @@ export default function DocumentosExpediente({
       {d.anulado && <MarcaAnuladaPagina />}
       {mostrar("requerimiento") && <Requerimiento d={d} mcp={mcp} />}
       {mostrar("cotizaciones") && d.cotizaciones.length > 0 && <Cotizaciones d={d} mcp={mcp} />}
-      {mostrar("orden") && d.orden && <Orden d={d} mcp={mcp} />}
+      {mostrar("orden") && d.orden && <Orden d={d} mcp={mcp} tesorero={tesorero} cargo={cargo} />}
       {mostrar("conformidad") && d.conformidad && <Memorando d={d} mcp={mcp} tesorero={tesorero} cargo={cargo} />}
       {mostrar("comprobante") && d.cp && (
         <FormatoComprobante c={{ ...d.cp, hecho_por: (d.cp.perfiles as { nombre: string } | null)?.nombre }} mcp={mcp} extra={extraDe(d.cp, d.e, d.orden)} anulado={d.anulado ?? (d.cp.estado === "anulado" ? { motivo: d.cp.anulado_motivo, en: d.cp.anulado_en } : null)} />
@@ -182,7 +182,7 @@ function Cotizaciones({ d, mcp }: { d: Datos; mcp: Mcp }) {
  * condiciones, detalle con el monto en letras, afectación presupuestal, total, «facturar a nombre de», firmas y
  * nota importante. Es la misma hoja para compra y servicio; solo cambia el título. Una sola hoja A4.
  */
-export function Orden({ d, mcp }: { d: Datos; mcp: Mcp }) {
+export function Orden({ d, mcp, tesorero, cargo }: { d: Datos; mcp: Mcp; tesorero?: string; cargo?: string }) {
   const e = d.e!;
   const orden = d.orden!;
   const p = orden.proveedores as unknown as Proveedor | null;
@@ -217,8 +217,6 @@ export function Orden({ d, mcp }: { d: Datos; mcp: Mcp }) {
       <div className="og-cab">
         <div className="og-titulo">ORDEN DE {compra ? "COMPRA" : "SERVICIO"} N° <span className="og-caja">{num3(orden.numero)}-{orden.anio}</span></div>
         <div className="og-fila-exp">
-          <span />
-          <div className="og-exp">N° Exp. SIAF : <span className="og-caja vacia" /></div>
           <table className="og-fecha">
             <thead><tr><th>Día</th><th>Mes</th><th>Año</th></tr></thead>
             <tbody><tr><td>{dia}</td><td>{mes}</td><td>{anio}</td></tr></tbody>
@@ -291,7 +289,7 @@ export function Orden({ d, mcp }: { d: Datos; mcp: Mcp }) {
       </div>
 
       <div className="og-firmas">
-        <div><b>ELABORADO POR</b><span /></div>
+        <div><b>ELABORADO POR</b><span className="og-elab">{tesorero ? <><em>{tesorero.toUpperCase()}</em>{cargo ? <small>{cargo.toUpperCase()}</small> : null}</> : null}</span></div>
         <div><b>ORDENACIÓN DEL SERVICIO</b><span /><i>ALCALDE</i></div>
         <div>
           <b>CONFORMIDAD DEL SERVICIO</b><span />

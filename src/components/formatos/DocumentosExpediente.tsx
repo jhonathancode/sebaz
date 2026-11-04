@@ -151,6 +151,7 @@ export function Requerimiento({ d, mcp }: { d: Datos; mcp: Mcp }) {
 function Cotizaciones({ d, mcp, tesorero, cargo }: { d: Datos; mcp: Mcp; tesorero?: string; cargo?: string }) {
   const e = d.e!;
   const imp = ahora();
+  const [anio, mes, dia] = (e.fecha || "").slice(0, 10).split("-");
   const lugar = [mcp.distrito && `DISTRITO DE ${mcp.distrito}`, mcp.provincia && `PROVINCIA DE ${mcp.provincia}`].filter(Boolean).join(" · ").toUpperCase();
   const cots = d.cotizaciones.map((c) => ({ ...c, p: c.proveedores as unknown as { razon_social: string; num_doc: string } | null }));
   const elegida = cots.find((c) => c.elegida);
@@ -180,21 +181,14 @@ function Cotizaciones({ d, mcp, tesorero, cargo }: { d: Datos; mcp: Mcp; tesorer
         </div>
       </div>
 
-      <div className="sf-tit-fila">
-        <div>
-          <div className="sf-titulo">CUADRO COMPARATIVO DE COTIZACIONES</div>
-          <div className="sf-registro">
-            <span>REQUERIMIENTO N°</span> <b>{num3(e.numero)}-{e.anio}-MCP-{sufijo(mcp)}</b>
-          </div>
+      <div className="og-cab">
+        <div className="og-titulo">CUADRO COMPARATIVO DE COTIZACIONES <span className="og-caja">REQ. N° {num3(e.numero)}-{e.anio}</span></div>
+        <div className="og-fila-exp">
+          <table className="og-fecha">
+            <thead><tr><th>Día</th><th>Mes</th><th>Año</th></tr></thead>
+            <tbody><tr><td>{dia}</td><td>{mes}</td><td>{anio}</td></tr></tbody>
+          </table>
         </div>
-        <table className="sf-num">
-          <thead>
-            <tr><th>REQUERIMIENTO</th><th>FECHA</th></tr>
-          </thead>
-          <tbody>
-            <tr><td>{e.numero ? `${String(e.numero).padStart(4, "0")}-${e.anio}` : "—"}</td><td>{fecha(e.fecha)}</td></tr>
-          </tbody>
-        </table>
       </div>
 
       <div className="sf-linea"><span className="sf-et">UNIDAD ORGÁNICA</span><span className="sf-val">{e.area_usuaria ?? ""}</span></div>
@@ -405,21 +399,14 @@ export function Memorando({ d, mcp, tesorero, cargo }: { d: Datos; mcp: Mcp; tes
         </div>
       </div>
 
-      <div className="sf-tit-fila">
-        <div>
-          <div className="sf-titulo">MEMORANDO</div>
-          <div className="sf-registro">
-            <span>N°</span> <b>{num3(conf.memorando_numero)}-{conf.anio}-MCP-{sufijo(mcp)}/ALC</b>
-          </div>
+      <div className="og-cab">
+        <div className="og-titulo">MEMORANDO N° <span className="og-caja">{num3(conf.memorando_numero)}-{conf.anio}-MCP-{sufijo(mcp)}/ALC</span></div>
+        <div className="og-fila-exp">
+          <table className="og-fecha">
+            <thead><tr><th>Día</th><th>Mes</th><th>Año</th></tr></thead>
+            <tbody><tr><td>{dia}</td><td>{mes}</td><td>{anio}</td></tr></tbody>
+          </table>
         </div>
-        <table className="sf-num">
-          <thead>
-            <tr><th>N°</th><th>DIA</th><th>MES</th><th>AÑO</th></tr>
-          </thead>
-          <tbody>
-            <tr><td>{conf.memorando_numero ? String(conf.memorando_numero).padStart(4, "0") : "—"}</td><td>{dia}</td><td>{mes}</td><td>{anio}</td></tr>
-          </tbody>
-        </table>
       </div>
 
       <div className="sf-linea"><span className="sf-et">A</span><span className="sf-val">{tesorero}</span></div>

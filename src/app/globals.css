@@ -4044,7 +4044,7 @@ html.pdf-captura .sf-faltan { display: none; }
 .hoja.sf .sf-ret-cuerpo > span:last-child { justify-content: center; text-align: center; }
 
 /* ===== Cuadro de requerimiento: misma letra, líneas y encabezado que el comprobante; una sola hoja A4 en blanco y negro ===== */
-.hoja.rq { --sfb: 1.4px solid #000; font-family: Arial, "Liberation Sans", Helvetica, sans-serif; color: #000; font-size: 11px; line-height: 1.25; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+.hoja.rq { --sfb: 1.4px solid #000; --ogb: 1.4px solid #000; font-family: Arial, "Liberation Sans", Helvetica, sans-serif; color: #000; font-size: 11px; line-height: 1.25; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
 .hoja.rq, .escala-a4-interior .hoja.rq { display: flex !important; flex-direction: column; box-sizing: border-box; width: 794px; min-width: 0; max-width: none; min-height: 1123px; padding: 30px 34px 30px; overflow: hidden; }
 .escala-a4-interior .hoja.rq { width: 794px !important; min-width: 794px !important; max-width: 794px !important; }
 .escala-a4-interior .hoja.rq > :last-child { margin-top: 0 !important; padding-top: 0; }
@@ -4158,8 +4158,8 @@ html.pdf-captura .sf-faltan { display: none; }
 }
 
 /* Cuadro comparativo de cotizaciones: matriz lado a lado, una columna por proveedor */
-.hoja.cc .sf-titulo { font-size: 19px; white-space: nowrap; }
-.hoja.cc .sf-num th:first-child, .hoja.cc .sf-num td:first-child { width: 50%; }
+.hoja.cc .og-titulo { font-size: 19px; }
+.hoja.cc .og-caja { font-size: 15px; }
 .cc-mat { width: 100%; border-collapse: collapse; table-layout: fixed; border: var(--sfb); margin-top: 12px; }
 .cc-mat th, .cc-mat td { border: var(--sfb); padding: 12px 10px; font-size: 12.5px; text-align: center; vertical-align: middle; word-break: break-word; text-transform: uppercase; }
 .cc-mat th { text-align: left; font-weight: 400; font-size: 9.5px; letter-spacing: .08em; padding-left: 10px; }
@@ -4176,6 +4176,7 @@ html.pdf-captura .sf-faltan { display: none; }
 
 /* Memorando de conformidad: usa el formato del requerimiento */
 .hoja.mm .sf-et { width: 110px; }
+.hoja.mm .og-caja { font-size: 15px; }
 .hoja.mm .rq-marco { min-height: 300px; }
 .mm-texto { flex: 1; padding: 16px 18px; font-size: 14px; line-height: 1.75; white-space: pre-wrap; }
 .mm-atte { padding: 0 18px 14px; font-size: 13px; }

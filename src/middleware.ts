@@ -1,7 +1,8 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
-const PUBLICAS = ["/login", "/sitio"];
+// «/api/push/enviar» lo llama Vercel (se protege con su propia clave); «/sw.js» es el receptor de avisos del celular
+const PUBLICAS = ["/login", "/sitio", "/sw.js", "/api/push/enviar"];
 
 // Dominios de la web pública (por ejemplo «zebaz.pe,www.zebaz.pe»). Lo demás es el sistema.
 const HOSTS_SITIO = (process.env.SITIO_HOSTS ?? "").split(",").map((h) => h.trim().toLowerCase()).filter(Boolean);

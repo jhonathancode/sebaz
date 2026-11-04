@@ -1,4 +1,5 @@
 import Avisos, { type ParamsAviso } from "@/components/Avisos";
+import ActivarAvisos from "@/components/ActivarAvisos";
 import CampoPin from "@/components/CampoPin";
 import BotonConfirmar from "@/components/BotonConfirmar";
 import { obtenerContexto } from "@/lib/contexto";
@@ -25,6 +26,7 @@ export default async function Cuenta({ searchParams }: { searchParams: ParamsAvi
     <>
       <div className="titulo-ventana"><h1>Mi cuenta · {ctx.nombre}</h1></div>
       <Avisos ok={sp.ok} error={sp.error} />
+      <div style={{ maxWidth: 420 }}><ActivarAvisos /></div>
       <form action={cambiarClave} className="panel" style={{ maxWidth: 420 }}>
         <div className="panel-cab">Cambiar clave</div>
         <div className="panel-cuerpo">

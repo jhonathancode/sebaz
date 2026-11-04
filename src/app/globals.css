@@ -4437,8 +4437,7 @@ html.pdf-captura .sf-faltan { display: none; }
   .ini-hero-boton:hover { transform: none; box-shadow: none; }
 }
 
-/* =====================================================================
-   ASISTENTE «NUEVO REQUERIMIENTO» EN EL CELULAR: más aire, pie corto
+/* ==============================================================   ASISTENTE «NUEVO REQUERIMIENTO» EN EL CELULAR: más aire, pie corto
    ===================================================================== */
 @media (max-width: 760px) {
   /* La ventana ocupa toda la pantalla: el pie queda pegado abajo */
@@ -4475,3 +4474,10 @@ html.pdf-captura .sf-faltan { display: none; }
   .asist-botones .btn { flex: 1 1 0; min-width: 0; min-height: 46px; }
   .asist-botones .btn.primario { flex: 2 1 0; }
 }
+=======
+/* Avisos al celular (notificaciones push) */
+.push-caja { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; padding: 14px 16px; border-radius: 16px; border: 1px solid var(--primario-claro); background: var(--primario-fondo); color: var(--primario-texto); margin: 0 0 14px; }
+.push-caja .push-ico { flex: none; width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; background: var(--panel); color: var(--primario); }
+.push-caja .push-txt { flex: 1 1 200px; min-width: 0; font-size: 14px; font-weight: 600; line-height: 1.35; }
+.push-caja .push-acc { display: flex; gap: 8px; flex-wrap: wrap; }
+@media (max-width: 760px) { .push-caja .push-acc, .push-caja .push-acc .btn { flex: 1 1 100%; justify-content: center; } }

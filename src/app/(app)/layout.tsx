@@ -35,43 +35,39 @@ export default async function MarcoApp({ children }: { children: React.ReactNode
   // Primer ingreso: condiciones de uso y PIN, antes de cualquier pantalla
   if (ctx.ingresoPendiente) return <Bienvenida nombre={ctx.nombre} pendiente={ctx.ingresoPendiente} salir={salir} />;
   // Pendientes de firma (solo para quien aprueba)
-  let porAprobar = 0;
-  if (ctx.mcp && tiene(ctx, "alcalde", "admin")) {
-    const supabase = await supabaseServidor();
-    const [{ count: a }, { count: b }] = await Promise.all([
-      supabase.from("expedientes").select("id", { count: "exact", head: true }).eq("mcp_id", ctx.mcp.id).eq("estado", "borrador"),
-      supabase.from("comprobantes_pago").select("id", { count: "exact", head: true }).eq("mcp_id", ctx.mcp.id).eq("estado", "borrador"),
-    ]);
-    porAprobar = (a ?? 0) + (b ?? 0);
-  }
+  // Las tres consultas del marco (por aprobar, bandeja y pendientes) salen a la vez, no una tras otra
+  const sb = await supabaseServidor();
+  const [porAprobar, bandeja, pendientes] = await Promise.all([
+    (async () => {
+      if (!(ctx.mcp && tiene(ctx, "alcalde", "admin"))) return 0;
+      const [{ count: a }, { count: b }] = await Promise.all([
+        sb.from("expedientes").select("id", { count: "exact", head: true }).eq("mcp_id", ctx.mcp.id).eq("estado", "borrador"),
+        sb.from("comprobantes_pago").select("id", { count: "exact", head: true }).eq("mcp_id", ctx.mcp.id).eq("estado", "borrador"),
+      ]);
+      return (a ?? 0) + (b ?? 0);
+    })(),
+    (async () => {
+      // Si la base aún no tiene la actualización, la campana no aparece
+      const [{ data, error }, { count }] = await Promise.all([
+        sb.from("notificaciones").select("id, tipo, titulo, detalle, enlace, leida_en, creado_en").eq("user_id", ctx.userId).order("creado_en", { ascending: false }).limit(12),
+        sb.from("notificaciones").select("id", { count: "exact", head: true }).eq("user_id", ctx.userId).is("leida_en", null),
+      ]);
+      return error ? null : { avisos: (data ?? []) as Aviso[], sinLeer: count ?? 0 };
+    })(),
+    (async (): Promise<Pendiente[]> => {
+      // Pendientes que no son mensajes (ej. rendición del mes pasado sin armar): también van en la campana
+      if (!(ctx.mcp && !ctx.esSuperadmin && tieneModulo(ctx.mcp, "rendicion"))) return [];
+      try {
+        return await rendicionesAtrasadas(sb, ctx.mcp.id, ctx.fuentes);
+      } catch {
+        return [];
+      }
+    })(),
+  ]);
   const menuOculto = cookieStore.get("menu")?.value === "oculto";
-
-  // Bandeja de mensajes (si la base aún no tiene la actualización, la campana no aparece)
-  let avisos: Aviso[] = [];
-  let sinLeer = 0;
-  let hayBandeja = false;
-  {
-    const supabase = await supabaseServidor();
-    const [{ data, error }, { count }] = await Promise.all([
-      supabase.from("notificaciones").select("id, tipo, titulo, detalle, enlace, leida_en, creado_en").eq("user_id", ctx.userId).order("creado_en", { ascending: false }).limit(12),
-      supabase.from("notificaciones").select("id", { count: "exact", head: true }).eq("user_id", ctx.userId).is("leida_en", null),
-    ]);
-    if (!error) {
-      hayBandeja = true;
-      avisos = (data ?? []) as Aviso[];
-      sinLeer = count ?? 0;
-    }
-  }
-
-  // Pendientes que no son mensajes (ej. rendición del mes pasado sin armar): también van en la campana
-  let pendientes: Pendiente[] = [];
-  if (ctx.mcp && !ctx.esSuperadmin && tieneModulo(ctx.mcp, "rendicion")) {
-    try {
-      pendientes = await rendicionesAtrasadas(await supabaseServidor(), ctx.mcp.id, ctx.fuentes);
-    } catch {
-      pendientes = [];
-    }
-  }
+  const avisos: Aviso[] = bandeja?.avisos ?? [];
+  const sinLeer = bandeja?.sinLeer ?? 0;
+  const hayBandeja = !!bandeja;
 
   // Trabajo diario arriba; administración bajo el nombre del usuario.
   // El superadmin tiene su propio panel (Zebaz como empresa); las MCP son sus clientes.

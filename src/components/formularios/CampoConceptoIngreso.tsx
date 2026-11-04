@@ -34,6 +34,8 @@ export default function CampoConceptoIngreso({ historial }: { historial: Uso[] }
 
   const usados = [...new Set(historial.filter((h) => h.rubro === rubro).map((h) => h.concepto))].slice(0, 4);
   const comunes = (SUGERENCIAS[rubro] ?? []).filter((c) => !usados.some((u) => u.toLowerCase() === c.toLowerCase()));
+  // Primero lo que ya se cobró con ese rubro, luego lo más común; pocas opciones para no llenar la ventana
+  const sugeridos = [...usados.slice(0, 3), ...comunes].slice(0, 5);
 
   function poner(texto: string) {
     if (!campo.current) return;
@@ -47,24 +49,12 @@ export default function CampoConceptoIngreso({ historial }: { historial: Uso[] }
         Concepto
         <input ref={campo} name="concepto" required placeholder="Tipeo, copias e impresión de documentos" autoComplete="off" />
       </label>
-      {usados.length > 0 && (
-        <div className="chips-concepto">
-          <span className="grupo-et">Cobrados antes</span>
-          <div className="plantillas">
-            {usados.map((c) => (
-              <button key={c} type="button" className="f-chip" onClick={() => poner(c)}>{c}</button>
-            ))}
-          </div>
-        </div>
-      )}
-      {comunes.length > 0 && (
-        <div className="chips-concepto">
-          <span className="grupo-et">Recomendados</span>
-          <div className="plantillas">
-            {comunes.map((c) => (
-              <button key={c} type="button" className="f-chip" onClick={() => poner(c)}>{c}</button>
-            ))}
-          </div>
+      {sugeridos.length > 0 && (
+        <div className="rc-sug">
+          <span>Sugeridos</span>
+          {sugeridos.map((c) => (
+            <button key={c} type="button" className="f-chip" onClick={() => poner(c)}>{c}</button>
+          ))}
         </div>
       )}
     </div>

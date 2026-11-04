@@ -4043,7 +4043,49 @@ html.pdf-captura .sf-faltan { display: none; }
 .hoja.sf .sf-pat-cuerpo > span:nth-child(2), .hoja.sf .sf-pat-cuerpo > span:nth-child(4),
 .hoja.sf .sf-ret-cuerpo > span:last-child { justify-content: center; text-align: center; }
 
-/* ===== Requerimiento: disposición del pedido del SIGA ===== */
-.formato.pedido-siga th { width: 150px; white-space: nowrap; }
-.formato.pedido-siga td { font-weight: 600; text-transform: uppercase; }
-.formato.pedido-siga + .formato.pedido-siga { margin-top: 0; }
+/* ===== Cuadro de requerimiento: formato de los centros poblados, una sola hoja A4 en blanco y negro ===== */
+.hoja.rq { --rqb: 1.4px solid #000; font-family: Arial, "Liberation Sans", Helvetica, sans-serif; color: #000; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+.hoja.rq, .escala-a4-interior .hoja.rq { display: flex !important; flex-direction: column; box-sizing: border-box; width: 794px; min-width: 0; max-width: none; min-height: 1123px; padding: 34px 38px 34px 40px; overflow: hidden; }
+.escala-a4-interior .hoja.rq { width: 794px !important; min-width: 794px !important; max-width: 794px !important; }
+.escala-a4-interior .hoja.rq > :last-child { margin-top: 0 !important; padding-top: 0; }
+.hoja.rq :where(div, span, b, u, th, td, p, h1) { color: #000; }
+.rq-ent { display: flex; align-items: center; gap: 12px; }
+.rq-ent img { height: 58px; width: auto; max-width: 110px; object-fit: contain; }
+.rq-ent b { display: block; font-size: 14px; font-weight: 700; letter-spacing: .01em; }
+.rq-ent span { display: block; font-size: 10.5px; margin-top: 2px; }
+.rq-titulo { margin: 18px 0 8px; text-align: center; font-size: 21px; font-weight: 700; line-height: 1.2; }
+.rq-titulo u { text-decoration-thickness: 1.5px; text-underline-offset: 4px; }
+.rq-fecha { text-align: right; font-size: 12.5px; font-weight: 700; margin-bottom: 8px; }
+.rq-marco { flex: 1; display: flex; flex-direction: column; min-height: 0; border: var(--rqb); border-radius: 6px; overflow: hidden; }
+.rq-fila { display: grid; grid-template-columns: 34% minmax(0, 1fr); border-bottom: var(--rqb); }
+.rq-fila > b, .rq-fila > span { padding: 8px 12px; font-size: 12.5px; text-align: center; display: flex; align-items: center; justify-content: center; }
+.rq-fila > b { font-weight: 700; border-right: var(--rqb); }
+.rq-fila > span { font-weight: 700; text-transform: uppercase; }
+.rq-cuerpo { flex: 1; display: flex; min-height: 300px; }
+.rq-items { flex: 1; width: 100%; border-collapse: collapse; table-layout: fixed; }
+.rq-items th, .rq-items td { border: var(--rqb); padding: 7px 8px; font-size: 12px; text-align: center; vertical-align: middle; word-break: break-word; }
+.rq-items thead th { font-weight: 700; font-size: 12px; }
+.rq-items thead tr:first-child th { border-top: 0; }
+.rq-items th:first-child, .rq-items td:first-child { border-left: 0; }
+.rq-items th:last-child, .rq-items td:last-child { border-right: 0; }
+.rq-items tbody td { border-top: 0; border-bottom: 0; vertical-align: top; padding-top: 9px; }
+.rq-items tbody tr:first-child td { padding-top: 12px; }
+.rq-items .rq-relleno { height: 100%; }
+.rq-items .rq-relleno td { border-top: 0; border-bottom: 0; }
+.rq-items .rq-relleno td { padding: 0; }
+.rq-items tfoot th { border-bottom: 0; font-weight: 700; font-size: 12.5px; padding: 8px; }
+.rq-items tfoot .rq-tot-et { text-align: right; padding-right: 14px; }
+.rq-entregar { border-top: var(--rqb); padding: 8px 12px; font-size: 12px; min-height: 34px; }
+.rq-nota { margin: 6px 2px 0; font-size: 9.5px; }
+.rq-control { margin: 14px 2px 5px; font-size: 12px; font-weight: 700; }
+.rq-firmas { display: grid; grid-template-columns: 1fr 1fr; border: var(--rqb); border-radius: 6px; overflow: hidden; }
+.rq-firmas > div { display: flex; flex-direction: column; min-height: 150px; }
+.rq-firmas > div + div { border-left: var(--rqb); }
+.rq-firmas b { font-size: 12px; text-align: center; padding: 8px 6px; border-bottom: var(--rqb); }
+.rq-firmas span { flex: 1; }
+@page requerimiento { size: A4 portrait; margin: 0; }
+@media print {
+  .hoja.rq, .escala-a4-interior .hoja.rq { page: requerimiento; width: 210mm !important; min-width: 0 !important; max-width: none !important; min-height: 296mm !important; padding: 10mm 9mm 10mm 16mm !important; break-after: avoid; break-inside: avoid; margin: 0; }
+  body:has(.hoja.rq), html:has(.hoja.rq) { height: auto !important; min-height: 0 !important; overflow: visible !important; background: #fff !important; }
+  .marco-app:has(.hoja.rq), .marco-app:has(.hoja.rq) > .ventana, .ventana:has(.hoja.rq), .mesa:has(.hoja.rq), .escala-a4-medida:has(.hoja.rq), .escala-a4:has(.hoja.rq), .escala-a4-interior:has(.hoja.rq) { min-height: 0 !important; height: auto !important; margin: 0 !important; padding: 0 !important; gap: 0 !important; border: 0 !important; box-shadow: none !important; display: block !important; overflow: visible !important; }
+}

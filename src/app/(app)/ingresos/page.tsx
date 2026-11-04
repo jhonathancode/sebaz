@@ -1,5 +1,6 @@
 import Link from "next/link";
 import InputFecha from "@/components/InputFecha";
+import BuscadorTupa from "@/components/formularios/BuscadorTupa";
 import CampoConceptoIngreso from "@/components/formularios/CampoConceptoIngreso";
 import BotonPdf from "@/components/BotonPdf";
 import Avisos, { type ParamsAviso } from "@/components/Avisos";
@@ -8,6 +9,7 @@ import { RUBROS_INGRESO } from "@/lib/catalogos";
 import { contextoMcp, tiene } from "@/lib/contexto";
 import { fecha, hoyISO, nombrePeriodo, periodoActual, soles } from "@/lib/formato";
 import { supabaseServidor } from "@/lib/supabase/server";
+import { cargarTupa } from "@/lib/tupa";
 import Motivo from "@/components/Motivo";
 import VisorArchivo from "@/components/VisorArchivo";
 import CampoArchivoEstado from "@/components/formularios/CampoArchivoEstado";
@@ -123,6 +125,8 @@ export default async function Ingresos({ searchParams }: { searchParams: ParamsA
   );
   const siguiente = ultimo ? (ultimo.anio === Number(periodo.slice(0, 4)) ? ultimo.numero + 1 : 1) : 1;
   const puede = tiene(ctx, "admin", "tesorero", "contador");
+  // TUPA para consultar costo y requisitos al emitir el recibo (vacío si todavía no se cargó)
+  const tupa = puede ? await cargarTupa(supabase, ctx.mcp.id) : { procs: [], modelo: false, fuente: null };
 
   return (
     <>
@@ -134,6 +138,7 @@ export default async function Ingresos({ searchParams }: { searchParams: ParamsA
         {vista === "mes" && <BotonPdf nombre={`Ingresos propios ${etiqueta}`} selector=".cc-excel-marco" texto="Descargar PDF" className="btn contorno" horizontal />}
         {puede && (
           <VentanaFlotante boton="Nuevo recibo de ingreso" titulo={`Nuevo recibo de ingreso · N° ${String(siguiente).padStart(4, "0")}`} accion={emitirRecibo} textoGuardar="Emitir recibo" abierta={sp.nuevo === "1"} error={sp.nuevo === "1" ? sp.error : undefined}>
+            {tupa.procs.length > 0 && <BuscadorTupa procs={tupa.procs} modelo={tupa.modelo} fuente={tupa.fuente} />}
             <div className="rejilla">
               <label className="campo">Fecha<InputFecha name="fecha" defaultValue={hoyISO()} required /></label>
               <label className="campo">

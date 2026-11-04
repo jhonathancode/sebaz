@@ -51,3 +51,4 @@ psql -v ON_ERROR_STOP=1 -q -d prueba_mcp -f migrations/20261031100000_extractos_
 psql -v ON_ERROR_STOP=1 -q -d prueba_mcp -f migrations/20261031110000_sitio_web.sql
 psql -v ON_ERROR_STOP=1 -q -d prueba_mcp -f migrations/20261031120000_codigo_bien_almacen.sql
 psql -v ON_ERROR_STOP=1 -q -d prueba_mcp -f ACTUALIZAR_BASE.sql 2>&1 | grep -v NOTICE | grep -E "actualizada|ERROR"
+psql -v ON_ERROR_STOP=1 -q -d prueba_mcp -f migrations/20261103210000_tupa.sql

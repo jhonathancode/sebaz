@@ -1,4 +1,5 @@
 import { CLASIFICADORES } from "@/lib/catalogos";
+import InputFecha from "@/components/InputFecha";
 import type { Fuente } from "@/lib/contexto";
 import { hoyISO } from "@/lib/formato";
 import CampoCheque from "./CampoCheque";
@@ -62,7 +63,7 @@ export default function CamposRequerimiento({ fuentes, valores, pagosFijos, cheq
       <div className="fecha-exp">
         <label className="campo fecha-exp-campo">
           <span className="fecha-exp-et">Fecha del expediente</span>
-          <input type="date" name="fecha" defaultValue={valores?.fecha ?? hoyISO()} required />
+          <InputFecha name="fecha" defaultValue={valores?.fecha ?? hoyISO()} required />
         </label>
         <p className="pequeno tenue">Viene con la fecha de hoy; cámbiela solo si el expediente es de otro día. Los documentos saldrán con esa fecha, y cada uno se puede ajustar al generarlo.</p>
       </div>

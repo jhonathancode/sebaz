@@ -1,4 +1,5 @@
 import SelectFuncion from "@/components/SelectFuncion";
+import InputFecha from "@/components/InputFecha";
 import { CLASIFICADORES, SUSTENTOS } from "@/lib/catalogos";
 
 export type ComprobanteEditable = {
@@ -19,7 +20,7 @@ export default function CamposEditarComprobante({ id, c }: { id: string; c: Comp
     <>
       <input type="hidden" name="id" value={id} />
       <div className="rejilla-2">
-        <label className="campo">Fecha<input type="date" name="fecha" defaultValue={c.fecha} /></label>
+        <label className="campo">Fecha<InputFecha name="fecha" defaultValue={c.fecha} /></label>
         <label className="campo">
           Documento que entregó el proveedor
           <select name="sustento_tipo" defaultValue={c.sustento_tipo ?? ""}>

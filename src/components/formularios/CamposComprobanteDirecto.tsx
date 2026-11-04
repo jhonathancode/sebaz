@@ -1,4 +1,5 @@
 import AutoDocumento from "@/components/AutoDocumento";
+import InputFecha from "@/components/InputFecha";
 import SelectFuncion from "@/components/SelectFuncion";
 import { nombreFuente } from "./CamposRequerimiento";
 import SugerenciaConcepto from "./SugerenciaConcepto";
@@ -15,7 +16,7 @@ export default function CamposComprobanteDirecto({ fuentes, chequeSugerido = "" 
         mensuales. Las compras van por Expedientes; la caja chica, por su liquidación.
       </div>
       <div className="rejilla">
-        <label className="campo">Fecha<input type="date" name="fecha" defaultValue={hoyISO()} required /></label>
+        <label className="campo">Fecha<InputFecha name="fecha" defaultValue={hoyISO()} required /></label>
         <label className="campo">
           Se paga con
           <select name="fuente_id" required>

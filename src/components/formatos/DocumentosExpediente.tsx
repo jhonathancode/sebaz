@@ -5,7 +5,8 @@ import { extraDe } from "@/lib/datosCP";
 import FormatoComprobante from "@/components/formatos/FormatoComprobante";
 import type { Mcp } from "@/lib/contexto";
 import type { cargarExpediente, Proveedor } from "@/lib/documentos";
-import { fecha, logoMcp, num3, soles } from "@/lib/formato";
+import LogoSebaz from "@/components/LogoSebaz";
+import { enLetras, fecha, logoMcp, num3, soles } from "@/lib/formato";
 import { conceptoSinSeRequiere } from "@/lib/requerimiento";
 
 export type DatosExpediente = Awaited<ReturnType<typeof cargarExpediente>>;
@@ -44,34 +45,72 @@ function sufijo(mcp: Mcp) {
   return mcp.nombre.replace(/municipalidad( del)?( centro poblado)?/i, "").trim().toUpperCase();
 }
 
+const ahora = () => {
+  const d = new Date();
+  return {
+    fecha: d.toLocaleDateString("es-PE", { timeZone: "America/Lima", day: "2-digit", month: "2-digit", year: "numeric" }),
+    hora: d.toLocaleTimeString("es-PE", { timeZone: "America/Lima", hour12: false }),
+  };
+};
+
 /**
- * Cuadro de requerimiento con el formato que usan los centros poblados: una sola hoja A4, blanco y negro, con
- * unidad orgánica, proyecto/actividad, específica del gasto, detalle con precio de referencia, totales y las
- * firmas de control posterior. El cuerpo se estira para llenar la hoja; el margen izquierdo es para perforar.
+ * Cuadro de requerimiento con el formato de los centros poblados y la misma letra, líneas y encabezado del
+ * comprobante de pago: línea del sistema, título con recuadro de fecha, «SON …» en letras, detalle con precio
+ * de referencia, firmas de control posterior y el sello de ZEBAZ. Una sola hoja A4, blanco y negro, con margen
+ * izquierdo para perforar.
  */
 export function Requerimiento({ d, mcp }: { d: Datos; mcp: Mcp }) {
   const e = d.e!;
   const total = d.items.reduce((s, i) => s + Number(i.total), 0);
   const logo = logoMcp(mcp);
+  const imp = ahora();
+  const [anio, mes, dia] = (e.fecha || "").slice(0, 10).split("-");
   const lugar = [mcp.distrito && `DISTRITO DE ${mcp.distrito}`, mcp.provincia && `PROVINCIA DE ${mcp.provincia}`].filter(Boolean).join(" · ").toUpperCase();
   return (
     <div className="hoja rq">
       {d.anulado && <MarcaAnulado {...d.anulado} />}
-      <div className="rq-ent">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        {logo && <img src={logo} alt="" />}
+
+      {/* Línea del sistema, como en el comprobante */}
+      <div className="sf-sis">
         <div>
-          <b>{mcp.nombre.toUpperCase()}</b>
-          <span>{[lugar, mcp.ruc && `RUC ${mcp.ruc}`].filter(Boolean).join(" · ")}</span>
+          <div>ZEBAZ - Módulo de Tesorería</div>
+          <div>{(mcp.nombre ?? "").toUpperCase()}{lugar ? ` · ${lugar}` : ""}{mcp.ruc ? ` · RUC ${mcp.ruc}` : ""}</div>
+        </div>
+        <div className="sf-sis-der" suppressHydrationWarning>
+          <div>Fecha : {imp.fecha}</div>
+          <div>Hora : {imp.hora}</div>
+          <div>Pag. : 1 de 1</div>
         </div>
       </div>
-      <h1 className="rq-titulo"><u>CUADRO DE REQUERIMIENTO N° {num3(e.numero)}-{e.anio}-MCP-{sufijo(mcp)}</u></h1>
-      <div className="rq-fecha">FECHA: {fecha(e.fecha)}</div>
+
+      <div className="sf-tit-fila">
+        <div className="rq-tit">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          {logo && <img src={logo} alt="" />}
+          <div>
+            <div className="sf-titulo">CUADRO DE REQUERIMIENTO</div>
+            <div className="sf-registro">
+              <span>N°</span> <b>{num3(e.numero)}-{e.anio}-MCP-{sufijo(mcp)}</b>
+            </div>
+          </div>
+        </div>
+        <table className="sf-num">
+          <thead>
+            <tr><th>N°</th><th>DIA</th><th>MES</th><th>AÑO</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>{e.numero ? String(e.numero).padStart(4, "0") : "—"}</td><td>{dia}</td><td>{mes}</td><td>{anio}</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div className="sf-linea"><span className="sf-et">UNIDAD ORGÁNICA</span><span className="sf-val">{e.area_usuaria ?? ""}</span></div>
+      <div className="sf-linea"><span className="sf-et">PROYECTO / ACTIVIDAD</span><span className="sf-val">{e.meta ?? ""}</span></div>
+      <div className="sf-linea"><span className="sf-et">ESPECÍFICA DEL GASTO</span><span className="sf-val">{e.clasificador ?? ""}</span></div>
+      <div className="sf-linea"><span className="sf-et">SON</span><span className="sf-val">{enLetras(total).replace(/ SOLES$/, " NUEVOS SOLES")}</span></div>
 
       <div className="rq-marco">
-        <div className="rq-fila"><b>UNIDAD ORGÁNICA</b><span>{e.area_usuaria ?? ""}</span></div>
-        <div className="rq-fila"><b>PROYECTO / ACTIVIDAD</b><span>{e.meta ?? ""}</span></div>
-        <div className="rq-fila"><b>ESPECÍFICA DEL GASTO</b><span>{e.clasificador ?? ""}</span></div>
+        <div className="sf-cab">DETALLE DEL REQUERIMIENTO</div>
         <div className="rq-cuerpo">
           <table className="rq-items">
             <colgroup><col style={{ width: "6%" }} /><col style={{ width: "13%" }} /><col style={{ width: "14%" }} /><col /><col style={{ width: "14%" }} /><col style={{ width: "14%" }} /></colgroup>
@@ -95,12 +134,16 @@ export function Requerimiento({ d, mcp }: { d: Datos; mcp: Mcp }) {
         </div>
         <div className="rq-entregar"><b>ENTREGAR EN:</b></div>
       </div>
-      <p className="rq-nota">(*) Precios de referencia; el monto final se define con la cotización elegida.</p>
 
       <div className="rq-control">CONTROL POSTERIOR</div>
       <div className="rq-firmas">
         <div><b>GERENCIA DE ADMINISTRACIÓN</b><span /></div>
         <div><b>GERENCIA MUNICIPAL</b><span /></div>
+      </div>
+
+      <div className="rq-pie">
+        <span>(*) Precios de referencia; el monto final se define con la cotización elegida.</span>
+        <span className="rq-sello"><LogoSebaz tamano={26} claro={false} /></span>
       </div>
     </div>
   );

@@ -3991,7 +3991,7 @@ html.pdf-captura .sf-faltan { display: none; }
 .sf-pago-tipo-v { font-size: 10px; }
 
 /* Comprobante: una sola hoja A4, con margen izquierdo para perforar y archivar, y más espacio para firmar */
-.hoja.sf, .escala-a4-interior .hoja.sf { display: flex !important; flex-direction: column; box-sizing: border-box; width: 794px; height: 1123px; min-height: 0; padding: 34px 30px 34px 100px; overflow: hidden; }
+.hoja.sf, .escala-a4-interior .hoja.sf { display: flex !important; flex-direction: column; box-sizing: border-box; width: 794px; height: 1123px; min-height: 0; padding: 30px 34px 30px; overflow: hidden; }
 .hoja.sf > .sf-marco { flex: 1; display: flex; flex-direction: column; min-height: 0; }
 .hoja.sf .sf-concepto-cuerpo { min-height: 70px; }
 .hoja.sf .sf-alta { min-height: 250px; }
@@ -4015,3 +4015,7 @@ html.pdf-captura .sf-faltan { display: none; }
 .hoja.sf .sf-teso-cuerpo { min-height: 112px; }
 .hoja.sf .sf-visa { min-height: 100px; }
 .hoja.sf .sf-recibi-cuerpo { min-height: 100px; }
+@media print {
+  body:has(.hoja.sf), html:has(.hoja.sf) { height: auto !important; min-height: 0 !important; overflow: visible !important; background: #fff !important; }
+  .marco-app:has(.hoja.sf), .marco-app:has(.hoja.sf) > .ventana, .ventana:has(.hoja.sf), .mesa:has(.hoja.sf), .escala-a4-medida:has(.hoja.sf), .escala-a4:has(.hoja.sf), .escala-a4-interior:has(.hoja.sf) { min-height: 0 !important; height: auto !important; margin: 0 !important; padding: 0 !important; gap: 0 !important; border: 0 !important; box-shadow: none !important; display: block !important; overflow: visible !important; }
+}

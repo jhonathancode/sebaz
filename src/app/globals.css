@@ -4042,3 +4042,8 @@ html.pdf-captura .sf-faltan { display: none; }
 .hoja.sf .sf-parcial, .hoja.sf .sf-total-col,
 .hoja.sf .sf-pat-cuerpo > span:nth-child(2), .hoja.sf .sf-pat-cuerpo > span:nth-child(4),
 .hoja.sf .sf-ret-cuerpo > span:last-child { justify-content: center; text-align: center; }
+
+/* ===== Requerimiento: disposición del pedido del SIGA ===== */
+.formato.pedido-siga th { width: 150px; white-space: nowrap; }
+.formato.pedido-siga td { font-weight: 600; text-transform: uppercase; }
+.formato.pedido-siga + .formato.pedido-siga { margin-top: 0; }

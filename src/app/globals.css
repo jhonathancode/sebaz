@@ -4180,3 +4180,10 @@ html.pdf-captura .sf-faltan { display: none; }
 .mm-atte { padding: 0 18px 14px; font-size: 13px; }
 .hoja.mm .mm-firma { grid-template-columns: 1fr; width: 52%; margin: 12px 0 0 auto; }
 .hoja.mm .mm-firma > div { min-height: 130px; }
+
+/* NEA: usa el formato del requerimiento y la orden, con tres firmas */
+.hoja.nea .rq-firmas { grid-template-columns: repeat(3, 1fr); margin-top: 10px; }
+.hoja.nea .rq-firmas > div { min-height: 130px; }
+.hoja.nea .rq-cuerpo { min-height: 240px; }
+.hoja.nea .rq-items td:nth-child(3) { text-align: left; }
+.hoja.nea .rq-entregar b { font-weight: 700; letter-spacing: .04em; }

@@ -4169,3 +4169,11 @@ html.pdf-captura .sf-faltan { display: none; }
 .hoja.cc .cc-elegida td { font-weight: 700; }
 .hoja.cc .rq-firmas { margin-top: 10px; }
 .hoja.cc .rq-firmas > div { min-height: 120px; }
+
+/* Memorando de conformidad: usa el formato del requerimiento */
+.hoja.mm .sf-et { width: 110px; }
+.hoja.mm .rq-marco { min-height: 300px; }
+.mm-texto { flex: 1; padding: 16px 18px; font-size: 14px; line-height: 1.75; white-space: pre-wrap; }
+.mm-atte { padding: 0 18px 14px; font-size: 13px; }
+.hoja.mm .mm-firma { grid-template-columns: 1fr; width: 52%; margin: 12px 0 0 auto; }
+.hoja.mm .mm-firma > div { min-height: 130px; }

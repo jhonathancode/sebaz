@@ -4005,7 +4005,7 @@ html.pdf-captura .sf-faltan { display: none; }
 .hoja.sf .sf-pago-tipo-v { white-space: normal; }
 @page comprobante { size: A4 portrait; margin: 0; }
 @media print {
-  .hoja.sf, .escala-a4-interior .hoja.sf { page: comprobante; width: 210mm !important; height: 296mm !important; max-width: none !important; padding: 10mm 8mm 10mm 28mm !important; break-after: avoid; break-inside: avoid; margin: 0; }
+  .hoja.sf, .escala-a4-interior .hoja.sf { page: comprobante; width: 210mm !important; height: 296mm !important; max-width: none !important; padding: 8mm 8mm 8mm 16mm !important; break-after: avoid; break-inside: avoid; margin: 0; }
 }
 .hoja.sf .sf-fila { grid-template-columns: 57% minmax(0, 1fr); }
 .hoja.sf .sf-codif-rej { grid-template-columns: 6% 8% 4% 6% 7% 13% 12% 5% 6% 6% 12% 15%; }
@@ -4037,3 +4037,4 @@ html.pdf-captura .sf-faltan { display: none; }
 .hoja.sf .sf-totret { display: grid; grid-template-columns: minmax(0, 1fr) 31%; padding: 0; align-items: stretch; }
 .hoja.sf .sf-totret > span { padding: 5px 10px; }
 .hoja.sf .sf-totret > b { padding: 5px 6px; border-left: var(--sfb); text-align: right; }
+.hoja.sf :where(div, span, b, i, th, td):not(.sf-faltan, .sf-faltan *) { color: #000; }

@@ -4158,8 +4158,7 @@ html.pdf-captura .sf-faltan { display: none; }
 }
 
 /* Cuadro comparativo de cotizaciones: matriz lado a lado, una columna por proveedor */
-.hoja.cc .og-titulo { font-size: 19px; }
-.hoja.cc .og-caja { font-size: 15px; }
+.hoja.cc .og-titulo { font-size: 17px; }
 .cc-mat { width: 100%; border-collapse: collapse; table-layout: fixed; border: var(--sfb); margin-top: 12px; }
 .cc-mat th, .cc-mat td { border: var(--sfb); padding: 12px 10px; font-size: 12.5px; text-align: center; vertical-align: middle; word-break: break-word; text-transform: uppercase; }
 .cc-mat th { text-align: left; font-weight: 400; font-size: 9.5px; letter-spacing: .08em; padding-left: 10px; }
@@ -4176,7 +4175,6 @@ html.pdf-captura .sf-faltan { display: none; }
 
 /* Memorando de conformidad: usa el formato del requerimiento */
 .hoja.mm .sf-et { width: 110px; }
-.hoja.mm .og-caja { font-size: 15px; }
 .hoja.mm .rq-marco { min-height: 300px; }
 .mm-texto { flex: 1; padding: 16px 18px; font-size: 14px; line-height: 1.75; white-space: pre-wrap; }
 .mm-atte { padding: 0 18px 14px; font-size: 13px; }

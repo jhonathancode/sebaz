@@ -182,7 +182,7 @@ function Cotizaciones({ d, mcp, tesorero, cargo }: { d: Datos; mcp: Mcp; tesorer
       </div>
 
       <div className="og-cab">
-        <div className="og-titulo">CUADRO COMPARATIVO DE COTIZACIONES <span className="og-caja">REQ. N° {num3(e.numero)}-{e.anio}</span></div>
+        <div className="og-titulo">CUADRO COMPARATIVO DE COTIZACIONES N° {num3(e.numero)}-{e.anio}-MCP-{sufijo(mcp)}</div>
         <div className="og-fila-exp">
           <table className="og-fecha">
             <thead><tr><th>Día</th><th>Mes</th><th>Año</th></tr></thead>
@@ -400,7 +400,7 @@ export function Memorando({ d, mcp, tesorero, cargo }: { d: Datos; mcp: Mcp; tes
       </div>
 
       <div className="og-cab">
-        <div className="og-titulo">MEMORANDO N° <span className="og-caja">{num3(conf.memorando_numero)}-{conf.anio}-MCP-{sufijo(mcp)}/ALC</span></div>
+        <div className="og-titulo">MEMORANDO N° {num3(conf.memorando_numero)}-{conf.anio}-MCP-{sufijo(mcp)}/ALC</div>
         <div className="og-fila-exp">
           <table className="og-fecha">
             <thead><tr><th>Día</th><th>Mes</th><th>Año</th></tr></thead>

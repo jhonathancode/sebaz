@@ -59,7 +59,7 @@ export default function FormatoComprobante({ c, mcp, anulado, extra }: { c: Dato
       <div className="sf-sis">
         <div>
           <div>ZEBAZ - Módulo de Tesorería</div>
-          <div>{mcp.nombre}{lugar ? ` · ${lugar}` : ""}</div>
+          <div>{(mcp.nombre ?? "").toUpperCase()}{lugar ? ` · ${lugar}` : ""}</div>
         </div>
         <div className="sf-sis-der" suppressHydrationWarning>
           <div>Fecha : {imp.fecha}</div>

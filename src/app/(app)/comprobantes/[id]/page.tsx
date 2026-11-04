@@ -15,6 +15,7 @@ import { contextoMcp, tiene } from "@/lib/contexto";
 import { cargarCierres, estadoGestion } from "@/lib/gestion";
 import { codigoCP, fecha, fechaHora, hoyISO } from "@/lib/formato";
 import { supabaseServidor } from "@/lib/supabase/server";
+import { extraDe } from "@/lib/datosCP";
 import { siguienteCheque } from "@/lib/pagosFijos";
 import { cambiarEstadoComprobante, editarComprobante, registrarCheque } from "../acciones";
 
@@ -36,7 +37,7 @@ export default async function Comprobante({ params, searchParams }: { params: P;
   const [{ data: c }, chequeSugerido] = await Promise.all([
     supabase
       .from("comprobantes_pago")
-      .select("*, fuentes(municipalidad), expedientes(numero, anio), perfiles!comprobantes_pago_creado_por_fkey(nombre)")
+      .select("*, fuentes(municipalidad), expedientes(numero, anio, meta, tipo, fuente_id), perfiles!comprobantes_pago_creado_por_fkey(nombre)")
       .eq("id", id)
       .single(),
     siguienteCheque(supabase, ctx.mcp.id),
@@ -109,7 +110,7 @@ export default async function Comprobante({ params, searchParams }: { params: P;
       {anulado && <MarcaAnuladaPagina />}
       <div className="mesa">
         <EscalaA4>
-          <FormatoComprobante c={{ ...c, hecho_por: (c.perfiles as { nombre: string } | null)?.nombre }} mcp={ctx.mcp} anulado={anulado ? { motivo: c.anulado_motivo, en: c.anulado_en } : null} />
+          <FormatoComprobante c={{ ...c, hecho_por: (c.perfiles as { nombre: string } | null)?.nombre }} mcp={ctx.mcp} extra={extraDe(c, c.expedientes as { numero: number; anio: number; meta: string | null; tipo: string; fuente_id: string | null } | null)} anulado={anulado ? { motivo: c.anulado_motivo, en: c.anulado_en } : null} />
         </EscalaA4>
       </div>
 

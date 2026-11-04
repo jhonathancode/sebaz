@@ -22,6 +22,7 @@ import SelectFuncion from "@/components/SelectFuncion";
 import { SUSTENTOS } from "@/lib/catalogos";
 import { contextoMcp, tiene } from "@/lib/contexto";
 import { codigoCP, fecha, fechaHora, hoyISO, num3, soles } from "@/lib/formato";
+import { extraDe } from "@/lib/datosCP";
 import { supabaseServidor } from "@/lib/supabase/server";
 import {
   agregarCotizacion,
@@ -512,6 +513,7 @@ export default async function Expediente({ params, searchParams }: { params: Par
               cheque: null,
               hecho_por: ctx.nombre,
             }}
+            extra={extraDe({ fuente_id: e.fuente_id }, e, orden)}
           />
         ),
       };

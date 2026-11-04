@@ -1,6 +1,7 @@
 import Encabezado from "@/components/Encabezado";
 import MarcaAnulado, { MarcaAnuladaPagina } from "@/components/MarcaAnulado";
 import Firmas from "@/components/Firmas";
+import { extraDe } from "@/lib/datosCP";
 import FormatoComprobante from "@/components/formatos/FormatoComprobante";
 import type { Mcp } from "@/lib/contexto";
 import type { cargarExpediente, Proveedor } from "@/lib/documentos";
@@ -33,7 +34,7 @@ export default function DocumentosExpediente({
       {mostrar("orden") && d.orden && <Orden d={d} mcp={mcp} />}
       {mostrar("conformidad") && d.conformidad && <Memorando d={d} mcp={mcp} tesorero={tesorero} cargo={cargo} />}
       {mostrar("comprobante") && d.cp && (
-        <FormatoComprobante c={{ ...d.cp, hecho_por: (d.cp.perfiles as { nombre: string } | null)?.nombre }} mcp={mcp} anulado={d.anulado ?? (d.cp.estado === "anulado" ? { motivo: d.cp.anulado_motivo, en: d.cp.anulado_en } : null)} />
+        <FormatoComprobante c={{ ...d.cp, hecho_por: (d.cp.perfiles as { nombre: string } | null)?.nombre }} mcp={mcp} extra={extraDe(d.cp, d.e, d.orden)} anulado={d.anulado ?? (d.cp.estado === "anulado" ? { motivo: d.cp.anulado_motivo, en: d.cp.anulado_en } : null)} />
       )}
     </>
   );

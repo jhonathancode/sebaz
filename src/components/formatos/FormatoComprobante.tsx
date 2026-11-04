@@ -132,7 +132,7 @@ export default function FormatoComprobante({ c, mcp, anulado, extra }: { c: Dato
             <div className="sf-est-cuerpo">
               <div className="sf-clasif-v">{c.partida ?? ""}</div>
               <div className="sf-parcial">{M(c.importe)}</div>
-              <div className="sf-total-col" />
+              <div className="sf-total-col">{M(c.importe)}</div>
             </div>
             <div className="sf-tot">
               <div><span>TOTAL</span><b>{M(c.importe)}</b></div>
@@ -198,7 +198,6 @@ export default function FormatoComprobante({ c, mcp, anulado, extra }: { c: Dato
                     <span>DNI <b>{doc.length === 8 ? doc : ""}</b></span>
                     <span>RUC <b>{doc.length === 11 ? doc : ""}</b></span>
                   </div>
-                  <div className="sf-rc-lm">LIBRETA MILITAR</div>
                 </div>
               </div>
             </div>

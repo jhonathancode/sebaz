@@ -4051,7 +4051,6 @@ html.pdf-captura .sf-faltan { display: none; }
 .hoja.rq :where(div, span, b, u, th, td, p, h1, i) { color: #000; }
 .hoja.rq .sf-et { width: 138px; }
 .rq-tit { display: flex; align-items: center; gap: 12px; }
-.rq-tit img { height: 50px; width: auto; max-width: 96px; object-fit: contain; }
 .rq-marco { flex: 1; display: flex; flex-direction: column; min-height: 0; border: var(--sfb); margin-top: 8px; }
 .rq-cuerpo { flex: 1; display: flex; min-height: 260px; }
 .rq-items { flex: 1; width: 100%; border-collapse: collapse; table-layout: fixed; }

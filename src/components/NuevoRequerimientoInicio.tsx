@@ -16,7 +16,7 @@ export default async function NuevoRequerimientoInicio() {
   const ctx = await contextoMcp();
   const supabase = await supabaseServidor();
   const anio = Number(hoyISO().slice(0, 4));
-  const [pagosFijos, chequeSugerido, atajos, { data: provData }, { data: tesoreroMiembro }, nExp, nOrdC, nOrdS, nMemo, nNea, nCp] = await Promise.all([
+  const [pagosFijos, chequeSugerido, atajos, { data: provData }, { data: tesoreroMiembro }, nExp, nOrdC, nOrdS, nMemo, nNea, nCp, { data: alcaldeMiembro }] = await Promise.all([
     cargarCatalogoPagosFijos(supabase, ctx.mcp.id),
     siguienteCheque(supabase, ctx.mcp.id),
     cargarAtajos(supabase, ctx.mcp.id),
@@ -28,6 +28,7 @@ export default async function NuevoRequerimientoInicio() {
     proximoNumero(supabase, ctx.mcp.id, CORRELATIVO.memorando, anio),
     proximoNumero(supabase, ctx.mcp.id, CORRELATIVO.nea, anio),
     proximoNumero(supabase, ctx.mcp.id, CORRELATIVO.comprobante, anio),
+    supabase.from("miembros").select("perfiles(nombre)").eq("mcp_id", ctx.mcp.id).eq("rol", "alcalde").eq("activo", true).maybeSingle(),
   ]);
   return (
     <AsistenteRequerimiento
@@ -37,6 +38,7 @@ export default async function NuevoRequerimientoInicio() {
       proximos={{ expediente: nExp, ordenCompra: nOrdC, ordenServicio: nOrdS, memorando: nMemo, nea: nNea, comprobante: nCp }}
       tesorero={(tesoreroMiembro?.perfiles as unknown as { nombre: string } | null)?.nombre ?? ""}
       cargo={tesoreroMiembro?.cargo ?? "Tesorero(a)"}
+      alcalde={(alcaldeMiembro?.perfiles as unknown as { nombre: string } | null)?.nombre ?? ""}
       hechoPor={ctx.nombre}
       proveedores={provData ?? []}
       chequeSugerido={chequeSugerido}

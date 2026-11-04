@@ -60,7 +60,7 @@ export default async function Expedientes({ searchParams }: { searchParams: Para
   if (q) consulta = consulta.ilike("descripcion", `%${q}%`);
   if (tipo) consulta = consulta.eq("tipo", tipo);
   const anioNum = Number(hoyISO().slice(0, 4));
-  const [{ data: lista }, pagosFijos, chequeSugerido, cierres, atajos, { data: provData }, { data: tesoreroMiembro }, nExp, nOrdC, nOrdS, nMemo, nNea, nCp, { data: extsTodos }, { data: cobradosTodos }] = await Promise.all([
+  const [{ data: lista }, pagosFijos, chequeSugerido, cierres, atajos, { data: provData }, { data: tesoreroMiembro }, nExp, nOrdC, nOrdS, nMemo, nNea, nCp, { data: extsTodos }, { data: cobradosTodos }, { data: alcaldeMiembro }] = await Promise.all([
     consulta,
     cargarCatalogoPagosFijos(supabase, ctx.mcp.id),
     siguienteCheque(supabase, ctx.mcp.id),
@@ -77,6 +77,7 @@ export default async function Expedientes({ searchParams }: { searchParams: Para
     // Se piden desde ya, a la vez que lo demás (antes esperaban su turno)
     supabase.from("extractos_transcritos").select("lineas"),
     supabase.from("cheques_cobrados").select("comprobante_id").eq("anulado", false),
+    supabase.from("miembros").select("perfiles(nombre)").eq("mcp_id", ctx.mcp.id).eq("rol", "alcalde").eq("activo", true).maybeSingle(),
   ]);
 
   const todosBase = (lista ?? []).map((e) => ({
@@ -222,6 +223,7 @@ export default async function Expedientes({ searchParams }: { searchParams: Para
             proximos={{ expediente: nExp, ordenCompra: nOrdC, ordenServicio: nOrdS, memorando: nMemo, nea: nNea, comprobante: nCp }}
             tesorero={(tesoreroMiembro?.perfiles as unknown as { nombre: string } | null)?.nombre ?? ""}
             cargo={tesoreroMiembro?.cargo ?? "Tesorero(a)"}
+            alcalde={(alcaldeMiembro?.perfiles as unknown as { nombre: string } | null)?.nombre ?? ""}
             hechoPor={ctx.nombre}
             proveedores={provData ?? []}
             chequeSugerido={chequeSugerido}

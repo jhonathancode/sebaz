@@ -75,6 +75,7 @@ export default function AsistenteRequerimiento({
   proximos,
   tesorero,
   cargo,
+  alcalde,
   hechoPor,
   proveedores,
   chequeSugerido,
@@ -91,6 +92,7 @@ export default function AsistenteRequerimiento({
   proximos: Proximos;
   tesorero: string;
   cargo: string;
+  alcalde?: string;
   hechoPor: string;
   proveedores: ProveedorConocido[];
   chequeSugerido: string;
@@ -395,6 +397,7 @@ export default function AsistenteRequerimiento({
                   mcp={mcp}
                   tesorero={tesorero}
                   cargo={cargo}
+                  alcalde={alcalde}
                   d={{ ...dBase, orden: { tipo: ordenTipo }, conformidad: { memorando_numero: proximos.memorando, anio: L.anio, fecha: fd("conf"), texto: textoConformidad } } as unknown as DatosExpediente}
                 />,
               )}

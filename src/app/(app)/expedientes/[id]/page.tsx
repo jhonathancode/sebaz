@@ -88,6 +88,7 @@ export default async function Expediente({ params, searchParams }: { params: Par
     numMemorando,
     numNea,
     numComprobante,
+    { data: alcaldeDoc },
   ] = await Promise.all([
     supabase
       .from("expedientes")
@@ -116,6 +117,7 @@ export default async function Expediente({ params, searchParams }: { params: Par
     proximoNumero(supabase, ctx.mcp.id, CORRELATIVO.memorando, anioNum),
     proximoNumero(supabase, ctx.mcp.id, CORRELATIVO.nea, anioNum),
     proximoNumero(supabase, ctx.mcp.id, CORRELATIVO.comprobante, anioNum),
+    supabase.from("miembros").select("perfiles(nombre)").eq("mcp_id", ctx.mcp.id).eq("rol", "alcalde").eq("activo", true).maybeSingle(),
   ]);
   if (!e) notFound();
   // Cambios de fecha ya hechos (si la base aún no tiene la actualización, simplemente no hay)
@@ -167,6 +169,7 @@ export default async function Expediente({ params, searchParams }: { params: Par
   const proveedores: ProveedorConocido[] = provData ?? [];
   const nombreTesorero = (tesoreroDoc?.perfiles as unknown as { nombre: string } | null)?.nombre ?? "";
   const cargoTesorero = tesoreroDoc?.cargo ?? "Tesorero(a)";
+  const nombreAlcalde = (alcaldeDoc?.perfiles as unknown as { nombre: string } | null)?.nombre ?? "";
 
   const textoConformidad = `Mediante la presente se le comunica la CONFORMIDAD por ${conceptoSinSeRequiere(e.descripcion).toLowerCase()}, a cargo de ${prov(orden?.proveedores)?.razon_social ?? ""}, a favor de la ${ctx.mcp.nombre}.`;
 
@@ -472,6 +475,7 @@ export default async function Expediente({ params, searchParams }: { params: Par
             mcp={ctx.mcp}
             tesorero={nombreTesorero}
             cargo={cargoTesorero}
+            alcalde={nombreAlcalde}
             d={{ ...datosDoc, conformidad: { memorando_numero: numeroPrevio, anio: anioHoy, fecha: hoy, texto: textoConformidad } } as unknown as DatosExpediente}
           />
         ),
@@ -678,7 +682,7 @@ export default async function Expediente({ params, searchParams }: { params: Par
             {viendoBorrador ? (
               <div className="hoja-borrador">{borrador!.nodo}</div>
             ) : (
-              <DocumentosExpediente d={datosDoc} mcp={ctx.mcp} clave={verClave} tesorero={nombreTesorero} cargo={cargoTesorero} />
+              <DocumentosExpediente d={datosDoc} mcp={ctx.mcp} clave={verClave} tesorero={nombreTesorero} cargo={cargoTesorero} alcalde={nombreAlcalde} />
             )}
           </EscalaA4>
         </div>

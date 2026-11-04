@@ -5,7 +5,7 @@ import { FormatoNea } from "@/components/formatos/FormatosAlmacen";
 import type { Mcp } from "@/lib/contexto";
 import type { cargarExpediente, Proveedor } from "@/lib/documentos";
 import LogoSebaz from "@/components/LogoSebaz";
-import { enLetras, fecha, num3, soles } from "@/lib/formato";
+import { enLetras, fechaConAnio, logoMcp, nombreDelAnio, num3, soles } from "@/lib/formato";
 import { conceptoSinSeRequiere } from "@/lib/requerimiento";
 
 export type DatosExpediente = Awaited<ReturnType<typeof cargarExpediente>>;
@@ -18,12 +18,14 @@ export default function DocumentosExpediente({
   clave,
   tesorero,
   cargo,
+  alcalde,
 }: {
   d: Datos;
   mcp: Mcp;
   clave: string;
   tesorero: string;
   cargo: string;
+  alcalde?: string;
 }) {
   const mostrar = (c: string) => clave === "todo" || clave === c;
   return (
@@ -32,7 +34,7 @@ export default function DocumentosExpediente({
       {mostrar("requerimiento") && <Requerimiento d={d} mcp={mcp} />}
       {mostrar("cotizaciones") && d.cotizaciones.length > 0 && <Cotizaciones d={d} mcp={mcp} tesorero={tesorero} cargo={cargo} />}
       {mostrar("orden") && d.orden && <Orden d={d} mcp={mcp} tesorero={tesorero} cargo={cargo} />}
-      {mostrar("conformidad") && d.conformidad && <Memorando d={d} mcp={mcp} tesorero={tesorero} cargo={cargo} />}
+      {mostrar("conformidad") && d.conformidad && <Memorando d={d} mcp={mcp} tesorero={tesorero} cargo={cargo} alcalde={alcalde} />}
       {mostrar("nea") && d.nea && <FormatoNea mcp={mcp} n={neaDe(d)} />}
       {mostrar("comprobante") && d.cp && (
         <FormatoComprobante c={{ ...d.cp, hecho_por: (d.cp.perfiles as { nombre: string } | null)?.nombre }} mcp={mcp} extra={extraDe(d.cp, d.e, d.orden)} anulado={d.anulado ?? (d.cp.estado === "anulado" ? { motivo: d.cp.anulado_motivo, en: d.cp.anulado_en } : null)} />
@@ -401,65 +403,58 @@ export function Orden({ d, mcp, tesorero, cargo }: { d: Datos; mcp: Mcp; tesorer
 }
 
 /**
- * Memorando de conformidad del alcalde al tesorero, con el mismo formato que el requerimiento y la orden:
- * línea del sistema, título con recuadro de fecha, datos del memorando, contenido y firma. Una sola hoja A4.
+ * Memorando de conformidad con la disposición del modelo de memorando municipal: membrete con el nombre de la
+ * municipalidad, «ALCALDÍA» y la denominación oficial del año; título subrayado; PARA / DE / ASUNTO / REFERENCIA /
+ * FECHA; cuerpo justificado; «Atentamente»; copia a archivo y dirección al pie. Una sola hoja A4.
  */
-export function Memorando({ d, mcp, tesorero, cargo }: { d: Datos; mcp: Mcp; tesorero: string; cargo: string }) {
+export function Memorando({ d, mcp, tesorero, cargo, alcalde }: { d: Datos; mcp: Mcp; tesorero: string; cargo: string; alcalde?: string }) {
   const conf = d.conformidad!;
-  const imp = ahora();
-  const [anio, mes, dia] = (conf.fecha || "").slice(0, 10).split("-");
-  const lugar = [mcp.distrito && `DISTRITO DE ${mcp.distrito}`, mcp.provincia && `PROVINCIA DE ${mcp.provincia}`].filter(Boolean).join(" · ").toUpperCase();
+  const logo = logoMcp(mcp);
+  const lema = nombreDelAnio(Number(conf.anio));
+  const lugar = mcp.nombre.replace(/municipalidad( del)?( centro poblado)?( de)?/i, "").trim() || mcp.nombre;
   const compra = d.orden?.tipo === "compra";
   const ref = [
     d.orden?.numero ? `${compra ? "ORDEN DE COMPRA" : "ORDEN DE SERVICIO"} N° ${num3(d.orden.numero)}-${d.orden.anio}` : "",
     d.e?.numero ? `REQUERIMIENTO N° ${num3(d.e.numero)}-${d.e.anio}` : "",
   ].filter(Boolean).join(" · ");
   return (
-    <div className="hoja rq mm">
+    <div className="hoja mc">
       {d.anulado && <MarcaAnulado {...d.anulado} />}
 
-      <div className="sf-sis">
-        <div>
-          <div>ZEBAZ - Módulo de Tesorería</div>
-          <div>{(mcp.nombre ?? "").toUpperCase()}{lugar ? ` · ${lugar}` : ""}{mcp.ruc ? ` · RUC ${mcp.ruc}` : ""}</div>
-        </div>
-        <div className="sf-sis-der" suppressHydrationWarning>
-          <div>Fecha : {imp.fecha}</div>
-          <div>Hora : {imp.hora}</div>
-          <div>Pag. : 1 de 1</div>
+      <div className="mc-cab">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        {logo && <img src={logo} alt="" />}
+        <div className="mc-ent">
+          <div className="mc-mun">{mcp.nombre.toUpperCase()}</div>
+          <div className="mc-alc">“ALCALDÍA”</div>
+          {lema && <div className="mc-lema">“{lema}”</div>}
         </div>
       </div>
 
-      <div className="og-cab">
-        <div className="og-titulo">MEMORANDO N° {num3(conf.memorando_numero)}-{conf.anio}-MCP-{sufijo(mcp)}/ALC</div>
-        <div className="og-fila-exp">
-          <table className="og-fecha">
-            <thead><tr><th>Día</th><th>Mes</th><th>Año</th></tr></thead>
-            <tbody><tr><td>{dia}</td><td>{mes}</td><td>{anio}</td></tr></tbody>
-          </table>
+      <h1 className="mc-titulo"><u>MEMORANDO N° {num3(conf.memorando_numero)}-{conf.anio}-MCP-{sufijo(mcp)}/ALC</u></h1>
+
+      <div className="mc-datos">
+        <b>PARA</b><span>: {tesorero}{cargo && <strong>{cargo}</strong>}</span>
+        <b>DE</b><span>: {alcalde ?? ""}<strong>Alcalde</strong></span>
+        <b>ASUNTO</b><span>: Conformidad de {compra ? "bienes" : "servicio"}</span>
+        {ref && <><b>REFERENCIA</b><span>: {ref}</span></>}
+        <b>FECHA</b><span>: {lugar}, {fechaConAnio(conf.fecha)}</span>
+      </div>
+
+      <div className="mc-cuerpo">
+        <p>{conf.texto}</p>
+      </div>
+
+      <div className="mc-atte">Atentamente;</div>
+      <div className="mc-firma"><span>{alcalde ? alcalde.toUpperCase() : ""}</span><i>ALCALDE</i></div>
+
+      <div className="mc-pie">
+        <div className="mc-cc">
+          <div>C.c. Arch/{conf.anio}</div>
+          <div>Arch. Alcaldía</div>
         </div>
-      </div>
-
-      <div className="sf-linea"><span className="sf-et">A</span><span className="sf-val">{tesorero}</span></div>
-      <div className="sf-linea"><span className="sf-et">CARGO</span><span className="sf-val">{cargo} DE LA {mcp.nombre}</span></div>
-      <div className="sf-linea"><span className="sf-et">DE</span><span className="sf-val">ALCALDE</span></div>
-      <div className="sf-linea"><span className="sf-et">ASUNTO</span><span className="sf-val">CONFORMIDAD DE {compra ? "BIENES" : "SERVICIO"}</span></div>
-      {ref && <div className="sf-linea"><span className="sf-et">REFERENCIA</span><span className="sf-val">{ref}</span></div>}
-      <div className="sf-linea"><span className="sf-et">FECHA</span><span className="sf-val">{fecha(conf.fecha)}</span></div>
-
-      <div className="rq-marco">
-        <div className="sf-cab">CONTENIDO</div>
-        <div className="mm-texto">{conf.texto}</div>
-        <div className="mm-atte">Atentamente,</div>
-      </div>
-
-      <div className="rq-firmas mm-firma">
-        <div><b>ALCALDE</b><span /></div>
-      </div>
-
-      <div className="rq-pie">
-        <span />
-        <span className="rq-sello"><LogoSebaz tamano={26} claro={false} /></span>
+        <span className="rq-sello"><LogoSebaz tamano={22} claro={false} /></span>
+        <div className="mc-dir">{mcp.direccion ?? ""}</div>
       </div>
     </div>
   );

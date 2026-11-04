@@ -26,9 +26,10 @@ export default async function Documentos({
   if (imprimir !== "1") redirect(`/expedientes/${id}${doc === "todo" ? "" : `?ver=${doc}`}`);
   const ctx = await contextoMcp();
   const supabase = await supabaseServidor();
-  const [d, { data: tesorero }] = await Promise.all([
+  const [d, { data: tesorero }, { data: alcalde }] = await Promise.all([
     cargarExpediente(supabase, id),
     supabase.from("miembros").select("cargo, perfiles(nombre)").eq("mcp_id", ctx.mcp.id).eq("rol", "tesorero").eq("activo", true).maybeSingle(),
+    supabase.from("miembros").select("perfiles(nombre)").eq("mcp_id", ctx.mcp.id).eq("rol", "alcalde").eq("activo", true).maybeSingle(),
   ]);
   if (!d.e) notFound();
   const e = d.e;
@@ -91,7 +92,7 @@ export default async function Documentos({
       )}
 
       <div className="documentos mesa">
-        <DocumentosExpediente d={d} mcp={ctx.mcp} clave={doc} tesorero={nombreTesorero} cargo={tesorero?.cargo ?? "Tesorero(a)"} />
+        <DocumentosExpediente d={d} mcp={ctx.mcp} clave={doc} tesorero={nombreTesorero} cargo={tesorero?.cargo ?? "Tesorero(a)"} alcalde={(alcalde?.perfiles as unknown as { nombre: string } | null)?.nombre ?? ""} />
       </div>
     </>
   );

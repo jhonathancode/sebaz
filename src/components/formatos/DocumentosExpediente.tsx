@@ -145,8 +145,8 @@ export function Requerimiento({ d, mcp }: { d: Datos; mcp: Mcp }) {
 }
 
 /**
- * Cuadro comparativo de cotizaciones, con el mismo formato que el requerimiento y la orden: lo solicitado, las
- * cotizaciones recibidas (una o varias), la decisión con el monto en letras y las firmas. Una sola hoja A4.
+ * Cuadro comparativo de cotizaciones: una columna por proveedor, lado a lado, con la elegida resaltada. Lleva el
+ * mismo encabezado, letra, líneas y sello que los demás documentos, pero se lee de un vistazo como comparación.
  */
 function Cotizaciones({ d, mcp, tesorero, cargo }: { d: Datos; mcp: Mcp; tesorero?: string; cargo?: string }) {
   const e = d.e!;
@@ -156,6 +156,14 @@ function Cotizaciones({ d, mcp, tesorero, cargo }: { d: Datos; mcp: Mcp; tesorer
   const elegida = cots.find((c) => c.elegida);
   const menor = cots.length ? Math.min(...cots.map((c) => Number(c.monto))) : 0;
   const porMenor = !!elegida && cots.length > 1 && Number(elegida.monto) === menor;
+  const cls = (c: { elegida: boolean }) => (c.elegida ? "cc-sel" : "");
+  const diferencia = (monto: number) => {
+    if (cots.length < 2) return "—";
+    if (monto === menor) return "MENOR PRECIO";
+    const dif = monto - menor;
+    return `+ S/ ${soles(dif)} (+${((dif / menor) * 100).toFixed(1)} %)`;
+  };
+  const solicitado = d.items.map((i) => `${Number(i.cantidad)} ${i.unidad} · ${i.descripcion}`).join(" ; ");
   return (
     <div className="hoja rq cc">
       {d.anulado && <MarcaAnulado {...d.anulado} />}
@@ -191,48 +199,24 @@ function Cotizaciones({ d, mcp, tesorero, cargo }: { d: Datos; mcp: Mcp; tesorer
 
       <div className="sf-linea"><span className="sf-et">UNIDAD ORGÁNICA</span><span className="sf-val">{e.area_usuaria ?? ""}</span></div>
       <div className="sf-linea"><span className="sf-et">OBJETO</span><span className="sf-val">{conceptoSinSeRequiere(e.descripcion)}</span></div>
+      <div className="sf-linea"><span className="sf-et">SE COTIZA</span><span className="sf-val">{solicitado}</span></div>
 
-      <div className="rq-marco cc-fijo">
-        <div className="sf-cab">LO SOLICITADO</div>
-        <div className="rq-cuerpo">
-          <table className="rq-items">
-            <colgroup><col style={{ width: "6%" }} /><col style={{ width: "13%" }} /><col style={{ width: "16%" }} /><col /></colgroup>
-            <thead>
-              <tr><th>IT</th><th>CANTIDAD</th><th>UNIDAD DE MEDIDA</th><th>DESCRIPCIÓN DETALLADA</th></tr>
-            </thead>
-            <tbody>
-              {d.items.map((i) => (
-                <tr key={i.id}><td>{i.item}</td><td>{Number(i.cantidad)}</td><td>{i.unidad}</td><td>{i.descripcion}</td></tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      <div className="rq-marco">
-        <div className="sf-cab">COTIZACIONES RECIBIDAS ({cots.length})</div>
-        <div className="rq-cuerpo">
-          <table className="rq-items">
-            <colgroup><col style={{ width: "6%" }} /><col /><col style={{ width: "17%" }} /><col style={{ width: "14%" }} /><col style={{ width: "15%" }} /><col style={{ width: "13%" }} /></colgroup>
-            <thead>
-              <tr><th>N°</th><th>PROVEEDOR</th><th>RUC / DNI</th><th>PLAZO</th><th>MONTO S/</th><th>RESULTADO</th></tr>
-            </thead>
-            <tbody>
-              {cots.map((c, i) => (
-                <tr key={c.id} className={c.elegida ? "cc-elegida" : ""}>
-                  <td>{i + 1}</td><td>{c.p?.razon_social}</td><td>{c.p?.num_doc}</td><td>{c.plazo ?? ""}</td>
-                  <td>S/ {soles(c.monto)}</td><td>{c.elegida ? "ELEGIDA" : ""}</td>
-                </tr>
-              ))}
-              <tr className="rq-relleno"><td /><td /><td /><td /><td /><td /></tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
+      <table className="cc-mat">
+        <colgroup><col style={{ width: "19%" }} />{cots.map((c) => <col key={c.id} />)}</colgroup>
+        <tbody>
+          <tr><th>COTIZACIÓN</th>{cots.map((c, i) => <td key={c.id} className={`${cls(c)} cc-n`}>N° {i + 1}</td>)}</tr>
+          <tr><th>PROVEEDOR</th>{cots.map((c) => <td key={c.id} className={`${cls(c)} cc-prov`}>{c.p?.razon_social}</td>)}</tr>
+          <tr><th>RUC / DNI</th>{cots.map((c) => <td key={c.id} className={cls(c)}>{c.p?.num_doc}</td>)}</tr>
+          <tr><th>PLAZO</th>{cots.map((c) => <td key={c.id} className={cls(c)}>{c.plazo ?? ""}</td>)}</tr>
+          <tr><th>MONTO S/</th>{cots.map((c) => <td key={c.id} className={`${cls(c)} cc-monto`}>{soles(c.monto)}</td>)}</tr>
+          <tr><th>DIFERENCIA CON LA MENOR</th>{cots.map((c) => <td key={c.id} className={cls(c)}>{diferencia(Number(c.monto))}</td>)}</tr>
+          <tr><th>RESULTADO</th>{cots.map((c) => <td key={c.id} className={`${cls(c)} cc-res`}>{c.elegida ? "ELEGIDA" : elegida ? "NO ELEGIDA" : ""}</td>)}</tr>
+        </tbody>
+      </table>
 
       {elegida && (
         <>
-          <div className="sf-linea">
+          <div className="sf-linea cc-dec">
             <span className="sf-et">DECISIÓN</span>
             <span className="sf-val">
               SE ELIGE LA COTIZACIÓN DE {elegida.p?.razon_social} ({elegida.p?.num_doc}) POR S/ {soles(elegida.monto)}{porMenor ? ", POR SER LA DE MENOR PRECIO" : ""}
@@ -241,6 +225,8 @@ function Cotizaciones({ d, mcp, tesorero, cargo }: { d: Datos; mcp: Mcp; tesorer
           <div className="sf-linea"><span className="sf-et">SON</span><span className="sf-val">{enLetras(Number(elegida.monto)).replace(/ SOLES$/, " NUEVOS SOLES")}</span></div>
         </>
       )}
+
+      <div className="cc-sep" />
 
       <div className="rq-firmas">
         <div><b>ELABORADO POR</b><span className="og-elab">{tesorero ? <><em>{tesorero.toUpperCase()}</em>{cargo ? <small>{cargo.toUpperCase()}</small> : null}</> : null}</span></div>

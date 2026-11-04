@@ -142,3 +142,20 @@ export function enLetras(monto: number | string): string {
   const c = v % 100;
   return `${entero(e).replace(/UNO$/, "UN")} CON ${String(c).padStart(2, "0")}/100 SOLES`;
 }
+
+/**
+ * Denominación oficial del año, de uso obligatorio en los documentos oficiales (decreto supremo de la PCM).
+ * Se agrega la de cada año cuando se publica; si falta, el documento simplemente no la muestra.
+ */
+const NOMBRE_DEL_ANIO: Record<number, string> = {
+  2025: "Año de la recuperación y consolidación de la economía peruana",
+  2026: "Año de la Esperanza y el Fortalecimiento de la Democracia",
+};
+export const nombreDelAnio = (anio: number): string | null => NOMBRE_DEL_ANIO[anio] ?? null;
+
+/** «2026-11-03» → «03 de noviembre del 2026». */
+export function fechaConAnio(f: string | null | undefined): string {
+  if (!f) return "";
+  const [a, m, d] = f.slice(0, 10).split("-");
+  return `${d} de ${MESES[Number(m) - 1] ?? ""} del ${a}`;
+}

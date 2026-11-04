@@ -14,7 +14,7 @@ import type { Mcp } from "@/lib/contexto";
 export type BaseVistaPrevia =
   | { tipo: "requerimiento" }
   | { tipo: "orden"; d: DatosExpediente; ordenTipo: string; monto: number; proveedor: unknown; tesorero?: string; cargo?: string }
-  | { tipo: "conformidad"; d: DatosExpediente; tesorero: string; cargo: string }
+  | { tipo: "conformidad"; d: DatosExpediente; tesorero: string; cargo: string; alcalde?: string }
   | { tipo: "comprobante"; beneficiario: string; beneficiario_doc: string | null; concepto: string; importe: number; partida: string | null; hecho_por: string }
   | { tipo: "comprobante_directo"; hecho_por: string }
   | { tipo: "recibo" };
@@ -50,7 +50,7 @@ function armar(base: BaseVistaPrevia, fd: FormData, mcp: Mcp): React.ReactNode {
     }
     case "conformidad": {
       const d = { ...base.d, conformidad: { memorando_numero: null, anio, fecha, texto: String(fd.get("texto") ?? "") } } as unknown as DatosExpediente;
-      return <Memorando d={d} mcp={mcp} tesorero={base.tesorero} cargo={base.cargo} />;
+      return <Memorando d={d} mcp={mcp} tesorero={base.tesorero} cargo={base.cargo} alcalde={base.alcalde} />;
     }
     case "comprobante":
       return (

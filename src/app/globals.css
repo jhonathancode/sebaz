@@ -4436,3 +4436,42 @@ html.pdf-captura .sf-faltan { display: none; }
   .ini-hero:hover { box-shadow: 0 18px 36px -24px #1d4fb8; }
   .ini-hero-boton:hover { transform: none; box-shadow: none; }
 }
+
+/* =====================================================================
+   ASISTENTE «NUEVO REQUERIMIENTO» EN EL CELULAR: más aire, pie corto
+   ===================================================================== */
+@media (max-width: 760px) {
+  /* La ventana ocupa toda la pantalla: el pie queda pegado abajo */
+  .ventana-flotante > .vf-marco { max-height: 100dvh; height: 100dvh; }
+
+  /* Cabecera: título arriba, paso debajo, cerrar a la derecha */
+  dialog.asistente .vf-cab { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 1px 10px; padding: 10px 14px 9px; }
+  dialog.asistente .vf-cab h2 { grid-column: 1; margin: 0; font-size: 18px; line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  dialog.asistente .asist-progreso { grid-column: 1; grid-row: 2; margin: 0; padding: 0; border: 0; border-radius: 0; background: none; font-size: 11.5px; line-height: 1.3; letter-spacing: .03em; font-weight: 700; text-transform: none; color: var(--primario-texto); white-space: normal; }
+  dialog.asistente .vf-cerrar { grid-column: 2; grid-row: 1 / span 2; width: 38px; height: 38px; }
+
+  /* Cuerpo: tarjetas a todo el ancho, con aire pero sin apretar */
+  dialog.asistente .vf-cuerpo, .vf-cuerpo:has(fieldset.pregunta) { padding: 12px 12px 20px; }
+  .vf-cuerpo fieldset.pregunta, .vf-cuerpo details.pregunta { padding: 14px 14px 16px; border-radius: 18px; margin-bottom: 12px; }
+  .vf-cuerpo fieldset.pregunta > legend { font-size: 15px; margin-bottom: 12px; }
+  .fecha-exp { padding: 12px 14px; gap: 8px; margin-bottom: 12px; border-left-width: 4px; border-radius: 18px; }
+  .fecha-exp-campo { width: 100%; }
+  .fecha-exp input[type="date"], .fecha-exp .campo input { min-width: 0; width: 100%; }
+  .fecha-exp p { flex: 1 1 100%; font-size: 12.5px; line-height: 1.4; }
+
+  /* Tipo de gasto: tres botones en una fila; de dónde sale el dinero: una por fila */
+  .opciones.opciones-tipo { flex-direction: row; gap: 4px; }
+  .opciones.opciones-tipo label.opcion { flex-direction: column; justify-content: flex-start; gap: 4px; min-height: 64px; padding: 10px 4px 8px; text-align: center; }
+  .opciones.opciones-tipo label.opcion .opcion-titulo { font-size: 12.5px; line-height: 1.2; }
+  .opciones.opciones-tipo label.opcion .opcion-texto { display: none; }
+  .opciones.opciones-dinero { grid-template-columns: minmax(0, 1fr); gap: 8px; }
+
+  /* Pie: solo la pregunta corta y los botones, sin tapar el formulario */
+  .asist-pie { gap: 8px; padding: 10px 12px calc(10px + env(safe-area-inset-bottom)); background: var(--panel); border-top: 1px solid var(--borde); box-shadow: 0 -8px 18px -14px rgba(0, 0, 0, .35); }
+  .asist-pie:not(.asist-salir) .asist-pregunta { flex: 1 1 100%; }
+  .asist-pie:not(.asist-salir) .asist-pregunta .etiqueta, .asist-pie:not(.asist-salir) .asist-pregunta .tenue { display: none; }
+  .asist-pie:not(.asist-salir) .asist-pregunta b { font-size: 14px; font-weight: 700; line-height: 1.25; }
+  .asist-botones { gap: 8px; width: 100%; flex-wrap: wrap; }
+  .asist-botones .btn { flex: 1 1 0; min-width: 0; min-height: 46px; }
+  .asist-botones .btn.primario { flex: 2 1 0; }
+}

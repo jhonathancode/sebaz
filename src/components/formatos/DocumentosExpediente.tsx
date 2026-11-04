@@ -1,5 +1,4 @@
 import MarcaAnulado, { MarcaAnuladaPagina } from "@/components/MarcaAnulado";
-import Firmas from "@/components/Firmas";
 import { datosCPDe, extraDe } from "@/lib/datosCP";
 import FormatoComprobante from "@/components/formatos/FormatoComprobante";
 import type { Mcp } from "@/lib/contexto";
@@ -390,24 +389,74 @@ export function Orden({ d, mcp, tesorero, cargo }: { d: Datos; mcp: Mcp; tesorer
   );
 }
 
+/**
+ * Memorando de conformidad del alcalde al tesorero, con el mismo formato que el requerimiento y la orden:
+ * línea del sistema, título con recuadro de fecha, datos del memorando, contenido y firma. Una sola hoja A4.
+ */
 export function Memorando({ d, mcp, tesorero, cargo }: { d: Datos; mcp: Mcp; tesorero: string; cargo: string }) {
   const conf = d.conformidad!;
+  const imp = ahora();
+  const [anio, mes, dia] = (conf.fecha || "").slice(0, 10).split("-");
+  const lugar = [mcp.distrito && `DISTRITO DE ${mcp.distrito}`, mcp.provincia && `PROVINCIA DE ${mcp.provincia}`].filter(Boolean).join(" · ").toUpperCase();
+  const compra = d.orden?.tipo === "compra";
+  const ref = [
+    d.orden?.numero ? `${compra ? "ORDEN DE COMPRA" : "ORDEN DE SERVICIO"} N° ${num3(d.orden.numero)}-${d.orden.anio}` : "",
+    d.e?.numero ? `REQUERIMIENTO N° ${num3(d.e.numero)}-${d.e.anio}` : "",
+  ].filter(Boolean).join(" · ");
   return (
-    <div className="hoja">
+    <div className="hoja rq mm">
       {d.anulado && <MarcaAnulado {...d.anulado} />}
-      <div style={{ fontWeight: 600, textAlign: "center", fontSize: 15 }}>
-        MEMORANDO N° {num3(conf.memorando_numero)}-{conf.anio}-MCP-{sufijo(mcp)}/ALC
+
+      <div className="sf-sis">
+        <div>
+          <div>ZEBAZ - Módulo de Tesorería</div>
+          <div>{(mcp.nombre ?? "").toUpperCase()}{lugar ? ` · ${lugar}` : ""}{mcp.ruc ? ` · RUC ${mcp.ruc}` : ""}</div>
+        </div>
+        <div className="sf-sis-der" suppressHydrationWarning>
+          <div>Fecha : {imp.fecha}</div>
+          <div>Hora : {imp.hora}</div>
+          <div>Pag. : 1 de 1</div>
+        </div>
       </div>
-      <table className="formato" style={{ marginTop: 16 }}>
-        <tbody>
-          <tr><th style={{ width: 120 }}>A</th><td>{tesorero}<br />{cargo} de la {mcp.nombre}</td></tr>
-          <tr><th>Asunto</th><td>CONFORMIDAD DE {d.orden?.tipo === "compra" ? "BIENES" : "SERVICIO"}</td></tr>
-          <tr><th>Fecha</th><td>{fecha(conf.fecha)}</td></tr>
-        </tbody>
-      </table>
-      <p style={{ marginTop: 18, lineHeight: 1.6 }}>{conf.texto}</p>
-      <p>Atentamente,</p>
-      <Firmas nombres={["ALCALDE"]} />
+
+      <div className="sf-tit-fila">
+        <div>
+          <div className="sf-titulo">MEMORANDO</div>
+          <div className="sf-registro">
+            <span>N°</span> <b>{num3(conf.memorando_numero)}-{conf.anio}-MCP-{sufijo(mcp)}/ALC</b>
+          </div>
+        </div>
+        <table className="sf-num">
+          <thead>
+            <tr><th>N°</th><th>DIA</th><th>MES</th><th>AÑO</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>{conf.memorando_numero ? String(conf.memorando_numero).padStart(4, "0") : "—"}</td><td>{dia}</td><td>{mes}</td><td>{anio}</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div className="sf-linea"><span className="sf-et">A</span><span className="sf-val">{tesorero}</span></div>
+      <div className="sf-linea"><span className="sf-et">CARGO</span><span className="sf-val">{cargo} DE LA {mcp.nombre}</span></div>
+      <div className="sf-linea"><span className="sf-et">DE</span><span className="sf-val">ALCALDE</span></div>
+      <div className="sf-linea"><span className="sf-et">ASUNTO</span><span className="sf-val">CONFORMIDAD DE {compra ? "BIENES" : "SERVICIO"}</span></div>
+      {ref && <div className="sf-linea"><span className="sf-et">REFERENCIA</span><span className="sf-val">{ref}</span></div>}
+      <div className="sf-linea"><span className="sf-et">FECHA</span><span className="sf-val">{fecha(conf.fecha)}</span></div>
+
+      <div className="rq-marco">
+        <div className="sf-cab">CONTENIDO</div>
+        <div className="mm-texto">{conf.texto}</div>
+        <div className="mm-atte">Atentamente,</div>
+      </div>
+
+      <div className="rq-firmas mm-firma">
+        <div><b>ALCALDE</b><span /></div>
+      </div>
+
+      <div className="rq-pie">
+        <span />
+        <span className="rq-sello"><LogoSebaz tamano={26} claro={false} /></span>
+      </div>
     </div>
   );
 }

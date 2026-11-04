@@ -5,7 +5,7 @@ export type Proveedor = { razon_social: string; num_doc: string; direccion: stri
 
 /** Carga en paralelo todo lo que forma el expediente de gasto. */
 export async function cargarExpediente(supabase: SupabaseClient, id: string) {
-  const [{ data: e }, { data: items }, { data: cotizacionesTodas }, { data: ordenesTodas }, { data: conformidadesTodas }, { data: cpsTodos }] = await Promise.all([
+  const [{ data: e }, { data: items }, { data: cotizacionesTodas }, { data: ordenesTodas }, { data: conformidadesTodas }, { data: cpsTodos }, { data: neasTodas }] = await Promise.all([
     supabase.from("expedientes").select("*").eq("id", id).single(),
     supabase.from("expediente_items").select("*").eq("expediente_id", id).eq("anulado", false).order("item"),
     supabase.from("cotizaciones").select("*, proveedores(razon_social, num_doc)").eq("expediente_id", id).order("monto"),
@@ -20,6 +20,11 @@ export async function cargarExpediente(supabase: SupabaseClient, id: string) {
       .select("*, perfiles!comprobantes_pago_creado_por_fkey(nombre)")
       .eq("expediente_id", id)
       .order("creado_en", { ascending: false }),
+    supabase
+      .from("notas_entrada")
+      .select("*, nota_entrada_items(item, cantidad, precio_unitario, almacen_bienes(codigo, descripcion, unidad))")
+      .eq("expediente_id", id)
+      .order("creado_en", { ascending: false }),
   ]);
   // Si el expediente se anuló, sus documentos siguen disponibles (con la marca de anulado) para imprimirlos.
   const anuladoExp = e?.estado === "anulado";
@@ -29,17 +34,19 @@ export async function cargarExpediente(supabase: SupabaseClient, id: string) {
   const conformidades = conformidadesTodas ?? [];
   const orden = ordenes.find((o) => !o.anulado) ?? (anuladoExp ? ordenes[0] ?? null : null);
   const conformidad = conformidades.find((c) => !c.anulado) ?? (anuladoExp ? conformidades[0] ?? null : null);
+  const neas = neasTodas ?? [];
+  const nea = neas.find((n) => !n.anulado) ?? (anuladoExp ? neas[0] ?? null : null);
   const cps = cpsTodos ?? [];
   const cp = cps.find((c) => c.estado !== "anulado") ?? (e?.estado === "anulado" ? cps[0] ?? null : null);
   const anulado = e?.estado === "anulado" ? { motivo: (e.anulado_motivo as string | null) ?? null, en: (e.anulado_en as string | null) ?? null } : null;
-  return { e, items: items ?? [], cotizaciones: cotizaciones ?? [], orden, conformidad, cp, anulado };
+  return { e, items: items ?? [], cotizaciones: cotizaciones ?? [], orden, conformidad, nea, cp, anulado };
 }
 
-export type ClaveDoc = "requerimiento" | "cotizaciones" | "orden" | "conformidad" | "comprobante";
+export type ClaveDoc = "requerimiento" | "cotizaciones" | "orden" | "conformidad" | "nea" | "comprobante";
 
 /** Lista de documentos del expediente, en el orden del archivo físico. */
 export function listaDocumentos(d: Awaited<ReturnType<typeof cargarExpediente>>) {
-  const { e, cotizaciones, orden, conformidad, cp } = d;
+  const { e, cotizaciones, orden, conformidad, nea, cp } = d;
   const lista = [
     {
       clave: "requerimiento" as ClaveDoc,
@@ -66,12 +73,24 @@ export function listaDocumentos(d: Awaited<ReturnType<typeof cargarExpediente>>)
       listo: !!conformidad,
     },
     {
+      clave: "nea" as ClaveDoc,
+      nombre: "Entrada al almacén (NEA)",
+      numero: nea ? `N° ${num3(nea.numero)}-${nea.anio}` : "",
+      listo: !!nea,
+    },
+    {
       clave: "comprobante" as ClaveDoc,
       nombre: "Comprobante de pago",
       numero: cp ? codigoCP(cp.numero, cp.origen) : "",
       listo: !!cp,
     },
   ];
+  // La NEA solo existe en las compras de bienes que pasan por almacén
+  const pasaPorAlmacen = e?.tipo === "compra" && !(e as { sin_almacen_motivo?: string | null }).sin_almacen_motivo;
+  if (!nea && !pasaPorAlmacen) {
+    const i = lista.findIndex((x) => x.clave === "nea");
+    if (i >= 0) lista.splice(i, 1);
+  }
   if (e?.tipo === "caja_chica") return lista.filter((x) => x.clave === "requerimiento" || x.clave === "comprobante");
   if (e?.tipo !== "pago_fijo") return lista;
   // Pago fijo simple (dietas): solo requerimiento y comprobante. Con expediente completo: sin cuadro comparativo.

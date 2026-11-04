@@ -3,7 +3,7 @@ import Encabezado from "@/components/Encabezado";
 import Firmas from "@/components/Firmas";
 import type { Mcp } from "@/lib/contexto";
 import LogoSebaz from "@/components/LogoSebaz";
-import { enLetras, fecha, num3, soles } from "@/lib/formato";
+import { fecha, num3, soles } from "@/lib/formato";
 
 export type ItemAlmacen = {
   codigo?: number | null;
@@ -23,6 +23,10 @@ export type DatosNea = {
   observacion: string | null;
   orden?: string | null;
   expediente?: string | null;
+  /** Para qué es el ingreso (el motivo del requerimiento), el área responsable y la específica del gasto. */
+  motivo?: string | null;
+  responsable?: string | null;
+  especifica?: string | null;
   anulado?: boolean;
   items: ItemAlmacen[];
 };
@@ -37,8 +41,6 @@ export type DatosPecosa = {
   anulado?: boolean;
   items: ItemAlmacen[];
 };
-
-const ORIGEN: Record<DatosNea["origen"], string> = { compra: "Compra", donacion: "Donación", otro: "Otro ingreso" };
 
 const cant = (n: number) => Number(n).toLocaleString("es-PE", { maximumFractionDigits: 3 });
 const codigo = (c?: number | null) => (c ? String(c).padStart(5, "0") : "NUEVO");
@@ -89,18 +91,15 @@ const ahora = () => {
 };
 
 /**
- * NEA: Nota de Entrada al Almacén, con el mismo formato que la orden y el requerimiento: línea del sistema,
- * título centrado con el número en recuadro y la fecha, datos del ingreso, «SON» en letras, detalle, firmas y
- * sello de ZEBAZ. Una sola hoja A4.
+ * NEA: Nota de Entrada de Almacén, con la disposición del modelo que usan las municipalidades: hoja A4 horizontal,
+ * membrete con «ALMACÉN» y el título, cuadro de datos (motivo, responsable, destino, encargado, fecha) y la tabla de
+ * ítems con específica del gasto, unidad, cantidad, número de orden de compra, PECOSA y observación.
  */
 export function FormatoNea({ n, mcp }: { n: DatosNea; mcp: Mcp }) {
   const imp = ahora();
-  const [anio, mes, dia] = (n.fecha || "").slice(0, 10).split("-");
-  const total = n.items.reduce((s, i) => s + Math.round(i.cantidad * i.precio_unitario * 100) / 100, 0);
   const lugar = [mcp.distrito && `DISTRITO DE ${mcp.distrito}`, mcp.provincia && `PROVINCIA DE ${mcp.provincia}`].filter(Boolean).join(" · ").toUpperCase();
-  const origenOrden = [n.orden, n.expediente].filter(Boolean).join(" · ");
   return (
-    <div className="hoja rq nea">
+    <div className="hoja rq nea horizontal">
       {n.anulado && <><MarcaAnulado /><MarcaAnuladaPagina /></>}
 
       <div className="sf-sis">
@@ -115,56 +114,55 @@ export function FormatoNea({ n, mcp }: { n: DatosNea; mcp: Mcp }) {
         </div>
       </div>
 
-      <div className="og-cab">
-        <div className="og-titulo">NOTA DE ENTRADA AL ALMACÉN N° <span className="og-caja">{numeroDoc(n.numero, n.anio)}</span></div>
-        <div className="og-fila-exp">
-          <table className="og-fecha">
-            <thead><tr><th>Día</th><th>Mes</th><th>Año</th></tr></thead>
-            <tbody><tr><td>{dia}</td><td>{mes}</td><td>{anio}</td></tr></tbody>
-          </table>
+      <div className="nh-cab">
+        <div className="nh-ent">
+          <div className="nh-mun">{(mcp.nombre ?? "").toUpperCase()}</div>
+          <div className="nh-alm">ALMACÉN</div>
+          <div className="nh-tit">NOTA DE ENTRADA DE ALMACÉN - NEA</div>
         </div>
+        <div className="nh-num">N° <span className="og-caja">{numeroDoc(n.numero, n.anio)}</span></div>
       </div>
 
-      <div className="sf-linea"><span className="sf-et">TIPO DE INGRESO</span><span className="sf-val">{ORIGEN[n.origen]}</span></div>
-      <div className="sf-linea"><span className="sf-et">{n.origen === "compra" ? "PROVEEDOR" : "PROCEDENCIA"}</span><span className="sf-val">{n.proveedor ?? ""}</span></div>
-      {n.documento_ref && <div className="sf-linea"><span className="sf-et">DOCUMENTO</span><span className="sf-val">{n.documento_ref}</span></div>}
-      {origenOrden && <div className="sf-linea"><span className="sf-et">ORDEN / EXPEDIENTE</span><span className="sf-val">{origenOrden}</span></div>}
-      <div className="sf-linea"><span className="sf-et">SON</span><span className="sf-val">{enLetras(total).replace(/ SOLES$/, " NUEVOS SOLES")}</span></div>
+      <table className="nh-info">
+        <tbody>
+          <tr><th>MOTIVO</th><td>{n.motivo ?? ""}</td></tr>
+          <tr><th>RESPONSABLE DE LA ACTIVIDAD</th><td>{n.responsable ?? ""}</td></tr>
+          {n.proveedor && <tr><th>{n.origen === "compra" ? "PROVEEDOR" : "PROCEDENCIA"}</th><td>{n.proveedor}{n.documento_ref ? ` · ${n.documento_ref}` : ""}</td></tr>}
+          <tr><th>DESTINO</th><td /></tr>
+          <tr><th>ENCARGADO DE ALMACÉN</th><td /></tr>
+          <tr><th>FECHA</th><td>{fecha(n.fecha)}</td></tr>
+        </tbody>
+      </table>
 
       <div className="rq-marco">
-        <div className="sf-cab">DETALLE DEL INGRESO</div>
         <div className="rq-cuerpo">
-          <table className="rq-items">
-            <colgroup><col style={{ width: "6%" }} /><col style={{ width: "10%" }} /><col /><col style={{ width: "11%" }} /><col style={{ width: "11%" }} /><col style={{ width: "13%" }} /><col style={{ width: "13%" }} /></colgroup>
+          <table className="rq-items nh-items">
+            <colgroup><col style={{ width: "6%" }} /><col /><col style={{ width: "14%" }} /><col style={{ width: "9%" }} /><col style={{ width: "7%" }} /><col style={{ width: "11%" }} /><col style={{ width: "9%" }} /><col style={{ width: "17%" }} /></colgroup>
             <thead>
-              <tr><th>IT</th><th>CÓDIGO</th><th>DESCRIPCIÓN DEL BIEN</th><th>UNIDAD</th><th>CANTIDAD</th><th>P. UNITARIO S/</th><th>TOTAL S/</th></tr>
+              <tr><th>ÍTEM</th><th>DESCRIPCIÓN</th><th>ESPECÍFICA DE GASTO</th><th>UNID. DE MEDIDA</th><th>CANT.</th><th>N° ORDEN DE COMPRA</th><th>N° PECOSA</th><th>OBSERVACIÓN</th></tr>
             </thead>
             <tbody>
               {n.items.map((i, k) => (
                 <tr key={k}>
-                  <td>{k + 1}</td><td>{codigo(i.codigo)}</td><td>{i.descripcion}</td><td>{i.unidad}</td>
-                  <td>{cant(i.cantidad)}</td><td>{soles(i.precio_unitario)}</td><td>{soles(i.cantidad * i.precio_unitario)}</td>
+                  <td>{String(k + 1).padStart(2, "0")}</td><td>{i.descripcion}</td><td>{n.especifica ?? ""}</td><td>{i.unidad}</td>
+                  <td>{cant(i.cantidad)}</td><td>{(n.orden ?? "").replace(/^O\/[CS]\s*/, "")}</td><td /><td>{k === 0 ? n.observacion ?? "" : ""}</td>
                 </tr>
               ))}
-              <tr className="rq-relleno"><td /><td /><td /><td /><td /><td /><td /></tr>
+              <tr className="rq-relleno"><td /><td /><td /><td /><td /><td /><td /><td /></tr>
             </tbody>
-            <tfoot>
-              <tr><th colSpan={6} className="rq-tot-et">TOTAL S/</th><th>{soles(total)}</th></tr>
-            </tfoot>
           </table>
         </div>
-        {n.observacion && <div className="rq-entregar"><b>OBSERVACIÓN:</b> {n.observacion}</div>}
       </div>
 
       <div className="rq-firmas">
         <div><b>ENTREGUÉ CONFORME</b><span /></div>
-        <div><b>RESPONSABLE DE ALMACÉN</b><span /></div>
+        <div><b>ENCARGADO DE ALMACÉN</b><span /></div>
         <div><b>V°B° TESORERÍA</b><span /></div>
       </div>
 
       <div className="rq-pie">
         <span />
-        <span className="rq-sello"><LogoSebaz tamano={26} claro={false} /></span>
+        <span className="rq-sello"><LogoSebaz tamano={24} claro={false} /></span>
       </div>
     </div>
   );

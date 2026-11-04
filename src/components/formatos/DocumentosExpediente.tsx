@@ -58,6 +58,9 @@ function neaDe(d: Datos) {
     observacion: (n.observacion as string | null) ?? null,
     orden: d.orden?.numero ? `O/C ${num3(d.orden.numero)}-${d.orden.anio}` : null,
     expediente: d.e ? `Exp. ${num3(d.e.numero)}-${d.e.anio}` : null,
+    motivo: d.e?.descripcion ? conceptoSinSeRequiere(d.e.descripcion) : null,
+    responsable: (d.e?.area_usuaria as string | null) ?? null,
+    especifica: (d.e?.clasificador as string | null) ?? null,
     anulado: !!n.anulado,
     items: items.map((i) => ({ ...i.almacen_bienes, cantidad: Number(i.cantidad), precio_unitario: Number(i.precio_unitario) })),
   };

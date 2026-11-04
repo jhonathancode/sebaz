@@ -5,7 +5,7 @@ import { extraDe } from "@/lib/datosCP";
 import FormatoComprobante from "@/components/formatos/FormatoComprobante";
 import type { Mcp } from "@/lib/contexto";
 import type { cargarExpediente, Proveedor } from "@/lib/documentos";
-import { fecha, num3, soles } from "@/lib/formato";
+import { fecha, logoMcp, num3, soles } from "@/lib/formato";
 import { conceptoSinSeRequiere } from "@/lib/requerimiento";
 
 export type DatosExpediente = Awaited<ReturnType<typeof cargarExpediente>>;
@@ -44,61 +44,64 @@ function sufijo(mcp: Mcp) {
   return mcp.nombre.replace(/municipalidad( del)?( centro poblado)?/i, "").trim().toUpperCase();
 }
 
-/** Tipo del pedido (B/S) como lo muestra el SIGA: compra → BIEN, servicio → SERVICIO. */
-function tipoPedido(tipo: string | null | undefined) {
-  if (tipo === "compra") return { bs: "BIEN", titulo: "PEDIDO DE COMPRA DE BIENES" };
-  if (tipo === "caja_chica") return { bs: "BIEN / SERVICIO", titulo: "PEDIDO DE BIENES Y SERVICIOS" };
-  return { bs: "SERVICIO", titulo: "PEDIDO DE SERVICIOS" };
-}
-
-/** Estado del pedido con los nombres del SIGA: Pendiente → Autorizado (o Anulado). */
-function estadoPedido(estado: string | null | undefined) {
-  if (estado === "anulado") return "ANULADO";
-  if (estado === "aprobado" || estado === "rendido") return "AUTORIZADO";
-  return "PENDIENTE";
-}
-
-/** Requerimiento con la disposición del pedido del SIGA: cabecera, detalle de ítems y firmas de VB y autorización. */
+/**
+ * Cuadro de requerimiento con el formato que usan los centros poblados: una sola hoja A4, blanco y negro, con
+ * unidad orgánica, proyecto/actividad, específica del gasto, detalle con precio de referencia, totales y las
+ * firmas de control posterior. El cuerpo se estira para llenar la hoja; el margen izquierdo es para perforar.
+ */
 export function Requerimiento({ d, mcp }: { d: Datos; mcp: Mcp }) {
   const e = d.e!;
   const total = d.items.reduce((s, i) => s + Number(i.total), 0);
-  const t = tipoPedido(e.tipo);
+  const logo = logoMcp(mcp);
+  const lugar = [mcp.distrito && `DISTRITO DE ${mcp.distrito}`, mcp.provincia && `PROVINCIA DE ${mcp.provincia}`].filter(Boolean).join(" · ").toUpperCase();
   return (
-    <div className="hoja">
+    <div className="hoja rq">
       {d.anulado && <MarcaAnulado {...d.anulado} />}
-      <Encabezado mcp={mcp} titulo={`CUADRO DE REQUERIMIENTO N° ${num3(e.numero)}-${e.anio}-MCP-${sufijo(mcp)}`} numero={t.titulo} />
-      <table className="formato pedido-siga">
-        <tbody>
-          <tr>
-            <th>N° pedido</th><td>{num3(e.numero)}-{e.anio}</td>
-            <th>Fecha</th><td>{fecha(e.fecha)}</td>
-          </tr>
-          <tr>
-            <th>B/S</th><td>{t.bs}</td>
-            <th>Estado</th><td>{estadoPedido(e.estado)}</td>
-          </tr>
-        </tbody>
-      </table>
-      <table className="formato pedido-siga datos-cabecera">
-        <tbody>
-          <tr><th>Centro de costo</th><td>{e.area_usuaria ?? ""}</td></tr>
-          <tr><th>Meta</th><td>{e.meta ?? ""}</td></tr>
-          <tr><th>Clasificador de gasto</th><td>{e.clasificador ?? ""}</td></tr>
-          <tr><th>Motivo</th><td>{e.descripcion}</td></tr>
-        </tbody>
-      </table>
-      <table className="formato">
-        <thead>
-          <tr><th>Ítem</th><th>Descripción</th><th>Unidad de medida</th><th className="num">Cantidad</th><th className="num">Precio unitario</th><th className="num">Total</th></tr>
-        </thead>
-        <tbody>
-          {d.items.map((i) => (
-            <tr key={i.id}><td>{i.item}</td><td>{i.descripcion}</td><td>{i.unidad}</td><td className="num">{Number(i.cantidad)}</td><td className="num">{soles(i.precio_unitario)}</td><td className="num">{soles(i.total)}</td></tr>
-          ))}
-          <tr><th colSpan={5}>TOTAL S/</th><th className="num">{soles(total)}</th></tr>
-        </tbody>
-      </table>
-      <Firmas nombres={["ÁREA USUARIA · SOLICITANTE", "V°B° GERENCIA DE ADMINISTRACIÓN", "AUTORIZA · GERENCIA MUNICIPAL"]} />
+      <div className="rq-ent">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        {logo && <img src={logo} alt="" />}
+        <div>
+          <b>{mcp.nombre.toUpperCase()}</b>
+          <span>{[lugar, mcp.ruc && `RUC ${mcp.ruc}`].filter(Boolean).join(" · ")}</span>
+        </div>
+      </div>
+      <h1 className="rq-titulo"><u>CUADRO DE REQUERIMIENTO N° {num3(e.numero)}-{e.anio}-MCP-{sufijo(mcp)}</u></h1>
+      <div className="rq-fecha">FECHA: {fecha(e.fecha)}</div>
+
+      <div className="rq-marco">
+        <div className="rq-fila"><b>UNIDAD ORGÁNICA</b><span>{e.area_usuaria ?? ""}</span></div>
+        <div className="rq-fila"><b>PROYECTO / ACTIVIDAD</b><span>{e.meta ?? ""}</span></div>
+        <div className="rq-fila"><b>ESPECÍFICA DEL GASTO</b><span>{e.clasificador ?? ""}</span></div>
+        <div className="rq-cuerpo">
+          <table className="rq-items">
+            <colgroup><col style={{ width: "6%" }} /><col style={{ width: "13%" }} /><col style={{ width: "14%" }} /><col /><col style={{ width: "14%" }} /><col style={{ width: "14%" }} /></colgroup>
+            <thead>
+              <tr><th rowSpan={2}>IT</th><th rowSpan={2}>CANTIDAD</th><th rowSpan={2}>UNIDAD DE MEDIDA</th><th rowSpan={2}>DESCRIPCIÓN DETALLADA</th><th colSpan={2}>PRECIO REFERENCIA (*)</th></tr>
+              <tr><th>UNITARIO</th><th>TOTALES</th></tr>
+            </thead>
+            <tbody>
+              {d.items.map((i) => (
+                <tr key={i.id}>
+                  <td>{i.item}</td><td>{Number(i.cantidad)}</td><td>{i.unidad}</td><td>{i.descripcion}</td>
+                  <td>S/ {soles(i.precio_unitario)}</td><td>S/ {soles(i.total)}</td>
+                </tr>
+              ))}
+              <tr className="rq-relleno"><td /><td /><td /><td /><td /><td /></tr>
+            </tbody>
+            <tfoot>
+              <tr><th colSpan={5} className="rq-tot-et">TOTALES</th><th>S/ {soles(total)}</th></tr>
+            </tfoot>
+          </table>
+        </div>
+        <div className="rq-entregar"><b>ENTREGAR EN:</b></div>
+      </div>
+      <p className="rq-nota">(*) Precios de referencia; el monto final se define con la cotización elegida.</p>
+
+      <div className="rq-control">CONTROL POSTERIOR</div>
+      <div className="rq-firmas">
+        <div><b>GERENCIA DE ADMINISTRACIÓN</b><span /></div>
+        <div><b>GERENCIA MUNICIPAL</b><span /></div>
+      </div>
     </div>
   );
 }

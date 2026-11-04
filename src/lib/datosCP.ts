@@ -31,13 +31,21 @@ export type DatosCPMcp = {
 export const TIPO_OPERACION_BS = "GASTO - ADQUISICION DE BIENES Y SERVICIOS";
 export const TIPO_OPERACION_OTRO = "GASTO - OTROS GASTOS DEFINITIVOS (SIN PROVEEDOR)";
 
+/** Códigos del Clasificador Funcional del MEF para gestión administrativa (iguales en todas las entidades). */
+export const CODIF_FIJA: Partial<Codificacion> = { fn: "03", divf: "006", grpf: "0010" };
+export const CUENTA_DEBE_SUGERIDA = "2103.010101";
+export const CUENTA_HABER_SUGERIDA = "1101.1201";
+
+/** Rubro sugerido: 13 (donaciones y transferencias) si el dinero viene de otra municipalidad; 09 (recursos directamente recaudados) si es propio. */
+export const rubroSugerido = (tipo?: string | null) => (tipo === "propios" ? "09" : "13");
+
 /** Lo guardado en Configuración → Comprobante de pago (con valores vacíos si aún no se llenó). */
 export function datosCPDe(mcp: Mcp): DatosCPMcp {
   const d = ((mcp as { datos_cp?: unknown }).datos_cp ?? {}) as Partial<DatosCPMcp>;
   return {
-    codif: d.codif ?? {},
-    cuenta_debe: d.cuenta_debe ?? "",
-    cuenta_haber: d.cuenta_haber ?? "",
+    codif: Object.fromEntries(Object.entries(d.codif ?? {}).map(([k, v]) => [k, { ...CODIF_FIJA, ...Object.fromEntries(Object.entries(v ?? {}).filter(([, x]) => String(x ?? "").trim())) }])),
+    cuenta_debe: d.cuenta_debe || CUENTA_DEBE_SUGERIDA,
+    cuenta_haber: d.cuenta_haber || CUENTA_HABER_SUGERIDA,
     cci: d.cci ?? "",
     tipo_operacion_bs: d.tipo_operacion_bs || TIPO_OPERACION_BS,
     tipo_operacion_otro: d.tipo_operacion_otro || TIPO_OPERACION_OTRO,
@@ -97,8 +105,7 @@ export function faltantesCP(mcp: Mcp, fuenteId?: string | null): string[] {
   const d = datosCPDe(mcp);
   const f: string[] = [];
   const cod = fuenteId ? d.codif[fuenteId] : undefined;
-  if (!cod || !CAMPOS_CODIF.some((c) => (cod[c.k] ?? "").trim())) f.push("codificación programática");
-  if (!d.cuenta_debe.trim() || !d.cuenta_haber.trim()) f.push("cuentas contables (debe y haber)");
+  if (!cod || !["rb", "sec", "prod", "act", "meta", "final"].every((k) => (cod[k as ClaveCodif] ?? "").trim())) f.push("codificación programática");
   if (!mcp.banco_cuenta) f.push("cuenta del banco");
   if (!d.cci.trim()) f.push("CCI");
   return f;

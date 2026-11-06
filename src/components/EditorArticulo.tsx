@@ -70,7 +70,7 @@ export default function EditorArticulo({ inicial, categorias, guardar, urlPublic
   }
 
   return (
-    <form action={guardar} className="ea">
+    <form action={guardar} className="ea" data-sin-mayusculas>
       {d.id && <input type="hidden" name="id" value={d.id} />}
       <input type="hidden" name="contenido" value={d.contenido} />
 

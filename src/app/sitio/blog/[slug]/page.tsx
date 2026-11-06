@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import CompartirEnlace from "@/components/CompartirEnlace";
-import { cargarAjustes, fechaCorta, limpiarTexto, mdAHtml, origenSitio, rutaSitio, supabasePublico, tiempoLectura, urlWeb, type Articulo, type Categoria } from "@/lib/sitio/datos";
-import { TarjetaArticulo } from "../ListaBlog";
+import { cargarAjustes, limpiarTexto, mdAHtml, origenSitio, rutaSitio, supabasePublico, urlWeb, type Articulo, type Categoria } from "@/lib/sitio/datos";
+import { Avatar, MetaLectura, TarjetaArticulo } from "../ListaBlog";
 
 export const dynamic = "force-dynamic";
 
@@ -62,62 +62,71 @@ export default async function ArticuloPagina({ params }: { params: Promise<{ slu
     mainEntityOfPage: url,
   };
 
+  const inicio = await rutaSitio("/");
   return (
-    <div className="sw-contenedor">
+    <div className="sb">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(json).replace(/</g, "\\u003c") }} />
-      <div className="sw-articulo">
-        <article>
-          <header className="sw-articulo-cab">
-            <div className="sw-meta">
+      <div className="sw-contenedor">
+        <header className="sb-hero">
+          <div className="sb-hero-texto">
+            <div className="sb-ruta">
               <Link href={base}>Blog</Link>
-              {categoria && <> <span>/</span> <Link className="sw-cat" href={`${base}/categoria/${categoria.slug}`}>{categoria.nombre}</Link></>}
+              {categoria && <> <span>/</span> <Link href={`${base}/categoria/${categoria.slug}`}>{categoria.nombre}</Link></>}
             </div>
             <h1>{a.titulo}</h1>
-            {a.extracto && <p className="sw-extracto">{a.extracto}</p>}
-            <div className="sw-meta">
-              {a.autor && <span>Por <b>{a.autor}</b></span>}
-              <span>· {fechaCorta(a.publicado_en)}</span>
-              <span>· {tiempoLectura(a.contenido)} min de lectura</span>
-            </div>
-          </header>
+            {a.extracto && <p className="sb-extracto">{a.extracto}</p>}
+            <div className="sb-meta vertical"><MetaLectura x={a} /></div>
+          </div>
           {portada && (
-            <div className="sw-portada">
+            <div className="sb-hero-img">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={portada} alt={a.titulo} />
             </div>
           )}
-          <div className="sw-texto" dangerouslySetInnerHTML={{ __html: html }} />
-          {a.etiquetas.length > 0 && <div className="sw-etiquetas">{a.etiquetas.map((t) => <span key={t}>#{t}</span>)}</div>}
-          <CompartirEnlace url={url} titulo={a.titulo} />
-        </article>
+        </header>
 
-        <aside className="sw-lateral">
-          {indice.length > 1 && (
-            <nav className="sw-indice" aria-label="Contenido del artículo">
-              <h4>En este artículo</h4>
-              {indice.map((i) => (
-                <a key={i.id} href={`#${i.id}`} className={i.nivel === 3 ? "n3" : undefined}>{i.texto}</a>
+        <div className="sb-banner">
+          <div>
+            <b>Controle su municipalidad con Zebaz</b>
+            <span>Gastos, caja chica y rendición mensual en un solo sistema.</span>
+          </div>
+          <Link href={inicio} className="sb-boton">Conocer Zebaz</Link>
+        </div>
+
+        <div className="sb-cuerpo">
+          <article className="sb-contenido">
+            <div className="sw-texto" dangerouslySetInnerHTML={{ __html: html }} />
+            {a.etiquetas.length > 0 && <div className="sw-etiquetas">{a.etiquetas.map((t) => <span key={t}>#{t}</span>)}</div>}
+            <CompartirEnlace url={url} titulo={a.titulo} />
+          </article>
+
+          <aside className="sb-lateral">
+            <div className="sb-caja">
+              <h4>Autor del artículo</h4>
+              <div className="sb-autor grande"><Avatar nombre={a.autor} /> <b>{a.autor || aj.nombre_sitio}</b></div>
+            </div>
+            {indice.length > 1 && (
+              <nav className="sb-caja" aria-label="Contenido del artículo">
+                <h4>En este artículo</h4>
+                {indice.map((i) => (
+                  <a key={i.id} href={`#${i.id}`} className={i.nivel === 3 ? "n3" : undefined}>{i.texto}</a>
+                ))}
+              </nav>
+            )}
+          </aside>
+        </div>
+
+        {(relacionados ?? []).length > 0 && (
+          <section className="sb-ultimos">
+            <h2>Artículos relacionados</h2>
+            <div className="sb-grilla">
+              {((relacionados ?? []) as Articulo[]).map((x) => (
+                <TarjetaArticulo key={x.id} x={x} base={base} />
               ))}
-            </nav>
-          )}
-          <div className="sw-indice">
-            <h4>¿Su MCP rinde a tiempo?</h4>
-            <p style={{ margin: "0 0 12px", fontSize: 14.5 }}>Conozca Zebaz: gastos, caja chica y rendición en un solo sistema.</p>
-            <Link className="sw-boton chico" href={await rutaSitio("/")}>Conocer Zebaz</Link>
-          </div>
-        </aside>
+            </div>
+          </section>
+        )}
       </div>
-
-      {(relacionados ?? []).length > 0 && (
-        <section className="sw-relacionados">
-          <h2>Artículos relacionados</h2>
-          <div className="sw-grilla">
-            {((relacionados ?? []) as Articulo[]).map((x) => (
-              <TarjetaArticulo key={x.id} x={x} cat={categoria} base={base} />
-            ))}
-          </div>
-        </section>
-      )}
     </div>
   );
 }

@@ -55,5 +55,5 @@ export function urlCompartir(url: string, canal: string) {
 export function mensajeWhatsApp(titulo: string, resumen: string | null | undefined, url: string) {
   const gancho = (resumen ?? "").replace(/\s+/g, " ").trim();
   const corto = gancho.length > 140 ? `${gancho.slice(0, 139).trimEnd()}…` : gancho;
-  return `*${titulo}*${corto ? `\n${corto}` : ""}\n\nLéalo aquí 👉 ${urlCompartir(url, "whatsapp")}`;
+  return `*${titulo}*${corto ? `\n${corto}` : ""}\n\nLéelo completo aquí:\n${urlCompartir(url, "whatsapp")}`;
 }

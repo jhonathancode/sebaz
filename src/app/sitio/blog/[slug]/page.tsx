@@ -23,7 +23,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   const origen = await origenSitio(aj);
   const portada = urlWeb(a.portada_path) ?? urlWeb(aj.og_imagen);
   // Sin portada ni imagen general, se genera una tarjeta con el título (para que WhatsApp y Facebook muestren vista previa).
-  const imagenSocial = portada ?? `${origen}${await rutaSitio("/blog")}/${a.slug}/og`;
+  const imagenSocial = portada ?? `${origen}/blog/${a.slug}/og`;
   const titulo = a.seo_titulo || a.titulo;
   const desc = limpiarTexto(a.seo_descripcion || a.extracto || a.contenido, 160);
   return {
@@ -64,7 +64,7 @@ export default async function ArticuloPagina({ params }: { params: Promise<{ slu
       "@type": "BlogPosting",
       headline: a.titulo.slice(0, 110),
       description: limpiarTexto(a.seo_descripcion || a.extracto || a.contenido, 160),
-      image: [portada ?? `${origen}${base}/${a.slug}/og`],
+      image: [portada ?? `${origen}/blog/${a.slug}/og`],
       datePublished: a.publicado_en,
       dateModified: a.actualizado_en,
       inLanguage: "es-PE",

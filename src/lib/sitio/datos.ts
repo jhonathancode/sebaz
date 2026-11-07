@@ -131,7 +131,8 @@ export async function origenSitio(ajustes?: Ajustes) {
   if (dom) return dom.replace(/\/+$/, "").replace(/^(?!https?:\/\/)/, "https://");
   const h = await headers();
   const host = h.get("host") ?? "localhost:3000";
-  return `${host.startsWith("localhost") ? "http" : "https"}://${host}`;
+  // Sin dominio propio, se visita desde el dominio del sistema: las rutas públicas viven bajo «/sitio».
+  return `${host.startsWith("localhost") ? "http" : "https"}://${host}${h.get("x-sitio-base") ?? "/sitio"}`;
 }
 
 /** Markdown → HTML seguro, con identificadores en los títulos para el índice. */

@@ -45,3 +45,15 @@ export function normalizarParrafos(md: string) {
   }
   return out.join("\n");
 }
+
+/** Dirección con marca de origen, para saber en Analytics qué canal trae visitas (el canonical sigue siendo la dirección limpia). */
+export function urlCompartir(url: string, canal: string) {
+  return `${url}${url.includes("?") ? "&" : "?"}utm_source=${canal}&utm_medium=compartir&utm_campaign=blog`;
+}
+
+/** Mensaje listo para WhatsApp: título en negrita, un gancho corto y el enlace. */
+export function mensajeWhatsApp(titulo: string, resumen: string | null | undefined, url: string) {
+  const gancho = (resumen ?? "").replace(/\s+/g, " ").trim();
+  const corto = gancho.length > 140 ? `${gancho.slice(0, 139).trimEnd()}…` : gancho;
+  return `*${titulo}*${corto ? `\n${corto}` : ""}\n\nLéalo aquí 👉 ${urlCompartir(url, "whatsapp")}`;
+}

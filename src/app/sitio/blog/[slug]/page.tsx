@@ -62,7 +62,6 @@ export default async function ArticuloPagina({ params }: { params: Promise<{ slu
     mainEntityOfPage: url,
   };
 
-  const inicio = await rutaSitio("/");
   return (
     <div className="sb">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(json).replace(/</g, "\\u003c") }} />
@@ -85,13 +84,6 @@ export default async function ArticuloPagina({ params }: { params: Promise<{ slu
           )}
         </header>
 
-        <div className="sb-banner">
-          <div>
-            <b>Controle su municipalidad con Zebaz</b>
-            <span>Gastos, caja chica y rendición mensual en un solo sistema.</span>
-          </div>
-          <Link href={inicio} className="sb-boton">Conocer Zebaz</Link>
-        </div>
 
         <div className="sb-cuerpo">
           <article className="sb-contenido">

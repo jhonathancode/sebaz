@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { cargarAjustes, fechaCorta, limpiarTexto, rutaSitio, supabasePublico, tiempoLectura, urlWeb, type Articulo, type Categoria } from "@/lib/sitio/datos";
+import ListaBlog from "./blog/ListaBlog";
+import { SOLO_BLOG, cargarAjustes, fechaCorta, limpiarTexto, rutaSitio, supabasePublico, tiempoLectura, urlWeb, type Articulo, type Categoria } from "@/lib/sitio/datos";
 
 export const dynamic = "force-dynamic";
 
@@ -10,7 +11,11 @@ const PILARES = [
   { t: "Contabilidad y estados de cuenta", d: "Libros, ejecución y conciliación con el estado de cuenta del Banco de la Nación, del cheque al comprobante." },
 ];
 
-export default async function Inicio() {
+export default async function Inicio({ searchParams }: { searchParams: Promise<{ q?: string; pag?: string }> }) {
+  if (SOLO_BLOG) {
+    const sp = await searchParams;
+    return <ListaBlog q={sp.q} pag={sp.pag} />;
+  }
   const a = await cargarAjustes();
   const sb = supabasePublico();
   const [{ data: arts }, { data: cats }] = await Promise.all([

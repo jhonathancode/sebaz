@@ -32,6 +32,7 @@ export default async function LayoutSitio({ children }: { children: React.ReactN
   const pie = await Promise.all((a.pie_enlaces ?? []).map(async (m) => ({ ...m, destino: await enlace(m.href) })));
   const boton = a.boton_menu_texto ? { texto: a.boton_menu_texto, destino: await enlace(a.boton_menu_enlace || "/login") } : null;
   const inicio = await rutaSitio("/");
+  const rutaBlog = await rutaSitio("/blog");
   const wa = a.whatsapp ? `https://wa.me/${a.whatsapp.replace(/\D/g, "")}${a.whatsapp_mensaje ? `?text=${encodeURIComponent(a.whatsapp_mensaje)}` : ""}` : null;
   const redes = Object.entries(a.redes ?? {}).filter(([, v]) => v);
 
@@ -65,6 +66,12 @@ export default async function LayoutSitio({ children }: { children: React.ReactN
               {boton && <Link className="sw-boton chico" href={boton.destino}>{boton.texto}</Link>}
             </nav>
           </details>}
+          {SOLO_BLOG && (
+            <form className="sw-buscar-cab" method="get" action={rutaBlog} role="search">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7" /><path d="m20 20-3.5-3.5" /></svg>
+              <input name="q" type="search" placeholder="Buscar artículos…" aria-label="Buscar en el blog" />
+            </form>
+          )}
         </div>
       </header>
 

@@ -36,7 +36,7 @@ export default async function LayoutSitio({ children }: { children: React.ReactN
   const redes = Object.entries(a.redes ?? {}).filter(([, v]) => v);
 
   return (
-    <div className="sw">
+    <div className={`sw${SOLO_BLOG ? " solo" : ""}`}>
       <header className="sw-cab">
         <div className="sw-contenedor sw-cab-fila">
           <Link href={inicio} className="sw-marca">

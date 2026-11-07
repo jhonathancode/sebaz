@@ -85,7 +85,7 @@ const AJUSTES_BASE: Ajustes = {
 export const SOLO_BLOG = true;
 const NOMBRE_BLOG = "Gestión Municipal";
 const DESCRIPCION_BLOG = "Guías, normas y buenas prácticas para la gestión de su municipalidad de centro poblado.";
-const menciona = (t: string | null | undefined) => /zebaz|sebaz|sistema/i.test(t ?? "");
+export const menciona = (t: string | null | undefined) => /zebaz|sebaz|sistema/i.test(t ?? "");
 
 export async function cargarAjustes(): Promise<Ajustes> {
   const { data } = await supabasePublico().from("web_ajustes").select("*").eq("id", 1).maybeSingle();

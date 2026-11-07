@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { fechaCorta, limpiarTexto, rutaSitio, supabasePublico, tiempoLectura, urlWeb, type Articulo, type Categoria } from "@/lib/sitio/datos";
+import { SOLO_BLOG, fechaCorta, menciona, limpiarTexto, rutaSitio, supabasePublico, tiempoLectura, urlWeb, type Articulo, type Categoria } from "@/lib/sitio/datos";
 
 const POR_PAGINA = 9;
 
@@ -50,7 +50,7 @@ export default async function ListaBlog({ categoriaSlug, q, pag }: { categoriaSl
   const base = await rutaSitio("/blog");
   const ahora = new Date().toISOString();
   const { data: cats } = await sb.from("blog_categorias").select("id, slug, nombre, descripcion").order("orden");
-  const categorias = (cats ?? []) as Categoria[];
+  const categorias = ((cats ?? []) as Categoria[]).filter((c) => !SOLO_BLOG || !menciona(c.nombre));
   const actual = categoriaSlug ? categorias.find((c) => c.slug === categoriaSlug) ?? null : null;
   const pagina = Math.max(1, Math.floor(Number(pag)) || 1);
   const termino = (q ?? "").replace(/[,()%*\\]/g, " ").trim();

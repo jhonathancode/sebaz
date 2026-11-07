@@ -48,6 +48,7 @@ export function TarjetaArticulo({ x, base }: { x: Articulo; cat?: Categoria | nu
 export default async function ListaBlog({ categoriaSlug, q, pag }: { categoriaSlug?: string; q?: string; pag?: string }) {
   const sb = supabasePublico();
   const base = await rutaSitio("/blog");
+  const raiz = SOLO_BLOG ? await rutaSitio("/") : base; // dirección de la lista principal
   const ahora = new Date().toISOString();
   const { data: cats } = await sb.from("blog_categorias").select("id, slug, nombre, descripcion").order("orden");
   const categorias = ((cats ?? []) as Categoria[]).filter((c) => !SOLO_BLOG || !menciona(c.nombre));
@@ -78,7 +79,7 @@ export default async function ListaBlog({ categoriaSlug, q, pag }: { categoriaSl
     if (termino) params.set("q", termino);
     if (p > 1) params.set("pag", String(p));
     const s = params.toString();
-    return `${actual ? `${base}/categoria/${actual.slug}` : base}${s ? `?${s}` : ""}`;
+    return `${actual ? `${base}/categoria/${actual.slug}` : raiz}${s ? `?${s}` : ""}`;
   };
   const portadaDest = destacado ? urlWeb(destacado.portada_path) : null;
 
@@ -93,7 +94,7 @@ export default async function ListaBlog({ categoriaSlug, q, pag }: { categoriaSl
         )}
         {categorias.length > 0 && (
           <nav className="sb-filtros" aria-label="Categorías">
-            <Link className={`sb-pildora${!actual ? " activa" : ""}`} href={base}>Todos</Link>
+            <Link className={`sb-pildora${!actual ? " activa" : ""}`} href={raiz}>Todos</Link>
             {categorias.map((c) => (
               <Link key={c.id} className={`sb-pildora${actual?.id === c.id ? " activa" : ""}`} href={`${base}/categoria/${c.slug}`}>{c.nombre}</Link>
             ))}
@@ -105,7 +106,7 @@ export default async function ListaBlog({ categoriaSlug, q, pag }: { categoriaSl
             <article className="sb-destacado">
               <Link href={`${base}/${destacado.slug}`} className="sb-destacado-img" aria-label={destacado.titulo}>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                {portadaDest ? <img src={portadaDest} alt="" /> : <span className="sb-sinimg grande">{destacado.titulo.slice(0, 1)}</span>}
+                {portadaDest ? <img src={portadaDest} alt={destacado.titulo} fetchPriority="high" decoding="async" /> : <span className="sb-sinimg grande">{destacado.titulo.slice(0, 1)}</span>}
                 <span className="sb-etiqueta">Post destacado</span>
               </Link>
               <div className="sb-destacado-cuerpo">

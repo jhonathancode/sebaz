@@ -20,14 +20,18 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   const aj = await cargarAjustes();
   const origen = await origenSitio(aj);
   const portada = urlWeb(a.portada_path) ?? urlWeb(aj.og_imagen);
+  // Sin portada ni imagen general, se genera una tarjeta con el título (para que WhatsApp y Facebook muestren vista previa).
+  const imagenSocial = portada ?? `${origen}${await rutaSitio("/blog")}/${a.slug}/og`;
   const titulo = a.seo_titulo || a.titulo;
   const desc = limpiarTexto(a.seo_descripcion || a.extracto || a.contenido, 160);
   return {
     title: titulo,
     description: desc,
     alternates: { canonical: `${origen}/blog/${a.slug}` },
-    openGraph: { type: "article", title: titulo, description: desc, publishedTime: a.publicado_en ?? undefined, modifiedTime: a.actualizado_en, authors: a.autor ? [a.autor] : undefined, ...(portada ? { images: [portada] } : {}) },
-    twitter: { card: portada ? "summary_large_image" : "summary", title: titulo, description: desc },
+    // Permite a Google mostrar la imagen grande en resultados y en Discover.
+    robots: { index: true, follow: true, "max-image-preview": "large", "max-snippet": -1 },
+    openGraph: { type: "article", title: titulo, description: desc, url: `${origen}/blog/${a.slug}`, publishedTime: a.publicado_en ?? undefined, modifiedTime: a.actualizado_en, authors: a.autor ? [a.autor] : undefined, tags: a.etiquetas, images: [imagenSocial] },
+    twitter: { card: "summary_large_image", title: titulo, description: desc, images: [imagenSocial] },
   };
 }
 
@@ -51,18 +55,33 @@ export default async function ArticuloPagina({ params }: { params: Promise<{ slu
   const { html, indice } = mdAHtml(a.contenido);
   const portada = urlWeb(a.portada_path);
   const url = `${origen}/blog/${a.slug}`;
-  const json = {
-    "@context": "https://schema.org",
-    "@type": "BlogPosting",
-    headline: a.titulo,
-    description: limpiarTexto(a.seo_descripcion || a.extracto || a.contenido, 160),
-    image: portada ? [portada] : undefined,
-    datePublished: a.publicado_en,
-    dateModified: a.actualizado_en,
-    author: { "@type": "Person", name: a.autor || aj.nombre_sitio },
-    publisher: { "@type": "Organization", name: aj.nombre_sitio },
-    mainEntityOfPage: url,
-  };
+  const json = [
+    {
+      "@context": "https://schema.org",
+      "@type": "BlogPosting",
+      headline: a.titulo.slice(0, 110),
+      description: limpiarTexto(a.seo_descripcion || a.extracto || a.contenido, 160),
+      image: [portada ?? `${origen}${base}/${a.slug}/og`],
+      datePublished: a.publicado_en,
+      dateModified: a.actualizado_en,
+      inLanguage: "es-PE",
+      wordCount: a.contenido.split(/\s+/).filter(Boolean).length,
+      ...(categoria ? { articleSection: categoria.nombre } : {}),
+      ...(a.etiquetas.length ? { keywords: a.etiquetas.join(", ") } : {}),
+      author: { "@type": "Person", name: a.autor || aj.nombre_sitio },
+      publisher: { "@type": "Organization", name: aj.nombre_sitio, ...(urlWeb(aj.logo_path) ? { logo: { "@type": "ImageObject", url: urlWeb(aj.logo_path) } } : {}) },
+      mainEntityOfPage: { "@type": "WebPage", "@id": url },
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": "BreadcrumbList",
+      itemListElement: [
+        { "@type": "ListItem", position: 1, name: "Inicio", item: `${origen}/` },
+        ...(categoria ? [{ "@type": "ListItem", position: 2, name: categoria.nombre, item: `${origen}/blog/categoria/${categoria.slug}` }] : []),
+        { "@type": "ListItem", position: categoria ? 3 : 2, name: a.titulo, item: url },
+      ],
+    },
+  ];
 
   return (
     <div className="sb">
@@ -81,7 +100,7 @@ export default async function ArticuloPagina({ params }: { params: Promise<{ slu
           {portada && (
             <div className="sb-hero-img">
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={portada} alt={a.titulo} />
+              <img src={portada} alt={a.titulo} fetchPriority="high" decoding="async" />
             </div>
           )}
         </header>

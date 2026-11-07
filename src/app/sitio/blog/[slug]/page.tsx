@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import CompartirEnlace from "@/components/CompartirEnlace";
+import CompartirEnlace, { BarraCompartirMovil } from "@/components/CompartirEnlace";
+import { mensajeWhatsApp } from "@/lib/sitio/texto";
 import ProgresoLectura from "@/components/ProgresoLectura";
 import { cargarAjustes, limpiarTexto, mdAHtml, origenSitio, rutaSitio, supabasePublico, urlWeb, type Articulo, type Categoria } from "@/lib/sitio/datos";
 import { Avatar, MetaLectura, TarjetaArticulo } from "../ListaBlog";
@@ -89,6 +90,7 @@ export default async function ArticuloPagina({ params }: { params: Promise<{ slu
     <div className="sb">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(json).replace(/</g, "\\u003c") }} />
       <ProgresoLectura />
+      <BarraCompartirMovil url={url} titulo={a.titulo} resumen={a.extracto} />
       <div className="sw-contenedor">
         <header className="sb-hero">
           <div className="sb-hero-texto">
@@ -102,7 +104,7 @@ export default async function ArticuloPagina({ params }: { params: Promise<{ slu
               {a.autor && <span className="sb-autor"><Avatar nombre={a.autor} /> {a.autor}</span>}
               <MetaLectura x={a} />
             </div>
-            <a className="sb-wa" href={`https://wa.me/?text=${encodeURIComponent(`${a.titulo} ${url}`)}`} target="_blank" rel="noopener noreferrer">Compartir por WhatsApp</a>
+            <a className="sb-wa" href={`https://wa.me/?text=${encodeURIComponent(mensajeWhatsApp(a.titulo, a.extracto, url))}`} target="_blank" rel="noopener noreferrer">Compartir por WhatsApp</a>
           </div>
           {portada && (
             <div className="sb-hero-img">
@@ -125,7 +127,7 @@ export default async function ArticuloPagina({ params }: { params: Promise<{ slu
             )}
             <div className="sw-texto" dangerouslySetInnerHTML={{ __html: html }} />
             {a.etiquetas.length > 0 && <div className="sw-etiquetas">{a.etiquetas.map((t) => <span key={t}>#{t}</span>)}</div>}
-            <CompartirEnlace url={url} titulo={a.titulo} />
+            <CompartirEnlace url={url} titulo={a.titulo} resumen={a.extracto} />
           </article>
 
           <aside className="sb-lateral">

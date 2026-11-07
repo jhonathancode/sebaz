@@ -355,3 +355,29 @@
 .sb .sw-texto tr:nth-child(even) td { background: rgba(255,255,255,.025); }
 .sb .sw-texto blockquote p { margin: 0; }
 .sb .sw-texto blockquote p + p { margin-top: 10px; }
+
+/* Compartir */
+.sb-comparte { margin: 40px 0 0; padding: 26px 26px 22px; border: 1px solid rgba(37,211,102,.35); background: linear-gradient(135deg, rgba(37,211,102,.10), rgba(37,211,102,.02)); border-radius: 16px; max-width: 68ch; }
+.sb-comparte h3 { font-size: 20px; margin: 0 0 6px; }
+.sb-comparte p { margin: 0 0 16px; color: var(--sb-texto); font-size: 15.5px; line-height: 1.6; }
+.sb-comparte-botones { display: flex; flex-wrap: wrap; gap: 10px; }
+.sb-btn { display: inline-flex; align-items: center; justify-content: center; gap: 9px; padding: 12px 18px; border-radius: 12px; border: 1.5px solid var(--sb-linea); background: rgba(255,255,255,.04); color: var(--sb-blanco) !important; font: inherit; font-weight: 700; font-size: 15px; cursor: pointer; line-height: 1; }
+.sb-btn:hover { border-color: var(--sb-amarillo); }
+.sb-btn-wa { background: #25d366; border-color: #25d366; color: #052e16 !important; }
+.sb-btn-wa:hover { filter: brightness(1.07); border-color: #25d366; }
+.sb-comparte-otros { margin-top: 16px; display: flex; flex-wrap: wrap; gap: 6px 16px; align-items: center; font-size: 14px; color: var(--sb-tenue); }
+.sb-comparte-otros a { color: var(--sb-texto); text-decoration: underline; text-underline-offset: 3px; }
+.sb-comparte-otros a:hover { color: var(--sb-amarillo); }
+.sb-barra-compartir { display: none; }
+@media (max-width: 900px) {
+  .sb-barra-compartir { display: flex; gap: 8px; position: fixed; left: 12px; right: 12px; bottom: 12px; z-index: 55; padding: 8px; border-radius: 16px; background: rgba(11,18,32,.92); backdrop-filter: blur(10px); border: 1px solid var(--sb-linea); box-shadow: 0 16px 40px -12px rgba(0,0,0,.7); transform: translateY(140%); transition: transform .25s ease; }
+  .sb-barra-compartir.visible { transform: translateY(0); }
+  .sb-barra-compartir .sb-btn-wa { flex: 1; }
+  .sb-barra-compartir .sb-btn { padding: 13px 16px; }
+}
+@media (max-width: 560px) {
+  .sb-comparte { padding: 20px 16px 18px; margin-top: 30px; }
+  .sb-comparte-botones .sb-btn { flex: 1 1 100%; }
+  .sb-comparte-botones .sb-btn-wa { font-size: 16px; padding: 15px 18px; }
+  .sb { padding-bottom: 90px; }
+}

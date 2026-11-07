@@ -138,7 +138,7 @@ export async function origenSitio(ajustes?: Ajustes) {
 export function mdAHtml(markdown: string): { html: string; indice: { id: string; texto: string; nivel: number }[] } {
   const indice: { id: string; texto: string; nivel: number }[] = [];
   const usados = new Set<string>();
-  const crudo = marked.parse(markdown ?? "", { async: false, gfm: true, breaks: true }) as string;
+  const crudo = marked.parse(normalizarParrafos(markdown ?? ""), { async: false, gfm: true, breaks: true }) as string;
   const limpio = sanitizeHtml(crudo, {
     allowedTags: ["h2", "h3", "h4", "p", "br", "hr", "strong", "em", "del", "a", "ul", "ol", "li", "blockquote", "code", "pre", "img", "table", "thead", "tbody", "tr", "th", "td", "figure", "figcaption"],
     allowedAttributes: { a: ["href", "title", "target", "rel"], img: ["src", "alt", "title", "width", "height", "loading"], th: ["align"], td: ["align"] },
@@ -160,5 +160,5 @@ export function mdAHtml(markdown: string): { html: string; indice: { id: string;
   return { html, indice };
 }
 
-export { slugify, tiempoLectura, fechaCorta, limpiarTexto } from "./texto";
-import { slugify } from "./texto";
+export { slugify, tiempoLectura, fechaCorta, limpiarTexto, normalizarParrafos } from "./texto";
+import { normalizarParrafos, slugify } from "./texto";

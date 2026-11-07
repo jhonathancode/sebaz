@@ -106,7 +106,7 @@ export default async function ListaBlog({ categoriaSlug, q, pag }: { categoriaSl
             <article className="sb-destacado">
               <Link href={`${base}/${destacado.slug}`} className="sb-destacado-img" aria-label={destacado.titulo}>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                {portadaDest ? <img src={portadaDest} alt={destacado.titulo} fetchPriority="high" decoding="async" /> : <span className="sb-sinimg grande">{destacado.titulo.slice(0, 1)}</span>}
+                {portadaDest ? <img src={portadaDest} alt={destacado.titulo} fetchPriority="high" decoding="async" /> : <span className="sb-sinimg-grande">{destacado.titulo.slice(0, 1)}</span>}
                 <span className="sb-etiqueta">Post destacado</span>
               </Link>
               <div className="sb-destacado-cuerpo">

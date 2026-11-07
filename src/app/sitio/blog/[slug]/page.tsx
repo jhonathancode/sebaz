@@ -43,7 +43,9 @@ export default async function ArticuloPagina({ params }: { params: Promise<{ slu
 
   const [{ data: cat }, { data: relacionados }] = await Promise.all([
     a.categoria_id ? sb.from("blog_categorias").select("id, slug, nombre, descripcion").eq("id", a.categoria_id).maybeSingle() : Promise.resolve({ data: null }),
-    sb.from("blog_articulos").select("*").in("estado", ["publicado", "programado"]).lte("publicado_en", new Date().toISOString()).neq("id", a.id).eq("categoria_id", a.categoria_id ?? "00000000-0000-0000-0000-000000000000").order("publicado_en", { ascending: false }).limit(3),
+    (a.categoria_id
+      ? sb.from("blog_articulos").select("*").in("estado", ["publicado", "programado"]).lte("publicado_en", new Date().toISOString()).neq("id", a.id).eq("categoria_id", a.categoria_id).order("publicado_en", { ascending: false }).limit(3)
+      : sb.from("blog_articulos").select("*").in("estado", ["publicado", "programado"]).lte("publicado_en", new Date().toISOString()).neq("id", a.id).order("publicado_en", { ascending: false }).limit(3)),
   ]);
   const categoria = cat as Categoria | null;
   const { html, indice } = mdAHtml(a.contenido);
@@ -69,12 +71,12 @@ export default async function ArticuloPagina({ params }: { params: Promise<{ slu
         <header className="sb-hero">
           <div className="sb-hero-texto">
             <div className="sb-ruta">
-              <Link href={base}>Blog</Link>
-              {categoria && <> <span>/</span> <Link href={`${base}/categoria/${categoria.slug}`}>{categoria.nombre}</Link></>}
+              <Link href={base}>← Blog</Link>
+              {categoria && <Link className="sb-chip" href={`${base}/categoria/${categoria.slug}`}>{categoria.nombre}</Link>}
             </div>
             <h1>{a.titulo}</h1>
             {a.extracto && <p className="sb-extracto">{a.extracto}</p>}
-            <div className="sb-meta vertical"><MetaLectura x={a} /></div>
+            <div className="sb-meta fila">{a.autor && <span className="sb-autor"><Avatar nombre={a.autor} /> {a.autor}</span>}<MetaLectura x={a} /></div>
           </div>
           {portada && (
             <div className="sb-hero-img">
@@ -110,7 +112,7 @@ export default async function ArticuloPagina({ params }: { params: Promise<{ slu
 
         {(relacionados ?? []).length > 0 && (
           <section className="sb-ultimos">
-            <h2>Artículos relacionados</h2>
+            <h2>{categoria ? "Artículos relacionados" : "Más artículos"}</h2>
             <div className="sb-grilla">
               {((relacionados ?? []) as Articulo[]).map((x) => (
                 <TarjetaArticulo key={x.id} x={x} base={base} />

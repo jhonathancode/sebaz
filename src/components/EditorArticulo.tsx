@@ -5,7 +5,7 @@ import { useMemo, useRef, useState } from "react";
 import { subirImagenWeb } from "@/app/(app)/superadmin/web/acciones";
 import BotonConfirmar from "@/components/BotonConfirmar";
 import CampoImagenWeb, { reducirImagen } from "@/components/CampoImagenWeb";
-import { slugify, tiempoLectura } from "@/lib/sitio/texto";
+import { normalizarParrafos, slugify, tiempoLectura } from "@/lib/sitio/texto";
 
 export type DatosArticulo = {
   id?: string;
@@ -33,7 +33,7 @@ export default function EditorArticulo({ inicial, categorias, guardar, urlPublic
   const fotos = useRef<HTMLInputElement>(null);
   const poner = <K extends keyof DatosArticulo>(k: K, v: DatosArticulo[K]) => setD((x) => ({ ...x, [k]: v }));
 
-  const html = useMemo(() => marked.parse(d.contenido || "", { async: false, gfm: true }) as string, [d.contenido]);
+  const html = useMemo(() => marked.parse(normalizarParrafos(d.contenido || ""), { async: false, gfm: true }) as string, [d.contenido]);
   const palabras = d.contenido.split(/\s+/).filter(Boolean).length;
 
   function envolver(antes: string, despues = antes, ejemplo = "texto") {

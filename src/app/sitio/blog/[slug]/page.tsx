@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import CompartirEnlace from "@/components/CompartirEnlace";
+import ProgresoLectura from "@/components/ProgresoLectura";
 import { cargarAjustes, limpiarTexto, mdAHtml, origenSitio, rutaSitio, supabasePublico, urlWeb, type Articulo, type Categoria } from "@/lib/sitio/datos";
 import { Avatar, MetaLectura, TarjetaArticulo } from "../ListaBlog";
 
@@ -55,6 +56,7 @@ export default async function ArticuloPagina({ params }: { params: Promise<{ slu
   const { html, indice } = mdAHtml(a.contenido);
   const portada = urlWeb(a.portada_path);
   const url = `${origen}/blog/${a.slug}`;
+  const inicio = await rutaSitio("/");
   const json = [
     {
       "@context": "https://schema.org",
@@ -86,16 +88,21 @@ export default async function ArticuloPagina({ params }: { params: Promise<{ slu
   return (
     <div className="sb">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(json).replace(/</g, "\\u003c") }} />
+      <ProgresoLectura />
       <div className="sw-contenedor">
         <header className="sb-hero">
           <div className="sb-hero-texto">
             <div className="sb-ruta">
-              <Link href={base}>← Blog</Link>
+              <Link href={inicio}>← Blog</Link>
               {categoria && <Link className="sb-chip" href={`${base}/categoria/${categoria.slug}`}>{categoria.nombre}</Link>}
             </div>
             <h1>{a.titulo}</h1>
             {a.extracto && <p className="sb-extracto">{a.extracto}</p>}
-            <div className="sb-meta fila">{a.autor && <span className="sb-autor"><Avatar nombre={a.autor} /> {a.autor}</span>}<MetaLectura x={a} /></div>
+            <div className="sb-meta-fila">
+              {a.autor && <span className="sb-autor"><Avatar nombre={a.autor} /> {a.autor}</span>}
+              <MetaLectura x={a} />
+            </div>
+            <a className="sb-wa" href={`https://wa.me/?text=${encodeURIComponent(`${a.titulo} ${url}`)}`} target="_blank" rel="noopener noreferrer">Compartir por WhatsApp</a>
           </div>
           {portada && (
             <div className="sb-hero-img">
@@ -107,7 +114,15 @@ export default async function ArticuloPagina({ params }: { params: Promise<{ slu
 
 
         <div className="sb-cuerpo">
-          <article className="sb-contenido">
+          <article className="sb-contenido" id="articulo">
+            {indice.length > 1 && (
+              <details className="sb-toc-movil">
+                <summary>En este artículo</summary>
+                {indice.map((i) => (
+                  <a key={i.id} href={`#${i.id}`} className={i.nivel === 3 ? "n3" : undefined}>{i.texto}</a>
+                ))}
+              </details>
+            )}
             <div className="sw-texto" dangerouslySetInnerHTML={{ __html: html }} />
             {a.etiquetas.length > 0 && <div className="sw-etiquetas">{a.etiquetas.map((t) => <span key={t}>#{t}</span>)}</div>}
             <CompartirEnlace url={url} titulo={a.titulo} />
@@ -116,10 +131,11 @@ export default async function ArticuloPagina({ params }: { params: Promise<{ slu
           <aside className="sb-lateral">
             <div className="sb-caja">
               <h4>Autor del artículo</h4>
-              <div className="sb-autor grande"><Avatar nombre={a.autor} /> <b>{a.autor || aj.nombre_sitio}</b></div>
+              <div className="sb-autor-grande"><Avatar nombre={a.autor} /> <b>{a.autor || aj.nombre_sitio}</b></div>
+              <Link className="sb-mas" href={inicio}>Ver todos los artículos →</Link>
             </div>
             {indice.length > 1 && (
-              <nav className="sb-caja" aria-label="Contenido del artículo">
+              <nav className="sb-caja sb-toc" aria-label="Contenido del artículo">
                 <h4>En este artículo</h4>
                 {indice.map((i) => (
                   <a key={i.id} href={`#${i.id}`} className={i.nivel === 3 ? "n3" : undefined}>{i.texto}</a>

@@ -85,22 +85,20 @@ export default async function ListaBlog({ categoriaSlug, q, pag }: { categoriaSl
   return (
     <div className="sb">
       <div className="sw-contenedor">
-        <div className="sb-cab">
-          <div>
-            <h1>{actual ? actual.nombre : "Blog"}</h1>
-            <p>{actual?.descripcion || "Guías, normas y buenas prácticas para la gestión de su municipalidad de centro poblado."}</p>
+        {!portadaPrincipal && (
+          <div className="sb-cab">
+            <h1>{actual ? actual.nombre : termino ? `Resultados para «${termino}»` : "Blog"}</h1>
+            {actual?.descripcion && <p>{actual.descripcion}</p>}
           </div>
-          <form className="sb-buscar" method="get" action={actual ? `${base}/categoria/${actual.slug}` : base} role="search">
-            <input name="q" defaultValue={termino} placeholder="Buscar artículos…" aria-label="Buscar en el blog" />
-            <button type="submit">Buscar</button>
-          </form>
-        </div>
-        <div className="sb-filtros">
-          <Link className={`sb-pildora${!actual ? " activa" : ""}`} href={base}>Todos</Link>
-          {categorias.map((c) => (
-            <Link key={c.id} className={`sb-pildora${actual?.id === c.id ? " activa" : ""}`} href={`${base}/categoria/${c.slug}`}>{c.nombre}</Link>
-          ))}
-        </div>
+        )}
+        {categorias.length > 0 && (
+          <nav className="sb-filtros" aria-label="Categorías">
+            <Link className={`sb-pildora${!actual ? " activa" : ""}`} href={base}>Todos</Link>
+            {categorias.map((c) => (
+              <Link key={c.id} className={`sb-pildora${actual?.id === c.id ? " activa" : ""}`} href={`${base}/categoria/${c.slug}`}>{c.nombre}</Link>
+            ))}
+          </nav>
+        )}
 
         {destacado && (
           <section className={`sb-portada-fila${masLeidos.length === 0 ? " sola" : ""}`}>
@@ -147,7 +145,7 @@ export default async function ListaBlog({ categoriaSlug, q, pag }: { categoriaSl
 
         {resto.length > 0 && (
           <section className="sb-ultimos">
-            <h2>{termino ? `Resultados para «${termino}»` : destacado ? "Últimos artículos" : actual ? actual.nombre : "Artículos"}</h2>
+            {destacado && <h2>Últimos artículos</h2>}
             <div className="sb-grilla">
               {resto.map((x) => (
                 <TarjetaArticulo key={x.id} x={x} base={base} />

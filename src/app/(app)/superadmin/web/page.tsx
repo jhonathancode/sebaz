@@ -28,6 +28,7 @@ export default async function WebAdmin({ searchParams }: { searchParams: ParamsA
       {error && <div className="aviso error">La web aún no está activa: falta la actualización de la base de datos (ACTUALIZAR_BASE.sql).</div>}
       <div className="wh-tarjetas">
         <Link className="wh-tarjeta" href="/superadmin/web/blog"><b>Blog</b><span>{n("publicado")} publicado(s) · {n("programado")} programado(s) · {n("borrador")} borrador(es) · {lecturas} lecturas</span></Link>
+        <Link className="wh-tarjeta" href="/superadmin/web/visitas"><b>Visitas del blog</b><span>Quién lee, qué artículos, desde dónde y por qué canal llegan</span></Link>
         <Link className="wh-tarjeta" href="/superadmin/web/blog/nuevo"><b>+ Nuevo artículo</b><span>Escriba y publique en minutos</span></Link>
         <Link className="wh-tarjeta" href="/superadmin/web/blog/categorias"><b>Categorías del blog</b><span>Ordene los artículos por tema</span></Link>
         <Link className="wh-tarjeta" href="/superadmin/web/ajustes"><b>Menú, contacto y SEO</b><span>Menú, botón, WhatsApp, pie de página, redes, Google Analytics</span></Link>

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import Script from "next/script";
 import { SOLO_BLOG, cargarAjustes, limpiarTexto, origenSitio, rutaSitio, urlWeb } from "@/lib/sitio/datos";
+import RegistrarVisita from "@/components/RegistrarVisita";
 import "./sitio.css";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -33,6 +34,7 @@ export default async function LayoutSitio({ children }: { children: React.ReactN
   const boton = a.boton_menu_texto ? { texto: a.boton_menu_texto, destino: await enlace(a.boton_menu_enlace || "/login") } : null;
   const inicio = await rutaSitio("/");
   const origen = await origenSitio(a);
+  const rutaVisita = await rutaSitio("/api/visita");
   const wa = a.whatsapp ? `https://wa.me/${a.whatsapp.replace(/\D/g, "")}${a.whatsapp_mensaje ? `?text=${encodeURIComponent(a.whatsapp_mensaje)}` : ""}` : null;
   const redes = Object.entries(a.redes ?? {}).filter(([, v]) => v);
 
@@ -44,6 +46,7 @@ export default async function LayoutSitio({ children }: { children: React.ReactN
   return (
     <div className={`sw${SOLO_BLOG ? " solo" : ""}`}>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonSitio).replace(/</g, "\\u003c") }} />
+      <RegistrarVisita endpoint={rutaVisita} />
       <header className="sw-cab">
         <div className="sw-contenedor sw-cab-fila">
           <Link href={inicio} className="sw-marca">

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { obtenerContexto } from "@/lib/contexto";
 import { supabaseServidor } from "@/lib/supabase/server";
+import "./visitas.css";
 
 const REGIONES_PE: Record<string, string> = {
   AMA: "Amazonas", ANC: "Áncash", APU: "Apurímac", ARE: "Arequipa", AYA: "Ayacucho", CAJ: "Cajamarca", CAL: "Callao", CUS: "Cusco",
@@ -32,20 +33,40 @@ function nombrePais(c: string) {
 const nombreRegion = (pais: string, r: string) => (r === "?" ? "Sin dato" : pais === "PE" ? REGIONES_PE[r] ?? r : `${r} (${nombrePais(pais)})`);
 const num = (n: number) => Number(n).toLocaleString("es-PE");
 
-function Barras({ filas }: { filas: { et: string; n: number }[] }) {
+const pct = (n: number, t: number) => (t > 0 ? Math.round((n / t) * 100) : 0);
+
+function Lista({ filas, total }: { filas: { et: string; n: number }[]; total: number }) {
+  if (!filas.length) return <div className="vis-vacio">Aún no hay datos.</div>;
   const max = Math.max(1, ...filas.map((f) => f.n));
-  if (!filas.length) return <div className="tenue">Aún no hay datos.</div>;
   return (
-    <div className="barras">
+    <div className="vis-lista">
       {filas.map((f) => (
-        <div key={f.et} className="fila">
-          <span>{f.et}</span>
-          <span className="monto">{num(f.n)}</span>
+        <div key={f.et} className="vis-fila">
+          <span className="n" title={f.et}>{f.et}</span>
+          <span className="c">{num(f.n)}<small>{pct(f.n, total)}%</small></span>
           <div className="pista"><div style={{ width: `${(f.n / max) * 100}%` }} /></div>
         </div>
       ))}
     </div>
   );
+}
+
+function diasRango(n: number): string[] {
+  const hoy = new Date(new Date().toLocaleString("en-US", { timeZone: "America/Lima" }));
+  const out: string[] = [];
+  for (let i = n - 1; i >= 0; i--) {
+    const d = new Date(hoy);
+    d.setDate(d.getDate() - i);
+    out.push(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`);
+  }
+  return out;
+}
+function techo(max: number) {
+  if (max <= 4) return 4;
+  const bruto = max / 4;
+  const p = Math.pow(10, Math.floor(Math.log10(bruto)));
+  const paso = [1, 2, 5, 10].map((m) => m * p).find((x) => x >= bruto) ?? 10 * p;
+  return paso * 4;
 }
 
 export default async function VisitasBlog({ searchParams }: { searchParams: Promise<{ dias?: string }> }) {
@@ -61,89 +82,113 @@ export default async function VisitasBlog({ searchParams }: { searchParams: Prom
   const s = (data ?? null) as Stats | null;
   const dominio = (aj?.dominio ?? "").trim().replace(/\/+$/, "") || "su-dominio";
   const masLeido = s?.articulos?.[0];
-  const pctMovil = s && s.total > 0 ? Math.round((s.moviles / s.total) * 100) : 0;
-  const maxDia = Math.max(1, ...(s?.por_dia ?? []).map((d) => d.visitas));
+  const total = s?.total ?? 0;
+  const pctMovil = pct(s?.moviles ?? 0, total);
+  const mapa = new Map((s?.por_dia ?? []).map((d) => [d.dia.slice(0, 10), d]));
+  const serie = diasRango(dias).map((d) => ({ dia: d, visitas: mapa.get(d)?.visitas ?? 0, unicos: mapa.get(d)?.unicos ?? 0 }));
+  const tope = techo(Math.max(1, ...serie.map((d) => d.visitas)));
+  const paso = dias <= 7 ? 1 : dias <= 30 ? 5 : 10;
+  const promedio = dias > 0 ? Math.round((total / dias) * 10) / 10 : 0;
+  const maxArt = Math.max(1, ...(s?.articulos ?? []).map((a) => a.visitas));
 
   return (
-    <>
-      <div className="cab-vista">
+    <div className="vis">
+      <div className="vis-cab">
         <div>
           <h1>Visitas del blog</h1>
-          <div className="sub">Cuántas personas leen, qué leen, desde dónde y por qué canal llegan</div>
+          <div className="sub">Quién lee, qué lee, desde dónde y por qué canal llega</div>
         </div>
-        <span className="espacio" />
-        <div className="grupo" role="group" aria-label="Periodo">
+        <span className="espacio" style={{ flex: 1 }} />
+        <nav className="vis-seg" aria-label="Periodo">
           {[7, 30, 90].map((d) => (
-            <Link key={d} className={`f-chip${dias === d ? " activo" : ""}`} href={`/superadmin/web/visitas?dias=${d}`}>{d} días</Link>
+            <Link key={d} className={dias === d ? "on" : ""} href={`/superadmin/web/visitas?dias=${d}`}>{d} días</Link>
           ))}
-        </div>
+        </nav>
         <Link className="btn contorno" href="/superadmin/web">Volver</Link>
       </div>
 
-      {error && <div className="aviso error">Las visitas aún no están activas: falta ejecutar el último ACTUALIZAR_BASE.sql en Supabase.</div>}
+      {error && <div className="aviso error">Las visitas aún no están activas: falta ejecutar el SQL de visitas en Supabase (archivo ACTUALIZAR_BASE.sql).</div>}
 
       {s && (
         <>
-          <div className="kpis">
-            <div className="kpi azul"><span className="k-et">Visitas</span><span className="k-val">{num(s.total)}</span><span className="k-det">últimos {dias} días</span></div>
-            <div className="kpi"><span className="k-et">Visitantes únicos</span><span className="k-val">{num(s.unicos)}</span><span className="k-det">contados por día</span></div>
-            <div className="kpi"><span className="k-et">Artículo más leído</span><span className="k-val" style={{ fontSize: 16, lineHeight: 1.3 }}>{masLeido ? masLeido.titulo : "—"}</span><span className="k-det">{masLeido ? `${num(masLeido.visitas)} visitas` : "sin visitas todavía"}</span></div>
-            <div className="kpi"><span className="k-et">Desde celular</span><span className="k-val">{pctMovil}%</span><span className="k-det">{num(s.moviles)} de {num(s.total)} visitas</span></div>
+          <div className="vis-kpis">
+            <div className="vis-kpi principal"><span className="et">Visitas</span><span className="val">{num(s.total)}</span><span className="det">promedio {num(promedio)} por día</span></div>
+            <div className="vis-kpi"><span className="et">Visitantes únicos</span><span className="val">{num(s.unicos)}</span><span className="det">personas distintas por día</span></div>
+            <div className="vis-kpi"><span className="et">Más leído</span><span className={`val ${masLeido ? "txt" : ""}`}>{masLeido ? masLeido.titulo : "—"}</span><span className="det">{masLeido ? `${num(masLeido.visitas)} visitas` : "sin visitas todavía"}</span></div>
+            <div className="vis-kpi"><span className="et">Desde celular</span><span className="val">{pctMovil}%</span><span className="det">{num(s.moviles)} de {num(s.total)} visitas</span></div>
           </div>
 
-          <div className="panel" style={{ marginTop: 14 }}>
-            <div className="panel-cab">Visitas por día</div>
-            <div className="panel-cuerpo">
-              {s.por_dia.length === 0 ? (
-                <div className="tenue">Aún no hay visitas en este periodo.</div>
-              ) : (
-                <div style={{ display: "flex", alignItems: "flex-end", gap: 3, height: 130, overflowX: "auto" }}>
-                  {s.por_dia.map((d) => (
-                    <div key={d.dia} title={`${d.dia}: ${d.visitas} visitas, ${d.unicos} únicos`} style={{ flex: "1 0 14px", minWidth: 14, display: "flex", flexDirection: "column", justifyContent: "flex-end", alignItems: "center", gap: 4, height: "100%" }}>
-                      <span style={{ fontSize: 10.5, color: "var(--tenue)" }}>{d.visitas}</span>
-                      <div style={{ width: "100%", height: `${Math.max(4, (d.visitas / maxDia) * 90)}px`, background: "var(--primario)", borderRadius: "4px 4px 0 0" }} />
-                      <span style={{ fontSize: 10, color: "var(--tenue)" }}>{d.dia.slice(8, 10)}/{d.dia.slice(5, 7)}</span>
-                    </div>
+          <div className="vis-dos">
+            <section className="vis-sec">
+              <header><h2>Visitas por día</h2><span className="sub">últimos {dias} días</span></header>
+              <div className="cuerpo">
+                <div className="vis-leyenda"><span><i style={{ background: "color-mix(in srgb, var(--primario) 30%, transparent)" }} />Visitas</span><span><i style={{ background: "var(--primario)" }} />Visitantes únicos</span></div>
+                <div className="vis-graf">
+                  {[1, 0.75, 0.5, 0.25, 0].map((f) => (
+                    <div key={f} className="lin" style={{ top: `calc((100% - 22px) * ${1 - f})` }}><span>{Math.round(tope * f)}</span></div>
                   ))}
+                  <div className="vis-barras">
+                    {serie.map((d, i) => (
+                      <div key={d.dia} className="vis-col">
+                        <div className="v" style={{ height: `${(d.visitas / tope) * 100}%` }}>
+                          <div className="u" style={{ height: d.visitas ? `${(Math.min(d.unicos, d.visitas) / d.visitas) * 100}%` : 0 }} />
+                        </div>
+                        {(serie.length - 1 - i) % paso === 0 && <span className="eje">{d.dia.slice(8, 10)}/{d.dia.slice(5, 7)}</span>}
+                        <span className="tip">{d.dia.slice(8, 10)}/{d.dia.slice(5, 7)} · {d.visitas} visitas · {d.unicos} únicos</span>
+                      </div>
+                    ))}
+                  </div>
                 </div>
-              )}
-            </div>
+              </div>
+            </section>
+
+            <section className="vis-sec">
+              <header><h2>Cómo llegan</h2><span className="sub">canal de origen</span></header>
+              <div className="cuerpo"><Lista total={total} filas={s.canales.map((c) => ({ et: CANALES[c.canal] ?? c.canal, n: c.visitas }))} /></div>
+            </section>
           </div>
 
-          <div className="panel" style={{ marginTop: 14 }}>
-            <div className="panel-cab">Artículos <span className="tenue pequeno">· la portada del blog tuvo {num(s.portada)} visitas</span></div>
-            <div className="tabla-marco" style={{ border: "none", borderRadius: 0 }}>
-              <table className="tabla">
-                <thead><tr><th>Artículo</th><th className="num">Visitas</th><th className="num">Únicos</th><th className="num">Celular</th></tr></thead>
+          <section className="vis-sec">
+            <header><h2>Artículos</h2><span className="sub">portada del blog: {num(s.portada)} visitas</span></header>
+            <div className="vis-tabla-marco">
+              <table className="vis-tabla">
+                <thead><tr><th>#</th><th>Artículo</th><th className="num">Visitas</th><th className="num">Únicos</th><th className="num">Celular</th></tr></thead>
                 <tbody>
-                  {s.articulos.length === 0 && <tr><td colSpan={4} className="tenue">Aún no hay visitas a artículos.</td></tr>}
-                  {s.articulos.map((a) => (
+                  {s.articulos.length === 0 && <tr><td colSpan={5} className="vis-vacio" style={{ padding: 16 }}>Aún no hay visitas a artículos. Comparte el primero y aparecerá aquí.</td></tr>}
+                  {s.articulos.map((a, i) => (
                     <tr key={a.id}>
-                      <td className="envolver"><Link href={`/superadmin/web/blog/${a.id}`}>{a.titulo}</Link><div className="tenue pequeno">/blog/{a.slug}</div></td>
-                      <td className="num">{num(a.visitas)}</td>
+                      <td className="pos">{i + 1}</td>
+                      <td><Link href={`/superadmin/web/blog/${a.id}`}>{a.titulo}</Link><div className="ruta">/{a.slug}</div></td>
+                      <td className="num"><span className="vis-mini"><div style={{ width: `${(a.visitas / maxArt) * 100}%` }} /></span><b>{num(a.visitas)}</b></td>
                       <td className="num">{num(a.unicos)}</td>
-                      <td className="num">{a.visitas > 0 ? Math.round((a.moviles / a.visitas) * 100) : 0}%</td>
+                      <td className="num">{pct(a.moviles, a.visitas)}%</td>
                     </tr>
                   ))}
                 </tbody>
               </table>
             </div>
-          </div>
+          </section>
 
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: 14, marginTop: 14 }}>
-            <div className="panel"><div className="panel-cab">Países</div><div className="panel-cuerpo"><Barras filas={s.paises.map((p) => ({ et: nombrePais(p.pais), n: p.visitas }))} /></div></div>
-            <div className="panel"><div className="panel-cab">Regiones</div><div className="panel-cuerpo"><Barras filas={s.regiones.map((r) => ({ et: nombreRegion(r.pais, r.region), n: r.visitas }))} /></div></div>
-            <div className="panel"><div className="panel-cab">Ciudades</div><div className="panel-cuerpo"><Barras filas={s.ciudades.map((c) => ({ et: c.ciudad === "?" ? "Sin dato" : `${c.ciudad}${c.pais && c.pais !== "PE" && c.pais !== "?" ? ` (${nombrePais(c.pais)})` : ""}`, n: c.visitas }))} /></div></div>
-            <div className="panel"><div className="panel-cab">Por qué canal llegan</div><div className="panel-cuerpo"><Barras filas={s.canales.map((c) => ({ et: CANALES[c.canal] ?? c.canal, n: c.visitas }))} /></div></div>
-          </div>
+          <section className="vis-sec">
+            <header><h2>Ubicación</h2><span className="sub">aproximada, según la conexión de internet</span></header>
+            <div className="vis-tres">
+              <div><h3>Países</h3><Lista total={total} filas={s.paises.map((p) => ({ et: nombrePais(p.pais), n: p.visitas }))} /></div>
+              <div><h3>Regiones</h3><Lista total={total} filas={s.regiones.map((r) => ({ et: nombreRegion(r.pais, r.region), n: r.visitas }))} /></div>
+              <div><h3>Ciudades</h3><Lista total={total} filas={s.ciudades.map((c) => ({ et: c.ciudad === "?" ? "Sin dato" : `${c.ciudad}${c.pais && c.pais !== "PE" && c.pais !== "?" ? ` (${nombrePais(c.pais)})` : ""}`, n: c.visitas }))} /></div>
+            </div>
+          </section>
 
-          <div className="aviso info" style={{ marginTop: 14 }}>
-            <b>Cómo leer esto.</b> La ubicación se calcula por la dirección de internet y es aproximada: en celulares, la ciudad puede ser la del proveedor (por ejemplo Lima) y no la de la persona. No se guarda la IP, solo un código que cambia cada día, por eso «únicos» cuenta personas por día. Los robots de Google y de vistas previas no se cuentan.
-            <br />
-            <b>Para no contar sus propias visitas:</b> abra una sola vez <code>{dominio}/?sin_conteo=1</code> en cada navegador o celular que use (con <code>?sin_conteo=0</code> vuelve a contar).
-          </div>
+          <details className="vis-sec vis-ayuda">
+            <summary>Cómo leer estos datos</summary>
+            <ul>
+              <li>La ubicación es aproximada: en celulares la ciudad puede ser la del proveedor (por ejemplo Lima) y no la de la persona.</li>
+              <li>No se guarda la IP, solo un código que cambia cada día; por eso «únicos» cuenta personas por día.</li>
+              <li>Los robots de Google y de vistas previas no se cuentan.</li>
+              <li>Para no contar sus propias visitas, abra una vez <code>{dominio}/?sin_conteo=1</code> en cada navegador o celular que use. Con <code>?sin_conteo=0</code> vuelve a contar.</li>
+            </ul>
+          </details>
         </>
       )}
-    </>
+    </div>
   );
 }

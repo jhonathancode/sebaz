@@ -384,3 +384,46 @@
 .sb-pildora:hover { background: #eaf1fd; border-color: #c9d8f5; color: #1d4fb8 !important; }
 .sb-pildora.activa:hover { background: #1d4fb8; color: #fff !important; }
 .sb-tarjeta:hover h3 a, .sb-leido:hover h3 a { color: #1d4fb8; }
+
+/* ===== Botón de modo oscuro ===== */
+.sw-tema { flex: none; width: 40px; height: 40px; border-radius: 99px; border: 1.5px solid var(--sw-linea); background: transparent; color: var(--sw-texto); display: inline-grid; place-items: center; cursor: pointer; margin-left: 10px; }
+.sw-tema:hover { border-color: var(--sw-azul); color: var(--sw-azul); }
+.sw-cab-fila > .sw-tema:last-child { margin-left: 10px; }
+
+/* ===== Modo oscuro (html[data-sw-tema="oscuro"]) ===== */
+html[data-sw-tema="oscuro"] { color-scheme: dark; }
+html[data-sw-tema="oscuro"] body { background: #0b1220; }
+html[data-sw-tema="oscuro"] .sw, html[data-sw-tema="oscuro"] .sw.solo {
+  --sw-azul: #5b8def; --sw-azul-2: #7aa2f7; --sw-azul-suave: #172345; --sw-tinta: #070c17; --sw-texto: #cfd8e8; --sw-tenue: #8d9ab1; --sw-linea: #232e44; --sw-fondo: #0b1220;
+  background: #0b1220; color: #cfd8e8;
+}
+html[data-sw-tema="oscuro"] .sb { --sb-fondo: #0b1220; --sb-card: #111a2e; --sb-linea: #232e44; --sb-texto: #cfd8e8; --sb-tenue: #8d9ab1; --sb-blanco: #f1f5fd; --sb-amarillo: #6f9bf5;
+  background: linear-gradient(180deg, #0f1a33 0, #0b1220 380px); }
+html[data-sw-tema="oscuro"] .sw-cab { background: rgba(11,18,32,.9); }
+html[data-sw-tema="oscuro"] .sw-marca { color: #f1f5fd; }
+html[data-sw-tema="oscuro"] .sw-pie { background: #060a14; }
+html[data-sw-tema="oscuro"] .sw-buscar-cab input { background: #131d33; border-color: #2a3650; color: #f1f5fd; }
+html[data-sw-tema="oscuro"] .sw-buscar-cab input::placeholder, html[data-sw-tema="oscuro"] .sw-buscar-cab svg { color: #7d8aa3; }
+html[data-sw-tema="oscuro"] .sw-buscar-cab input:focus { background: #172140; border-color: #6f9bf5; box-shadow: 0 0 0 3px rgba(111,155,245,.2); }
+html[data-sw-tema="oscuro"] .sw-menu-movil summary, html[data-sw-tema="oscuro"] .sw-menu-movil nav { background: #111a2e; color: #cfd8e8; }
+html[data-sw-tema="oscuro"] .sb-buscar input { background: #131d33; }
+html[data-sw-tema="oscuro"] .sb-pildora, html[data-sw-tema="oscuro"] .sw-pildora { background: #111a2e; }
+html[data-sw-tema="oscuro"] .sb-pildora:hover { background: #172345; border-color: #35508f; color: #9db9f7 !important; }
+html[data-sw-tema="oscuro"] .sb-pildora.activa, html[data-sw-tema="oscuro"] .sb-pildora.activa:hover { background: #3a6fe0; border-color: #3a6fe0; color: #fff !important; }
+html[data-sw-tema="oscuro"] .sb-buscar button, html[data-sw-tema="oscuro"] .sb-boton, html[data-sw-tema="oscuro"] .sb-paginas .activa { background: #3a6fe0; border-color: #3a6fe0; }
+html[data-sw-tema="oscuro"] .sb-destacado, html[data-sw-tema="oscuro"] .sb-caja { box-shadow: 0 18px 40px -30px rgba(0,0,0,.8); }
+html[data-sw-tema="oscuro"] .sb-destacado-img, html[data-sw-tema="oscuro"] .sb-leido-img, html[data-sw-tema="oscuro"] .sb-tarjeta .sb-img, html[data-sw-tema="oscuro"] .sb-hero-img { background: linear-gradient(135deg, #172345, #0f1a33); }
+html[data-sw-tema="oscuro"] .sb-sinimg, html[data-sw-tema="oscuro"] .sb-sinimg-grande { color: #4766ad; }
+html[data-sw-tema="oscuro"] .sb-hero-img { box-shadow: 0 24px 50px -28px rgba(0,0,0,.8); }
+html[data-sw-tema="oscuro"] .sb-chip { background: rgba(111,155,245,.12); border-color: rgba(111,155,245,.35); }
+html[data-sw-tema="oscuro"] .sb .sw-texto code { background: #172140; color: #f4a37b; }
+html[data-sw-tema="oscuro"] .sb .sw-texto th { background: #172140; }
+html[data-sw-tema="oscuro"] .sb .sw-texto tr:nth-child(even) td { background: rgba(255,255,255,.025); }
+html[data-sw-tema="oscuro"] .sb .sw-texto blockquote { background: rgba(111,155,245,.08); }
+html[data-sw-tema="oscuro"] .sb .sw-etiquetas span { background: #172345; color: #9db9f7; }
+html[data-sw-tema="oscuro"] .sb-meta-fila > span, html[data-sw-tema="oscuro"] .sb-btn, html[data-sw-tema="oscuro"] .sb-toc-movil { background: rgba(255,255,255,.04); }
+html[data-sw-tema="oscuro"] .sb-btn-wa { background: #25d366; }
+html[data-sw-tema="oscuro"] .sb-comparte { background: linear-gradient(135deg, rgba(37,211,102,.12), rgba(37,211,102,.03)); }
+html[data-sw-tema="oscuro"] .sb-barra-compartir { background: rgba(17,26,46,.96); border-color: #232e44; }
+html[data-sw-tema="oscuro"] .sb .sw-compartir a, html[data-sw-tema="oscuro"] .sb .sw-compartir button { background: transparent; }
+html[data-sw-tema="oscuro"] .sw-tema { color: #cfd8e8; }

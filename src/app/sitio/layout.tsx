@@ -3,6 +3,7 @@ import Link from "next/link";
 import Script from "next/script";
 import { SOLO_BLOG, cargarAjustes, limpiarTexto, origenSitio, rutaSitio, urlWeb } from "@/lib/sitio/datos";
 import RegistrarVisita from "@/components/RegistrarVisita";
+import BotonTemaBlog from "@/components/BotonTemaBlog";
 import "./sitio.css";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -45,6 +46,7 @@ export default async function LayoutSitio({ children }: { children: React.ReactN
 
   return (
     <div className={`sw${SOLO_BLOG ? " solo" : ""}`}>
+      <script dangerouslySetInnerHTML={{ __html: `try{document.documentElement.dataset.swTema=localStorage.getItem("sw-tema")==="oscuro"?"oscuro":"claro"}catch(e){}` }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonSitio).replace(/</g, "\\u003c") }} />
       <RegistrarVisita endpoint={rutaVisita} />
       <header className="sw-cab">
@@ -81,6 +83,7 @@ export default async function LayoutSitio({ children }: { children: React.ReactN
               <input name="q" type="search" placeholder="Buscar artículos…" aria-label="Buscar en el blog" />
             </form>
           )}
+          <BotonTemaBlog />
         </div>
       </header>
 

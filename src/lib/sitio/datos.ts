@@ -78,9 +78,33 @@ const AJUSTES_BASE: Ajustes = {
   scripts_cabeza: null,
 };
 
+/**
+ * Modo «solo blog»: la web pública muestra únicamente el blog, sin menú, sin botón de ingreso,
+ * sin WhatsApp flotante y sin ninguna mención del sistema. Para volver a la web completa, ponga false.
+ */
+export const SOLO_BLOG = true;
+const NOMBRE_BLOG = "Gestión Municipal";
+const DESCRIPCION_BLOG = "Guías, normas y buenas prácticas para la gestión de su municipalidad de centro poblado.";
+const menciona = (t: string | null | undefined) => /zebaz|sebaz|sistema/i.test(t ?? "");
+
 export async function cargarAjustes(): Promise<Ajustes> {
   const { data } = await supabasePublico().from("web_ajustes").select("*").eq("id", 1).maybeSingle();
-  return { ...AJUSTES_BASE, ...(data ?? {}) } as Ajustes;
+  const a = { ...AJUSTES_BASE, ...(data ?? {}) } as Ajustes;
+  if (!SOLO_BLOG) return a;
+  return {
+    ...a,
+    nombre_sitio: menciona(a.nombre_sitio) ? NOMBRE_BLOG : a.nombre_sitio,
+    eslogan: menciona(a.eslogan) ? DESCRIPCION_BLOG : a.eslogan,
+    seo_titulo: menciona(a.seo_titulo) ? null : a.seo_titulo,
+    seo_descripcion: menciona(a.seo_descripcion) ? null : a.seo_descripcion,
+    pie_texto: menciona(a.pie_texto) ? null : a.pie_texto,
+    menu: [],
+    pie_enlaces: [],
+    boton_menu_texto: null,
+    boton_menu_enlace: null,
+    whatsapp: null,
+    whatsapp_mensaje: null,
+  };
 }
 
 /** Dirección pública de una imagen del bucket «web». */
@@ -114,7 +138,7 @@ export async function origenSitio(ajustes?: Ajustes) {
 export function mdAHtml(markdown: string): { html: string; indice: { id: string; texto: string; nivel: number }[] } {
   const indice: { id: string; texto: string; nivel: number }[] = [];
   const usados = new Set<string>();
-  const crudo = marked.parse(markdown ?? "", { async: false, gfm: true, breaks: false }) as string;
+  const crudo = marked.parse(markdown ?? "", { async: false, gfm: true, breaks: true }) as string;
   const limpio = sanitizeHtml(crudo, {
     allowedTags: ["h2", "h3", "h4", "p", "br", "hr", "strong", "em", "del", "a", "ul", "ol", "li", "blockquote", "code", "pre", "img", "table", "thead", "tbody", "tr", "th", "td", "figure", "figcaption"],
     allowedAttributes: { a: ["href", "title", "target", "rel"], img: ["src", "alt", "title", "width", "height", "loading"], th: ["align"], td: ["align"] },

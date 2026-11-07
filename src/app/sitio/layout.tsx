@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import Script from "next/script";
-import { cargarAjustes, limpiarTexto, origenSitio, rutaSitio, urlWeb } from "@/lib/sitio/datos";
+import { SOLO_BLOG, cargarAjustes, limpiarTexto, origenSitio, rutaSitio, urlWeb } from "@/lib/sitio/datos";
 import "./sitio.css";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -50,13 +50,13 @@ export default async function LayoutSitio({ children }: { children: React.ReactN
               </>
             )}
           </Link>
-          <nav className="sw-nav" aria-label="Menú principal">
+          {(menu.length > 0 || boton) && <nav className="sw-nav" aria-label="Menú principal">
             {menu.map((m) => (
               <Link key={m.href + m.texto} href={m.destino}>{m.texto}</Link>
             ))}
             {boton && <Link className="sw-boton chico" href={boton.destino} style={{ marginLeft: 8 }}>{boton.texto}</Link>}
-          </nav>
-          <details className="sw-menu-movil">
+          </nav>}
+          {(menu.length > 0 || boton) && <details className="sw-menu-movil">
             <summary>Menú</summary>
             <nav aria-label="Menú principal">
               {menu.map((m) => (
@@ -64,7 +64,7 @@ export default async function LayoutSitio({ children }: { children: React.ReactN
               ))}
               {boton && <Link className="sw-boton chico" href={boton.destino}>{boton.texto}</Link>}
             </nav>
-          </details>
+          </details>}
         </div>
       </header>
 
@@ -77,15 +77,15 @@ export default async function LayoutSitio({ children }: { children: React.ReactN
               <h4>{a.nombre_sitio}</h4>
               <p style={{ margin: 0, maxWidth: "40ch" }}>{a.pie_texto || a.eslogan}</p>
             </div>
-            <div>
+            {!SOLO_BLOG && <div>
               <h4>Enlaces</h4>
               <ul>
                 {(pie.length ? pie : menu).map((m) => (
                   <li key={m.href + m.texto}><Link href={m.destino}>{m.texto}</Link></li>
                 ))}
               </ul>
-            </div>
-            <div>
+            </div>}
+            {(!SOLO_BLOG || a.correo || a.telefono || a.direccion || redes.length > 0) && <div>
               <h4>Contacto</h4>
               <ul>
                 {a.correo && <li><a href={`mailto:${a.correo}`}>{a.correo}</a></li>}
@@ -96,11 +96,11 @@ export default async function LayoutSitio({ children }: { children: React.ReactN
                   <li key={k}><a href={v} target="_blank" rel="noopener noreferrer" style={{ textTransform: "capitalize" }}>{k}</a></li>
                 ))}
               </ul>
-            </div>
+            </div>}
           </div>
           <div className="sw-pie-abajo">
             <span>© {new Date().getFullYear()} {a.nombre_sitio}. Todos los derechos reservados.</span>
-            <span>Hecho en Chanchamayo, Perú</span>
+            {!SOLO_BLOG && <span>Hecho en Chanchamayo, Perú</span>}
           </div>
         </div>
       </footer>

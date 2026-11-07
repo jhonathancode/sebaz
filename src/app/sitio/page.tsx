@@ -1,8 +1,27 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import ListaBlog from "./blog/ListaBlog";
-import { SOLO_BLOG, cargarAjustes, fechaCorta, limpiarTexto, rutaSitio, supabasePublico, tiempoLectura, urlWeb, type Articulo, type Categoria } from "@/lib/sitio/datos";
+import { SOLO_BLOG, origenSitio, cargarAjustes, fechaCorta, limpiarTexto, rutaSitio, supabasePublico, tiempoLectura, urlWeb, type Articulo, type Categoria } from "@/lib/sitio/datos";
 
 export const dynamic = "force-dynamic";
+
+export async function generateMetadata({ searchParams }: { searchParams: Promise<{ q?: string; pag?: string }> }): Promise<Metadata> {
+  if (!SOLO_BLOG) return {};
+  const sp = await searchParams;
+  const a = await cargarAjustes();
+  const origen = await origenSitio(a);
+  const pag = Math.max(1, Math.floor(Number(sp.pag)) || 1);
+  const base = a.seo_titulo || `${a.nombre_sitio} | Blog para municipalidades de centros poblados`;
+  const desc = limpiarTexto(a.seo_descripcion || a.eslogan, 160);
+  return {
+    title: { absolute: pag > 1 ? `${base} · Página ${pag}` : base },
+    description: desc,
+    alternates: { canonical: pag > 1 ? `${origen}/?pag=${pag}` : `${origen}/` },
+    // Las búsquedas internas no se indexan, pero sus enlaces sí se siguen.
+    robots: sp.q ? { index: false, follow: true } : undefined,
+    openGraph: { title: base, description: desc, url: `${origen}/`, type: "website" },
+  };
+}
 
 const PILARES = [
   { t: "Requerimientos que se arman solos", d: "Requerimiento, cotizaciones, orden, conformidad y comprobante de pago en un solo recorrido, con numeración automática y todo en orden." },

@@ -1,14 +1,23 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { supabasePublico } from "@/lib/sitio/datos";
+import { origenSitio, supabasePublico } from "@/lib/sitio/datos";
 import ListaBlog from "../../ListaBlog";
 
 export const dynamic = "force-dynamic";
 
-export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
+export async function generateMetadata({ params, searchParams }: { params: Promise<{ slug: string }>; searchParams: Promise<{ q?: string; pag?: string }> }): Promise<Metadata> {
   const { slug } = await params;
+  const sp = await searchParams;
   const { data } = await supabasePublico().from("blog_categorias").select("nombre, descripcion").eq("slug", slug).maybeSingle();
-  return data ? { title: `${data.nombre} · Blog`, description: data.descripcion ?? undefined } : {};
+  if (!data) return {};
+  const origen = await origenSitio();
+  const pag = Math.max(1, Math.floor(Number(sp.pag)) || 1);
+  return {
+    title: `${data.nombre}${pag > 1 ? ` · Página ${pag}` : ""} · Blog`,
+    description: data.descripcion ?? undefined,
+    alternates: { canonical: `${origen}/blog/categoria/${slug}${pag > 1 ? `?pag=${pag}` : ""}` },
+    robots: sp.q ? { index: false, follow: true } : undefined,
+  };
 }
 
 export default async function Categoria({ params, searchParams }: { params: Promise<{ slug: string }>; searchParams: Promise<{ q?: string; pag?: string }> }) {

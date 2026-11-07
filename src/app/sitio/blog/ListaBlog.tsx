@@ -4,7 +4,7 @@ import { fechaCorta, limpiarTexto, rutaSitio, supabasePublico, tiempoLectura, ur
 const POR_PAGINA = 9;
 
 export function Avatar({ nombre }: { nombre: string | null }) {
-  const n = (nombre || "Zebaz").trim();
+  const n = (nombre || "Redacción").trim();
   const iniciales = n.split(/\s+/).slice(0, 2).map((p) => p[0]).join("").toUpperCase();
   return <span className="sb-avatar" aria-hidden="true">{iniciales}</span>;
 }
@@ -39,7 +39,7 @@ export function TarjetaArticulo({ x, base }: { x: Articulo; cat?: Categoria | nu
       </Link>
       <h3><Link href={`${base}/${x.slug}`}>{x.titulo}</Link></h3>
       <div className="sb-meta"><MetaLectura x={x} /></div>
-      <div className="sb-autor"><Avatar nombre={x.autor} /> {x.autor || "Zebaz"}</div>
+      <div className="sb-autor"><Avatar nombre={x.autor} /> {x.autor || "Redacción"}</div>
     </article>
   );
 }
@@ -80,7 +80,6 @@ export default async function ListaBlog({ categoriaSlug, q, pag }: { categoriaSl
     const s = params.toString();
     return `${actual ? `${base}/categoria/${actual.slug}` : base}${s ? `?${s}` : ""}`;
   };
-  const inicio = await rutaSitio("/");
   const portadaDest = destacado ? urlWeb(destacado.portada_path) : null;
 
   return (
@@ -116,7 +115,7 @@ export default async function ListaBlog({ categoriaSlug, q, pag }: { categoriaSl
                 <p>{limpiarTexto(destacado.extracto || destacado.contenido, 200)}</p>
               </div>
               <div className="sb-destacado-pie">
-                <span className="sb-autor"><Avatar nombre={destacado.autor} /> {destacado.autor || "Zebaz"}</span>
+                <span className="sb-autor"><Avatar nombre={destacado.autor} /> {destacado.autor || "Redacción"}</span>
                 <span className="sb-meta"><MetaLectura x={destacado} /></span>
               </div>
             </article>
@@ -135,7 +134,7 @@ export default async function ListaBlog({ categoriaSlug, q, pag }: { categoriaSl
                       <div>
                         <h3><Link href={`${base}/${x.slug}`}>{x.titulo}</Link></h3>
                         <div className="sb-meta"><MetaLectura x={x} /></div>
-                        <div className="sb-autor"><Avatar nombre={x.autor} /> {x.autor || "Zebaz"}</div>
+                        <div className="sb-autor"><Avatar nombre={x.autor} /> {x.autor || "Redacción"}</div>
                       </div>
                     </article>
                   );
@@ -145,15 +144,6 @@ export default async function ListaBlog({ categoriaSlug, q, pag }: { categoriaSl
           </section>
         )}
 
-        {portadaPrincipal && (
-          <div className="sb-banner">
-            <div>
-              <b>Controle su municipalidad con Zebaz</b>
-              <span>Gastos, caja chica y rendición mensual en un solo sistema.</span>
-            </div>
-            <Link href={inicio} className="sb-boton">Conocer Zebaz</Link>
-          </div>
-        )}
 
         {resto.length > 0 && (
           <section className="sb-ultimos">

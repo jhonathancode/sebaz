@@ -59,6 +59,14 @@ export default function EditorArticulo({ inicial, categorias, guardar, urlPublic
     poner("contenido", value.slice(0, ini) + bloque + value.slice(fin));
     setTimeout(() => el.focus(), 0);
   }
+  /** Pasa a minúsculas normales lo que quedó guardado en MAYÚSCULAS (primera letra de cada oración en mayúscula). */
+  function aNormal() {
+    if (!window.confirm("¿Convertir título, resumen, contenido y autor a minúsculas normales? Revise después las siglas y nombres propios.")) return;
+    const oracion = (t: string) =>
+      t.toLocaleLowerCase("es-PE").replace(/(^|[.!?¿¡]\s+|\n+(?:#{1,6}\s+|[-*>]\s+|\d+\.\s+)?)(\p{L})/gu, (_m, ini: string, l: string) => ini + l.toLocaleUpperCase("es-PE"));
+    const nombre = (t: string) => t.toLocaleLowerCase("es-PE").replace(/(^|\s)(\p{L})/gu, (_m, ini: string, l: string) => ini + l.toLocaleUpperCase("es-PE"));
+    setD((x) => ({ ...x, titulo: oracion(x.titulo), extracto: oracion(x.extracto), contenido: oracion(x.contenido), autor: nombre(x.autor) }));
+  }
   async function imagen(f: File) {
     setSubiendo(true);
     const fd = new FormData();
@@ -112,6 +120,7 @@ export default function EditorArticulo({ inicial, categorias, guardar, urlPublic
                 <button type="button" onClick={() => envolver("[", "](https://)", "texto del enlace")} title="Enlace">🔗 Enlace</button>
                 <button type="button" onClick={() => fotos.current?.click()} disabled={subiendo} title="Insertar imagen">{subiendo ? "Subiendo…" : "🖼 Imagen"}</button>
                 <button type="button" onClick={() => envolver("\n\n---\n\n", "", "")} title="Línea divisoria">― Línea</button>
+                <button type="button" onClick={aNormal} title="Convertir de MAYÚSCULAS a minúsculas normales">Aa Normal</button>
                 <input ref={fotos} type="file" hidden accept="image/jpeg,image/png,image/webp,image/gif" onChange={(e) => { const f = e.target.files?.[0]; if (f) void imagen(f); e.target.value = ""; }} />
               </div>
             )}

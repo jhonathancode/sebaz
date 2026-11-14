@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import BotonConfirmar from "@/components/BotonConfirmar";
 import InputFecha from "@/components/InputFecha";
 import { type DatosSec } from "@/components/formatos/FormatoSecretaria";
 import { esLibre, hojaLibreHtml, membreteHtml, sinMarca, textoFecha } from "@/lib/secretaria";
@@ -13,11 +14,13 @@ const INTERLINEADO = ["1", "1.15", "1.5", "2"];
 /** Formulario del documento (izquierda) y la hoja A4 editable con su barra de formato tipo Word (derecha). */
 export default function EditorSecretaria({
   accion,
+  emitir,
   inicial,
   mcp,
   id,
 }: {
   accion: (fd: FormData) => Promise<void>;
+  emitir: (fd: FormData) => Promise<void>;
   inicial: DatosSec;
   mcp: Mcp;
   id: string;
@@ -175,7 +178,8 @@ export default function EditorSecretaria({
       <div className="sec-barra-sup">
         <label className="campo">Fecha del documento<InputFecha name="fecha" defaultValue={fecha} required onChange={cambiarFecha} /></label>
         <p className="pequeno tenue">Escriba y cambie todo directamente sobre la hoja: membrete, destinatario, asunto, texto y firma. El número se asigna al emitir. Lo que está entre [CORCHETES] es lo que debe completar.</p>
-        <button type="submit" className="btn primario">Guardar borrador</button>
+        <button type="submit" className="btn">Guardar borrador</button>
+        <BotonConfirmar formAction={emitir} className="btn primario" pregunta="¿Ya terminó el documento?" detalle="Se guardará tal como está y recibirá su número correlativo. Después ya no se puede editar." textoConfirmar="Sí, emitir">Ya terminé · Emitir</BotonConfirmar>
       </div>
 
       <div className="sec-vista">

@@ -7,7 +7,7 @@ import sanitizeHtml from "sanitize-html";
 import { contextoMcp, tiene } from "@/lib/contexto";
 import { mensajeError, texto, volver } from "@/lib/acciones";
 import { hoyISO } from "@/lib/formato";
-import { esLibre, lugarMcp, MARCA_LIBRE, sinMarca, MODELOS_BASE, rellenar, TIPOS_SEC } from "@/lib/secretaria";
+import { esLibre, lugarMcp, MARCA_LIBRE, membreteHtml, sinMarca, MODELOS_BASE, rellenar, TIPOS_SEC } from "@/lib/secretaria";
 import { supabaseServidor } from "@/lib/supabase/server";
 
 const TIPOS_ARCHIVO: Record<string, string> = { "application/pdf": "pdf", "image/jpeg": "jpg", "image/png": "png", "image/webp": "webp" };
@@ -81,6 +81,8 @@ export async function crearDesdeModelo(fd: FormData) {
     const { data: m } = await supabase.from("sec_modelos").select("tipo, nombre, asunto, cuerpo").eq("id", clave).eq("mcp_id", ctx.mcp.id).maybeSingle();
     if (!m) volver(destino, "error", "No se encontró el modelo.");
     tipo = m.tipo; asunto = m.asunto ?? ""; cuerpo = m.cuerpo; modelo = m.nombre;
+    // Modelos cargados desde Word antes de la hoja libre: ya traen su propio encabezado, no se les agrega otro
+    if (!esLibre(cuerpo) && m.asunto && m.asunto === m.nombre.toUpperCase()) cuerpo = MARCA_LIBRE + membreteHtml(ctx.mcp) + `<div class="sec-cuerpo">${cuerpo}</div>`;
   } else if (clase === "blanco") {
     if (!TIPOS_SEC.some((t) => t.clave === clave)) volver(destino, "error", "Elija el tipo de documento.");
     tipo = clave; cuerpo = "<p><br></p>";
@@ -109,22 +111,21 @@ export async function crearDesdeModelo(fd: FormData) {
   redirect(`${ruta(data.id)}/editar`);
 }
 
-export async function guardarBorrador(fd: FormData) {
+/** Guarda el contenido de la hoja en el borrador. Devuelve el id; si algo falla, vuelve con el aviso. */
+async function persistir(fd: FormData, destino: string) {
   const id = texto(fd, "id") ?? "";
-  const destino = `${ruta(id)}/editar`;
   const ctx = await permiso(destino);
   const supabase = await supabaseServidor();
   const fecha = texto(fd, "fecha");
   if (!fecha || !/^\d{4}-\d{2}-\d{2}$/.test(fecha)) volver(destino, "error", "Elija la fecha del documento.");
   const html = String(fd.get("cuerpo") ?? "");
   if (html.length > 3_000_000) volver(destino, "error", "El documento es demasiado pesado (imágenes muy grandes). Use imágenes más pequeñas.");
-  const asunto = texto(fd, "asunto") || "SIN ASUNTO";
   const { error } = await supabase
     .from("sec_documentos")
     .update({
       fecha,
       destinatario: texto(fd, "destinatario"),
-      asunto,
+      asunto: texto(fd, "asunto") || "SIN ASUNTO",
       cuerpo: MARCA_LIBRE + limpiar(html),
     })
     .eq("id", id)
@@ -132,7 +133,25 @@ export async function guardarBorrador(fd: FormData) {
     .eq("estado", "borrador");
   if (error) volver(destino, "error", falta(mensajeError(error)));
   revalidatePath("/secretaria");
+  return id;
+}
+
+export async function guardarBorrador(fd: FormData) {
+  const id = texto(fd, "id") ?? "";
+  await persistir(fd, `${ruta(id)}/editar`);
   volver(ruta(id), "ok", "Borrador guardado. Revíselo y, si está bien, emítalo.");
+}
+
+/** «Ya terminé»: guarda lo que hay en la hoja y emite el documento (recibe su número). */
+export async function guardarYEmitir(fd: FormData) {
+  const id = texto(fd, "id") ?? "";
+  const destino = `${ruta(id)}/editar`;
+  await persistir(fd, destino);
+  const supabase = await supabaseServidor();
+  const { error } = await supabase.rpc("sec_emitir", { p_id: id });
+  if (error) volver(destino, "error", falta(mensajeError(error)));
+  revalidatePath("/secretaria");
+  redirect(`${ruta(id)}?emitido=1`);
 }
 
 /** Emite el documento: recibe su número correlativo y ya no se edita. */
@@ -254,12 +273,12 @@ export async function importarModeloWord(fd: FormData) {
   let html = "";
   try {
     const r = await mammoth.convertToHtml({ buffer: Buffer.from(await archivo.arrayBuffer()) });
-    html = limpiar(r.value);
+    html = limpiar(membreteHtml(ctx.mcp) + `<div class="sec-cuerpo">${r.value}</div>`);
   } catch {
     volver(destino, "error", "No se pudo leer el archivo. Verifique que sea un .docx válido.");
   }
   if (!html.replace(/<[^>]*>/g, "").trim()) volver(destino, "error", "El archivo no tiene texto.");
-  const { error } = await supabase.from("sec_modelos").insert({ mcp_id: ctx.mcp.id, tipo, nombre, asunto: nombre.toUpperCase(), cuerpo: html });
+  const { error } = await supabase.from("sec_modelos").insert({ mcp_id: ctx.mcp.id, tipo, nombre, asunto: nombre.toUpperCase(), cuerpo: MARCA_LIBRE + html });
   if (error) volver(destino, "error", falta(mensajeError(error)));
   revalidatePath(destino);
   volver(destino, "ok", "Modelo cargado. Ya aparece en «Mis modelos»: úselo y edítelo como cualquier otro.");

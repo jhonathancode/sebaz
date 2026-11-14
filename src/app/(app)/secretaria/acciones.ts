@@ -205,12 +205,14 @@ export async function guardarComoModelo(fd: FormData) {
 
 /** Un modelo propio no se borra: se archiva y deja de aparecer. */
 export async function archivarModelo(fd: FormData) {
-  const ctx = await permiso("/secretaria/nuevo");
+  const t = texto(fd, "tipo") ?? "";
+  const destino = TIPOS_SEC.some((x) => x.clave === t) ? `/secretaria?tipo=${t}` : "/secretaria/nuevo";
+  const ctx = await permiso(destino);
   const supabase = await supabaseServidor();
   const { error } = await supabase.from("sec_modelos").update({ activo: false }).eq("id", texto(fd, "id") ?? "").eq("mcp_id", ctx.mcp.id);
-  if (error) volver("/secretaria/nuevo", "error", falta(mensajeError(error)));
-  revalidatePath("/secretaria/nuevo");
-  volver("/secretaria/nuevo", "ok", "Modelo archivado.");
+  if (error) volver(destino, "error", falta(mensajeError(error)));
+  revalidatePath("/secretaria");
+  volver(destino, "ok", "Modelo archivado.");
 }
 
 /** Adjunta el escaneado del documento ya firmado y sellado. */
@@ -236,7 +238,8 @@ export async function subirEscaneado(fd: FormData) {
 
 /** Carga un modelo propio desde un archivo de Word (.docx): queda en «Mis modelos» para usarlo y editarlo. */
 export async function importarModeloWord(fd: FormData) {
-  const destino = "/secretaria/nuevo";
+  const tipoDestino = texto(fd, "tipo") ?? "";
+  const destino = TIPOS_SEC.some((t) => t.clave === tipoDestino) ? `/secretaria?tipo=${tipoDestino}` : "/secretaria/nuevo";
   const ctx = await permiso(destino);
   const supabase = await supabaseServidor();
   const nombre = texto(fd, "nombre");

@@ -4794,3 +4794,17 @@ html.pdf-captura .sf-faltan { display: none; }
 .sec-libre p { margin: 0 0 11px; }
 .sec-libre hr { border: 0; border-top: 1.4px solid #111; margin: 8px 0; }
 .sec-libre .sec-lugar { text-align: right; }
+
+/* Secretaría: modelos dentro de la carpeta */
+.sec-mods { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 10px; }
+.sec-mod { position: relative; }
+.sec-mod-btn { width: 100%; display: grid; grid-template-columns: 30px 1fr; gap: 10px; align-items: center; text-align: left; padding: 10px 12px; border: 1px dashed var(--borde-fuerte); border-radius: 14px; background: var(--panel); color: inherit; cursor: pointer; }
+.sec-mod-btn:hover { border-style: solid; border-color: var(--azul-borde); background: color-mix(in srgb, var(--primario) 6%, var(--panel)); }
+.sec-mod-btn .sec-ico-hoja { width: 30px; height: 36px; }
+.sec-mod-btn span { display: flex; flex-direction: column; min-width: 0; }
+.sec-mod-btn b { font-size: 14px; }
+.sec-mod-btn small { color: var(--tenue); font-size: 12px; }
+.sec-mod.propio .sec-mod-btn { border-style: solid; border-color: var(--azul-borde); }
+.sec-mod-x { position: absolute; top: 6px; right: 6px; }
+.sec-mod-x .btn { padding: 1px 8px; font-size: 11px; opacity: 0; }
+.sec-mod:hover .sec-mod-x .btn, .sec-mod-x:focus-within .btn { opacity: 1; }

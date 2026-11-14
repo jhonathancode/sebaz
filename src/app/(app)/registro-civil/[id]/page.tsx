@@ -24,6 +24,8 @@ function Dato({ t, v }: { t: string; v: string | null | undefined }) {
   );
 }
 
+const kb = (n: number | null | undefined) => (n ? (n > 1024 * 1024 ? `${(n / 1024 / 1024).toFixed(1)} MB` : `${Math.max(1, Math.round(n / 1024))} KB`) : "");
+
 export default async function FichaRegistro({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: ParamsAviso }) {
   const { id } = await params;
   const sp = await searchParams;
@@ -51,63 +53,95 @@ export default async function FichaRegistro({ params, searchParams }: { params: 
   const urlBajar = new Map((bajar.data ?? []).map((x) => [x.path, x.signedUrl]));
   const anulado = r.estado === "anulado";
 
+  const iniciales = (r.apellido_paterno[0] ?? "") + (r.nombres[0] ?? "");
+  const filiacion = [r.padre ? { t: "Padre", v: r.padre } : null, r.madre ? { t: "Madre", v: r.madre } : null].filter(Boolean) as { t: string; v: string }[];
+
   return (
     <>
-      <div className="titulo-ventana">
-        <h1>{nombreCompleto(r)}</h1>
-        <span className="etq">{NOMBRE_TIPO_RC[r.tipo] ?? r.tipo}</span>
-        {anulado && <span className="etq">Anulado</span>}
-        <span className="espacio" />
-        {puede && !anulado && (
-          <VentanaFlotante boton="Corregir datos" titulo="Corregir datos del registro" accion={editarRegistro} claseBoton="btn contorno" ancha>
-            <CamposRegistro r={r} />
-          </VentanaFlotante>
-        )}
-        {puede && !anulado && <Motivo accion={anularRegistro} boton="Anular registro" ayuda="Motivo de la anulación" campos={{ id }} motivos={MOTIVOS_REGISTRO} />}
-        {puede && anulado && (
-          <form action={restaurarRegistro}>
-            <input type="hidden" name="id" value={id} />
-            <button className="btn contorno" type="submit">Volver a dejar vigente</button>
-          </form>
-        )}
-        <Link className="btn" href="/registro-civil">Cerrar</Link>
-      </div>
       <Avisos ok={sp.ok} error={sp.error} />
       {anulado && <div className="aviso error">Registro anulado: {r.anulado_motivo}</div>}
 
-      <div className="columnas en-pila">
-        <div className="principal">
+      <header className="rc-perfil-cab">
+        <div className="rc-perfil-avatar" aria-hidden="true">{iniciales}</div>
+        <div className="rc-perfil-id">
+          <h1>{r.apellido_paterno} {r.apellido_materno ?? ""}</h1>
+          <div className="rc-perfil-nombres">{r.nombres}</div>
+          <div className="rc-perfil-chips">
+            <span className={`rc-chip rc-${r.tipo}`}>{NOMBRE_TIPO_RC[r.tipo] ?? r.tipo}</span>
+            {r.dni && <span className="rc-chip">DNI {r.dni}</span>}
+            {r.sexo && <span className="rc-chip">{r.sexo === "M" ? "Masculino" : "Femenino"}</span>}
+            {anulado && <span className="rc-chip rc-anulado-chip">Anulado</span>}
+            <span className="rc-chip">{r.origen === "digital" ? "Sistema digital" : "Libro físico"}</span>
+          </div>
+        </div>
+        <div className="rc-perfil-acc no-imprimir">
+          {puede && !anulado && (
+            <VentanaFlotante boton="Corregir datos" titulo="Corregir datos del registro" accion={editarRegistro} claseBoton="btn contorno" ancha>
+              <CamposRegistro r={r} />
+            </VentanaFlotante>
+          )}
+          {puede && !anulado && <Motivo accion={anularRegistro} boton="Anular registro" ayuda="Motivo de la anulación" campos={{ id }} motivos={MOTIVOS_REGISTRO} />}
+          {puede && anulado && (
+            <form action={restaurarRegistro}>
+              <input type="hidden" name="id" value={id} />
+              <button className="btn contorno" type="submit">Volver a dejar vigente</button>
+            </form>
+          )}
+          <Link className="btn" href="/registro-civil">← Volver al padrón</Link>
+        </div>
+      </header>
+
+      <section className="rc-ubica" aria-label="Dónde está el acta">
+        <div><span>Fecha del hecho</span><b>{r.fecha_acto ? fecha(r.fecha_acto) : "—"}</b></div>
+        <div><span>N° de acta</span><b>{r.numero_acta || "—"}</b></div>
+        <div><span>N° de expediente</span><b>{r.expediente || "—"}</b></div>
+        <div><span>Libro / Folio</span><b>{[r.libro, r.folio].filter(Boolean).join(" / ") || "—"}</b></div>
+        <div><span>Guardado en</span><b>{r.ubicacion || "—"}</b></div>
+      </section>
+
+      <div className="rc-perfil-cols">
+        <div className="rc-perfil-main">
           <section className="panel">
-            <div className="panel-cab">Partida y constancias adjuntas</div>
+            <div className="panel-cab">Partida y constancias adjuntas<span className="tenue pequeno">{vigentes.length} {vigentes.length === 1 ? "archivo" : "archivos"}</span></div>
             <div className="panel-cuerpo">
-              {vigentes.length === 0 && <p className="tenue">Todavía no tiene la partida adjunta. {puede ? "Súbala abajo para poder imprimirla desde aquí." : ""}</p>}
-              <ul className="lista-docs">
-                {vigentes.map((a) => {
-                  const url = urlVer.get(a.archivo_path);
-                  return (
-                    <li key={a.id}>
-                      <span className="nombre-doc">
-                        <b>{a.descripcion}</b>
-                        <small>{a.archivo_nombre} · subido el {fecha(String(a.creado_en).slice(0, 10))}</small>
-                      </span>
-                      {url ? <VisorArchivo url={url} descarga={urlBajar.get(a.archivo_path) ?? url} nombre={a.archivo_nombre ?? "partida"} tipo={a.archivo_tipo ?? "application/pdf"} titulo={`${a.descripcion} · ${nombreCompleto(r)}`} /> : <span className="tenue pequeno">No disponible</span>}
-                      {puede && <Motivo accion={anularPartida} boton="Anular" ayuda="Motivo" campos={{ id: a.id, registro_id: id }} chico motivos={MOTIVOS_ARCHIVO} />}
-                    </li>
-                  );
-                })}
-              </ul>
+              {vigentes.length === 0 ? (
+                <div className="rc-vacio-caja">
+                  <b>Todavía no tiene la partida adjunta</b>
+                  <span>{puede ? "Súbala aquí abajo y se podrá ver e imprimir desde esta ficha." : "Quien registra puede adjuntarla."}</span>
+                </div>
+              ) : (
+                <ul className="rc-archivos">
+                  {vigentes.map((a) => {
+                    const url = urlVer.get(a.archivo_path);
+                    const pdf = a.archivo_tipo === "application/pdf";
+                    return (
+                      <li key={a.id}>
+                        <span className={`rc-tipo-arch ${pdf ? "pdf" : "img"}`} aria-hidden="true">{pdf ? "PDF" : "IMG"}</span>
+                        <span className="rc-arch-txt">
+                          <b>{a.descripcion}</b>
+                          <small>{a.archivo_nombre} · {kb(a.archivo_tamano)} · subido el {fecha(String(a.creado_en).slice(0, 10))}</small>
+                        </span>
+                        <span className="rc-arch-acc">
+                          {url ? <VisorArchivo url={url} descarga={urlBajar.get(a.archivo_path) ?? url} nombre={a.archivo_nombre ?? "partida"} tipo={a.archivo_tipo ?? "application/pdf"} titulo={`${a.descripcion} · ${nombreCompleto(r)}`} /> : <span className="tenue pequeno">No disponible</span>}
+                          {puede && <Motivo accion={anularPartida} boton="Anular" ayuda="Motivo" campos={{ id: a.id, registro_id: id }} chico motivos={MOTIVOS_ARCHIVO} />}
+                        </span>
+                      </li>
+                    );
+                  })}
+                </ul>
+              )}
               {(archivos ?? []).filter((a) => a.anulado).map((a) => (
-                <p key={a.id} className="tenue pequeno" style={{ margin: "6px 0 0" }}>Anulado: {a.descripcion} ({a.archivo_nombre}) · {a.anulado_motivo}</p>
+                <p key={a.id} className="tenue pequeno" style={{ margin: "8px 0 0" }}>Anulado: {a.descripcion} ({a.archivo_nombre}) · {a.anulado_motivo}</p>
               ))}
               {puede && !anulado && (
-                <form action={subirPartida} className="barra" style={{ marginTop: 14 }}>
+                <form action={subirPartida} className="rc-subir rc-form">
                   <input type="hidden" name="registro_id" value={id} />
                   <label className="campo">Qué documento es
                     <select name="descripcion" defaultValue="Partida">
                       {DESCRIPCIONES_ARCHIVO.map((d) => <option key={d}>{d}</option>)}
                     </select>
                   </label>
-                  <div style={{ flex: "1 1 260px" }}>
+                  <div className="rc-subir-archivo">
                     <CampoArchivoEstado etiqueta="Foto o PDF" multiple={false} ayuda="PDF o foto; máximo 4 MB. Las fotos grandes se reducen solas." />
                   </div>
                   <button className="btn primario" type="submit">Adjuntar</button>
@@ -117,52 +151,52 @@ export default async function FichaRegistro({ params, searchParams }: { params: 
           </section>
 
           <section className="panel">
-            <div className="panel-cab">Copias entregadas</div>
+            <div className="panel-cab">Copias entregadas<span className="tenue pequeno">{(entregas ?? []).length}</span></div>
             <div className="panel-cuerpo">
               {(entregas ?? []).length === 0 ? (
-                <p className="tenue">Aún no se registró ninguna entrega de copia.</p>
+                <p className="tenue" style={{ margin: 0 }}>Aún no se entregó ninguna copia de esta partida.</p>
               ) : (
-                <div className="tabla-marco" style={{ border: "none" }}>
-                  <table className="tabla">
-                    <thead><tr><th>Fecha</th><th>Solicitante</th><th>DNI</th><th>Motivo</th></tr></thead>
-                    <tbody>
-                      {(entregas ?? []).map((e) => (
-                        <tr key={e.id}><td>{fecha(e.fecha)}</td><td className="envolver">{e.solicitante_nombre}</td><td>{e.solicitante_dni ?? "—"}</td><td className="envolver">{e.motivo ?? "—"}</td></tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
+                <ol className="rc-linea">
+                  {(entregas ?? []).map((e) => (
+                    <li key={e.id}>
+                      <span className="rc-linea-fecha">{fecha(e.fecha)}</span>
+                      <span className="rc-linea-txt"><b>{e.solicitante_nombre}</b>{e.solicitante_dni ? ` · DNI ${e.solicitante_dni}` : ""}{e.motivo ? <small>{e.motivo}</small> : null}</span>
+                    </li>
+                  ))}
+                </ol>
               )}
               {puede && !anulado && (
-                <form action={registrarEntrega} className="barra" style={{ marginTop: 14 }}>
-                  <input type="hidden" name="registro_id" value={id} />
-                  <label className="campo" style={{ flex: "2 1 220px" }}>Quién pidió la copia<input name="solicitante_nombre" required style={{ textTransform: "uppercase" }} autoComplete="off" /></label>
-                  <label className="campo">DNI<input name="solicitante_dni" inputMode="numeric" maxLength={8} autoComplete="off" /></label>
-                  <label className="campo" style={{ flex: "2 1 200px" }}>Para qué<input name="motivo" placeholder="Ej.: MATRÍCULA, TRÁMITE DE DNI" style={{ textTransform: "uppercase" }} autoComplete="off" /></label>
-                  <button className="btn" type="submit">Registrar entrega</button>
-                </form>
+                <details className="rc-entrega-form">
+                  <summary>+ Registrar una entrega</summary>
+                  <form action={registrarEntrega} className="rc-form">
+                    <input type="hidden" name="registro_id" value={id} />
+                    <div className="rc-rejilla">
+                      <label className="campo rc-ancho2">Quién pidió la copia<input name="solicitante_nombre" required style={{ textTransform: "uppercase" }} autoComplete="off" /></label>
+                      <label className="campo">DNI<input name="solicitante_dni" inputMode="numeric" maxLength={8} pattern="[0-9]{8}" title="El DNI tiene 8 dígitos" autoComplete="off" /></label>
+                      <label className="campo rc-ancho3">Para qué<input name="motivo" placeholder="Ej.: MATRÍCULA, TRÁMITE DE DNI" style={{ textTransform: "uppercase" }} autoComplete="off" /></label>
+                    </div>
+                    <div><button className="btn primario" type="submit">Registrar entrega</button></div>
+                  </form>
+                </details>
               )}
             </div>
           </section>
         </div>
 
-        <aside className="lateral">
+        <aside className="rc-perfil-lado">
           <section className="panel">
-            <div className="panel-cab">Datos del acta</div>
+            <div className="panel-cab">Filiación</div>
             <div className="panel-cuerpo rc-datos">
-              <Dato t="DNI" v={r.dni} />
-              <Dato t="Fecha del hecho" v={r.fecha_acto ? fecha(r.fecha_acto) : null} />
-              <Dato t="Sexo" v={r.sexo === "M" ? "Masculino" : r.sexo === "F" ? "Femenino" : null} />
+              {filiacion.length === 0 && r.tipo !== "matrimonio" && <p className="tenue" style={{ margin: 0 }}>No consta.</p>}
+              {filiacion.map((f) => <Dato key={f.t} t={f.t} v={f.v} />)}
+              {r.tipo === "matrimonio" && <Dato t="Cónyuge" v={[r.conyuge_nombre, r.conyuge_dni && `DNI ${r.conyuge_dni}`].filter(Boolean).join(" · ")} />}
+            </div>
+          </section>
+          <section className="panel">
+            <div className="panel-cab">Más datos</div>
+            <div className="panel-cuerpo rc-datos">
               <Dato t="Lugar" v={r.lugar} />
-              <Dato t="Padre" v={r.padre} />
-              <Dato t="Madre" v={r.madre} />
-              {r.tipo === "matrimonio" && <Dato t="Cónyuge" v={[r.conyuge_nombre, r.conyuge_dni].filter(Boolean).join(" · ")} />}
-              <Dato t="N° de acta" v={r.numero_acta} />
-              <Dato t="N° de expediente" v={r.expediente} />
-              <Dato t="Libro / Folio" v={[r.libro, r.folio].filter(Boolean).join(" / ")} />
-              <Dato t="Guardado en" v={r.ubicacion} />
-              <Dato t="Origen" v={r.origen === "digital" ? "Sistema digital" : "Libro físico"} />
-              {r.observaciones && <Dato t="Observaciones" v={r.observaciones} />}
+              <Dato t="Observaciones" v={r.observaciones} />
             </div>
           </section>
           {(otros ?? []).length > 0 && (

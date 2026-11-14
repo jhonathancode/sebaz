@@ -6,7 +6,7 @@ import BotonConfirmar from "@/components/BotonConfirmar";
 import Motivo from "@/components/Motivo";
 import VentanaFlotante from "@/components/VentanaFlotante";
 import { contextoMcp, tiene } from "@/lib/contexto";
-import { balanceAnual, cargarContabilidad, chequesEnTransito, libro, libroDiario, matriz, MESES_CORTOS, nombreRubro } from "@/lib/contabilidad";
+import { cargarContabilidad, chequesEnTransito, libro, libroDiario, matriz, MESES_CORTOS, nombreRubro } from "@/lib/contabilidad";
 import { fecha, hoyISO, nombrePeriodo, periodoActual, monto2, soles } from "@/lib/formato";
 import { supabaseServidor } from "@/lib/supabase/server";
 import { tocaEnMes } from "@/lib/fuentes";
@@ -19,7 +19,6 @@ const VISTAS = [
   { v: "acumulado", t: "Acumulado del año" },
   { v: "bancos", t: "Libro Bancos" },
   { v: "caja", t: "Libro Caja" },
-  { v: "balance", t: "Balance anual" },
   { v: "ejecucion", t: "Ejecución" },
   { v: "conciliacion", t: "Conciliación bancaria" },
   { v: "diario", t: "Libro diario" },
@@ -69,7 +68,7 @@ export default async function Contabilidad({ searchParams }: { searchParams: Par
           <div className="sub">Así está {nombrePeriodo(mes)}: lo que entró, lo que salió y si cuadra con el banco</div>
         </div>
         <span className="espacio" />
-        {["bancos", "caja", "balance", "ejecucion", "diario"].includes(ver) && (
+        {["bancos", "caja", "ejecucion", "diario"].includes(ver) && (
           <a className="btn contorno" href={`/exportar/contabilidad?ver=${ver}&mes=${mes}`}>Descargar Excel</a>
         )}
       </div>
@@ -364,48 +363,6 @@ export default async function Contabilidad({ searchParams }: { searchParams: Par
           <p className="pequeno tenue" style={{ margin: 0 }}>Gastos: comprobantes de pago aprobados o rendidos, por su importe. Ingresos: transferencias registradas y recibos de ingresos propios.</p>
         </>
       )}
-
-      {/* ------------------------------------------------ BALANCE ANUAL */}
-      {ver === "balance" && (() => {
-        const b = balanceAnual(d);
-        return (
-          <>
-            <div className="bal-cab no-imprimir">
-              <p className="tenue pequeno" style={{ margin: 0 }}>Se arma solo con lo registrado en {anio}: transferencias, recibos, comprobantes y los saldos iniciales. Cada vez que se registra algo, el balance se actualiza.</p>
-              <BotonPdf nombre={`Balance anual ${anio}`} selector=".bal-hoja" texto="Descargar PDF" className="btn primario" />
-            </div>
-            {!d.hayDatosIniciales && (
-              <div className="aviso alerta aviso-accion"><span>Falta el <b>saldo inicial {anio}</b>; sin él el activo no refleja el dinero con que empezó el año.</span><Link className="btn chico primario" href={enlace("datos")}>Completar datos</Link></div>
-            )}
-            <div className="bal-kpis no-imprimir">
-              <div className="kpi azul"><span className="k-et">Ingresos {anio}</span><span className="k-val">S/ {soles(b.totalIngresos)}</span></div>
-              <div className="kpi"><span className="k-et">Gastos {anio}</span><span className="k-val">S/ {soles(b.totalGastos)}</span></div>
-              <div className={`kpi${b.resultado < 0 ? " alerta" : ""}`}><span className="k-et">{b.resultado >= 0 ? "Superávit" : "Déficit"}</span><span className="k-val">S/ {soles(Math.abs(b.resultado))}</span></div>
-              <div className="kpi"><span className="k-et">Bancos + caja</span><span className="k-val">S/ {soles(b.activo)}</span></div>
-            </div>
-            <div className="hoja bal-hoja">
-              <header className="rep-cab"><b>{ctx.mcp.nombre.toUpperCase()}</b><span>{ctx.mcp.ruc ? `RUC ${ctx.mcp.ruc}` : ""}</span><h2>BALANCE ANUAL {anio}</h2></header>
-              <table className="rep-tabla">
-                <tbody>
-                  {b.lineas.map((x, i) =>
-                    x.tipo === "titulo" ? (
-                      <tr key={i} className="bal-titulo"><td colSpan={2}>{x.texto}</td></tr>
-                    ) : (
-                      <tr key={i} className={x.tipo === "total" ? "bal-total" : x.tipo === "destacado" ? "bal-dest" : undefined}>
-                        <td>{x.texto}</td>
-                        <td className="d">{soles(x.monto ?? 0)}</td>
-                      </tr>
-                    ),
-                  )}
-                </tbody>
-              </table>
-              <p className={`bal-cuadre${b.cuadra ? " ok" : ""}`}>{b.cuadra ? "✓ El balance cuadra: activo = pasivo + patrimonio." : "⚠ El balance no cuadra; revise los datos contables."}</p>
-              {b.transito > 0 && <p className="pequeno tenue" style={{ margin: "4px 0 0" }}>Hay S/ {soles(b.transito)} en cheques girados que el banco aún no cobra al cierre (ya están descontados de Bancos).</p>}
-              <footer className="rep-pie">Emitido el {fecha(hoyISO())}</footer>
-            </div>
-          </>
-        );
-      })()}
 
       {/* -------------------------------------------- CONCILIACIÓN */}
       {ver === "conciliacion" && (

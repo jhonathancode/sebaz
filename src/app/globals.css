@@ -4951,3 +4951,23 @@ html.pdf-captura .sf-faltan { display: none; }
   .ing-filtros .btn { padding: 6px 12px; font-size: 13px; min-height: 36px; }
   .cc-excel-marco { margin-top: 4px; }
 }
+
+/* Celular: aún más compacto, el cuadro debe quedar casi pegado al título */
+@media (max-width: 760px) {
+  .cc-selector .cc-fila { flex-wrap: nowrap; }
+  .cc-selector .cc-caja { flex: 1 1 0; white-space: nowrap; }
+  .cc-selector .cc-anio { flex: 1 1 0; }
+  .cc-selector .cc-meses { display: flex; overflow-x: auto; scroll-snap-type: x proximity; gap: 4px; scrollbar-width: none; flex: 1 1 100%; }
+  .cc-selector .cc-meses::-webkit-scrollbar { display: none; }
+  .cc-selector .cc-mes { flex: 0 0 52px; scroll-snap-align: center; }
+  .ing-franja { flex-wrap: nowrap; overflow-x: auto; gap: 14px; padding: 2px 4px; scrollbar-width: none; }
+  .ing-franja span { flex: 0 0 auto; }
+  .ing-franja::-webkit-scrollbar { display: none; }
+  .ing-filtros { display: grid; grid-template-columns: 1fr 1fr auto auto; gap: 6px; }
+  .ing-filtros input:not([type="hidden"]) { grid-column: 1 / -1; }
+  .ing-filtros select { min-width: 0; width: 100%; text-overflow: ellipsis; font-size: 13px; padding: 6px 8px; }
+  html:not(.pdf-captura) .cc-excel caption { display: none; }
+  .cc-excel-marco::after { padding: 3px 4px 5px; }
+  .titulo-ventana h1 { font-size: 17px; }
+  .titulo-ventana .btn { flex: 1 1 auto; text-align: center; }
+}

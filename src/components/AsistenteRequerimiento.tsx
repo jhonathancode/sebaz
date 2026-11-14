@@ -7,7 +7,8 @@ import EscalaA4 from "@/components/EscalaA4";
 import SelectFuncion from "@/components/SelectFuncion";
 import CamposProveedor, { type ProveedorConocido } from "@/components/formularios/CamposProveedor";
 import { detalleFuente, nombreFuente, ORDEN_FUENTES } from "@/components/formularios/CamposRequerimiento";
-import { Memorando, Orden, Requerimiento, type DatosExpediente } from "@/components/formatos/DocumentosExpediente";
+import { Memorando, Orden, PlanillaMensual, Requerimiento, type DatosExpediente } from "@/components/formatos/DocumentosExpediente";
+import { cargoDePago } from "@/lib/documentos";
 import FormatoComprobante from "@/components/formatos/FormatoComprobante";
 import { FormatoNea } from "@/components/formatos/FormatosAlmacen";
 import { SUSTENTOS } from "@/lib/catalogos";
@@ -24,12 +25,13 @@ export type Proximos = {
   nea: number | null;
   comprobante: number | null;
 };
-type PagoFijoInfo = { id: string; beneficiario: string | null; beneficiario_doc: string | null; completo: boolean } | null;
-type Paso = "form" | "req" | "prov" | "orden" | "conf" | "alm" | "comp";
+type PagoFijoInfo = { id: string; beneficiario: string | null; beneficiario_doc: string | null; completo: boolean; planilla?: boolean; concepto?: string } | null;
+type Paso = "form" | "req" | "plan" | "prov" | "orden" | "conf" | "alm" | "comp";
 
 const TITULO: Record<Paso, string> = {
   form: "Datos del requerimiento",
   req: "Requerimiento",
+  plan: "Planilla de remuneración",
   prov: "Proveedor",
   orden: "Orden",
   conf: "Conformidad",
@@ -190,8 +192,8 @@ export default function AsistenteRequerimiento({
       ? !pf
         ? ["form", "req"]
         : pf.completo
-          ? ["form", "req", "orden", "conf", "comp"]
-          : ["form", "req", "comp"]
+          ? ["form", "req", ...(pf.planilla ? ["plan" as const] : []), "orden", "conf", "comp"]
+          : ["form", "req", ...(pf.planilla ? ["plan" as const] : []), "comp"]
       : L.tipo === "compra"
         ? ["form", "req", "prov", "orden", "conf", "alm", "comp"]
         : ["form", "req", "prov", "orden", "conf", "comp"];
@@ -299,6 +301,7 @@ export default function AsistenteRequerimiento({
   const pregunta: Record<Paso, { t: string; a: string }> = {
     form: { t: "Complete los datos y revise el requerimiento", a: "Aún no se guarda nada: puede salir sin que quede registrado." },
     req: { t: "¿El requerimiento está bien?", a: `Revíselo arriba. Aprobado: S/ ${soles(L.total)}.` },
+    plan: { t: "¿La planilla está bien?", a: "La arma el sistema cada mes con los datos del pago fijo; no hay que escribir nada." },
     prov: { t: "¿A quién se compra o contrata?", a: "El monto de la orden es el total del detalle." },
     orden: { t: `¿La orden de ${ordenTipo} está bien?`, a: `A nombre de ${proveedor.razon_social || "el proveedor"} por S/ ${soles(L.total)}.` },
     conf: { t: "¿Todo se recibió conforme?", a: "Es el memorando que confirma lo recibido. Si aún no llega, registre hasta la orden." },
@@ -364,6 +367,15 @@ export default function AsistenteRequerimiento({
                 </div>
                 {hoja(<Requerimiento d={dBase} mcp={mcp} />)}
               </>
+            )}
+
+            {paso === "plan" && (
+              hoja(
+                <PlanillaMensual
+                  d={{ ...dBase, planilla: { cargo: cargoDePago(pf?.concepto ?? ""), nombre: (pf?.beneficiario ?? "").toUpperCase(), dni: pf?.beneficiario_doc ?? "", monto: L.total, mes: L.g("mes_pagado") || L.fecha.slice(0, 7) } } as unknown as DatosExpediente}
+                  mcp={mcp}
+                />,
+              )
             )}
 
             {/* Proveedor */}

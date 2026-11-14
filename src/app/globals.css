@@ -4648,3 +4648,9 @@ html.pdf-captura .sf-faltan { display: none; }
 .de-wsp-cel input { max-width: 170px; padding: 6px 10px; border: 1px solid var(--borde); border-radius: 8px; background: var(--panel); color: inherit; }
 .de-aviso { margin: 0; text-align: right; }
 @media (max-width: 640px) { .de-botones > .btn { flex: 1 1 45%; } .de-wsp-cel { flex-wrap: wrap; } }
+
+.doc-emitido[open], .doc-emitido[open]::backdrop { animation: none !important; }
+.de-wsp-fila { display: flex; gap: 8px; align-items: center; justify-content: flex-end; }
+.de-pref { font-weight: 600; color: var(--tenue); }
+.de-wsp-fila input { flex: 0 1 280px; padding: 8px 12px; border: 1px solid var(--borde-fuerte); border-radius: 10px; background: var(--panel); color: inherit; font-size: 14px; }
+.de-wsp.activo { box-shadow: 0 0 0 3px rgba(31,143,78,.25); }

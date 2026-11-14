@@ -141,7 +141,6 @@ export default async function Ingresos({ searchParams }: { searchParams: ParamsA
           mensaje={`Recibo de ingreso N° ${String(emitido.numero).padStart(4, "0")}-${emitido.anio} emitido correctamente.`}
           archivo={`Recibo de ingreso ${String(emitido.numero).padStart(4, "0")}-${emitido.anio}`}
           textoWhatsapp={`Hola, le enviamos su recibo de ingreso N° ${String(emitido.numero).padStart(4, "0")}-${emitido.anio} por S/ ${soles(Number(emitido.monto))} (${emitido.concepto}). ${ctx.mcp.nombre}.`}
-          urlImprimir={`/ingresos/${emitido.id}?imprimir=1`}
           urlCerrar={`/ingresos?mes=${periodo}`}
           textoNuevo="Nuevo recibo"
           urlNuevo={`/ingresos?mes=${periodo}&nuevo=1`}

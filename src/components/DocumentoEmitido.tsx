@@ -15,7 +15,6 @@ export default function DocumentoEmitido({
   mensaje,
   archivo,
   textoWhatsapp,
-  urlImprimir,
   urlCerrar,
   textoNuevo,
   urlNuevo,
@@ -26,8 +25,6 @@ export default function DocumentoEmitido({
   /** Nombre del archivo PDF, sin extensión. */
   archivo: string;
   textoWhatsapp: string;
-  /** Página del documento que se abre sola en el diálogo de impresión. */
-  urlImprimir: string;
   urlCerrar: string;
   textoNuevo: string;
   urlNuevo: string;
@@ -38,7 +35,7 @@ export default function DocumentoEmitido({
   const [celular, setCelular] = useState("");
   const [ocupado, setOcupado] = useState<"" | "pdf" | "wsp">("");
   const [aviso, setAviso] = useState("");
-  const [impresion, setImpresion] = useState(0);
+  const [wspAbierto, setWspAbierto] = useState(false);
 
   useEffect(() => {
     const d = ref.current;
@@ -58,30 +55,45 @@ export default function DocumentoEmitido({
   }
 
   async function whatsapp() {
+    const tel = celular.replace(/\D/g, "").replace(/^51(?=\d{9}$)/, "");
+    if (tel.length !== 9) {
+      setAviso("Escriba el celular de 9 dígitos.");
+      return;
+    }
     setOcupado("wsp");
     setAviso("");
     try {
       const pdf = await crearPdf(".doc-emitido .hoja");
-      if (!pdf) return;
-      const blob = pdf.output("blob");
-      const archivoPdf = new File([blob], nombre, { type: "application/pdf" });
-      // En el celular se comparte el PDF directo; en computadora se descarga y se abre el chat
-      if (typeof navigator.canShare === "function" && navigator.canShare({ files: [archivoPdf] })) {
-        try {
-          await navigator.share({ files: [archivoPdf], text: textoWhatsapp });
-          return;
-        } catch {
-          return; // el usuario canceló
-        }
-      }
-      pdf.save(nombre);
-      const tel = celular.replace(/\D/g, "");
-      const destino = tel.length === 9 ? `51${tel}` : tel.length > 9 ? tel : "";
-      window.open(`https://wa.me/${destino}?text=${encodeURIComponent(textoWhatsapp)}`, "_blank", "noopener");
+      pdf?.save(nombre);
+      window.open(`https://wa.me/51${tel}?text=${encodeURIComponent(textoWhatsapp)}`, "_blank", "noopener");
       setAviso("Se descargó el PDF y se abrió WhatsApp: adjunte el archivo en la conversación.");
     } finally {
       setOcupado("");
     }
+  }
+
+  /** Imprime solo el documento, en una ventana aparte con los mismos estilos. */
+  function imprimir() {
+    const hoja = ref.current?.querySelector(".hoja");
+    if (!hoja) return;
+    const w = window.open("", "_blank", "width=900,height=700");
+    if (!w) {
+      setAviso("El navegador bloqueó la ventana de impresión. Permítala e intente de nuevo.");
+      return;
+    }
+    const estilos = Array.from(document.querySelectorAll<HTMLElement>('link[rel="stylesheet"], style'))
+      .map((n) => (n instanceof HTMLLinkElement ? `<link rel="stylesheet" href="${n.href}">` : n.outerHTML))
+      .join("");
+    w.document.open();
+    w.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>${titulo.replace(/</g, "")}</title>${estilos}<style>html,body{background:#fff!important;color:#000;margin:0;padding:0}.hoja{box-shadow:none!important;margin:0 auto!important;max-width:none!important;border-color:#000!important}@page{size:A4;margin:12mm}</style></head><body><div style="padding:0">${hoja.outerHTML}</div></body></html>`);
+    w.document.close();
+    w.onload = () => {
+      setTimeout(() => {
+        w.focus();
+        w.print();
+        w.onafterprint = () => w.close();
+      }, 300);
+    };
   }
 
   function cerrar() {
@@ -102,14 +114,17 @@ export default function DocumentoEmitido({
             <div className="mesa">{children}</div>
           </div>
           <div className="vf-pie de-pie">
-            <label className="de-wsp-cel">
-              <span>Celular para WhatsApp (opcional)</span>
-              <input value={celular} onChange={(e) => setCelular(e.target.value.replace(/[^\d+ ]/g, ""))} inputMode="tel" placeholder="9 dígitos" maxLength={14} />
-            </label>
+            {wspAbierto && (
+              <div className="de-wsp-fila">
+                <span className="de-pref">+51</span>
+                <input value={celular} onChange={(e) => setCelular(e.target.value.replace(/\D/g, "").slice(0, 9))} inputMode="numeric" placeholder="Celular del cliente (9 dígitos)" autoFocus aria-label="Celular del cliente" onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); whatsapp(); } }} />
+                <button type="button" className="btn de-wsp" onClick={whatsapp} disabled={ocupado !== "" || celular.length !== 9}>{ocupado === "wsp" ? "Preparando…" : "Enviar"}</button>
+              </div>
+            )}
             <div className="de-botones">
               <button type="button" className="btn" onClick={descargar} disabled={ocupado !== ""}>{ocupado === "pdf" ? "Preparando…" : "Descargar PDF"}</button>
-              <button type="button" className="btn de-wsp" onClick={whatsapp} disabled={ocupado !== ""}>{ocupado === "wsp" ? "Preparando…" : "Enviar por WhatsApp"}</button>
-              <button type="button" className="btn" onClick={() => setImpresion((n) => n + 1)}>Imprimir</button>
+              <button type="button" className={`btn de-wsp${wspAbierto ? " activo" : ""}`} onClick={() => setWspAbierto((v) => !v)}>WhatsApp</button>
+              <button type="button" className="btn" onClick={imprimir}>Imprimir</button>
               <button type="button" className="btn" onClick={() => { ref.current?.close(); router.replace(urlNuevo); }}>{textoNuevo}</button>
               <button type="button" className="btn primario" onClick={cerrar}>Listo</button>
             </div>
@@ -117,7 +132,6 @@ export default function DocumentoEmitido({
           </div>
         </div>
       </dialog>
-      {impresion > 0 && <iframe key={impresion} title="Impresión" src={urlImprimir} style={{ position: "fixed", width: 0, height: 0, border: 0, opacity: 0 }} />}
     </>
   );
 }

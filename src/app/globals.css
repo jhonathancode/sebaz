@@ -4822,3 +4822,6 @@ html.pdf-captura .sf-faltan { display: none; }
 .sec-pestanas a span { font-size: 11.5px; color: var(--tenue); }
 .sec-pestanas a.activa { background: var(--primario); border-color: var(--primario); color: #fff; font-weight: 600; }
 .sec-pestanas a.activa span { color: #fff; opacity: .85; }
+/* Los avisos de confirmación dentro de las opciones no deben heredar el «no tocable» */
+.sec-archivo-op dialog, .sec-archivo-op dialog * { pointer-events: auto; }
+.sec-archivo-op:has(dialog[open]) { opacity: 1; pointer-events: auto; }

@@ -1,3 +1,4 @@
+import ScrollMesActivo from "@/components/ScrollMesActivo";
 import Link from "next/link";
 import InputFecha from "@/components/InputFecha";
 import BuscadorTupa from "@/components/formularios/BuscadorTupa";
@@ -187,6 +188,7 @@ export default async function Ingresos({ searchParams }: { searchParams: ParamsA
       <Avisos ok={sp.ok} error={sp.error} />
 
       <section className="cc-selector" aria-label="Elegir el período">
+        <ScrollMesActivo />
         <div className="cc-fila">
           <Link className={`cc-caja${vista === "anio" ? " activa" : ""}`} href={enlace({ vista: "anio", mes: `${anio}-${mesNum}` })}>Resumen del año</Link>
           <div className="cc-anio">

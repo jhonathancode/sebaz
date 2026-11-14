@@ -1,3 +1,4 @@
+import ScrollMesActivo from "@/components/ScrollMesActivo";
 import Link from "next/link";
 import InputFecha from "@/components/InputFecha";
 import Avisos, { type ParamsAviso } from "@/components/Avisos";
@@ -202,6 +203,7 @@ export default async function CajaChica({ searchParams }: { searchParams: Params
       <Avisos ok={sp.ok} error={sp.error} />
 
       <section className="cc-selector" aria-label="Elegir el período">
+        <ScrollMesActivo />
         <div className="cc-fila">
           <div className="cc-anio">
             <Link className="cc-flecha" href={enlace({ mes: `${Number(anio) - 1}-${mesNum}` })} aria-label={`Año ${Number(anio) - 1}`}>‹</Link>

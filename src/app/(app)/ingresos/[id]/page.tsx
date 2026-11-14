@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import Avisos from "@/components/Avisos";
 import FormatoRecibo from "@/components/formatos/FormatoRecibo";
 import BotonPdf from "@/components/BotonPdf";
-import BotonImprimir from "@/components/BotonImprimir";
+import BotonImprimir, { ImprimirAlAbrir } from "@/components/BotonImprimir";
 import Estado from "@/components/Estado";
 import Motivo from "@/components/Motivo";
 import { contextoMcp, tiene } from "@/lib/contexto";
@@ -15,7 +15,7 @@ export default async function Recibo({
   searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ ok?: string; error?: string }>;
+  searchParams: Promise<{ ok?: string; error?: string; imprimir?: string }>;
 }) {
   const { id } = await params;
   const sp = await searchParams;
@@ -26,6 +26,7 @@ export default async function Recibo({
 
   return (
     <>
+      {sp.imprimir === "1" && <ImprimirAlAbrir />}
       <div className="titulo-ventana no-imprimir">
         <h1>Recibo de ingreso {String(r.numero).padStart(4, "0")}</h1>
         <Estado valor={r.estado} />

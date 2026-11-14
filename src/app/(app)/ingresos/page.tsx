@@ -5,6 +5,8 @@ import CampoConceptoIngreso from "@/components/formularios/CampoConceptoIngreso"
 import BotonPdf from "@/components/BotonPdf";
 import Avisos, { type ParamsAviso } from "@/components/Avisos";
 import VentanaFlotante from "@/components/VentanaFlotante";
+import DocumentoEmitido from "@/components/DocumentoEmitido";
+import FormatoRecibo from "@/components/formatos/FormatoRecibo";
 import { RUBROS_INGRESO } from "@/lib/catalogos";
 import { contextoMcp, tiene } from "@/lib/contexto";
 import { fecha, hoyISO, nombrePeriodo, periodoActual, soles } from "@/lib/formato";
@@ -128,8 +130,25 @@ export default async function Ingresos({ searchParams }: { searchParams: ParamsA
   // TUPA para consultar costo y requisitos al emitir el recibo (vacío si todavía no se cargó)
   const tupa = puede ? await cargarTupa(supabase, ctx.mcp.id) : { procs: [], modelo: false, fuente: null };
 
+  // Recién emitido: se abre la ventana con el recibo (imprimir, PDF, WhatsApp)
+  const emitido = puede && sp.emitido ? (await supabase.from("ingresos").select("*").eq("id", sp.emitido).eq("mcp_id", ctx.mcp.id).maybeSingle()).data : null;
+
   return (
     <>
+      {emitido && (
+        <DocumentoEmitido
+          titulo={`Recibo de ingreso · N° ${String(emitido.numero).padStart(4, "0")}-${emitido.anio}`}
+          mensaje={`Recibo de ingreso N° ${String(emitido.numero).padStart(4, "0")}-${emitido.anio} emitido correctamente.`}
+          archivo={`Recibo de ingreso ${String(emitido.numero).padStart(4, "0")}-${emitido.anio}`}
+          textoWhatsapp={`Hola, le enviamos su recibo de ingreso N° ${String(emitido.numero).padStart(4, "0")}-${emitido.anio} por S/ ${soles(Number(emitido.monto))} (${emitido.concepto}). ${ctx.mcp.nombre}.`}
+          urlImprimir={`/ingresos/${emitido.id}?imprimir=1`}
+          urlCerrar={`/ingresos?mes=${periodo}`}
+          textoNuevo="Nuevo recibo"
+          urlNuevo={`/ingresos?mes=${periodo}&nuevo=1`}
+        >
+          <FormatoRecibo mcp={ctx.mcp} r={{ numero: emitido.numero, anio: emitido.anio, fecha: emitido.fecha, pagador_nombre: emitido.pagador_nombre, pagador_doc: emitido.pagador_doc, concepto: emitido.concepto, monto: Number(emitido.monto) }} />
+        </DocumentoEmitido>
+      )}
       <div className="titulo-ventana">
         <h1>Ingresos propios · {vista === "anio" ? `resumen ${anio}` : etiqueta}</h1>
         <span className="espacio" />

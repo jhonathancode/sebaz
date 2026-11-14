@@ -14,13 +14,17 @@ export default async function NuevoDocumento({ searchParams }: { searchParams: P
   if (!tiene(ctx, "admin", "tesorero", "contador", "alcalde")) {
     return <div className="aviso info">No tiene permiso para redactar documentos.</div>;
   }
+  const filtro = sp.tipo && TIPOS_SEC.some((t) => t.clave === sp.tipo) ? sp.tipo : "";
   const supabase = await supabaseServidor();
-  const { data: propios } = await supabase.from("sec_modelos").select("id, tipo, nombre, asunto").eq("mcp_id", ctx.mcp.id).eq("activo", true).order("creado_en", { ascending: false });
+  const { data: propios0 } = await supabase.from("sec_modelos").select("id, tipo, nombre, asunto").eq("mcp_id", ctx.mcp.id).eq("activo", true).order("creado_en", { ascending: false });
+
+  const propios = (propios0 ?? []).filter((m) => !filtro || m.tipo === filtro);
+  const base = MODELOS_BASE.filter((m) => !filtro || m.tipo === filtro);
 
   return (
     <>
       <div className="titulo-ventana">
-        <h1>Nuevo documento</h1>
+        <h1>{filtro ? `Nuevo: ${tipoSec(filtro).nombre}` : "Nuevo documento"}</h1>
         <span className="espacio" />
         <VentanaFlotante boton="Cargar mi modelo desde Word" titulo="Cargar un modelo desde Word" accion={importarModeloWord} textoGuardar="Cargar modelo" claseBoton="btn">
           <label className="campo">Nombre del modelo<input name="nombre" required placeholder="Ej.: Acuerdo de consejo de audiencia pública" /></label>
@@ -30,18 +34,19 @@ export default async function NuevoDocumento({ searchParams }: { searchParams: P
               {TIPOS_SEC.map((t) => <option key={t.clave} value={t.clave}>{t.nombre}</option>)}
             </select>
           </label>
-          <CampoArchivoEstado etiqueta="Archivo de Word (.docx)" multiple={false} ayuda="Solo .docx, máximo 4 MB. Se conservan el texto, negritas, listas y tablas; si algo cambia, se corrige en el editor." />
+          <CampoArchivoEstado etiqueta="Archivo de Word (.docx)" multiple={false} accept=".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document" ayuda="Solo .docx, máximo 4 MB. Se conservan el texto, negritas, listas y tablas; si algo cambia, se corrige en el editor." />
         </VentanaFlotante>
-        <Link className="btn" href="/secretaria">Volver al archivo</Link>
+        <Link className="btn" href={filtro ? `/secretaria?tipo=${filtro}` : "/secretaria"}>Volver</Link>
       </div>
       <Avisos ok={sp.ok} error={sp.error} />
+      {filtro && <p className="pequeno" style={{ marginTop: 0 }}><Link href="/secretaria/nuevo">Ver los modelos de todos los tipos</Link></p>}
       <p className="tenue pequeno" style={{ marginTop: 0 }}>Elija un modelo: se copia como borrador y usted lo edita. El modelo original no cambia.</p>
 
-      {(propios ?? []).length > 0 && (
+      {propios.length > 0 && (
         <>
           <h2 className="sec-grupo">Mis modelos</h2>
           <div className="sec-modelos">
-            {(propios ?? []).map((m) => (
+            {propios.map((m) => (
               <div key={m.id} className="sec-modelo">
                 <span className="etq">{tipoSec(m.tipo).nombre}</span>
                 <b>{m.nombre}</b>
@@ -62,7 +67,7 @@ export default async function NuevoDocumento({ searchParams }: { searchParams: P
 
       <h2 className="sec-grupo">Modelos de ZEBAZ</h2>
       <div className="sec-modelos">
-        {MODELOS_BASE.map((m) => (
+        {base.map((m) => (
           <div key={m.id} className="sec-modelo">
             <span className="etq">{tipoSec(m.tipo).nombre}</span>
             <b>{m.nombre}</b>
@@ -77,7 +82,7 @@ export default async function NuevoDocumento({ searchParams }: { searchParams: P
 
       <h2 className="sec-grupo">En blanco</h2>
       <div className="sec-tipos">
-        {TIPOS_SEC.map((t) => (
+        {TIPOS_SEC.filter((t) => !filtro || t.clave === filtro).map((t) => (
           <form key={t.clave} action={crearDesdeModelo} style={{ display: "inline" }}>
             <input type="hidden" name="origen" value={`blanco:${t.clave}`} />
             <button type="submit" className="btn chico contorno">{t.nombre} en blanco</button>

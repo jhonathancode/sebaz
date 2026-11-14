@@ -234,8 +234,8 @@ export default async function Secretaria({ searchParams }: { searchParams: Param
       <Avisos ok={sp.ok} error={sp.error} />
       {error && <div className="aviso error">El módulo aún no está activo: falta la actualización de la base de datos (ACTUALIZAR_BASE.sql). Avise a soporte.</div>}
 
-      <form className="ing-filtros" method="get">
-        <input name="q" defaultValue={sp.q ?? ""} placeholder="Buscar en todos los documentos: asunto, destinatario o número" aria-label="Buscar" />
+      <form className="ing-filtros sec-buscar" method="get">
+        <input name="q" defaultValue={sp.q ?? ""} placeholder="Buscar: asunto, destinatario o número" aria-label="Buscar" />
         <button className="btn" type="submit">Buscar</button>
         {buscando && <Link className="btn contorno" href="/secretaria">Quitar búsqueda</Link>}
       </form>

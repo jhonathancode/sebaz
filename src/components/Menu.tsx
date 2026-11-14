@@ -57,6 +57,13 @@ const ICONOS: Record<string, React.ReactNode> = {
       <path d="M7.5 18c.4-1.8 1.6-2.8 3-2.8s2.6 1 3 2.8" />
     </>
   ),
+  "/secretaria": (
+    <>
+      <path d="M4 7.5 12 13l8-5.5" />
+      <rect x="3.5" y="5" width="17" height="14" rx="2" />
+      <path d="M7 16.5h4" />
+    </>
+  ),
   "/contabilidad": (
     <>
       <rect x="4" y="3" width="16" height="18" rx="2" />

@@ -161,14 +161,14 @@ export async function siguienteCheque(supabase: Cliente, mcpId: string): Promise
   return sig.padStart(mayor.length, "0");
 }
 
-export type ArchivoPermanente = { nombre: string; path: string; url?: string | null };
+export type ArchivoPermanente = { nombre: string; path: string; mime: string | null; url?: string | null };
 
 /** Documentos permanentes (DNI, credencial…) de los pagos fijos: clave «pagoFijoId|tipo». Vacío si la base aún no tiene la tabla. */
 export async function cargarArchivosPagoFijo(supabase: Cliente, mcpId: string, conUrl = false): Promise<Map<string, ArchivoPermanente>> {
   const mapa = new Map<string, ArchivoPermanente>();
-  const { data, error } = await supabase.from("pago_fijo_archivos").select("pago_fijo_id, tipo, archivo_path, archivo_nombre").eq("mcp_id", mcpId).eq("anulado", false).order("creado_en");
+  const { data, error } = await supabase.from("pago_fijo_archivos").select("pago_fijo_id, tipo, archivo_path, archivo_nombre, archivo_tipo").eq("mcp_id", mcpId).eq("anulado", false).order("creado_en");
   if (error || !data) return mapa;
-  for (const a of data) mapa.set(`${a.pago_fijo_id}|${a.tipo}`, { nombre: a.archivo_nombre ?? a.tipo, path: a.archivo_path });
+  for (const a of data) mapa.set(`${a.pago_fijo_id}|${a.tipo}`, { nombre: a.archivo_nombre ?? a.tipo, path: a.archivo_path, mime: (a.archivo_tipo as string | null) ?? null });
   if (conUrl && mapa.size) {
     const { data: firmadas } = await supabase.storage.from("sustentos").createSignedUrls([...mapa.values()].map((v) => v.path), 1800);
     for (const v of mapa.values()) v.url = firmadas?.find((f) => f.path === v.path)?.signedUrl ?? null;

@@ -6,6 +6,8 @@ import EscalaA4 from "@/components/EscalaA4";
 import { notFound } from "next/navigation";
 import AutoDocumento from "@/components/AutoDocumento";
 import Avisos from "@/components/Avisos";
+import VisorAnexo from "@/components/VisorAnexo";
+import { cargarAnexos } from "@/lib/adjuntosVista";
 import AdjuntosExpediente, { type Adjunto } from "@/components/AdjuntosExpediente";
 import Estado from "@/components/Estado";
 import Motivo from "@/components/Motivo";
@@ -141,6 +143,7 @@ export default async function Expediente({ params, searchParams }: { params: Par
   const requeridos = ((pfDocs as { documentos?: string[] } | null)?.documentos ?? null) as string[] | null;
   const pfId = (e as { pago_fijo_id?: string | null }).pago_fijo_id ?? null;
   const permanentesMapa = pfId ? await cargarArchivosPagoFijo(supabase, ctx.mcp.id, true) : new Map<string, ArchivoPermanente>();
+  const anexos = await cargarAnexos(supabase, ctx.mcp.id, id, pfId);
   const permanentes = [...permanentesMapa].filter(([k]) => k.startsWith(`${pfId}|`)).map(([k, v]) => ({ tipo: k.split("|")[1], nombre: v.nombre, url: v.url ?? null }));
   const firmadasAdj = (adjData ?? []).filter((a) => !a.anulado).length
     ? await supabase.storage.from("sustentos").createSignedUrls((adjData ?? []).filter((a) => !a.anulado).map((a) => a.archivo_path as string), 1800)
@@ -550,9 +553,10 @@ export default async function Expediente({ params, searchParams }: { params: Par
     }
   }
   // Vista de abajo: por defecto, el documento de la fase en la que está (borrador si aún no se emite).
-  const opcionesVer = [...docs.map((x) => x.clave), ...(borrador ? ["borrador"] : [])];
+  const opcionesVer = [...docs.map((x) => x.clave), ...anexos.map((x) => x.clave), ...(borrador ? ["borrador"] : [])];
   const verClave = opcionesVer.includes(sp.ver ?? "") ? sp.ver! : borrador ? "borrador" : docs[docs.length - 1].clave;
   const viendoBorrador = verClave === "borrador" && !!borrador;
+  const viendoAnexo = anexos.find((x) => x.clave === verClave) ?? null;
 
 
   const nombreTabla: Record<string, string> = {
@@ -659,9 +663,9 @@ export default async function Expediente({ params, searchParams }: { params: Par
         <div className="panel-cab">
           <span>{viendoBorrador ? `Así quedará: ${borrador!.nombre}` : "Así va su documento"}</span>
           <div className="acciones-fila" style={viendoBorrador ? { display: "none" } : undefined}>
-            <BotonPdf nombre={`Expediente ${num3(e.numero)}-${e.anio} ${verClave}`} selector=".vista-previa .hoja" className="btn chico primario" />
+            {!viendoAnexo && <BotonPdf nombre={`Expediente ${num3(e.numero)}-${e.anio} ${verClave}`} selector=".vista-previa .hoja" className="btn chico primario" />}
             <Link className="btn chico contorno" href={`/expedientes/${id}/documentos?doc=${verClave}&imprimir=1`}>Imprimir</Link>
-            {docs.length > 1 && (
+            {(docs.length > 1 || anexos.length > 0) && (
               <Link className="btn chico contorno" href={`/expedientes/${id}/documentos?doc=todo&imprimir=1`}>Imprimir todo el expediente</Link>
             )}
           </div>
@@ -670,6 +674,20 @@ export default async function Expediente({ params, searchParams }: { params: Par
           {docs.map((x, i) => (
             <span key={x.clave} className="doc-par">
               {i > 0 && <i className="doc-sep ok" aria-hidden="true" />}
+              <Link
+                role="tab"
+                aria-selected={x.clave === verClave}
+                scroll={false}
+                className={`doc-tab${x.clave === verClave ? " activo" : ""}`}
+                href={`/expedientes/${id}?ver=${x.clave}${sp.paso ? `&paso=${sp.paso}` : ""}`}
+              >
+                <span className="ic" aria-hidden="true">✓</span>{x.nombre}
+              </Link>
+            </span>
+          ))}
+          {anexos.map((x) => (
+            <span key={x.clave} className="doc-par">
+              <i className="doc-sep ok" aria-hidden="true" />
               <Link
                 role="tab"
                 aria-selected={x.clave === verClave}
@@ -702,6 +720,9 @@ export default async function Expediente({ params, searchParams }: { params: Par
           </div>
         )}
         <div className="mesa">
+          {viendoAnexo ? (
+            <VisorAnexo anexo={viendoAnexo} />
+          ) : (
           <EscalaA4>
             {viendoBorrador ? (
               <div className="hoja-borrador">{borrador!.nodo}</div>
@@ -709,6 +730,7 @@ export default async function Expediente({ params, searchParams }: { params: Par
               <DocumentosExpediente d={datosDoc} mcp={ctx.mcp} clave={verClave} tesorero={nombreTesorero} cargo={cargoTesorero} alcalde={nombreAlcalde} />
             )}
           </EscalaA4>
+          )}
         </div>
       </section>
 

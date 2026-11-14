@@ -5,6 +5,8 @@ import BotonImprimir, { ImprimirAlAbrir } from "@/components/BotonImprimir";
 import Estado from "@/components/Estado";
 import DocumentosExpediente from "@/components/formatos/DocumentosExpediente";
 import { contextoMcp } from "@/lib/contexto";
+import VisorAnexo from "@/components/VisorAnexo";
+import { cargarAnexos } from "@/lib/adjuntosVista";
 import { cargarExpediente, listaDocumentos } from "@/lib/documentos";
 import { num3 } from "@/lib/formato";
 import { supabaseServidor } from "@/lib/supabase/server";
@@ -33,6 +35,8 @@ export default async function Documentos({
   ]);
   if (!d.e) notFound();
   const e = d.e;
+  const anexos = await cargarAnexos(supabase, ctx.mcp.id, id, (e as { pago_fijo_id?: string | null }).pago_fijo_id ?? null);
+  const anexoElegido = anexos.find((x) => x.clave === doc) ?? null;
   const lista = listaDocumentos(d);
   const nombreTesorero = (tesorero?.perfiles as unknown as { nombre: string } | null)?.nombre ?? "";
   const elegido = lista.find((x) => x.clave === doc);
@@ -74,6 +78,14 @@ export default async function Documentos({
             )}
           </span>
         ))}
+        {anexos.map((x) => (
+          <span key={x.clave} className="doc-par">
+            <i className="doc-sep ok" aria-hidden="true" />
+            <Link className={`doc-tab${doc === x.clave ? " activo" : ""}`} aria-current={doc === x.clave ? "page" : undefined} href={`/expedientes/${id}/documentos?doc=${x.clave}`}>
+              <span className="ic" aria-hidden="true">✓</span>{x.nombre}
+            </Link>
+          </span>
+        ))}
       </nav>
 
       {vecinos && (
@@ -87,12 +99,19 @@ export default async function Documentos({
       {elegido && !elegido.listo && <div className="aviso info">Este documento todavía no existe en el expediente.</div>}
       {doc === "todo" && (
         <div className="aviso info no-imprimir">
-          {lista.filter((x) => x.listo).length} de {lista.length} documentos listos. Se imprimen en este orden, cada uno en su hoja.
+          {lista.filter((x) => x.listo).length} de {lista.length} documentos listos{anexos.length ? ` y ${anexos.length} anexo(s) adjunto(s)` : ""}. Se imprimen en este orden, cada uno en su hoja.
         </div>
       )}
 
       <div className="documentos mesa">
-        <DocumentosExpediente d={d} mcp={ctx.mcp} clave={doc} tesorero={nombreTesorero} cargo={tesorero?.cargo ?? "Tesorero(a)"} alcalde={(alcalde?.perfiles as unknown as { nombre: string } | null)?.nombre ?? ""} />
+        {anexoElegido ? (
+          <VisorAnexo anexo={anexoElegido} />
+        ) : (
+          <>
+            <DocumentosExpediente d={d} mcp={ctx.mcp} clave={doc} tesorero={nombreTesorero} cargo={tesorero?.cargo ?? "Tesorero(a)"} alcalde={(alcalde?.perfiles as unknown as { nombre: string } | null)?.nombre ?? ""} />
+            {doc === "todo" && anexos.map((x) => <VisorAnexo key={x.clave} anexo={x} />)}
+          </>
+        )}
       </div>
     </>
   );

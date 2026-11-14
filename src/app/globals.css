@@ -5175,3 +5175,11 @@ html.pdf-captura .sf-faltan { display: none; }
 .casilla-doc-ok { margin-left: auto; font-size: 12px; color: #16a34a; font-weight: 700; }
 .casilla-doc-sub { display: flex; flex-direction: column; gap: 4px; margin-top: 8px; }
 .casilla-doc-sub input[type="file"] { width: 100%; }
+
+/* Archivos adjuntos vistos y impresos junto al expediente */
+.anexo-hoja { background: #fff; color: #111; width: 100%; max-width: 794px; margin: 0 auto; padding: 12px; box-sizing: border-box; break-after: page; text-align: center; border-radius: 6px; }
+.anexo-cab { text-align: left; padding: 0 0 8px; }
+.anexo-img { max-width: 100%; max-height: 1000px; object-fit: contain; }
+.anexo-pdf { width: 100%; height: 78vh; border: 1px solid var(--borde); border-radius: 6px; background: #fff; }
+.anexo-nota { display: none; padding: 40mm 10mm; text-align: center; flex-direction: column; gap: 8px; }
+@media print { .anexo-hoja { box-shadow: none; padding: 0; max-width: none; } .anexo-img { max-height: 270mm; } .anexo-nota { display: flex; } }

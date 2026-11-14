@@ -313,7 +313,8 @@ export default async function Contabilidad({ searchParams }: { searchParams: Par
             .eq("anulado", false)
             .gte("fecha", `${anio}-01-01`)
             .lte("fecha", `${anio}-12-31`)
-            .order("fecha");
+            .order("fecha")
+            .order("creado_en");
           filas = (gastos ?? []).map((g) => {
             const c = g.cajas_chicas as unknown as { periodo: string; numero: number } | null;
             return { fecha: g.fecha, monto: Number(g.monto), celdas: [c ? `${MESES_CORTOS[Number(c.periodo.slice(5, 7)) - 1]} · ${c.numero}` : "", fecha(g.fecha), `${g.sustento_tipo}${g.sustento_numero ? ` ${g.sustento_numero}` : ""}`, g.razon_social, g.concepto] };

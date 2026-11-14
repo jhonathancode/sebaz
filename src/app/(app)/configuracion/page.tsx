@@ -9,7 +9,8 @@ import { FRECUENCIAS, MESES_LARGO, textoFrecuencia, tocaEnMes } from "@/lib/fuen
 import VentanaFlotante from "@/components/VentanaFlotante";
 import { nombreFuente } from "@/components/formularios/CamposRequerimiento";
 import { TIPOS_ADJUNTO } from "@/lib/adjuntosExpediente";
-import { cargarCatalogoPagosFijos, type PagoFijoCatalogo } from "@/lib/pagosFijos";
+import CasillaDocumento from "@/components/formularios/CasillaDocumento";
+import { cargarArchivosPagoFijo, cargarCatalogoPagosFijos, type PagoFijoCatalogo } from "@/lib/pagosFijos";
 import { NUMERACIONES, proximoNumero } from "@/lib/numeracion";
 import { CAMPOS_CODIF, CODIF_FIJA, rubroSugerido, datosCPDe, faltantesCP, TIPO_OPERACION_BS, TIPO_OPERACION_OTRO } from "@/lib/datosCP";
 import { contextoMcp, tiene } from "@/lib/contexto";
@@ -24,11 +25,12 @@ export default async function Configuracion({ searchParams }: { searchParams: Pa
   const admin = tiene(ctx, "admin");
   const m = ctx.mcp;
   const cap1 = m.capitulo1 ?? {};
-  const [{ data: periodos }, { data: reaperturas }, pagosFijos, { data: cuentasExtra }] = await Promise.all([
+  const [{ data: periodos }, { data: reaperturas }, pagosFijos, { data: cuentasExtra }, archivosPF] = await Promise.all([
     supabase.from("periodos").select("*").eq("mcp_id", m.id).order("periodo", { ascending: false }).limit(12),
     supabase.from("periodo_reaperturas").select("*").eq("mcp_id", m.id).order("hecho_en", { ascending: false }).limit(10),
     cargarCatalogoPagosFijos(supabase, m.id, false),
     supabase.from("cuentas_bancarias").select("id, banco, numero, alias").eq("mcp_id", m.id).eq("activo", true).order("creado_en"),
+    cargarArchivosPagoFijo(supabase, m.id, true),
   ]);
   const mesActual = periodoActual();
   const puedePagos = tiene(ctx, "admin", "tesorero", "contador", "alcalde");
@@ -67,13 +69,12 @@ export default async function Configuracion({ searchParams }: { searchParams: Pa
       </label>
       <fieldset className="campo" style={{ gridColumn: "1 / -1", border: "1px solid var(--borde)", borderRadius: "var(--radio)", padding: "8px 14px 10px", margin: 0 }}>
         <legend style={{ padding: "0 6px", fontWeight: 600 }}>Documentos que debe llevar el expediente</legend>
-        <span className="pequeno tenue" style={{ display: "block", marginBottom: 6 }}>Marque lo que se adjunta cada mes (por ejemplo planilla o recibo por honorarios). El expediente mostrará qué falta.</span>
-        <div style={{ display: "flex", flexWrap: "wrap", gap: "6px 18px" }}>
-          {TIPOS_ADJUNTO.filter((t) => t.clave !== "otro").map((t) => (
-            <label key={t.clave} style={{ display: "flex", alignItems: "center", gap: 6, flexDirection: "row" }}>
-              <input type="checkbox" name="documentos" value={t.clave} defaultChecked={p?.documentos.includes(t.clave)} style={{ width: "auto" }} /> {t.texto}
-            </label>
-          ))}
+        <span className="pequeno tenue" style={{ display: "block", marginBottom: 6 }}>Marque cada documento que lleva el expediente de este gasto. Si es el mismo todos los meses (DNI, credencial), súbalo aquí una sola vez y los expedientes saldrán con él ya marcado.</span>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+          {TIPOS_ADJUNTO.filter((t) => t.clave !== "otro").map((t) => {
+            const ex = p ? archivosPF.get(`${p.id}|${t.clave}`) : undefined;
+            return <CasillaDocumento key={t.clave} clave={t.clave} texto={t.texto} marcado={!!p?.documentos.includes(t.clave)} existente={ex ? { nombre: ex.nombre, url: ex.url } : null} />;
+          })}
         </div>
       </fieldset>
     </div>

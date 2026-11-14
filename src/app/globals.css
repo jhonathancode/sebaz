@@ -5167,3 +5167,11 @@ html.pdf-captura .sf-faltan { display: none; }
 .adj-det { display: flex; flex-wrap: wrap; gap: 6px 14px; align-items: center; font-size: 13px; }
 .adj-arch { display: inline-flex; align-items: center; gap: 8px; }
 @media (max-width: 700px) { .adj-fila { grid-template-columns: 22px 1fr; } .adj-det { grid-column: 2; } }
+
+/* Casillas de documentos del pago fijo */
+.casilla-doc { border: 1px solid var(--borde); border-radius: 12px; padding: 8px 12px; background: var(--panel-2); flex: 1 1 280px; }
+.casilla-doc.activa { border-color: var(--primario-claro); background: var(--primario-fondo); }
+.casilla-doc-cab { display: flex; flex-direction: row !important; align-items: center; gap: 8px; font-weight: 600; cursor: pointer; }
+.casilla-doc-ok { margin-left: auto; font-size: 12px; color: #16a34a; font-weight: 700; }
+.casilla-doc-sub { display: flex; flex-direction: column; gap: 4px; margin-top: 8px; }
+.casilla-doc-sub input[type="file"] { width: 100%; }

@@ -3,7 +3,7 @@
 import { useRef, useState } from "react";
 
 /** Reduce una foto grande (de celular) para que entre en el envío; los PDF no se tocan. */
-async function reducirFoto(archivo: File): Promise<File> {
+export async function reducirFoto(archivo: File): Promise<File> {
   if (!archivo.type.startsWith("image/") || archivo.size <= 1.5 * 1024 * 1024) return archivo;
   const bmp = await createImageBitmap(archivo);
   const escala = Math.min(1, 2400 / Math.max(bmp.width, bmp.height));

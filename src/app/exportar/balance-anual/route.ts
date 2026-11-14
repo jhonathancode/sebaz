@@ -19,7 +19,7 @@ export async function GET(req: NextRequest) {
   libro.creator = "Sistema MCP";
   const azul = { type: "pattern" as const, pattern: "solid" as const, fgColor: { argb: "FF2B6FE6" } };
   const celeste = { type: "pattern" as const, pattern: "solid" as const, fgColor: { argb: "FFECF3FE" } };
-  const borde = { style: "thin" as const, color: { argb: "FFD3D8DE" } };
+  const borde = { style: "thin" as const, color: { argb: "FFC7D6EE" } };
 
   hojas.forEach((h) => {
     const ws = libro.addWorksheet(h.pestana.replace("·", "-").replace(/[\\/?*[\]:]/g, "").slice(0, 30));
@@ -28,10 +28,10 @@ export async function GET(req: NextRequest) {
     ws.columns = h.columnas.map((c) => ({ width: c.ancho }));
     ws.mergeCells(1, 1, 1, n);
     ws.getCell(1, 1).value = ctx.mcp.nombre.toUpperCase();
-    ws.getCell(1, 1).font = { bold: true, size: 13 };
+    ws.getCell(1, 1).font = { bold: true, size: 13, color: { argb: "FF1F5BC7" } };
     ws.mergeCells(2, 1, 2, n);
     ws.getCell(2, 1).value = `${ctx.mcp.ruc ? `RUC ${ctx.mcp.ruc} · ` : ""}${h.titulo}`;
-    ws.getCell(2, 1).font = { bold: true, size: 11 };
+    ws.getCell(2, 1).font = { bold: true, size: 11, color: { argb: "FF1F5BC7" } };
 
     let r = 4;
     if (h.grupos) {
@@ -62,7 +62,7 @@ export async function GET(req: NextRequest) {
         ws.mergeCells(r, 1, r, n);
         const c = ws.getCell(r, 1);
         c.value = f.celdas[0];
-        c.font = { bold: true };
+        c.font = { bold: true, color: { argb: "FF1F5BC7" } };
         c.fill = celeste;
       } else {
         f.celdas.forEach((v, i) => {
@@ -71,7 +71,8 @@ export async function GET(req: NextRequest) {
           if (h.columnas[i]?.tipo === "monto") c.numFmt = "#,##0.00";
           c.border = { top: borde, bottom: borde, left: borde, right: borde };
           if (f.tipo === "grupo4") c.font = { bold: true };
-          if (f.tipo === "total" || f.tipo === "destacado") { c.font = { bold: true }; c.fill = celeste; }
+          if (f.tipo === "total") { c.font = { bold: true, color: { argb: "FF1F5BC7" } }; c.fill = celeste; }
+          if (f.tipo === "destacado") { c.font = { bold: true, color: { argb: "FFFFFFFF" } }; c.fill = azul; }
         });
       }
       r += 1;

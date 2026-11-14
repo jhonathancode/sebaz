@@ -5137,3 +5137,25 @@ html.pdf-captura .sf-faltan { display: none; }
 .ef-2 .ef-total > span, .ef-2 .ef-gran > span { letter-spacing: .06em; }
 @media (max-width: 900px) { .hoja.ef-hoja { min-width: 860px; } }
 @media print { .hoja.ef-hoja { box-shadow: none; padding: 6mm 4mm; max-width: none; } @page ef1 { size: A4 landscape; margin: 10mm; } @page ef2 { size: A4 portrait; margin: 12mm; } }
+
+/* ---------- Balance anual: todas las pestañas con el mismo estilo azul del sistema ---------- */
+.hoja.bal-hoja:not(.ef-hoja) { font-family: inherit; color: #1b2430; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+.bal-hoja:not(.ef-hoja) .rep-cab { border-bottom: 2px solid #2b6fe6; padding-bottom: 10px; align-items: center; text-align: center; }
+.bal-hoja:not(.ef-hoja) .rep-cab b { color: #1f5bc7; font-size: 13px; }
+.bal-hoja:not(.ef-hoja) .rep-cab span { color: #4a5565; }
+.bal-hoja:not(.ef-hoja) .rep-cab h2 { color: #1f5bc7; font-size: 15px; letter-spacing: .05em; margin-top: 8px; }
+.bal-hoja .rep-tabla { border-collapse: separate; border-spacing: 0; }
+.bal-hoja .rep-tabla th { background: #2b6fe6; color: #fff; border: 1px solid #fff; padding: 6px 8px; }
+.bal-hoja .rep-tabla thead tr:first-child th:first-child { border-top-left-radius: 8px; }
+.bal-hoja .rep-tabla thead tr:last-child th:first-child { border-bottom-left-radius: 8px; }
+.bal-hoja .rep-tabla thead tr:first-child th:last-child { border-top-right-radius: 8px; }
+.bal-hoja .rep-tabla thead tr:last-child th:last-child { border-bottom-right-radius: 8px; }
+.bal-hoja .rep-tabla td { border: none; border-bottom: 1px solid #e1e9f6; padding: 5px 8px; }
+.bal-hoja .rep-tabla tbody tr:hover td { background: #f6f9fe; }
+.bal-hoja .bal-titulo td { background: #ecf3fe; color: #1f5bc7; font-weight: 700; border-bottom: 1px solid #9db9ea; letter-spacing: .04em; }
+.bal-hoja .bal-total td { background: #ecf3fe; color: #1f5bc7; font-weight: 700; border-bottom: 1px solid #9db9ea; }
+.bal-hoja .bal-dest td { background: #2b6fe6; color: #fff; font-weight: 800; border-bottom: none; }
+.bal-hoja .bal-cuenta td { background: #f4f8ff; color: #1f5bc7; font-weight: 700; }
+.bal-hoja .bal-cuadre { color: #b42318; }
+.bal-hoja .bal-cuadre.ok { color: #1f5bc7; }
+.bal-hoja .rep-pie { color: #4a5565; }

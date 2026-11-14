@@ -190,6 +190,24 @@ export async function anularDocumento(fd: FormData) {
   volver(ruta(id), "ok", "Documento anulado. Queda en el archivo con su motivo.");
 }
 
+/** «Eliminar» un borrador: nunca se borra de verdad; queda anulado y auditado, y ya no aparece en las listas. */
+export async function eliminarBorrador(fd: FormData) {
+  const id = texto(fd, "id") ?? "";
+  const volverA = texto(fd, "volver") ?? "/secretaria";
+  const destino = volverA.startsWith("/secretaria") ? volverA : "/secretaria";
+  const ctx = await permiso(destino);
+  const supabase = await supabaseServidor();
+  const { error } = await supabase
+    .from("sec_documentos")
+    .update({ estado: "anulado", anulado_motivo: "BORRADOR ELIMINADO POR EL USUARIO" })
+    .eq("id", id)
+    .eq("mcp_id", ctx.mcp.id)
+    .eq("estado", "borrador");
+  if (error) volver(destino, "error", falta(mensajeError(error)));
+  revalidatePath("/secretaria");
+  volver(destino, "ok", "Borrador eliminado.");
+}
+
 /** Copia un documento (emitido o no) como borrador nuevo, para reutilizarlo y editarlo. */
 export async function clonarDocumento(fd: FormData) {
   const id = texto(fd, "id") ?? "";

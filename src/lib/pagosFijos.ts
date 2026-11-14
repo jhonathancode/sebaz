@@ -86,6 +86,8 @@ export type PagoFijoCatalogo = {
   mes_modelo: string | null;
   /** Documentos que debe llevar el expediente de este pago (claves de adjuntosExpediente). */
   documentos: string[];
+  /** Documentos que puede entregar el beneficiario (vacío: los del tipo de gasto «pago fijo»). */
+  sustentos: string[];
 };
 
 /** Lista de pagos fijos y meses pagados (vacía si la base aún no tiene la actualización). */
@@ -117,6 +119,7 @@ export async function cargarCatalogoPagosFijos(supabase: Cliente, mcpId: string,
     expediente_completo: (p.expediente_completo as boolean | null | undefined) ?? true,
     mes_modelo: (p.mes_modelo as string | null | undefined) ?? null,
     documentos: (p.documentos as string[] | null | undefined) ?? [],
+    sustentos: (p.sustentos as string[] | null | undefined) ?? [],
   }));
 }
 

@@ -1,8 +1,9 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { BANCOS, CAMPOS_CAPITULO1, CAMPOS_CAPITULO1_LARGOS } from "@/lib/catalogos";
+import { BANCOS, CAMPOS_CAPITULO1, CAMPOS_CAPITULO1_LARGOS, SUSTENTOS } from "@/lib/catalogos";
 import { contextoMcp, tiene } from "@/lib/contexto";
+import { GASTOS_SUSTENTO } from "@/lib/sustentos";
 import { TIPOS_ADJUNTO, TIPOS_ARCHIVO_ADJUNTO } from "@/lib/adjuntosExpediente";
 import { mensajeError, numero, texto, volver } from "@/lib/acciones";
 import { supabaseServidor } from "@/lib/supabase/server";
@@ -142,11 +143,12 @@ export async function guardarPagoFijo(fd: FormData) {
     clasificador: texto(fd, "clasificador"),
     expediente_completo: texto(fd, "completo") === "1",
   };
+  const sustentos = fd.getAll("sustentos").map(String).filter((c) => SUSTENTOS.some((x) => x.codigo === c));
   const documentos = fd.getAll("documentos").map(String).filter((d) => TIPOS_ADJUNTO.some((t) => t.clave === d));
   const guardar = (d: Record<string, unknown>) => (id ? supabase.from("pagos_fijos").update(d).eq("id", id) : supabase.from("pagos_fijos").insert({ mcp_id: ctx.mcp.id, ...d }));
-  let { error } = await guardar({ ...datos, documentos });
-  // Si la base aún no tiene la columna de documentos, se guarda igual lo demás
-  if (error && /documentos|schema cache/.test(error.message)) ({ error } = await guardar(datos));
+  let { error } = await guardar({ ...datos, documentos, sustentos });
+  // Si la base aún no tiene las columnas nuevas, se guarda igual lo demás
+  if (error && /documentos|sustentos|schema cache/.test(error.message)) ({ error } = await guardar(datos));
   if (error) volver(destino, "error", error.message.includes("duplicate") ? "Ya hay un pago fijo con ese concepto." : mensajeError(error));
   // Archivos permanentes (DNI, credencial…): se suben una vez y valen para todos los meses
   let pfId = id;
@@ -332,4 +334,23 @@ export async function guardarDatosCP(fd: FormData) {
   if (error) volver(destino, "error", /datos_cp|schema cache|column/i.test(error.message) ? "Falta la actualización de la base (ACTUALIZAR_BASE.sql). Avise a soporte." : mensajeError(error));
   revalidatePath("/", "layout");
   volver(destino, "ok", "Datos del comprobante guardados. Ya salen en todos los comprobantes, nuevos y anteriores.");
+}
+
+
+/** Qué comprobante entrega el proveedor según el tipo de gasto. */
+export async function guardarSustentosGasto(fd: FormData) {
+  const ctx = await contextoMcp();
+  const supabase = await supabaseServidor();
+  const destino = "/configuracion?seccion=comprobante";
+  if (!tiene(ctx, "admin")) volver(destino, "error", "Solo el administrador puede cambiar estos datos.");
+  const config: Record<string, string[]> = {};
+  for (const g of GASTOS_SUSTENTO) {
+    const marcados = fd.getAll(`sust_${g.clave}`).map(String).filter((c) => SUSTENTOS.some((x) => x.codigo === c));
+    if (marcados.length === 0) volver(destino, "error", `Marque al menos un documento para «${g.texto}».`);
+    config[g.clave] = marcados;
+  }
+  const { error } = await supabase.from("mcps").update({ sustentos_gasto: config }).eq("id", ctx.mcp.id);
+  if (error) volver(destino, "error", /sustentos_gasto|schema cache|column/i.test(error.message) ? "Falta la actualización de la base (SUSTENTOS_POR_GASTO.sql). Avise a soporte." : mensajeError(error));
+  revalidatePath("/", "layout");
+  volver(destino, "ok", "Guardado: los formularios ya ofrecen solo esos documentos según el tipo de gasto.");
 }

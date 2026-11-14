@@ -19,6 +19,8 @@ export type Mcp = {
   capitulo1: Record<string, string>;
   estado: string;
   logo_path?: string | null;
+  /** Documentos que entrega el proveedor según el tipo de gasto (Configuración; no existe antes de la actualización). */
+  sustentos_gasto?: Record<string, string[]> | null;
   /** Módulos habilitados por el superadmin (no existe antes de la actualización). */
   modulos?: string[] | null;
   /** Si la MCP pide el PIN para aprobar y firmar (se activa en Configuración; no existe antes de la actualización). */

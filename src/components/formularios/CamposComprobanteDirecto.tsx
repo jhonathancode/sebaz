@@ -8,7 +8,7 @@ import type { Fuente } from "@/lib/contexto";
 import { hoyISO } from "@/lib/formato";
 
 /** Comprobante de pago sin expediente: dietas, honorarios, servicios mensuales. */
-export default function CamposComprobanteDirecto({ fuentes, chequeSugerido = "" }: { fuentes: Fuente[]; chequeSugerido?: string }) {
+export default function CamposComprobanteDirecto({ fuentes, chequeSugerido = "", opciones }: { fuentes: Fuente[]; chequeSugerido?: string; opciones?: { codigo: string; nombre: string }[] }) {
   return (
     <>
       <div className="aviso info pequeno">
@@ -43,8 +43,8 @@ export default function CamposComprobanteDirecto({ fuentes, chequeSugerido = "" 
         <SelectFuncion />
         <label className="campo">
           Sustento
-          <select name="sustento_tipo" defaultValue="RH">
-            {SUSTENTOS.map((s) => (
+          <select name="sustento_tipo" defaultValue={opciones?.some((o) => o.codigo === "RH") ? "RH" : opciones?.[0]?.codigo ?? "RH"}>
+            {(opciones ?? SUSTENTOS).map((s) => (
               <option key={s.codigo} value={s.codigo}>{s.nombre}</option>
             ))}
           </select>

@@ -55,7 +55,8 @@ export const SUSTENTOS: { codigo: string; nombre: string }[] = [
   { codigo: "BV", nombre: "Boleta de venta" },
   { codigo: "FAC", nombre: "Factura" },
   { codigo: "RH", nombre: "Recibo por honorarios" },
-  { codigo: "REC", nombre: "Recibo" },
+  { codigo: "REC", nombre: "Recibo de ingreso interno" },
+  { codigo: "PL", nombre: "Planilla simple" },
   { codigo: "PM", nombre: "Planilla de movilidad" },
   { codigo: "TICKET", nombre: "Ticket" },
 ];

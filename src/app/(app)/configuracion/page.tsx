@@ -9,6 +9,7 @@ import { FRECUENCIAS, MESES_LARGO, textoFrecuencia, tocaEnMes } from "@/lib/fuen
 import VentanaFlotante from "@/components/VentanaFlotante";
 import { nombreFuente } from "@/components/formularios/CamposRequerimiento";
 import { TIPOS_ADJUNTO } from "@/lib/adjuntosExpediente";
+import { GASTOS_SUSTENTO, reglasSustento, SUSTENTOS_ELEGIBLES } from "@/lib/sustentos";
 import CasillaDocumento from "@/components/formularios/CasillaDocumento";
 import { cargarArchivosPagoFijo, cargarCatalogoPagosFijos, type PagoFijoCatalogo } from "@/lib/pagosFijos";
 import { NUMERACIONES, proximoNumero } from "@/lib/numeracion";
@@ -16,7 +17,7 @@ import { CAMPOS_CODIF, CODIF_FIJA, rubroSugerido, datosCPDe, faltantesCP, TIPO_O
 import { contextoMcp, tiene } from "@/lib/contexto";
 import { fechaHora, nombrePeriodo, periodoActual, monto2, soles, urlLogo } from "@/lib/formato";
 import { supabaseServidor } from "@/lib/supabase/server";
-import { agregarCuentaBancaria, agregarFuente, cerrarMes, desactivarCuentaBancaria, desactivarFuente, fijarNumeracion, guardarCapitulo1, guardarDatosCP, guardarDatosMcp, guardarFuente, reabrirMes, subirLogo, guardarPagoFijo, alternarPagoFijo, guardarExigirPin, guardarExigirAprobacion } from "./acciones";
+import { agregarCuentaBancaria, agregarFuente, cerrarMes, desactivarCuentaBancaria, desactivarFuente, fijarNumeracion, guardarCapitulo1, guardarDatosCP, guardarSustentosGasto, guardarDatosMcp, guardarFuente, reabrirMes, subirLogo, guardarPagoFijo, alternarPagoFijo, guardarExigirPin, guardarExigirAprobacion } from "./acciones";
 
 export default async function Configuracion({ searchParams }: { searchParams: ParamsAviso }) {
   const sp = await searchParams;
@@ -67,6 +68,17 @@ export default async function Configuracion({ searchParams }: { searchParams: Pa
           <span className="pequeno tenue" style={{ display: "block" }}>Con orden de servicio y memorando de conformidad antes del comprobante. Desmárquelo solo para las dietas del alcalde y regidores (solo requerimiento y comprobante).</span>
         </span>
       </label>
+      <fieldset className="campo" style={{ gridColumn: "1 / -1", border: "1px solid var(--borde)", borderRadius: "var(--radio)", padding: "8px 14px 10px", margin: 0 }}>
+        <legend style={{ padding: "0 6px", fontWeight: 600 }}>Comprobante que entrega quien cobra</legend>
+        <span className="pequeno tenue" style={{ display: "block", marginBottom: 6 }}>Ej.: dieta del alcalde o regidores = «Planilla simple»; asesor = «Recibo por honorarios». Si no marca ninguno, vale lo configurado para «Pagos fijos» en Datos del comprobante.</span>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: "6px 18px" }}>
+          {SUSTENTOS_ELEGIBLES.map((x) => (
+            <label key={x.codigo} style={{ display: "flex", alignItems: "center", gap: 6, flexDirection: "row" }}>
+              <input type="checkbox" name="sustentos" value={x.codigo} defaultChecked={!!p?.sustentos.includes(x.codigo)} style={{ width: "auto" }} /> {x.nombre}
+            </label>
+          ))}
+        </div>
+      </fieldset>
       <fieldset className="campo" style={{ gridColumn: "1 / -1", border: "1px solid var(--borde)", borderRadius: "var(--radio)", padding: "8px 14px 10px", margin: 0 }}>
         <legend style={{ padding: "0 6px", fontWeight: 600 }}>Documentos que debe llevar el expediente</legend>
         <span className="pequeno tenue" style={{ display: "block", marginBottom: 6 }}>Marque cada documento que lleva el expediente de este gasto. Si es el mismo todos los meses (DNI, credencial), súbalo aquí una sola vez y los expedientes saldrán con él ya marcado.</span>
@@ -505,6 +517,28 @@ export default async function Configuracion({ searchParams }: { searchParams: Pa
             <div className="aviso info">
               <b>Ya sugeridos:</b> RB (13 si el dinero viene de otra municipalidad, 09 si es ingreso propio), FN 03, DIVF 006 y GRPF 0010 (gestión administrativa, Clasificador Funcional del MEF) y las cuentas 2103.010101 / 1101.1201 (las de su modelo). Revíselos y pulse Guardar. <b>SEC, PROD, ACT, META y FINAL son propios de cada municipalidad</b>: se copian de su SIAF o POI. <b>¿Qué escribo?</b> Copie los códigos tal como los usa la municipalidad en su SIAF o en su POI/PIA. Un ejemplo de cómo se ve en un comprobante: <code>09 · 0002 · 1 · 0086 · 3000001 · 5001353 · 22 · 048 · 0109 · 00001 · 0070136</code>. Cada fuente de dinero (Perené, Chanchamayo, ingresos propios) puede llevar sus propios códigos. La <b>meta</b> se toma de cada requerimiento cuando la escribe; aquí queda la meta que se usa por defecto.
             </div>
+            <section className="panel" style={{ marginBottom: 14 }}>
+              <div className="panel-cab">Qué comprobante entrega el proveedor según el gasto</div>
+              <form action={guardarSustentosGasto} className="panel-cuerpo">
+                <span className="pequeno tenue">Marque los documentos que se aceptan en cada tipo de gasto. Al registrar un gasto, el sistema ofrece solo esos. Los pagos fijos pueden tener los suyos (por ejemplo, la dieta del alcalde con «Planilla simple»): se eligen en Pagos fijos.</span>
+                {GASTOS_SUSTENTO.map((g) => {
+                  const marcados = reglasSustento(m.sustentos_gasto, [])[g.clave];
+                  return (
+                    <fieldset key={g.clave} disabled={!puedeCambiar} style={{ border: "1px solid var(--borde)", borderRadius: "var(--radio)", padding: "8px 14px 10px", margin: 0 }}>
+                      <legend style={{ padding: "0 6px", fontWeight: 600 }}>{g.texto}</legend>
+                      <div style={{ display: "flex", flexWrap: "wrap", gap: "6px 18px" }}>
+                        {SUSTENTOS_ELEGIBLES.map((x) => (
+                          <label key={x.codigo} style={{ display: "flex", alignItems: "center", gap: 6, flexDirection: "row" }}>
+                            <input type="checkbox" name={`sust_${g.clave}`} value={x.codigo} defaultChecked={marcados.includes(x.codigo)} style={{ width: "auto" }} /> {x.nombre}
+                          </label>
+                        ))}
+                      </div>
+                    </fieldset>
+                  );
+                })}
+                {puedeCambiar && <BotonConfirmar className="btn primario" pregunta="¿Guardar los comprobantes por tipo de gasto?" textoConfirmar="Sí, guardar">Guardar</BotonConfirmar>}
+              </form>
+            </section>
             <form action={guardarDatosCP}>
               <fieldset disabled={!puedeCambiar} style={{ border: 0, padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: 14 }}>
                 {ctx.fuentes.map((f) => {

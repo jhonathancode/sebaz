@@ -5159,3 +5159,4 @@ html.pdf-captura .sf-faltan { display: none; }
 .bal-hoja .bal-cuadre { color: #b42318; }
 .bal-hoja .bal-cuadre.ok { color: #1f5bc7; }
 .bal-hoja .rep-pie { color: #4a5565; }
+.bal-hoja .rep-tabla th.bal-n, .bal-hoja .rep-tabla td.bal-n { width: 1%; white-space: nowrap; text-align: center; padding-left: 6px; padding-right: 6px; }

@@ -62,16 +62,10 @@ export async function hojasBalance(ctx: Ctx, supabase: SupabaseClient, anio: num
 
   // ---------------------------------------------------------------- listados agrupados por mes (una sola suma total)
   function porMes<T>(items: T[], fecha: (x: T) => string, fila: (x: T, n: number) => Celda[], monto: (x: T) => number, ncols: number): FilaBal[] {
-    const out: FilaBal[] = [];
-    let total = 0;
-    let n = 0;
-    for (let i = 0; i < 12; i++) {
-      const del = items.filter((x) => fecha(x).startsWith(mm(anio, i))).sort((a, b) => fecha(a).localeCompare(fecha(b)));
-      if (!del.length) continue;
-      out.push({ tipo: "grupo", celdas: [MES(i), ...Array(ncols - 1).fill(null)] });
-      del.forEach((x) => { n += 1; total += monto(x); out.push({ tipo: "fila", celdas: fila(x, n) }); });
-    }
-    out.push({ tipo: "total", celdas: ["TOTAL DEL AÑO", ...Array(ncols - 2).fill(null), r2(total)] });
+    // Todo junto y en orden de fecha, sin separar por meses; una sola suma total al final
+    const orden = [...items].sort((a, b) => fecha(a).localeCompare(fecha(b)));
+    const out: FilaBal[] = orden.map((x, i) => ({ tipo: "fila", celdas: fila(x, i + 1) }));
+    out.push({ tipo: "total", celdas: ["", "TOTAL DEL AÑO", ...Array(ncols - 3).fill(null), r2(orden.reduce((s, x) => s + monto(x), 0))] });
     return out;
   }
 
@@ -79,7 +73,7 @@ export async function hojasBalance(ctx: Ctx, supabase: SupabaseClient, anio: num
     clave: "ingresos",
     pestana: "INGRESOS PROPIOS",
     titulo: `INGRESOS PROPIOS ${anio}`,
-    columnas: [{ titulo: "N°", ancho: 6 }, { titulo: "N° RECIBO", ancho: 11 }, { titulo: "FECHA", ancho: 12 }, { titulo: "RUBRO", ancho: 20 }, { titulo: "PAGADOR", ancho: 32 }, { titulo: "CONCEPTO", ancho: 50 }, M("MONTO S/")],
+    columnas: [{ titulo: "N°", ancho: 4 }, { titulo: "N° RECIBO", ancho: 11 }, { titulo: "FECHA", ancho: 12 }, { titulo: "RUBRO", ancho: 20 }, { titulo: "PAGADOR", ancho: 32 }, { titulo: "CONCEPTO", ancho: 50 }, M("MONTO S/")],
     filas: porMes(d.ingresos, (x) => x.fecha, (x, n) => [n, String(x.numero).padStart(4, "0"), fechaPe(x.fecha), x.rubro.toUpperCase(), x.pagador.toUpperCase(), x.concepto.toUpperCase(), x.monto], (x) => x.monto, 7),
   };
 
@@ -87,7 +81,7 @@ export async function hojasBalance(ctx: Ctx, supabase: SupabaseClient, anio: num
     clave: "comprobantes",
     pestana: "COMPROBANTES",
     titulo: `COMPROBANTES DE PAGO ${anio}`,
-    columnas: [{ titulo: "N°", ancho: 6 }, { titulo: "N° CP", ancho: 12 }, { titulo: "FECHA", ancho: 12 }, { titulo: "BENEFICIARIO", ancho: 30 }, { titulo: "CONCEPTO", ancho: 46 }, { titulo: "CHEQUE", ancho: 14 }, { titulo: "PARTIDA", ancho: 14 }, M("IMPORTE S/")],
+    columnas: [{ titulo: "N°", ancho: 4 }, { titulo: "N° CP", ancho: 12 }, { titulo: "FECHA", ancho: 12 }, { titulo: "BENEFICIARIO", ancho: 30 }, { titulo: "CONCEPTO", ancho: 46 }, { titulo: "CHEQUE", ancho: 14 }, { titulo: "PARTIDA", ancho: 14 }, M("IMPORTE S/")],
     filas: porMes(d.cps, (x) => x.fecha, (x, n) => [n, x.codigo, fechaPe(x.fecha), x.beneficiario.toUpperCase(), x.concepto.toUpperCase(), x.cheque ?? null, x.partida, x.importe], (x) => x.importe, 8),
   };
 
@@ -99,7 +93,7 @@ export async function hojasBalance(ctx: Ctx, supabase: SupabaseClient, anio: num
     clave: "caja-chica",
     pestana: "CAJA CHICA",
     titulo: `CAJA CHICA ${anio}`,
-    columnas: [{ titulo: "N°", ancho: 6 }, { titulo: "FECHA", ancho: 12 }, { titulo: "CHEQUE", ancho: 14 }, { titulo: "CP", ancho: 8 }, { titulo: "N° CP", ancho: 14 }, { titulo: "RAZÓN SOCIAL", ancho: 34 }, { titulo: "CONCEPTO", ancho: 50 }, M("MONTO S/")],
+    columnas: [{ titulo: "N°", ancho: 4 }, { titulo: "FECHA", ancho: 12 }, { titulo: "CHEQUE", ancho: 14 }, { titulo: "CP", ancho: 8 }, { titulo: "N° CP", ancho: 14 }, { titulo: "RAZÓN SOCIAL", ancho: 34 }, { titulo: "CONCEPTO", ancho: 50 }, M("MONTO S/")],
     filas: porMes(gcc ?? [], (x) => x.fecha, (x, n) => [n, fechaPe(x.fecha), (cheque.get(x.caja_id) ?? "").toUpperCase(), x.sustento_tipo, x.sustento_numero ?? "SN", x.razon_social.toUpperCase(), x.concepto.toUpperCase(), Number(x.monto)], (x) => Number(x.monto), 8),
   };
 

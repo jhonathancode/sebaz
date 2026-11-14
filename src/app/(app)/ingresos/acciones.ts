@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 import { contextoMcp, tiene } from "@/lib/contexto";
 import { mensajeError, numero, texto, volver } from "@/lib/acciones";
 import { supabaseServidor } from "@/lib/supabase/server";
@@ -27,7 +28,8 @@ export async function emitirRecibo(fd: FormData) {
     .single();
   if (error || !data) volver("/ingresos?nuevo=1", "error", mensajeError(error));
   revalidatePath("/ingresos");
-  volver(`/ingresos/${data.id}`, "ok", "Recibo de ingreso emitido.");
+  // Se queda en la lista y se abre la ventana con el recibo ya emitido (imprimir, PDF, WhatsApp)
+  redirect(`/ingresos?mes=${String(texto(fd, "fecha") ?? "").slice(0, 7)}&emitido=${data.id}`);
 }
 
 export async function anularRecibo(fd: FormData) {

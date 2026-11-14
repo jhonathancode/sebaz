@@ -112,7 +112,7 @@ export default async function BalanceAnual({ searchParams }: { searchParams: Pro
               {h.grupos && (
                 <tr>{h.grupos.map((g, i) => <th key={i} colSpan={g.hasta - g.desde + 1} style={{ textAlign: "center" }}>{g.titulo}</th>)}</tr>
               )}
-              <tr>{h.columnas.map((c, i) => <th key={i} className={c.tipo === "monto" ? "d" : undefined}>{c.titulo}</th>)}</tr>
+              <tr>{h.columnas.map((c, i) => <th key={i} className={c.tipo === "monto" ? "d" : c.titulo === "N°" ? "bal-n" : undefined}>{c.titulo}</th>)}</tr>
             </thead>
             <tbody>
               {h.filas.map((f, i) =>
@@ -121,7 +121,7 @@ export default async function BalanceAnual({ searchParams }: { searchParams: Pro
                 ) : (
                   <tr key={i} className={f.tipo === "total" ? "bal-total" : f.tipo === "destacado" ? "bal-dest" : f.tipo === "grupo4" ? "bal-cuenta" : undefined}>
                     {f.celdas.map((v, j) => (
-                      <td key={j} className={monto(j) ? "d" : undefined}>{v === null || v === "" ? "" : typeof v === "number" && monto(j) ? soles(v) : v}</td>
+                      <td key={j} className={monto(j) ? "d" : h.columnas[j]?.titulo === "N°" ? "bal-n" : undefined}>{v === null || v === "" ? "" : typeof v === "number" && monto(j) ? soles(v) : v}</td>
                     ))}
                   </tr>
                 ),

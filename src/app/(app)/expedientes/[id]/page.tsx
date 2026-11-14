@@ -16,7 +16,7 @@ import FormatoComprobante from "@/components/formatos/FormatoComprobante";
 import { FormatoNea } from "@/components/formatos/FormatosAlmacen";
 import { cargarExpediente, listaDocumentos } from "@/lib/documentos";
 import { cargarCierres, estadoGestion } from "@/lib/gestion";
-import { siguienteCheque } from "@/lib/pagosFijos";
+import { cargarArchivosPagoFijo, siguienteCheque, type ArchivoPermanente } from "@/lib/pagosFijos";
 import { conceptoSinSeRequiere } from "@/lib/requerimiento";
 import { CORRELATIVO, proximoNumero } from "@/lib/numeracion";
 import SelectFuncion from "@/components/SelectFuncion";
@@ -139,6 +139,9 @@ export default async function Expediente({ params, searchParams }: { params: Par
     ? await supabase.from("pagos_fijos").select("documentos").eq("id", (e as { pago_fijo_id: string }).pago_fijo_id).maybeSingle()
     : { data: null };
   const requeridos = ((pfDocs as { documentos?: string[] } | null)?.documentos ?? null) as string[] | null;
+  const pfId = (e as { pago_fijo_id?: string | null }).pago_fijo_id ?? null;
+  const permanentesMapa = pfId ? await cargarArchivosPagoFijo(supabase, ctx.mcp.id, true) : new Map<string, ArchivoPermanente>();
+  const permanentes = [...permanentesMapa].filter(([k]) => k.startsWith(`${pfId}|`)).map(([k, v]) => ({ tipo: k.split("|")[1], nombre: v.nombre, url: v.url ?? null }));
   const firmadasAdj = (adjData ?? []).filter((a) => !a.anulado).length
     ? await supabase.storage.from("sustentos").createSignedUrls((adjData ?? []).filter((a) => !a.anulado).map((a) => a.archivo_path as string), 1800)
     : { data: [] as { path: string | null; signedUrl: string }[] };
@@ -879,6 +882,7 @@ export default async function Expediente({ params, searchParams }: { params: Par
       <AdjuntosExpediente
         id={id}
         tipoGasto={e.tipo}
+        permanentes={permanentes}
         requeridos={(e as { pago_fijo_id?: string | null }).pago_fijo_id ? requeridos ?? [] : null}
         adjuntos={adjuntos}
         puede={puedeRegistrar}

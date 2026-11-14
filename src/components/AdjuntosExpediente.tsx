@@ -14,6 +14,7 @@ export default function AdjuntosExpediente({
   id,
   tipoGasto,
   requeridos,
+  permanentes,
   adjuntos,
   sistema,
   puede,
@@ -22,6 +23,8 @@ export default function AdjuntosExpediente({
   tipoGasto: string;
   /** Pago fijo: los documentos que se pidieron al crearlo. Otro gasto: null (se usa la lista guía). */
   requeridos: string[] | null;
+  /** Documentos permanentes del pago fijo (se subieron una vez en Configuración). */
+  permanentes: { tipo: string; nombre: string; url: string | null }[];
   adjuntos: Adjunto[];
   sistema: { requerimiento: boolean; orden: boolean; conformidad: boolean; comprobante: boolean };
   puede: boolean;
@@ -35,7 +38,8 @@ export default function AdjuntosExpediente({
     { texto: "Conformidad", ok: sistema.conformidad },
     { texto: "Comprobante de pago", ok: sistema.comprobante },
   ];
-  const faltan = guia.filter((g) => !vigentes.some((a) => a.tipo === g)).length;
+  const tienePerm = (g: string) => permanentes.some((x) => x.tipo === g);
+  const faltan = guia.filter((g) => !vigentes.some((a) => a.tipo === g) && !tienePerm(g)).length;
 
   return (
     <section id="documentos" className="panel adj-panel no-imprimir">
@@ -74,12 +78,20 @@ export default function AdjuntosExpediente({
           ))}
           {guia.map((g) => {
             const subidos = vigentes.filter((a) => a.tipo === g);
+            const perm = permanentes.find((x) => x.tipo === g);
+            const cumple = subidos.length > 0 || !!perm;
             return (
-              <div key={g} className={`adj-fila ${subidos.length ? "ok" : "falta"}`}>
-                <span className="adj-marca" aria-hidden="true">{subidos.length ? "✔" : "○"}</span>
+              <div key={g} className={`adj-fila ${cumple ? "ok" : "falta"}`}>
+                <span className="adj-marca" aria-hidden="true">{cumple ? "✔" : "○"}</span>
                 <span className="adj-nombre">{nombreAdjunto(g)}</span>
                 <span className="adj-det">
-                  {subidos.length === 0 && <span className="tenue">Falta adjuntar</span>}
+                  {perm && (
+                    <span className="adj-arch">
+                      {perm.url ? <a href={perm.url} target="_blank" rel="noreferrer">{perm.nombre}</a> : <span>{perm.nombre}</span>}
+                      <span className="tenue">· permanente, vale todos los meses</span>
+                    </span>
+                  )}
+                  {!cumple && <span className="tenue">Falta adjuntar</span>}
                   {subidos.map((a) => (
                     <span key={a.id} className="adj-arch">
                       {a.url ? <a href={a.url} target="_blank" rel="noreferrer">{a.descripcion ?? a.archivo_nombre ?? "Ver"}</a> : <span>{a.descripcion ?? a.archivo_nombre}</span>}

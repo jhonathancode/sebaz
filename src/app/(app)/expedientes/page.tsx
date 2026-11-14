@@ -9,7 +9,7 @@ import { cargarCierres, estadoGestion } from "@/lib/gestion";
 import { codigoCP, fecha, hoyISO, nombrePeriodo, num3, periodoActual, rangoPeriodo, soles } from "@/lib/formato";
 import { supabaseServidor } from "@/lib/supabase/server";
 import { nombreAdjunto } from "@/lib/adjuntosExpediente";
-import { cargarCatalogoPagosFijos, siguienteCheque } from "@/lib/pagosFijos";
+import { cargarArchivosPagoFijo, cargarCatalogoPagosFijos, siguienteCheque } from "@/lib/pagosFijos";
 import { cargarAtajos } from "@/lib/atajos";
 import { anularExpedienteTotal, crearExpediente, registrarExpedienteCompleto } from "./acciones";
 import AsistenteRequerimiento from "@/components/AsistenteRequerimiento";
@@ -53,7 +53,7 @@ export default async function Expedientes({ searchParams }: { searchParams: Para
   // Se traen todos los del mes (con búsqueda y tipo) para contar por estado; el estado se filtra aquí.
   let consulta = supabase
     .from("expedientes")
-    .select("id, anio, numero, fecha, tipo, flujo_completo, descripcion, area_usuaria, fase, estado, expediente_items(total, anulado)")
+    .select("id, anio, numero, fecha, tipo, flujo_completo, descripcion, area_usuaria, fase, estado, pago_fijo_id, expediente_items(total, anulado)")
     .eq("mcp_id", ctx.mcp.id)
     .order("fecha", { ascending: false })
     .order("numero", { ascending: false });
@@ -106,6 +106,8 @@ export default async function Expedientes({ searchParams }: { searchParams: Para
     m.set(a.tipo, (m.get(a.tipo) ?? 0) + 1);
     adjDe.set(a.expediente_id, m);
   }
+  // Documentos permanentes de los pagos fijos (DNI, credencial…): cuentan como ya presentados en cada mes
+  const archivosPF = await cargarArchivosPagoFijo(supabase, ctx.mcp.id);
   const cpsAll = cpsAllRaw;
   const cpsV = cpsAllRaw;
   const cpVigente = new Map<string, { id: string; cheque: string | null }>();
@@ -418,14 +420,24 @@ export default async function Expedientes({ searchParams }: { searchParams: Para
                   {(() => {
                     const pf = pagosFijos.find((x) => x.id === (e as { pago_fijo_id?: string | null }).pago_fijo_id);
                     if (!pf || e.estado === "anulado") return null;
-                    return pf.documentos.filter((d) => !adjDe.get(e.id)?.has(d)).map((d) => (
-                      <span key={`falta-${d}`} className="doc-par">
-                        <i className="doc-sep" aria-hidden="true" />
-                        <Link className="doc-paso pendiente" href={`/expedientes/${e.id}#documentos`} title="Falta adjuntar este documento">
-                          <span className="ic" aria-hidden="true" />{nombreAdjunto(d)}
-                        </Link>
-                      </span>
-                    ));
+                    const sinSubir = pf.documentos.filter((d) => !adjDe.get(e.id)?.has(d));
+                    return sinSubir.map((d) => {
+                      const perm = archivosPF.has(`${pf.id}|${d}`);
+                      return (
+                        <span key={`req-${d}`} className="doc-par">
+                          <i className={`doc-sep${perm ? " ok" : ""}`} aria-hidden="true" />
+                          {perm ? (
+                            <Link className="doc-paso" href={`/expedientes/${e.id}#documentos`} title="Documento permanente: ya está completo">
+                              <span className="ic" aria-hidden="true">✓</span>{nombreAdjunto(d)}
+                            </Link>
+                          ) : (
+                            <Link className="doc-paso pendiente" href={`/expedientes/${e.id}#documentos`} title="Falta adjuntar este documento">
+                              <span className="ic" aria-hidden="true" />{nombreAdjunto(d)}
+                            </Link>
+                          )}
+                        </span>
+                      );
+                    });
                   })()}
                   {dd.hayCp && (
                     <span className="doc-par">

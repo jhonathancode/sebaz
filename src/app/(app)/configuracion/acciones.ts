@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { BANCOS, CAMPOS_CAPITULO1, CAMPOS_CAPITULO1_LARGOS } from "@/lib/catalogos";
 import { contextoMcp, tiene } from "@/lib/contexto";
-import { TIPOS_ADJUNTO } from "@/lib/adjuntosExpediente";
+import { TIPOS_ADJUNTO, TIPOS_ARCHIVO_ADJUNTO } from "@/lib/adjuntosExpediente";
 import { mensajeError, numero, texto, volver } from "@/lib/acciones";
 import { supabaseServidor } from "@/lib/supabase/server";
 import { NUMERACIONES, ultimoEmitido } from "@/lib/numeracion";
@@ -148,8 +148,34 @@ export async function guardarPagoFijo(fd: FormData) {
   // Si la base aún no tiene la columna de documentos, se guarda igual lo demás
   if (error && /documentos|schema cache/.test(error.message)) ({ error } = await guardar(datos));
   if (error) volver(destino, "error", error.message.includes("duplicate") ? "Ya hay un pago fijo con ese concepto." : mensajeError(error));
+  // Archivos permanentes (DNI, credencial…): se suben una vez y valen para todos los meses
+  let pfId = id;
+  if (!pfId) {
+    const { data: creado } = await supabase.from("pagos_fijos").select("id").eq("mcp_id", ctx.mcp.id).eq("concepto", concepto).maybeSingle();
+    pfId = creado?.id ?? null;
+  }
+  const avisos: string[] = [];
+  if (pfId) {
+    for (const clave of documentos) {
+      const a = fd.get(`archivo_${clave}`);
+      if (!(a instanceof File) || a.size === 0) continue;
+      if (!TIPOS_ARCHIVO_ADJUNTO[a.type]) { avisos.push(`«${a.name}» no es PDF ni foto`); continue; }
+      if (a.size > 4 * 1024 * 1024) { avisos.push(`«${a.name}» pesa más de 4 MB`); continue; }
+      const path = `${ctx.mcp.id}/pagos-fijos/${pfId}/${clave}-${Date.now()}.${TIPOS_ARCHIVO_ADJUNTO[a.type]}`;
+      const { error: eS } = await supabase.storage.from("sustentos").upload(path, a, { contentType: a.type });
+      if (eS) { avisos.push(mensajeError(eS)); continue; }
+      // El anterior no se borra: queda anulado por reemplazo
+      await supabase.from("pago_fijo_archivos").update({ anulado: true, anulado_motivo: "Reemplazado por un archivo nuevo" }).eq("pago_fijo_id", pfId).eq("tipo", clave).eq("anulado", false);
+      const { error: eI } = await supabase.from("pago_fijo_archivos").insert({ mcp_id: ctx.mcp.id, pago_fijo_id: pfId, tipo: clave, archivo_path: path, archivo_nombre: a.name.slice(0, 160), archivo_tipo: a.type, archivo_tamano: a.size });
+      if (eI) {
+        await supabase.storage.from("sustentos").remove([path]);
+        avisos.push(/pago_fijo_archivos|schema cache/.test(eI.message) ? "falta la actualización de la base (PAGO_FIJO_ARCHIVOS.sql)" : mensajeError(eI));
+      }
+    }
+  }
   revalidatePath("/configuracion");
   revalidatePath("/expedientes");
+  if (avisos.length) volver(destino, "error", `Se guardó el pago fijo, pero: ${avisos.join("; ")}.`);
   volver(destino, "ok", id ? "Pago fijo actualizado." : "Pago fijo agregado a la lista.");
 }
 

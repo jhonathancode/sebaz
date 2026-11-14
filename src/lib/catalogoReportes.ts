@@ -32,6 +32,7 @@ export const REPORTES: Reporte[] = [
   { clave: "caja-chica-mes", grupo: "Caja chica", titulo: "Caja chica del mes", detalle: "Gastos de la caja chica del mes: sustento, razón social, concepto y monto.", lista: "caja-chica", periodo: "mes", modulo: "caja_chica" },
   { clave: "caja-chica-anio", grupo: "Caja chica", titulo: "Caja chica del año", detalle: "Cuadro por mes: fondo, gastado, saldo y estado de cada caja.", lista: "caja-chica-anio", periodo: "anio", modulo: "caja_chica" },
 
+  { clave: "balance-anual", grupo: "Contabilidad", titulo: "Balance anual", detalle: "Ingresos, gastos, resultado del año y situación al cierre (bancos, caja, retenciones y patrimonio).", lista: "contabilidad", fijo: { ver: "balance" }, periodo: "anio", modulo: "contabilidad" },
   { clave: "libro-bancos", grupo: "Contabilidad", titulo: "Libro Bancos", detalle: "Movimientos del banco del mes con saldo anterior, ingresos, egresos y saldo.", lista: "contabilidad", fijo: { ver: "bancos" }, periodo: "mes", modulo: "contabilidad" },
   { clave: "libro-caja", grupo: "Contabilidad", titulo: "Libro Caja", detalle: "Movimientos de caja del mes con saldo anterior, ingresos, egresos y saldo.", lista: "contabilidad", fijo: { ver: "caja" }, periodo: "mes", modulo: "contabilidad" },
   { clave: "libro-diario", grupo: "Contabilidad", titulo: "Libro diario simplificado", detalle: "Asientos del mes con sus cuentas, debe y haber.", lista: "contabilidad", fijo: { ver: "diario" }, periodo: "mes", modulo: "contabilidad" },

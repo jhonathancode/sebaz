@@ -35,7 +35,7 @@ export default function AdjuntosExpediente({
   const faltan = guia.filter((g) => !vigentes.some((a) => a.tipo === g)).length;
 
   return (
-    <section className="panel adj-panel no-imprimir">
+    <section id="documentos" className="panel adj-panel no-imprimir">
       <div className="panel-cab" style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
         <span>Documentos del expediente</span>
         <span className={`adj-resumen${faltan ? "" : " completo"}`}>{faltan ? `Faltan ${faltan} por adjuntar` : guia.length ? "Completo" : `${vigentes.length} adjunto(s)`}</span>

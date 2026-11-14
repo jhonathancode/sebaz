@@ -8,7 +8,7 @@ import { contextoMcp, tiene } from "@/lib/contexto";
 import { fecha } from "@/lib/formato";
 import { MODELOS_BASE, TIPOS_SEC, tipoSec } from "@/lib/secretaria";
 import { supabaseServidor } from "@/lib/supabase/server";
-import { archivarModelo, crearDesdeModelo, importarModeloWord } from "./acciones";
+import { archivarModelo, clonarDocumento, crearDesdeModelo, fijarNumeracion, importarModeloWord } from "./acciones";
 
 type Doc = { id: string; tipo: string; numero: number | null; anio: number; estado: string; fecha: string; destinatario: string | null; asunto: string | null; archivo_path: string | null };
 
@@ -32,15 +32,27 @@ function Archivos({ docs, puede }: { docs: Doc[]; puede: boolean }) {
   return (
     <div className="sec-archivos">
       {docs.map((d) => (
-        <Link key={d.id} href={d.estado === "borrador" && puede ? `/secretaria/${d.id}/editar` : `/secretaria/${d.id}`} className={`sec-archivo${d.estado === "anulado" ? " anulado" : ""}`}>
-          <Hoja />
-          <div className="sa-texto">
-            <b className="sa-asunto">{d.asunto || "Sin asunto"}</b>
-            <span>{nombreArchivo(d)}</span>
-            <small>{fecha(d.fecha)}{d.destinatario ? ` · ${d.destinatario}` : ""}{d.archivo_path ? " · 📎 firmado" : ""}</small>
+        <div key={d.id} className="sec-archivo-caja">
+          <Link href={d.estado === "borrador" && puede ? `/secretaria/${d.id}/editar` : `/secretaria/${d.id}`} className={`sec-archivo${d.estado === "anulado" ? " anulado" : ""}`}>
+            <Hoja />
+            <div className="sa-texto">
+              <b className="sa-asunto">{d.asunto || "Sin asunto"}</b>
+              <span>{nombreArchivo(d)}</span>
+              <small>{fecha(d.fecha)}{d.destinatario ? ` · ${d.destinatario}` : ""}{d.archivo_path ? " · 📎 firmado" : ""}</small>
+            </div>
+            <Estado valor={d.estado} />
+          </Link>
+          <div className="sec-archivo-op">
+            <Link className="btn chico" href={`/secretaria/${d.id}`}>Ver</Link>
+            {puede && d.estado === "borrador" && <Link className="btn chico" href={`/secretaria/${d.id}/editar`}>Editar</Link>}
+            {puede && (
+              <form action={clonarDocumento}>
+                <input type="hidden" name="id" value={d.id} />
+                <button type="submit" className="btn chico">Clonar</button>
+              </form>
+            )}
           </div>
-          <Estado valor={d.estado} />
-        </Link>
+        </div>
       ))}
     </div>
   );
@@ -76,6 +88,10 @@ export default async function Secretaria({ searchParams }: { searchParams: Param
     const t = tipoSec(tipo);
     const { data: mp } = await supabase.from("sec_modelos").select("id, nombre, asunto").eq("mcp_id", ctx.mcp.id).eq("tipo", tipo).eq("activo", true).order("nombre");
     const propios = mp ?? [];
+    const anioActual = new Date().getFullYear();
+    const { data: prox } = await supabase.rpc("sec_proximo", { p_mcp: ctx.mcp.id, p_tipo: tipo, p_anio: anioActual });
+    const proximo = typeof prox === "number" ? prox : null;
+    const puedeNum = tiene(ctx, "admin", "contador");
     const base = MODELOS_BASE.filter((m) => m.tipo === tipo);
     const deTipo = todos.filter((d) => d.tipo === tipo);
     const filas = deTipo.filter((d) => (!estado || d.estado === estado) && (!q || coincide(d)));
@@ -100,6 +116,19 @@ export default async function Secretaria({ searchParams }: { searchParams: Param
           )}
         </div>
         <Avisos ok={sp.ok} error={sp.error} />
+        {proximo !== null && <div className="sec-numeracion">
+          <span>Numeración {anioActual}: el próximo {t.nombre.toLowerCase()} será el <b>N° {String(proximo ?? 1).padStart(3, "0")}-{anioActual}</b></span>
+          {puedeNum && (
+            <VentanaFlotante boton="Cambiar numeración" titulo={`Numeración de ${t.plural.toLowerCase()}`} accion={fijarNumeracion} textoGuardar="Guardar" claseBoton="btn chico">
+              <input type="hidden" name="tipo" value={tipo} />
+              <label className="campo">
+                El próximo documento debe llevar el N°
+                <input name="siguiente" type="number" min={1} max={99999} defaultValue={proximo} required />
+              </label>
+              <p className="pequeno tenue" style={{ margin: 0 }}>Úselo si la MCP ya emitió documentos fuera de ZEBAZ (por ejemplo, si va por el 79, escriba 80). Solo se puede subir, nunca bajar de lo ya emitido. La numeración se reinicia cada año.</p>
+            </VentanaFlotante>
+          )}
+        </div>}
         {puede && (
           <>
             <h2 className="sec-grupo">Modelos · un clic crea el documento</h2>

@@ -13,19 +13,22 @@ const MOTIVOS = ["Se subió el documento equivocado", "La foto no se lee bien", 
 export default function AdjuntosExpediente({
   id,
   tipoGasto,
+  requeridos,
   adjuntos,
   sistema,
   puede,
 }: {
   id: string;
   tipoGasto: string;
+  /** Pago fijo: los documentos que se pidieron al crearlo. Otro gasto: null (se usa la lista guía). */
+  requeridos: string[] | null;
   adjuntos: Adjunto[];
   sistema: { requerimiento: boolean; orden: boolean; conformidad: boolean; comprobante: boolean };
   puede: boolean;
 }) {
   const vigentes = adjuntos.filter((a) => !a.anulado);
   const anulados = adjuntos.filter((a) => a.anulado);
-  const guia = RECOMENDADOS[tipoGasto] ?? [];
+  const guia = requeridos ?? RECOMENDADOS[tipoGasto] ?? [];
   const delSistema: { texto: string; ok: boolean }[] = [
     { texto: "Requerimiento", ok: sistema.requerimiento },
     { texto: tipoGasto === "compra" ? "Orden de compra" : "Orden de servicio", ok: sistema.orden },

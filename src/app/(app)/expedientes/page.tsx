@@ -420,6 +420,18 @@ export default async function Expedientes({ searchParams }: { searchParams: Para
                       </Link>
                     </span>
                   ))}
+                  {(() => {
+                    const pf = pagosFijos.find((x) => x.id === (e as { pago_fijo_id?: string | null }).pago_fijo_id);
+                    if (!pf || e.estado === "anulado") return null;
+                    return pf.documentos.filter((d) => !adjDe.get(e.id)?.has(d)).map((d) => (
+                      <span key={`falta-${d}`} className="doc-par">
+                        <i className="doc-sep" aria-hidden="true" />
+                        <Link className="doc-paso pendiente" href={`/expedientes/${e.id}#documentos`} title="Falta adjuntar este documento">
+                          <span className="ic" aria-hidden="true" />{nombreAdjunto(d)}
+                        </Link>
+                      </span>
+                    ));
+                  })()}
                 </div>
                 {(() => {
                   const caja = cajaDe.get(e.id);

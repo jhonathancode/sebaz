@@ -134,6 +134,11 @@ export default async function Expediente({ params, searchParams }: { params: Par
     .select("id, tipo, descripcion, archivo_path, archivo_nombre, archivo_tipo, anulado, anulado_motivo, creado_en")
     .eq("expediente_id", id)
     .order("creado_en");
+  // Documentos que pidió quien creó el pago fijo (si no hay la columna, se usa la lista guía)
+  const { data: pfDocs } = (e as { pago_fijo_id?: string | null }).pago_fijo_id
+    ? await supabase.from("pagos_fijos").select("documentos").eq("id", (e as { pago_fijo_id: string }).pago_fijo_id).maybeSingle()
+    : { data: null };
+  const requeridos = ((pfDocs as { documentos?: string[] } | null)?.documentos ?? null) as string[] | null;
   const firmadasAdj = (adjData ?? []).filter((a) => !a.anulado).length
     ? await supabase.storage.from("sustentos").createSignedUrls((adjData ?? []).filter((a) => !a.anulado).map((a) => a.archivo_path as string), 1800)
     : { data: [] as { path: string | null; signedUrl: string }[] };
@@ -874,6 +879,7 @@ export default async function Expediente({ params, searchParams }: { params: Par
       <AdjuntosExpediente
         id={id}
         tipoGasto={e.tipo}
+        requeridos={(e as { pago_fijo_id?: string | null }).pago_fijo_id ? requeridos ?? [] : null}
         adjuntos={adjuntos}
         puede={puedeRegistrar}
         sistema={{ requerimiento: true, orden: (ordenes ?? []).some((o) => !(o as { anulado?: boolean }).anulado), conformidad: (conformidades ?? []).some((c) => !(c as { anulado?: boolean }).anulado), comprobante: (cps ?? []).some((c) => c.estado !== "anulado") }}

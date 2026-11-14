@@ -8,6 +8,7 @@ import { BANCOS, CAMPOS_CAPITULO1, CAMPOS_CAPITULO1_LARGOS, CLASIFICADORES } fro
 import { FRECUENCIAS, MESES_LARGO, textoFrecuencia, tocaEnMes } from "@/lib/fuentes";
 import VentanaFlotante from "@/components/VentanaFlotante";
 import { nombreFuente } from "@/components/formularios/CamposRequerimiento";
+import { TIPOS_ADJUNTO } from "@/lib/adjuntosExpediente";
 import { cargarCatalogoPagosFijos, type PagoFijoCatalogo } from "@/lib/pagosFijos";
 import { NUMERACIONES, proximoNumero } from "@/lib/numeracion";
 import { CAMPOS_CODIF, CODIF_FIJA, rubroSugerido, datosCPDe, faltantesCP, TIPO_OPERACION_BS, TIPO_OPERACION_OTRO } from "@/lib/datosCP";
@@ -64,6 +65,17 @@ export default async function Configuracion({ searchParams }: { searchParams: Pa
           <span className="pequeno tenue" style={{ display: "block" }}>Con orden de servicio y memorando de conformidad antes del comprobante. Desmárquelo solo para las dietas del alcalde y regidores (solo requerimiento y comprobante).</span>
         </span>
       </label>
+      <fieldset className="campo" style={{ gridColumn: "1 / -1", border: "1px solid var(--borde)", borderRadius: "var(--radio)", padding: "8px 14px 10px", margin: 0 }}>
+        <legend style={{ padding: "0 6px", fontWeight: 600 }}>Documentos que debe llevar el expediente</legend>
+        <span className="pequeno tenue" style={{ display: "block", marginBottom: 6 }}>Marque lo que se adjunta cada mes (por ejemplo planilla o recibo por honorarios). El expediente mostrará qué falta.</span>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: "6px 18px" }}>
+          {TIPOS_ADJUNTO.filter((t) => t.clave !== "otro").map((t) => (
+            <label key={t.clave} style={{ display: "flex", alignItems: "center", gap: 6, flexDirection: "row" }}>
+              <input type="checkbox" name="documentos" value={t.clave} defaultChecked={p?.documentos.includes(t.clave)} style={{ width: "auto" }} /> {t.texto}
+            </label>
+          ))}
+        </div>
+      </fieldset>
     </div>
   );
 

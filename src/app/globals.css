@@ -5030,3 +5030,13 @@ html.pdf-captura .sf-faltan { display: none; }
 .rep-pie { margin-top: 10px; font-size: 11px; color: #555; text-align: right; }
 @media (max-width: 760px) { .rep-filtros { display: grid; grid-template-columns: 1fr 1fr; } .rep-filtros .campo { min-width: 0; } .rep-filtros .btn { grid-column: 1 / -1; } .hoja.rep-hoja { padding: 14px; } }
 @media print { .rep-marco { padding: 0; background: none; overflow: visible; } .hoja.rep-hoja { min-width: 0; padding: 0; } }
+
+/* Expediente en móvil: la barra de "siguiente paso" no debe tapar el documento */
+@media (max-width: 760px) {
+  .barra-guiada { position: static; margin: 10px 0 14px; box-shadow: none; }
+  .barra-guiada .av-sigue { padding: 12px 14px; gap: 8px; border-left-width: 4px; }
+  .barra-guiada .sigue-titulo { font-size: 16px; }
+  .barra-guiada .sigue-texto .tenue { font-size: 12.5px; }
+  .barra-guiada .sigue-accion .btn.grande { min-height: 44px; width: 100%; }
+  .barra-guiada .acciones-fila { flex-direction: column; }
+}

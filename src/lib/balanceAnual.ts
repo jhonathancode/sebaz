@@ -79,16 +79,16 @@ export async function hojasBalance(ctx: Ctx, supabase: SupabaseClient, anio: num
     clave: "ingresos",
     pestana: "INGRESOS PROPIOS",
     titulo: `INGRESOS PROPIOS ${anio}`,
-    columnas: [{ titulo: "N° RECIBO", ancho: 11 }, { titulo: "FECHA", ancho: 12 }, { titulo: "RUBRO", ancho: 20 }, { titulo: "PAGADOR", ancho: 32 }, { titulo: "CONCEPTO", ancho: 50 }, M("MONTO S/")],
-    filas: porMes(d.ingresos, (x) => x.fecha, (x) => [String(x.numero).padStart(4, "0"), fechaPe(x.fecha), x.rubro.toUpperCase(), x.pagador.toUpperCase(), x.concepto.toUpperCase(), x.monto], (x) => x.monto, 6),
+    columnas: [{ titulo: "N°", ancho: 6 }, { titulo: "N° RECIBO", ancho: 11 }, { titulo: "FECHA", ancho: 12 }, { titulo: "RUBRO", ancho: 20 }, { titulo: "PAGADOR", ancho: 32 }, { titulo: "CONCEPTO", ancho: 50 }, M("MONTO S/")],
+    filas: porMes(d.ingresos, (x) => x.fecha, (x, n) => [n, String(x.numero).padStart(4, "0"), fechaPe(x.fecha), x.rubro.toUpperCase(), x.pagador.toUpperCase(), x.concepto.toUpperCase(), x.monto], (x) => x.monto, 7),
   };
 
   const comprobantes: HojaBal = {
     clave: "comprobantes",
     pestana: "COMPROBANTES",
     titulo: `COMPROBANTES DE PAGO ${anio}`,
-    columnas: [{ titulo: "N° CP", ancho: 12 }, { titulo: "FECHA", ancho: 12 }, { titulo: "BENEFICIARIO", ancho: 30 }, { titulo: "CONCEPTO", ancho: 46 }, { titulo: "CHEQUE", ancho: 14 }, { titulo: "PARTIDA", ancho: 14 }, M("IMPORTE S/")],
-    filas: porMes(d.cps, (x) => x.fecha, (x) => [x.codigo, fechaPe(x.fecha), x.beneficiario.toUpperCase(), x.concepto.toUpperCase(), x.cheque ?? null, x.partida, x.importe], (x) => x.importe, 7),
+    columnas: [{ titulo: "N°", ancho: 6 }, { titulo: "N° CP", ancho: 12 }, { titulo: "FECHA", ancho: 12 }, { titulo: "BENEFICIARIO", ancho: 30 }, { titulo: "CONCEPTO", ancho: 46 }, { titulo: "CHEQUE", ancho: 14 }, { titulo: "PARTIDA", ancho: 14 }, M("IMPORTE S/")],
+    filas: porMes(d.cps, (x) => x.fecha, (x, n) => [n, x.codigo, fechaPe(x.fecha), x.beneficiario.toUpperCase(), x.concepto.toUpperCase(), x.cheque ?? null, x.partida, x.importe], (x) => x.importe, 8),
   };
 
   const { data: cajas } = await supabase.from("cajas_chicas").select("id, periodo, numero_cheque").eq("mcp_id", ctx.mcp.id).gte("periodo", `${anio}-01`).lte("periodo", `${anio}-12`).neq("estado", "anulada");

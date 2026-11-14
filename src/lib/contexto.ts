@@ -23,6 +23,8 @@ export type Mcp = {
   modulos?: string[] | null;
   /** Si la MCP pide el PIN para aprobar y firmar (se activa en Configuración; no existe antes de la actualización). */
   exigir_pin?: boolean | null;
+  /** Si la MCP usa la pestaña «Por aprobar». Falso: todo se aprueba solo (no existe antes de la actualización). */
+  exigir_aprobacion?: boolean | null;
 };
 
 export type Fuente = {

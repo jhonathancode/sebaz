@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { exigirPin } from "@/lib/pin";
 import { contextoMcp } from "@/lib/contexto";
+import { aprobarComprobanteSiAuto } from "@/lib/aprobacion";
 import { mensajeError, numero, texto, volver } from "@/lib/acciones";
 import { supabaseServidor } from "@/lib/supabase/server";
 
@@ -48,6 +49,7 @@ export async function crearComprobanteDirecto(fd: FormData) {
     .single();
   if (error || !data) volver("/comprobantes?nuevo=1", "error", mensajeError(error));
   revalidatePath("/comprobantes");
+  if (await aprobarComprobanteSiAuto(supabase, ctx, data.id)) volver(`/comprobantes/${data.id}`, "ok", "Comprobante de pago registrado y aprobado.");
   volver(`/comprobantes/${data.id}`, "ok", "Comprobante de pago registrado en borrador.");
 }
 

@@ -40,7 +40,7 @@ export default async function MarcoApp({ children }: { children: React.ReactNode
   const sb = await supabaseServidor();
   const [porAprobar, bandeja, pendientes] = await Promise.all([
     (async () => {
-      if (!(ctx.mcp && tiene(ctx, "alcalde", "admin"))) return 0;
+      if (!(ctx.mcp && tiene(ctx, "alcalde", "admin")) || ctx.mcp.exigir_aprobacion === false) return 0;
       const [{ count: a }, { count: b }] = await Promise.all([
         sb.from("expedientes").select("id", { count: "exact", head: true }).eq("mcp_id", ctx.mcp.id).eq("estado", "borrador"),
         sb.from("comprobantes_pago").select("id", { count: "exact", head: true }).eq("mcp_id", ctx.mcp.id).eq("estado", "borrador"),
@@ -87,7 +87,7 @@ export default async function MarcoApp({ children }: { children: React.ReactNode
     : ctx.mcp
     ? [
         { href: "/", texto: "Inicio" },
-        ...(tiene(ctx, "alcalde", "admin") ? [{ href: "/aprobaciones", texto: "Por aprobar", n: porAprobar }] : []),
+        ...(tiene(ctx, "alcalde", "admin") && ctx.mcp?.exigir_aprobacion !== false ? [{ href: "/aprobaciones", texto: "Por aprobar", n: porAprobar }] : []),
         { href: "/expedientes", texto: "Expedientes" },
         ...(tieneModulo(ctx.mcp, "caja_chica") ? [{ href: "/caja-chica", texto: "Caja chica" }] : []),
         ...(tieneModulo(ctx.mcp, "ingresos") ? [{ href: "/ingresos", texto: "Ingresos" }] : []),
@@ -104,7 +104,7 @@ export default async function MarcoApp({ children }: { children: React.ReactNode
   const pestanas: PestanaInferior[] = [];
   if (ctx.mcp && !ctx.esSuperadmin) {
     pestanas.push({ href: "/", texto: "Inicio" });
-    if (tiene(ctx, "alcalde", "admin")) pestanas.push({ href: "/aprobaciones", texto: "Por aprobar", n: porAprobar });
+    if (tiene(ctx, "alcalde", "admin") && ctx.mcp.exigir_aprobacion !== false) pestanas.push({ href: "/aprobaciones", texto: "Por aprobar", n: porAprobar });
     pestanas.push({ href: "/expedientes", texto: "Gastos" });
     if (tieneModulo(ctx.mcp, "ingresos") && pestanas.length < 4) pestanas.push({ href: "/ingresos", texto: "Ingresos" });
     if (tieneModulo(ctx.mcp, "caja_chica") && pestanas.length < 4) pestanas.push({ href: "/caja-chica", texto: "Caja chica" });

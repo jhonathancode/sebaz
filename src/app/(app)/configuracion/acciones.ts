@@ -88,6 +88,18 @@ export async function guardarExigirPin(fd: FormData) {
   volver("/configuracion", "ok", activar ? "PIN activado: se pedirá para crear, aprobar y anular." : "PIN desactivado.");
 }
 
+/** Usa o no la pestaña «Por aprobar». Sin ella, todo documento nuevo se aprueba solo. Solo el administrador. */
+export async function guardarExigirAprobacion(fd: FormData) {
+  const ctx = await contextoMcp();
+  if (!tiene(ctx, "admin") && !ctx.esSoporte) volver("/configuracion", "error", "Solo el administrador puede cambiar esto.");
+  const supabase = await supabaseServidor();
+  const activar = texto(fd, "exigir_aprobacion") === "1";
+  const { error } = await supabase.from("mcps").update({ exigir_aprobacion: activar }).eq("id", ctx.mcp.id);
+  if (error) volver("/configuracion", "error", /exigir_aprobacion|schema cache|does not exist/.test(error.message) ? "Falta la actualización de la base (ACTUALIZAR_BASE.sql). Avise a soporte." : mensajeError(error));
+  revalidatePath("/", "layout");
+  volver("/configuracion", "ok", activar ? "Pestaña «Por aprobar» activada: el alcalde aprobará cada documento." : "Pestaña «Por aprobar» desactivada: todo se aprobará automáticamente.");
+}
+
 const TIPOS_LOGO: Record<string, string> = { "image/png": "png", "image/jpeg": "jpg", "image/webp": "webp" };
 
 /** Sube o cambia el logo de la MCP. Queda en el menú y en todos los formatos. */

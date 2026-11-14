@@ -6,6 +6,7 @@ import { exigirPin } from "@/lib/pin";
 import { nombrePeriodo } from "@/lib/formato";
 import { mensajeError, numero, texto, volver } from "@/lib/acciones";
 import { supabaseServidor } from "@/lib/supabase/server";
+import { aprobacionAutomatica, aprobarComprobanteSiAuto } from "@/lib/aprobacion";
 
 const ruta = (periodo: string, fuente: string, caja?: string | null) => `/caja-chica?mes=${periodo}&fuente=${fuente}${caja ? `&caja=${caja}` : ""}`;
 
@@ -57,7 +58,7 @@ export async function solicitarFondo(fd: FormData) {
   revalidatePath("/expedientes");
   revalidatePath("/caja-chica");
   // Alcalde o administrador: se aprueba al instante y la caja se abre sola
-  if (tiene(ctx, "alcalde", "admin")) {
+  if (tiene(ctx, "alcalde", "admin") || aprobacionAutomatica(ctx)) {
     const { error: eA } = await supabase.from("expedientes").update({ estado: "aprobado" }).eq("id", exp.id);
     if (!eA) {
       const { data: caja } = await supabase.from("cajas_chicas").select("id").eq("expediente_id", exp.id).maybeSingle();
@@ -154,7 +155,7 @@ export async function anularGasto(fd: FormData) {
 }
 
 export async function liquidarCaja(fd: FormData) {
-  await contextoMcp();
+  const ctx = await contextoMcp();
   const supabase = await supabaseServidor();
   const periodo = texto(fd, "periodo")!;
   const fuente = texto(fd, "fuente_id")!;
@@ -162,6 +163,7 @@ export async function liquidarCaja(fd: FormData) {
   const { data, error } = await supabase.rpc("liquidar_caja_chica", { p_caja: texto(fd, "caja_id") });
   if (error) volver(ruta(periodo, fuente, cajaId), "error", mensajeError(error));
   revalidatePath("/comprobantes");
+  if (await aprobarComprobanteSiAuto(supabase, ctx, data as string)) volver(`/comprobantes/${data}`, "ok", "Caja chica liquidada. Su comprobante de pago se generó y aprobó.");
   volver(`/comprobantes/${data}`, "ok", "Caja chica liquidada. Se generó su comprobante de pago en borrador.");
 }
 

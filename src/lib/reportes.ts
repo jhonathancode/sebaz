@@ -1,5 +1,6 @@
+import { hojasBalance } from "@/lib/balanceAnual";
 import { codigoCP, nombrePeriodo, num3, periodoActual, rangoPeriodo } from "@/lib/formato";
-import { balanceAnual, cargarContabilidad, libro as libroContable, libroDiario, matriz, MESES_CORTOS, nombreRubro } from "@/lib/contabilidad";
+import { cargarContabilidad, libro as libroContable, libroDiario, matriz, MESES_CORTOS, nombreRubro } from "@/lib/contabilidad";
 import type { contextoMcp } from "@/lib/contexto";
 import { NOMBRE_TIPO_RC } from "@/lib/registroCivil";
 import { codigoSec, tipoSec } from "@/lib/secretaria";
@@ -284,11 +285,11 @@ export async function construirHoja(lista: string, ctx: Awaited<ReturnType<typeo
           totales: ["TOTALES", null, "Saldo final", l.entradas, l.salidas, l.final],
         };
       } else if (ver === "balance") {
-        const b = balanceAnual(d);
+        const bc = (await hojasBalance(ctx, supabase, anio)).find((h) => h.clave === "constructivo")!;
         hoja = {
-          titulo: `Balance anual ${anio}`,
-          columnas: [{ titulo: "Concepto", ancho: 70 }, { titulo: "Importe S/", ancho: 18, tipo: "monto" }],
-          filas: b.lineas.map((x) => [x.tipo === "titulo" ? x.texto : x.texto, x.monto ?? null]),
+          titulo: bc.titulo,
+          columnas: bc.columnas.map((c, i) => ({ titulo: `${["", "", "APERTURA ", "APERTURA ", "MOV. ACUM. ", "MOV. ACUM. ", "SALDO ", "SALDO ", "", "", "", ""][i]}${c.titulo}`, ancho: c.ancho, tipo: c.tipo })),
+          filas: bc.filas.map((f) => f.celdas),
         };
       } else if (ver === "acumulado") {
         const cuadro = ["ingresos", "comprobantes", "caja"].includes(sp.get("cuadro") ?? "") ? sp.get("cuadro")! : "ingresos";

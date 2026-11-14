@@ -1,18 +1,23 @@
 import Link from "next/link";
 import BotonPdf from "@/components/BotonPdf";
+import { hojasBalance } from "@/lib/balanceAnual";
 import { contextoMcp } from "@/lib/contexto";
-import { balanceAnual, cargarContabilidad } from "@/lib/contabilidad";
-import { fecha, hoyISO, soles } from "@/lib/formato";
+import { hoyISO, soles } from "@/lib/formato";
 import { supabaseServidor } from "@/lib/supabase/server";
 
-export default async function BalanceAnual({ searchParams }: { searchParams: Promise<{ anio?: string }> }) {
+const fechaPe = (f: string) => f.split("-").reverse().join("/");
+
+export default async function BalanceAnual({ searchParams }: { searchParams: Promise<{ anio?: string; hoja?: string }> }) {
   const sp = await searchParams;
   const ctx = await contextoMcp();
   const supabase = await supabaseServidor();
   const anio = /^\d{4}$/.test(sp.anio ?? "") ? Number(sp.anio) : Number(hoyISO().slice(0, 4));
-  const d = await cargarContabilidad(supabase, ctx.mcp.id, anio, ctx.fuentes);
-  if (d.faltaActualizacion) return <div className="aviso error">La contabilidad aún no está activa: falta la actualización de la base de datos. Avise a soporte.</div>;
-  const b = balanceAnual(d);
+  const hojas = await hojasBalance(ctx, supabase, anio);
+  const h = hojas.find((x) => x.clave === sp.hoja) ?? hojas[4];
+  const enlace = (clave: string, a = anio) => `/contabilidad/balance-anual?anio=${a}&hoja=${clave}`;
+  const nCols = h.columnas.length;
+  const monto = (i: number) => h.columnas[i]?.tipo === "monto";
+
   return (
     <>
       <div className="cab-vista no-imprimir">
@@ -22,43 +27,52 @@ export default async function BalanceAnual({ searchParams }: { searchParams: Pro
         </div>
         <span className="espacio" />
         <div className="cc-anio">
-          <Link className="cc-flecha" href={`/contabilidad/balance-anual?anio=${anio - 1}`} aria-label={`Año ${anio - 1}`}>‹</Link>
+          <Link className="cc-flecha" href={enlace(h.clave, anio - 1)} aria-label={`Año ${anio - 1}`}>‹</Link>
           <b>{anio}</b>
-          <Link className="cc-flecha" href={`/contabilidad/balance-anual?anio=${anio + 1}`} aria-label={`Año ${anio + 1}`}>›</Link>
+          <Link className="cc-flecha" href={enlace(h.clave, anio + 1)} aria-label={`Año ${anio + 1}`}>›</Link>
         </div>
-        <a className="btn contorno" href={`/exportar/contabilidad?ver=balance&mes=${anio}-12`}>Descargar Excel</a>
-        <BotonPdf nombre={`Balance anual ${anio}`} selector=".bal-hoja" texto="Descargar PDF" className="btn primario" />
+        <a className="btn contorno" href={`/exportar/balance-anual?anio=${anio}`}>Descargar Excel (todas las hojas)</a>
+        <BotonPdf nombre={`${h.pestana} ${anio}`} selector=".bal-hoja" texto="Descargar PDF" className="btn primario" horizontal />
       </div>
-          {!d.hayDatosIniciales && (
-            <div className="aviso alerta aviso-accion"><span>Falta el <b>saldo inicial {anio}</b>; sin él el activo no refleja el dinero con que empezó el año.</span><Link className="btn chico primario" href="/contabilidad?ver=datos">Completar datos</Link></div>
-          )}
-          <div className="bal-kpis no-imprimir">
-            <div className="kpi azul"><span className="k-et">Ingresos {anio}</span><span className="k-val">S/ {soles(b.totalIngresos)}</span></div>
-            <div className="kpi"><span className="k-et">Gastos {anio}</span><span className="k-val">S/ {soles(b.totalGastos)}</span></div>
-            <div className={`kpi${b.resultado < 0 ? " alerta" : ""}`}><span className="k-et">{b.resultado >= 0 ? "Superávit" : "Déficit"}</span><span className="k-val">S/ {soles(Math.abs(b.resultado))}</span></div>
-            <div className="kpi"><span className="k-et">Bancos + caja</span><span className="k-val">S/ {soles(b.activo)}</span></div>
-          </div>
-          <div className="hoja bal-hoja">
-            <header className="rep-cab"><b>{ctx.mcp.nombre.toUpperCase()}</b><span>{ctx.mcp.ruc ? `RUC ${ctx.mcp.ruc}` : ""}</span><h2>BALANCE ANUAL {anio}</h2></header>
-            <table className="rep-tabla">
-              <tbody>
-                {b.lineas.map((x, i) =>
-                  x.tipo === "titulo" ? (
-                    <tr key={i} className="bal-titulo"><td colSpan={2}>{x.texto}</td></tr>
-                  ) : (
-                    <tr key={i} className={x.tipo === "total" ? "bal-total" : x.tipo === "destacado" ? "bal-dest" : undefined}>
-                      <td>{x.texto}</td>
-                      <td className="d">{soles(x.monto ?? 0)}</td>
-                    </tr>
-                  ),
-                )}
-              </tbody>
-            </table>
-            <p className={`bal-cuadre${b.cuadra ? " ok" : ""}`}>{b.cuadra ? "✓ El balance cuadra: activo = pasivo + patrimonio." : "⚠ El balance no cuadra; revise los datos contables."}</p>
-            {b.transito > 0 && <p className="pequeno tenue" style={{ margin: "4px 0 0" }}>Hay S/ {soles(b.transito)} en cheques girados que el banco aún no cobra al cierre (ya están descontados de Bancos).</p>}
-            <footer className="rep-pie">Emitido el {fecha(hoyISO())}</footer>
-          </div>
+
+      <nav className="cfg-tabs no-imprimir" role="tablist" aria-label="Hojas del balance">
+        {hojas.map((x) => (
+          <Link key={x.clave} role="tab" aria-selected={x.clave === h.clave} className={`cfg-tab${x.clave === h.clave ? " activa" : ""}`} href={enlace(x.clave)}>{x.pestana}</Link>
+        ))}
+      </nav>
+
+      <div className="rep-marco">
+        <div className="hoja bal-hoja bal-ancha">
+          <header className="rep-cab">
+            <b>{ctx.mcp.nombre.toUpperCase()}</b>
+            <span>{ctx.mcp.ruc ? `RUC ${ctx.mcp.ruc}` : ""}</span>
+            <h2>{h.titulo}</h2>
+          </header>
+          <table className="rep-tabla">
+            <thead>
+              {h.grupos && (
+                <tr>{h.grupos.map((g, i) => <th key={i} colSpan={g.hasta - g.desde + 1} style={{ textAlign: "center" }}>{g.titulo}</th>)}</tr>
+              )}
+              <tr>{h.columnas.map((c, i) => <th key={i} className={c.tipo === "monto" ? "d" : undefined}>{c.titulo}</th>)}</tr>
+            </thead>
+            <tbody>
+              {h.filas.map((f, i) =>
+                f.tipo === "grupo" ? (
+                  <tr key={i} className="bal-titulo"><td colSpan={nCols}>{f.celdas[0]}</td></tr>
+                ) : (
+                  <tr key={i} className={f.tipo === "total" ? "bal-total" : f.tipo === "destacado" ? "bal-dest" : undefined}>
+                    {f.celdas.map((v, j) => (
+                      <td key={j} className={monto(j) ? "d" : undefined}>{v === null || v === "" ? "" : typeof v === "number" && monto(j) ? soles(v) : v}</td>
+                    ))}
+                  </tr>
+                ),
+              )}
+            </tbody>
+          </table>
+          {h.nota && <p className={`bal-cuadre${h.nota.startsWith("⚠") ? "" : " ok"}`}>{h.nota}</p>}
+          <footer className="rep-pie">Emitido el {fechaPe(hoyISO())}</footer>
+        </div>
+      </div>
     </>
   );
 }
-

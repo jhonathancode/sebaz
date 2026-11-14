@@ -4665,3 +4665,12 @@ html.pdf-captura .sf-faltan { display: none; }
 .ing-filtros input[name="q"] { flex: 1 1 240px; min-width: 0; }
 .ing-filtros select, .ing-filtros input { padding: 7px 12px; border: 1px solid var(--borde); border-radius: 10px; background: var(--panel); color: inherit; font-size: 13.5px; }
 @media (max-width: 640px) { .ing-franja { gap: 6px 18px; } .ing-franja span { flex: 1 1 40%; } }
+
+/* ------------------------------------ caja chica: cabecera compacta */
+.cc-vacia-franja { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; padding: 4px 6px 10px; }
+.cc-vacia-txt { flex: 1 1 320px; display: flex; flex-direction: column; gap: 2px; }
+.cc-vacia-txt b { font-size: 16px; }
+.cc-vacia-txt small { font-size: 12.5px; color: var(--tenue); }
+.cc-franja { align-items: center; }
+.cc-f-ok b { color: var(--azul-texto); }
+.cc-f-mal b { color: var(--rojo); }

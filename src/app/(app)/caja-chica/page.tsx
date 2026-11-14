@@ -319,11 +319,10 @@ export default async function CajaChica({ searchParams }: { searchParams: Params
       {!caja && (
         <>
         {puede ? (
-          <div className="kpi azul" style={{ flexDirection: "row", alignItems: "center", gap: 16, flexWrap: "wrap" }}>
-            <div style={{ display: "flex", flexDirection: "column", gap: 4, flex: 1 }}>
-              <span className="k-et">Caja chica de {nombrePeriodo(periodo)}</span>
-              <span className="k-val">Aún no se abre el fondo</span>
-              <span className="k-det">La caja se abre desde un requerimiento (expediente): pida el fondo con el monto, el cheque y el responsable (normalmente S/ 2,000 de la transferencia).</span>
+          <div className="cc-vacia-franja">
+            <div className="cc-vacia-txt">
+              <b>Aún no se abre el fondo de {nombrePeriodo(periodo)}</b>
+              <small>Se abre desde un requerimiento: pida el fondo con el monto, el cheque y el responsable (normalmente S/ 2,000 de la transferencia).</small>
             </div>
             <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
               {candidatos.length > 0 && (
@@ -358,7 +357,7 @@ export default async function CajaChica({ searchParams }: { searchParams: Params
                   </div>
                 </VentanaFlotante>
               )}
-              {formAbrir("Pedir fondo del mes", "btn primario grande")}
+              {formAbrir("Pedir fondo del mes", "btn primario")}
             </div>
           </div>
         ) : (
@@ -389,41 +388,17 @@ export default async function CajaChica({ searchParams }: { searchParams: Params
 
       {caja && (
         <>
-          <div className="kpis">
-            <div className="kpi">
-              <span className="k-et">Fondo</span>
-              <span className="k-val">S/ {soles(fondo)}</span>
-              <span className="k-det">Responsable: {(caja.perfiles as { nombre: string } | null)?.nombre}{expedienteCaja && <> · <Link href={`/expedientes/${expedienteCaja.id}`}>Expediente {String(expedienteCaja.numero).padStart(3, "0")}-{expedienteCaja.anio}</Link></>}</span>
-            </div>
-            <div className="kpi">
-              <span className="k-et">Gastado</span>
-              <span className="k-val">S/ {soles(gastado)}</span>
-              <div className="k-barra"><div style={{ width: `${Math.min(pct, 100)}%` }} /></div>
-              <span className="k-det">{pct} % del fondo · {vigentes.length} gasto(s)</span>
-            </div>
-            <div className={`kpi ${cuadra ? "azul" : saldo < 0 ? "rojo" : "alerta"}`}>
-              <span className="k-et">{cuadra ? "Cuadra" : saldo < 0 ? "Se pasó del fondo" : "Falta gastar"}</span>
-              <span className="k-val">S/ {soles(Math.abs(saldo))}</span>
-              <span className="k-det">{cuadra ? (abierta ? "Ya puede cerrar la caja chica" : "Caja liquidada") : saldo < 0 ? "Anule o corrija algún gasto" : "Puede cerrarla aunque no se gaste todo; se le preguntará"}</span>
-            </div>
-            <div className="kpi">
-              <span className="k-et">Por sustento</span>
-              <span className="k-det" style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 4 }}>
-                {porTipo.size === 0 && "Aún no hay gastos"}
-                {[...porTipo].map(([t, v]) => (
-                  <span key={t} className="etq" title={NOMBRE_SUSTENTO[t] ?? t}>{t} · {v.n} · S/ {soles(v.total)}</span>
-                ))}
-              </span>
-              {cp && (
-                <span className="k-det" style={{ marginTop: 6 }}>
-                  Comprobante: <Link href={`/comprobantes/${cp.id}`}>{codigoCP(cp.numero, cp.origen)}</Link> <Estado valor={cp.estado} />
-                </span>
-              )}
-            </div>
-          </div>
-
+          <div className="ing-franja cc-franja" aria-label="Resumen de la caja chica">
+            <span><small>Fondo</small><b>S/ {soles(fondo)}</b></span>
+            <span><small>Gastado</small><b>S/ {soles(gastado)}</b><em>{pct} % · {vigentes.length} gasto(s)</em></span>
+            <span className={cuadra ? "cc-f-ok" : saldo < 0 ? "cc-f-mal" : "cc-f-falta"}><small>{cuadra ? "Cuadra" : saldo < 0 ? "Se pasó" : "Falta gastar"}</small><b>S/ {soles(Math.abs(saldo))}</b></span>
+            {[...porTipo].map(([t, v]) => (
+              <span key={t} className="etq" title={NOMBRE_SUSTENTO[t] ?? t}>{t} · {v.n} · S/ {soles(v.total)}</span>
+            ))}
+            {cp && <span><small>Comprobante</small><Link href={`/comprobantes/${cp.id}`}>{codigoCP(cp.numero, cp.origen)}</Link> <Estado valor={cp.estado} /></span>}
+            {expedienteCaja && <span><small>Expediente</small><Link href={`/expedientes/${expedienteCaja.id}`}>{String(expedienteCaja.numero).padStart(3, "0")}-{expedienteCaja.anio}</Link></span>}
           {puede && caja.estado === "abierta" && (
-            <div style={{ margin: "0 0 8px", display: "flex", justifyContent: "flex-end" }}>
+            <div style={{ marginLeft: "auto" }}>
               <VentanaFlotante boton={caja.numero_cheque ? `Cheque: ${caja.numero_cheque} · cambiar` : "Poner N° de cheque"} titulo="Número de cheque de la caja chica" accion={cambiarCheque} textoGuardar="Guardar" claseBoton="btn chico contorno">
                 <input type="hidden" name="periodo" value={periodo} />
                 <input type="hidden" name="fuente_id" value={fuenteId} />
@@ -432,6 +407,7 @@ export default async function CajaChica({ searchParams }: { searchParams: Params
               </VentanaFlotante>
             </div>
           )}
+          </div>
           <div className="cc-excel-marco">
             <table className="cc-excel">
               <caption>Caja chica mes de {nombrePeriodo(periodo)}</caption>

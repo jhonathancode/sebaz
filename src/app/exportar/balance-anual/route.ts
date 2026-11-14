@@ -1,6 +1,6 @@
 import ExcelJS from "exceljs";
 import { NextResponse, type NextRequest } from "next/server";
-import { hojasBalance } from "@/lib/balanceAnual";
+import { hojasBalance, type FormatoEF, type LineaEF } from "@/lib/balanceAnual";
 import { contextoMcp } from "@/lib/contexto";
 import { hoyISO } from "@/lib/formato";
 import { supabaseServidor } from "@/lib/supabase/server";
@@ -23,6 +23,7 @@ export async function GET(req: NextRequest) {
 
   hojas.forEach((h) => {
     const ws = libro.addWorksheet(h.pestana.replace("·", "-").replace(/[\\/?*[\]:]/g, "").slice(0, 30));
+    if (h.ef) { hojaEF(ws, h.ef, ctx.mcp.nombre.toUpperCase(), anio); return; }
     const n = h.columnas.length;
     ws.columns = h.columnas.map((c) => ({ width: c.ancho }));
     ws.mergeCells(1, 1, 1, n);
@@ -90,4 +91,85 @@ export async function GET(req: NextRequest) {
       "Cache-Control": "no-store",
     },
   });
+}
+
+/** EF-1 y EF-2 con el mismo formato del modelo: cajas con borde, totales en amarillo y firmas. */
+function hojaEF(ws: ExcelJS.Worksheet, ef: FormatoEF, nombre: string, anio: number) {
+  const dos = !!ef.der;
+  const negro = { style: "thin" as const, color: { argb: "FF000000" } };
+  const caja = { top: negro, bottom: negro, left: negro, right: negro };
+  const amarillo = { type: "pattern" as const, pattern: "solid" as const, fgColor: { argb: "FFFFF2A8" } };
+  ws.columns = dos ? [{ width: 46 }, { width: 14 }, { width: 14 }, { width: 3 }, { width: 46 }, { width: 14 }, { width: 14 }] : [{ width: 54 }, { width: 16 }, { width: 16 }];
+  const ultimaCol = dos ? 7 : 3;
+  ws.mergeCells(1, 1, 1, ultimaCol - 1);
+  ws.getCell(1, 1).value = nombre;
+  ws.getCell(1, 1).font = { bold: true, size: 12 };
+  ws.getCell(1, ultimaCol).value = ef.codigo;
+  ws.getCell(1, ultimaCol).font = { bold: true, size: 14 };
+  ws.mergeCells(3, 1, 3, ultimaCol);
+  ws.getCell(3, 1).value = ef.titulo;
+  ws.getCell(3, 1).font = { bold: true, size: 14 };
+  ws.getCell(3, 1).alignment = { horizontal: "center" };
+  ws.mergeCells(4, 1, 4, ultimaCol);
+  ws.getCell(4, 1).value = ef.codigo === "EF-1" ? `01 de Enero al 31 de Diciembre del ${anio}` : `Del 01 de Enero al 31 de Diciembre de ${anio}`;
+  ws.getCell(4, 1).alignment = { horizontal: "center" };
+  ws.mergeCells(5, 1, 5, ultimaCol);
+  ws.getCell(5, 1).value = "(EN SOLES, A VALORES HISTÓRICOS)";
+  ws.getCell(5, 1).alignment = { horizontal: "center" };
+  ws.getCell(7, 1).value = `Entidad: ${nombre}`;
+  ws.getCell(7, 1).font = { bold: true };
+
+  const escribir = (lineas: LineaEF[], col: number, fila0: number, conAnios: number) => {
+    const total = lineas.length;
+    let fila = fila0;
+    lineas.forEach((l, i) => {
+      if (l.tipo === "esp") { fila += 1; return; }
+      const a = ws.getCell(fila, col);
+      a.value = l.texto;
+      if (l.tipo === "titulo" || l.tipo === "total" || l.tipo === "gran" || l.tipo === "orden") a.font = { bold: true };
+      if (l.tipo !== "titulo") {
+        [1, 2].forEach((k) => {
+          const c = ws.getCell(fila, col + k);
+          if (l.tipo !== "orden") { c.value = (k === 1 ? l.a : l.b) ?? 0; c.numFmt = ef.codigo === "EF-2" ? '#,##0.00;(S/. #,##0.00)' : "#,##0.00"; }
+          c.border = caja;
+          if (l.tipo === "total" || l.tipo === "gran" || l.tipo === "orden") { c.fill = amarillo; c.font = { bold: true }; }
+        });
+      }
+      fila += 1;
+      if (i === conAnios) {
+        [1, 2].forEach((k) => {
+          const c = ws.getCell(fila, col + k);
+          c.value = ef.anios[k - 1];
+          c.fill = amarillo;
+          c.font = { bold: true };
+          c.border = caja;
+          c.alignment = { horizontal: "center" };
+        });
+        fila += 1;
+      }
+    });
+    return total;
+  };
+  if (dos) {
+    escribir(ef.izq, 1, 9, 1);
+    escribir(ef.der!, 5, 9, 1);
+  } else {
+    [1, 2].forEach((k) => {
+      const c = ws.getCell(9, 1 + k);
+      c.value = ef.anios[k - 1];
+      c.fill = amarillo;
+      c.font = { bold: true };
+      c.border = caja;
+      c.alignment = { horizontal: "center" };
+    });
+    escribir(ef.izq, 1, 10, -1);
+  }
+  const filaFirmas = 9 + Math.max(ef.izq.length, ef.der?.length ?? 0) + 5;
+  ef.firmas.forEach((f, i) => {
+    const col = dos ? [1, 5, 7][i] ?? 1 : [1, 3][i] ?? 1;
+    ws.getCell(filaFirmas, col).value = "..............................................";
+    ws.getCell(filaFirmas + 1, col).value = f;
+    ws.getCell(filaFirmas + 1, col).font = { size: 9 };
+  });
+  ws.pageSetup = { orientation: dos ? "landscape" : "portrait", fitToPage: true, fitToWidth: 1, fitToHeight: 1, paperSize: 9 };
 }

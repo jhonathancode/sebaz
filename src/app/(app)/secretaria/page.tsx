@@ -30,19 +30,18 @@ const nombreArchivo = (d: Doc) => (d.numero ? `${tipoSec(d.tipo).nombre} N° ${S
 
 function Archivos({ docs, puede, volverA }: { docs: Doc[]; puede: boolean; volverA: string }) {
   return (
-    <div className="sec-archivos">
+    <div className="sec-lista">
       {docs.map((d) => (
-        <div key={d.id} className="sec-archivo-caja">
-          <Link href={d.estado === "borrador" && puede ? `/secretaria/${d.id}/editar` : `/secretaria/${d.id}`} className={`sec-archivo${d.estado === "anulado" ? " anulado" : ""}`}>
+        <div key={d.id} className={`sec-fd${d.estado === "anulado" ? " anulado" : ""}`}>
+          <Link href={d.estado === "borrador" && puede ? `/secretaria/${d.id}/editar` : `/secretaria/${d.id}`} className="sec-fd-link">
             <Hoja />
-            <div className="sa-texto">
-              <b className="sa-asunto">{d.asunto || "Sin asunto"}</b>
-              <span>{nombreArchivo(d)}</span>
-              <small>{fecha(d.fecha)}{d.destinatario ? ` · ${d.destinatario}` : ""}{d.archivo_path ? " · 📎 firmado" : ""}</small>
-            </div>
+            <b className="sec-fd-asunto" title={d.asunto ?? ""}>{d.asunto || "Sin asunto"}</b>
+            <span className="sec-fd-num">{d.numero ? `N° ${String(d.numero).padStart(3, "0")}-${d.anio}` : "Borrador"}</span>
+            <span className="sec-fd-fecha">{fecha(d.fecha)}</span>
+            <span className="sec-fd-dest" title={d.destinatario ?? ""}>{d.destinatario || "—"}{d.archivo_path ? " 📎" : ""}</span>
             <Estado valor={d.estado} />
           </Link>
-          <div className="sec-archivo-op">
+          <div className="sec-fd-op">
             <Link className="btn chico" href={`/secretaria/${d.id}`}>Ver</Link>
             {puede && d.estado === "borrador" && <Link className="btn chico" href={`/secretaria/${d.id}/editar`}>Editar</Link>}
             {puede && (
@@ -148,7 +147,7 @@ export default async function Secretaria({ searchParams }: { searchParams: Param
         </div>}
         {puede && (
           <>
-            <h2 className="sec-grupo">Modelos · un clic crea el documento</h2>
+            <h2 className="sec-grupo">Modelos <span className="tenue">· un clic crea el documento</span></h2>
             <div className="sec-mods">
               {propios.map((m) => (
                 <div key={m.id} className="sec-mod propio">
@@ -175,14 +174,15 @@ export default async function Secretaria({ searchParams }: { searchParams: Param
           </>
         )}
         <h2 className="sec-grupo">Documentos</h2>
-        {grupos.length > 1 && (
+        <div className="sec-barra-doc">
+        {grupos.length > 1 ? (
           <div className="sec-pestanas" role="tablist" aria-label="Clases de documento">
             <Link href={enlace({ grupo: "" })} className={!grupo ? "activa" : ""} role="tab">Todos <span>{deTipo.length}</span></Link>
             {grupos.map(([k, n]) => (
               <Link key={k} href={enlace({ grupo: k })} className={grupo === k ? "activa" : ""} role="tab">{k === "_blanco" ? "En blanco" : k} <span>{n}</span></Link>
             ))}
           </div>
-        )}
+        ) : <span />}
         <form className="ing-filtros" method="get">
           <input type="hidden" name="tipo" value={tipo} />
           <input type="hidden" name="grupo" value={grupo} />
@@ -195,6 +195,7 @@ export default async function Secretaria({ searchParams }: { searchParams: Param
           </select>
           <button className="btn" type="submit">Filtrar</button>
         </form>
+        </div>
         {filas.length === 0 ? (
           <div className="sec-vacia">
             <Carpeta />

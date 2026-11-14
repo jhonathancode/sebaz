@@ -5096,3 +5096,6 @@ html.pdf-captura .sf-faltan { display: none; }
 .bal-cuadre { margin: 10px 0 0; font-size: 12.5px; font-weight: 700; color: #b42318; }
 .bal-cuadre.ok { color: #1f5bc7; }
 @media (max-width: 760px) { .bal-kpis { grid-template-columns: 1fr 1fr; } .hoja.bal-hoja { padding: 14px; } .bal-hoja .rep-tabla td { font-size: 12px; padding: 4px 5px; } }
+.hoja.bal-hoja.bal-ancha { max-width: none; min-width: 760px; width: 100%; }
+.bal-ancha .rep-tabla th { font-size: 10.5px; }
+.bal-ancha .rep-tabla td { font-size: 11.5px; }

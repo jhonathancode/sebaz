@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import mammoth from "mammoth";
 import sanitizeHtml from "sanitize-html";
 import { contextoMcp, tiene } from "@/lib/contexto";
 import { mensajeError, texto, volver } from "@/lib/acciones";
@@ -20,12 +21,31 @@ async function permiso(destino: string) {
   return ctx;
 }
 
-/** Deja solo el formato sencillo del editor (negrita, listas, alineación): nada de scripts ni estilos de Word. */
+/** Deja solo el formato del editor (negrita, listas, tablas, colores, letras): nada de scripts ni basura de Word. */
 function limpiar(html: string): string {
+  const css = /^[\w\s#%(),.'"\/-]+$/;
   return sanitizeHtml(html, {
-    allowedTags: ["p", "br", "b", "strong", "i", "em", "u", "ul", "ol", "li", "div"],
-    allowedAttributes: { p: ["style"], div: ["style"], li: ["style"] },
-    allowedStyles: { "*": { "text-align": [/^(left|right|center|justify)$/] } },
+    allowedTags: ["p", "br", "b", "strong", "i", "em", "u", "s", "strike", "span", "ul", "ol", "li", "div", "h1", "h2", "h3", "table", "thead", "tbody", "tr", "td", "th", "sub", "sup"],
+    allowedAttributes: { "*": ["style"], td: ["style", "colspan", "rowspan"], th: ["style", "colspan", "rowspan"] },
+    allowedStyles: {
+      "*": {
+        "text-align": [/^(left|right|center|justify)$/],
+        "font-family": [css],
+        "font-size": [/^\d+(\.\d+)?(px|pt|em|%)$/],
+        color: [css],
+        "background-color": [css],
+        "line-height": [/^\d+(\.\d+)?(px|pt|em|%)?$/],
+        "margin-left": [/^\d+(\.\d+)?(px|pt|em)$/],
+        "text-indent": [/^-?\d+(\.\d+)?(px|pt|em)$/],
+        "font-weight": [/^(normal|bold|\d+)$/],
+        "font-style": [/^(normal|italic)$/],
+        "text-decoration": [/^[\w\s-]+$/],
+        border: [css],
+        "border-collapse": [/^(collapse|separate)$/],
+        padding: [css],
+        width: [/^\d+(\.\d+)?(px|pt|%)$/],
+      },
+    },
   });
 }
 
@@ -209,4 +229,31 @@ export async function subirEscaneado(fd: FormData) {
   }
   revalidatePath("/secretaria");
   volver(ruta(id), "ok", "Documento firmado adjuntado al archivo.");
+}
+
+/** Carga un modelo propio desde un archivo de Word (.docx): queda en «Mis modelos» para usarlo y editarlo. */
+export async function importarModeloWord(fd: FormData) {
+  const destino = "/secretaria/nuevo";
+  const ctx = await permiso(destino);
+  const supabase = await supabaseServidor();
+  const nombre = texto(fd, "nombre");
+  if (!nombre) volver(destino, "error", "Escriba un nombre para el modelo.");
+  const tipo = texto(fd, "tipo") ?? "";
+  if (!TIPOS_SEC.some((t) => t.clave === tipo)) volver(destino, "error", "Elija el tipo de documento.");
+  const archivo = fd.get("archivo");
+  if (!(archivo instanceof File) || archivo.size === 0) volver(destino, "error", "Elija el archivo de Word (.docx).");
+  if (!/\.docx$/i.test(archivo.name)) volver(destino, "error", "El archivo debe ser de Word en formato .docx. Si es un .doc antiguo, ábralo en Word y use «Guardar como .docx».");
+  if (archivo.size > 4 * 1024 * 1024) volver(destino, "error", "El archivo pesa más de 4 MB.");
+  let html = "";
+  try {
+    const r = await mammoth.convertToHtml({ buffer: Buffer.from(await archivo.arrayBuffer()) });
+    html = limpiar(r.value);
+  } catch {
+    volver(destino, "error", "No se pudo leer el archivo. Verifique que sea un .docx válido.");
+  }
+  if (!html.replace(/<[^>]*>/g, "").trim()) volver(destino, "error", "El archivo no tiene texto.");
+  const { error } = await supabase.from("sec_modelos").insert({ mcp_id: ctx.mcp.id, tipo, nombre, asunto: nombre.toUpperCase(), cuerpo: html });
+  if (error) volver(destino, "error", falta(mensajeError(error)));
+  revalidatePath(destino);
+  volver(destino, "ok", "Modelo cargado. Ya aparece en «Mis modelos»: úselo y edítelo como cualquier otro.");
 }

@@ -1,10 +1,12 @@
 import Link from "next/link";
 import Avisos, { type ParamsAviso } from "@/components/Avisos";
 import BotonConfirmar from "@/components/BotonConfirmar";
+import VentanaFlotante from "@/components/VentanaFlotante";
+import CampoArchivoEstado from "@/components/formularios/CampoArchivoEstado";
 import { contextoMcp, tiene } from "@/lib/contexto";
 import { MODELOS_BASE, TIPOS_SEC, tipoSec } from "@/lib/secretaria";
 import { supabaseServidor } from "@/lib/supabase/server";
-import { archivarModelo, crearDesdeModelo } from "../acciones";
+import { archivarModelo, crearDesdeModelo, importarModeloWord } from "../acciones";
 
 export default async function NuevoDocumento({ searchParams }: { searchParams: ParamsAviso }) {
   const sp = await searchParams;
@@ -20,6 +22,16 @@ export default async function NuevoDocumento({ searchParams }: { searchParams: P
       <div className="titulo-ventana">
         <h1>Nuevo documento</h1>
         <span className="espacio" />
+        <VentanaFlotante boton="Cargar mi modelo desde Word" titulo="Cargar un modelo desde Word" accion={importarModeloWord} textoGuardar="Cargar modelo" claseBoton="btn">
+          <label className="campo">Nombre del modelo<input name="nombre" required placeholder="Ej.: Acuerdo de consejo de audiencia pública" /></label>
+          <label className="campo">
+            Tipo de documento
+            <select name="tipo" defaultValue="acuerdo">
+              {TIPOS_SEC.map((t) => <option key={t.clave} value={t.clave}>{t.nombre}</option>)}
+            </select>
+          </label>
+          <CampoArchivoEstado etiqueta="Archivo de Word (.docx)" multiple={false} ayuda="Solo .docx, máximo 4 MB. Se conservan el texto, negritas, listas y tablas; si algo cambia, se corrige en el editor." />
+        </VentanaFlotante>
         <Link className="btn" href="/secretaria">Volver al archivo</Link>
       </div>
       <Avisos ok={sp.ok} error={sp.error} />

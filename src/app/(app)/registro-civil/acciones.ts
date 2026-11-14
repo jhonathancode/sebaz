@@ -5,7 +5,6 @@ import ExcelJS from "exceljs";
 import { contextoMcp, tiene } from "@/lib/contexto";
 import { mensajeError, texto, volver } from "@/lib/acciones";
 import { supabaseServidor } from "@/lib/supabase/server";
-import { COLUMNAS_IMPORT } from "@/lib/registroCivil";
 
 const TIPOS_ARCHIVO: Record<string, string> = { "application/pdf": "pdf", "image/jpeg": "jpg", "image/png": "png", "image/webp": "webp" };
 const TIPOS_VALIDOS = ["nacimiento", "matrimonio", "defuncion", "otro"];

@@ -108,6 +108,18 @@ export default async function Expedientes({ searchParams }: { searchParams: Para
   }
   // Documentos permanentes de los pagos fijos (DNI, credencial…): cuentan como ya presentados en cada mes
   const archivosPF = await cargarArchivosPagoFijo(supabase, ctx.mcp.id);
+  // Lo subido en cualquier mes de un mismo pago fijo cuenta para todos sus meses
+  const pfIds = [...new Set(todosBase.map((x) => (x as { pago_fijo_id?: string | null }).pago_fijo_id).filter((x): x is string => !!x))];
+  const tiposDePF = new Map<string, Set<string>>();
+  if (pfIds.length) {
+    const { data: exps } = await supabase.from("expedientes").select("id, pago_fijo_id").eq("mcp_id", ctx.mcp.id).in("pago_fijo_id", pfIds).neq("estado", "anulado");
+    const pfDeExp = new Map((exps ?? []).map((x) => [x.id, x.pago_fijo_id as string]));
+    const { data: subidosPF } = pfDeExp.size ? await supabase.from("expediente_adjuntos").select("expediente_id, tipo").in("expediente_id", [...pfDeExp.keys()]).eq("anulado", false) : { data: [] as { expediente_id: string; tipo: string }[] };
+    for (const a of subidosPF ?? []) {
+      const pf = pfDeExp.get(a.expediente_id);
+      if (pf) tiposDePF.set(pf, (tiposDePF.get(pf) ?? new Set<string>()).add(a.tipo));
+    }
+  }
   const cpsAll = cpsAllRaw;
   const cpsV = cpsAllRaw;
   const cpVigente = new Map<string, { id: string; cheque: string | null }>();
@@ -422,12 +434,12 @@ export default async function Expedientes({ searchParams }: { searchParams: Para
                     if (!pf || e.estado === "anulado") return null;
                     const sinSubir = pf.documentos.filter((d) => !adjDe.get(e.id)?.has(d));
                     return sinSubir.map((d) => {
-                      const perm = archivosPF.has(`${pf.id}|${d}`);
+                      const perm = archivosPF.has(`${pf.id}|${d}`) || !!tiposDePF.get(pf.id)?.has(d);
                       return (
                         <span key={`req-${d}`} className="doc-par">
                           <i className={`doc-sep${perm ? " ok" : ""}`} aria-hidden="true" />
                           {perm ? (
-                            <Link className="doc-paso" href={`/expedientes/${e.id}#documentos`} title="Documento permanente: ya está completo">
+                            <Link className="doc-paso" href={`/expedientes/${e.id}#documentos`} title="Ya está completo: viene de otro mes de este gasto o es permanente">
                               <span className="ic" aria-hidden="true">✓</span>{nombreAdjunto(d)}
                             </Link>
                           ) : (

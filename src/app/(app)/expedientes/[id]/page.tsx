@@ -18,7 +18,7 @@ import FormatoComprobante from "@/components/formatos/FormatoComprobante";
 import { FormatoNea } from "@/components/formatos/FormatosAlmacen";
 import { cargarExpediente, listaDocumentos } from "@/lib/documentos";
 import { cargarCierres, estadoGestion } from "@/lib/gestion";
-import { cargarArchivosPagoFijo, siguienteCheque, type ArchivoPermanente } from "@/lib/pagosFijos";
+import { siguienteCheque } from "@/lib/pagosFijos";
 import { conceptoSinSeRequiere } from "@/lib/requerimiento";
 import { CORRELATIVO, proximoNumero } from "@/lib/numeracion";
 import SelectFuncion from "@/components/SelectFuncion";
@@ -142,9 +142,8 @@ export default async function Expediente({ params, searchParams }: { params: Par
     : { data: null };
   const requeridos = ((pfDocs as { documentos?: string[] } | null)?.documentos ?? null) as string[] | null;
   const pfId = (e as { pago_fijo_id?: string | null }).pago_fijo_id ?? null;
-  const permanentesMapa = pfId ? await cargarArchivosPagoFijo(supabase, ctx.mcp.id, true) : new Map<string, ArchivoPermanente>();
   const anexos = await cargarAnexos(supabase, ctx.mcp.id, id, pfId);
-  const permanentes = [...permanentesMapa].filter(([k]) => k.startsWith(`${pfId}|`)).map(([k, v]) => ({ tipo: k.split("|")[1], nombre: v.nombre, url: v.url ?? null }));
+  const compartidos = anexos.filter((x) => x.origen === "permanente" || x.origen === "heredado").map((x) => ({ tipo: x.tipo, nombre: x.nombre, url: x.url, origen: x.origen as "permanente" | "heredado" }));
   const firmadasAdj = (adjData ?? []).filter((a) => !a.anulado).length
     ? await supabase.storage.from("sustentos").createSignedUrls((adjData ?? []).filter((a) => !a.anulado).map((a) => a.archivo_path as string), 1800)
     : { data: [] as { path: string | null; signedUrl: string }[] };
@@ -663,8 +662,8 @@ export default async function Expediente({ params, searchParams }: { params: Par
         <div className="panel-cab">
           <span>{viendoBorrador ? `Así quedará: ${borrador!.nombre}` : "Así va su documento"}</span>
           <div className="acciones-fila" style={viendoBorrador ? { display: "none" } : undefined}>
-            {!viendoAnexo && <BotonPdf nombre={`Expediente ${num3(e.numero)}-${e.anio} ${verClave}`} selector=".vista-previa .hoja" className="btn chico primario" />}
-            <Link className="btn chico contorno" href={`/expedientes/${id}/documentos?doc=${verClave}&imprimir=1`}>Imprimir</Link>
+            {(!viendoAnexo) && <BotonPdf nombre={`Expediente ${num3(e.numero)}-${e.anio} ${verClave}`} selector=".vista-previa .hoja" className="btn chico primario" />}
+            {viendoAnexo?.origen !== "pendiente" && <Link className="btn chico contorno" href={`/expedientes/${id}/documentos?doc=${verClave}&imprimir=1`}>Imprimir</Link>}
             {(docs.length > 1 || anexos.length > 0) && (
               <Link className="btn chico contorno" href={`/expedientes/${id}/documentos?doc=todo&imprimir=1`}>Imprimir todo el expediente</Link>
             )}
@@ -687,15 +686,15 @@ export default async function Expediente({ params, searchParams }: { params: Par
           ))}
           {anexos.map((x) => (
             <span key={x.clave} className="doc-par">
-              <i className="doc-sep ok" aria-hidden="true" />
+              <i className={`doc-sep${x.origen === "pendiente" ? "" : " ok"}`} aria-hidden="true" />
               <Link
                 role="tab"
                 aria-selected={x.clave === verClave}
                 scroll={false}
-                className={`doc-tab${x.clave === verClave ? " activo" : ""}`}
+                className={`doc-tab${x.origen === "pendiente" ? " pendiente" : ""}${x.clave === verClave ? " activo" : ""}`}
                 href={`/expedientes/${id}?ver=${x.clave}${sp.paso ? `&paso=${sp.paso}` : ""}`}
               >
-                <span className="ic" aria-hidden="true">✓</span>{x.nombre}
+                <span className="ic" aria-hidden="true">{x.origen === "pendiente" ? "" : "✓"}</span>{x.nombre}
               </Link>
             </span>
           ))}
@@ -721,7 +720,7 @@ export default async function Expediente({ params, searchParams }: { params: Par
         )}
         <div className="mesa">
           {viendoAnexo ? (
-            <VisorAnexo anexo={viendoAnexo} />
+            <VisorAnexo anexo={viendoAnexo} expedienteId={id} />
           ) : (
           <EscalaA4>
             {viendoBorrador ? (
@@ -904,7 +903,7 @@ export default async function Expediente({ params, searchParams }: { params: Par
       <AdjuntosExpediente
         id={id}
         tipoGasto={e.tipo}
-        permanentes={permanentes}
+        compartidos={compartidos}
         requeridos={(e as { pago_fijo_id?: string | null }).pago_fijo_id ? requeridos ?? [] : null}
         adjuntos={adjuntos}
         puede={puedeRegistrar}

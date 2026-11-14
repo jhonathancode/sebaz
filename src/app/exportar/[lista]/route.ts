@@ -111,7 +111,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ list
       const { data: cajas } = await supabase.from("cajas_chicas").select("id, monto_fondo, numero_cheque").eq("mcp_id", mcpId).eq("periodo", mes).neq("estado", "anulada").order("numero");
       const caja = (cajas ?? []).find((c) => c.id === sp.get("caja")) ?? (cajas ?? [])[0];
       const { data } = caja
-        ? await supabase.from("caja_chica_gastos").select("fecha, concepto, sustento_tipo, sustento_numero, razon_social, monto, anulado").eq("caja_id", caja.id).order("fecha")
+        ? await supabase.from("caja_chica_gastos").select("fecha, concepto, sustento_tipo, sustento_numero, razon_social, monto, anulado").eq("caja_id", caja.id).order("fecha").order("creado_en")
         : { data: [] as { fecha: string; concepto: string; sustento_tipo: string; sustento_numero: string | null; razon_social: string; monto: number; anulado: boolean }[] };
       // Mismo formato que la hoja de caja chica: N°, FECHA, CP, N° CP, RAZÓN SOCIAL, CONCEPTO, MONTO (solo gastos vigentes)
       const filas = (data ?? [])
@@ -312,7 +312,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ list
           const { data: gastos } = await supabase
             .from("caja_chica_gastos")
             .select("fecha, concepto, sustento_tipo, sustento_numero, razon_social, monto, cajas_chicas(periodo, numero)")
-            .eq("mcp_id", mcpId).eq("anulado", false).gte("fecha", `${anio}-01-01`).lte("fecha", `${anio}-12-31`).order("fecha");
+            .eq("mcp_id", mcpId).eq("anulado", false).gte("fecha", `${anio}-01-01`).lte("fecha", `${anio}-12-31`).order("fecha").order("creado_en");
           regs = (gastos ?? []).map((g) => {
             const c = g.cajas_chicas as unknown as { periodo: string; numero: number } | null;
             return { fecha: g.fecha, monto: Number(g.monto), celdas: [c ? `${MESES_CORTOS[Number(c.periodo.slice(5, 7)) - 1]} · ${c.numero}` : "", fechaPe(g.fecha), `${g.sustento_tipo}${g.sustento_numero ? ` ${g.sustento_numero}` : ""}`, g.razon_social, g.concepto] };

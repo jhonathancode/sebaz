@@ -4526,3 +4526,38 @@ html.pdf-captura .sf-faltan { display: none; }
 .rc-form input[type="file"]:hover { border-color: var(--primario); }
 .rc-form input[type="file"]::file-selector-button { margin-right: 12px; padding: 8px 14px; border: 0; border-radius: 10px; background: var(--primario); color: #fff; font: inherit; font-weight: 700; cursor: pointer; }
 .rc-form textarea { border-radius: 12px; }
+
+/* Lista del padrón */
+.rc-cifras { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; padding: 0 14px 14px; }
+.rc-cifras > div { display: flex; flex-direction: column; gap: 2px; padding: 10px 14px; border: 1px solid var(--borde); border-radius: 14px; background: var(--panel-2); }
+.rc-cifras b { font-size: 22px; line-height: 1.1; font-variant-numeric: tabular-nums; }
+.rc-cifras span { font-size: 12px; color: var(--tenue); }
+.rc-tabla-marco { border-top: 1px solid var(--borde); overflow-x: auto; }
+.rc-tabla { width: 100%; min-width: 880px; border-collapse: collapse; table-layout: fixed; }
+.rc-tabla col.c-persona { width: 31%; } .rc-tabla col.c-dni { width: 11%; } .rc-tabla col.c-tipo { width: 11%; } .rc-tabla col.c-fecha { width: 11%; } .rc-tabla col.c-acta { width: 15%; } .rc-tabla col.c-partida { width: 14%; } .rc-tabla col.c-acc { width: 7%; }
+.rc-tabla th { padding: 10px 14px; text-align: left; font-size: 11.5px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: var(--suave); background: var(--tabla-cab); border-bottom: 1px solid var(--borde); }
+.rc-tabla td { padding: 11px 14px; vertical-align: middle; border-bottom: 1px solid var(--linea); font-size: 14px; }
+.rc-tabla tbody tr:last-child td { border-bottom: 0; }
+.rc-tabla tbody tr:hover { background: var(--panel-2); }
+.rc-tabla tr.anulado td { opacity: .55; }
+.rc-vacio { text-align: center; color: var(--tenue); padding: 34px 14px !important; }
+.rc-num { font-variant-numeric: tabular-nums; white-space: nowrap; }
+.rc-der { text-align: right; }
+.rc-persona { display: flex; align-items: center; gap: 12px; text-decoration: none; color: inherit; min-width: 0; }
+.rc-avatar { flex: none; width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; background: var(--primario-fondo); color: var(--primario-texto); font-weight: 800; font-size: 14px; letter-spacing: .02em; }
+.rc-persona-txt { display: flex; flex-direction: column; min-width: 0; line-height: 1.25; }
+.rc-persona-txt b { font-size: 14.5px; text-transform: uppercase; color: var(--primario-texto); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rc-persona:hover .rc-persona-txt b { text-decoration: underline; }
+.rc-persona-txt span { font-size: 13.5px; text-transform: uppercase; color: var(--texto); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rc-persona-txt small { font-size: 12px; color: var(--tenue); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rc-anulado { display: inline-block; margin-top: 4px; font-size: 11px; font-weight: 800; color: var(--peligro, #b3261e); letter-spacing: .06em; }
+.rc-chip { display: inline-block; padding: 3px 11px; border-radius: 999px; font-size: 12.5px; font-weight: 700; border: 1px solid var(--borde); background: var(--panel-2); color: var(--suave); }
+.rc-chip.rc-nacimiento { background: var(--primario-fondo); border-color: var(--primario-claro); color: var(--primario-texto); }
+.rc-chip.rc-matrimonio { background: color-mix(in srgb, #0f766e 12%, var(--panel)); border-color: color-mix(in srgb, #0f766e 40%, var(--borde)); color: #0f766e; }
+.rc-chip.rc-defuncion { background: color-mix(in srgb, #475569 14%, var(--panel)); border-color: color-mix(in srgb, #475569 40%, var(--borde)); color: #475569; }
+.rc-acta { display: flex; flex-direction: column; gap: 2px; font-variant-numeric: tabular-nums; }
+.rc-acta span { display: flex; gap: 6px; align-items: baseline; font-size: 13px; }
+.rc-acta i { font-style: normal; font-size: 11px; color: var(--tenue); width: 30px; text-transform: uppercase; letter-spacing: .04em; }
+.rc-partida { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.rc-partida.no { font-size: 12.5px; color: var(--tenue); }
+.rc-ok { font-size: 12.5px; font-weight: 700; color: var(--primario-texto); }

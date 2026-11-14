@@ -19,12 +19,29 @@ export type DatosSec = {
 };
 
 /** Oficio, carta, memorando, acuerdo, acta… tal como se imprime en una hoja A4. */
-export default function FormatoSecretaria({ d, mcp }: { d: DatosSec; mcp: Mcp }) {
+export type EditorCuerpo = { ref: React.Ref<HTMLDivElement>; onInput: (html: string) => void; onPaste: (e: React.ClipboardEvent<HTMLDivElement>) => void };
+
+export default function FormatoSecretaria({ d, mcp, editor }: { d: DatosSec; mcp: Mcp; editor?: EditorCuerpo }) {
   const logo = logoMcp(mcp);
   const t = tipoSec(d.tipo);
   const lugar = lugarMcp(mcp.nombre);
   const sub = [mcp.distrito && `Distrito de ${mcp.distrito}`, mcp.provincia && `Provincia de ${mcp.provincia}`].filter(Boolean).join(" · ");
-  const cuerpo = <div className="sec-cuerpo" dangerouslySetInnerHTML={{ __html: d.cuerpo }} />;
+  const cuerpo = editor ? (
+    <div
+      ref={editor.ref}
+      className="sec-cuerpo sec-editable"
+      contentEditable
+      suppressContentEditableWarning
+      role="textbox"
+      aria-multiline="true"
+      aria-label="Contenido del documento"
+      spellCheck
+      onInput={(e) => editor.onInput((e.currentTarget as HTMLDivElement).innerHTML)}
+      onPaste={editor.onPaste}
+    />
+  ) : (
+    <div className="sec-cuerpo" dangerouslySetInnerHTML={{ __html: d.cuerpo }} />
+  );
   const firma = (
     <div className="sec-firma">
       <span />

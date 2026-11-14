@@ -4704,7 +4704,7 @@ html.pdf-captura .sf-faltan { display: none; }
 .sec-cc { margin: auto 0 0; padding-top: 18px; font-size: 12px; }
 
 /* editor */
-.sec-editor { display: grid; grid-template-columns: minmax(340px, 460px) 1fr; gap: 18px; align-items: start; }
+.sec-editor { display: grid; grid-template-columns: minmax(280px, 340px) 1fr; gap: 18px; align-items: start; }
 .sec-form { display: flex; flex-direction: column; gap: 12px; position: sticky; top: 8px; max-height: calc(100vh - 24px); overflow-y: auto; padding: 2px 4px 12px 0; }
 .sec-fila { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; align-items: end; }
 .sec-num { font-weight: 700; color: var(--tenue); font-size: 13px; padding-bottom: 8px; }
@@ -4734,3 +4734,18 @@ html.pdf-captura .sf-faltan { display: none; }
 @media print {
   .hoja.sec-hoja { padding: 8mm 8mm 8mm 16mm; min-height: 0; max-width: none; border: 0; }
 }
+
+/* barra tipo Word y hoja editable */
+.sec-wordbar { position: sticky; top: 0; z-index: 6; display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: center; padding: 8px 10px; background: var(--panel); border: 1px solid var(--borde); border-radius: 12px; box-shadow: 0 4px 14px -8px rgba(0,0,0,.35); margin-bottom: 10px; }
+.sw-grupo { display: flex; gap: 4px; align-items: center; padding-right: 10px; border-right: 1px solid var(--borde); }
+.sw-grupo:last-child { border-right: 0; padding-right: 0; }
+.sec-wordbar button, .sec-wordbar .sw-color { min-width: 32px; height: 30px; padding: 0 8px; border: 1px solid var(--borde); border-radius: 8px; background: var(--panel); color: inherit; cursor: pointer; font-size: 13px; display: inline-flex; align-items: center; justify-content: center; position: relative; }
+.sec-wordbar button:hover, .sec-wordbar .sw-color:hover { background: color-mix(in srgb, var(--primario) 12%, var(--panel)); }
+.sec-wordbar select { height: 30px; border: 1px solid var(--borde); border-radius: 8px; background: var(--panel); color: inherit; font-size: 13px; padding: 0 6px; max-width: 120px; }
+.sw-color input { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; }
+.sec-editable { outline: none; min-height: 320px; cursor: text; border-radius: 4px; box-shadow: 0 0 0 1px dashed transparent; }
+.sec-editable:focus { background: color-mix(in srgb, var(--primario) 3%, #fff); }
+.sec-cuerpo table { border-collapse: collapse; width: 100%; margin: 6px 0 12px; }
+.sec-cuerpo td, .sec-cuerpo th { border: 1px solid #111; padding: 4px 7px; vertical-align: top; }
+.sec-cuerpo th { background: #eef1f5; }
+.sec-cuerpo h1, .sec-cuerpo h2, .sec-cuerpo h3 { font-size: 15px; margin: 4px 0 10px; }

@@ -229,6 +229,22 @@ export type DatosMcpMenu = { nombre: string; ruc: string | null; logo: string | 
 export default function Menu({ items, abajo = [], mcp, panel }: { items: ItemMenu[]; abajo?: ItemMenu[]; nuevo?: boolean; mcp: DatosMcpMenu; panel?: string }) {
   const ruta = usePathname();
   const [abierto, setAbierto] = useState<Record<string, boolean>>({});
+  // Módulos plegados por la persona (se recuerdan en este navegador)
+  const [plegados, setPlegados] = useState<Record<string, boolean>>({});
+  useEffect(() => {
+    try {
+      setPlegados(JSON.parse(localStorage.getItem("menu-plegados") ?? "{}"));
+    } catch {}
+  }, []);
+  function alternarGrupo(g: string) {
+    setPlegados((p) => {
+      const nuevo = { ...p, [g]: !p[g] };
+      try {
+        localStorage.setItem("menu-plegados", JSON.stringify(nuevo));
+      } catch {}
+      return nuevo;
+    });
+  }
   // Al cambiar de página, cada grupo vuelve a su estado normal: abierto solo si se está dentro de él
   useEffect(() => {
     setAbierto({});
@@ -309,9 +325,18 @@ export default function Menu({ items, abajo = [], mcp, panel }: { items: ItemMen
             const encabezado = i.grupo && i.grupo !== items[idx - 1]?.grupo ? i.grupo : null;
             return (
               <Fragment key={i.href}>
-              {encabezado && <li className="lm-grupo" aria-hidden="true"><span>{encabezado}</span></li>}
+              {encabezado && (
+                <li className="lm-grupo">
+                  <button type="button" aria-expanded={!plegados[encabezado]} title={plegados[encabezado] ? `Mostrar ${encabezado}` : `Ocultar ${encabezado}`} onClick={() => alternarGrupo(encabezado)}>
+                    <span>{encabezado}</span>
+                    <svg className={`lm-flecha-sub${plegados[encabezado] ? "" : " abierta"}`} viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.4" aria-hidden="true">
+                      <path d="m6 9 6 6 6-6" />
+                    </svg>
+                  </button>
+                </li>
+              )}
               {!i.grupo && idx > 0 && items[idx - 1].grupo && <li className="lm-grupo lm-sep" aria-hidden="true"><span /></li>}
-              <li>
+              <li data-plegado={i.grupo && plegados[i.grupo] ? "1" : undefined}>
                 {i.sub ? (
                   // Con sub-menús: al pulsar solo se abren o cierran; se elige luego
                   <button type="button" className={`lm-padre${dentro ? " activo" : ""}`} title={i.texto} aria-expanded={desplegado} onClick={() => {

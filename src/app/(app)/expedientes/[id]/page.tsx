@@ -8,7 +8,7 @@ import AutoDocumento from "@/components/AutoDocumento";
 import Avisos from "@/components/Avisos";
 import VisorAnexo from "@/components/VisorAnexo";
 import { cargarAnexos } from "@/lib/adjuntosVista";
-import AdjuntosExpediente, { type Adjunto } from "@/components/AdjuntosExpediente";
+import AdjuntosExpediente from "@/components/AdjuntosExpediente";
 import Estado from "@/components/Estado";
 import Motivo from "@/components/Motivo";
 import CamposRequerimiento, { nombreFuente } from "@/components/formularios/CamposRequerimiento";
@@ -130,24 +130,8 @@ export default async function Expediente({ params, searchParams }: { params: Par
     .eq("expediente_id", id)
     .order("creado_en", { ascending: false });
 
-  // Documentos adjuntos (si la base aún no tiene la actualización, simplemente no hay)
-  const { data: adjData } = await supabase
-    .from("expediente_adjuntos")
-    .select("id, tipo, descripcion, archivo_path, archivo_nombre, archivo_tipo, anulado, anulado_motivo, creado_en")
-    .eq("expediente_id", id)
-    .order("creado_en");
-  // Documentos que pidió quien creó el pago fijo (si no hay la columna, se usa la lista guía)
-  const { data: pfDocs } = (e as { pago_fijo_id?: string | null }).pago_fijo_id
-    ? await supabase.from("pagos_fijos").select("documentos").eq("id", (e as { pago_fijo_id: string }).pago_fijo_id).maybeSingle()
-    : { data: null };
-  const requeridos = ((pfDocs as { documentos?: string[] } | null)?.documentos ?? null) as string[] | null;
-  const pfId = (e as { pago_fijo_id?: string | null }).pago_fijo_id ?? null;
-  const anexos = await cargarAnexos(supabase, ctx.mcp.id, id, pfId);
-  const compartidos = anexos.filter((x) => x.origen === "permanente" || x.origen === "heredado").map((x) => ({ tipo: x.tipo, nombre: x.nombre, url: x.url, origen: x.origen as "permanente" | "heredado" }));
-  const firmadasAdj = (adjData ?? []).filter((a) => !a.anulado).length
-    ? await supabase.storage.from("sustentos").createSignedUrls((adjData ?? []).filter((a) => !a.anulado).map((a) => a.archivo_path as string), 1800)
-    : { data: [] as { path: string | null; signedUrl: string }[] };
-  const adjuntos: Adjunto[] = (adjData ?? []).map((a) => ({ ...a, url: firmadasAdj.data?.find((f) => f.path === a.archivo_path)?.signedUrl }));
+  // Documentos que acompañan al expediente (subidos, permanentes del pago fijo o de otro mes)
+  const anexos = await cargarAnexos(supabase, ctx.mcp.id, id, (e as { pago_fijo_id?: string | null }).pago_fijo_id ?? null);
 
   // Lo que depende del expediente: nombres del historial y el beneficiario del pago fijo, también a la vez
   const pagoFijoId = (e as { pago_fijo_id?: string | null }).pago_fijo_id ?? null;
@@ -657,42 +641,8 @@ export default async function Expediente({ params, searchParams }: { params: Par
           })}
         </ol>
 
-        {(datosDoc.planilla || anexos.length > 0) && (
-          <ol className="av-pasos av-docs" aria-label="Documentos que acompañan al expediente" style={{ gridTemplateColumns: `repeat(${Math.min(4, (datosDoc.planilla ? 1 : 0) + anexos.length)}, minmax(0, 1fr))` }}>
-            {[
-              ...(datosDoc.planilla ? [{ clave: "planilla", nombre: "Planilla de remuneración", hecho: true, detalle: "Generada por el sistema" }] : []),
-              ...anexos.map((x) => ({ clave: x.clave, nombre: x.nombre, hecho: x.origen !== "pendiente", detalle: x.origen === "pendiente" ? "Falta subir" : x.origen === "propio" ? "Subido en este expediente" : x.origen === "permanente" ? "Permanente" : "Tomado de otro mes" })),
-            ].map((x) => (
-              <li key={x.clave} className={`av-paso ${x.hecho ? "hecho" : "pendiente"}${x.clave === verClave ? " visto" : ""}`}>
-                <Link href={`/expedientes/${id}?ver=${x.clave}`} scroll={false} aria-current={x.clave === verClave ? "step" : undefined}>
-                  <span className="av-icono" aria-hidden="true">
-                    {x.hecho ? (
-                      <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round"><path d="m5 12.5 4.5 4.5L19 7.5" /></svg>
-                    ) : (
-                      <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 3H6.5A1.5 1.5 0 0 0 5 4.5v15A1.5 1.5 0 0 0 6.5 21h11a1.5 1.5 0 0 0 1.5-1.5V8Z" /><path d="M14 3v5h5" /></svg>
-                    )}
-                  </span>
-                  <span className="av-texto">
-                    <span className="av-num">Documento</span>
-                    <span className="av-nombre">{x.nombre}</span>
-                    <span className="av-det">{x.detalle}</span>
-                  </span>
-                </Link>
-              </li>
-            ))}
-          </ol>
-        )}
+        <AdjuntosExpediente id={id} planilla={!!datosDoc.planilla} anexos={anexos} verClave={verClave} puede={puedeRegistrar} />
       </section>
-
-      <AdjuntosExpediente
-        id={id}
-        tipoGasto={e.tipo}
-        compartidos={compartidos}
-        requeridos={(e as { pago_fijo_id?: string | null }).pago_fijo_id ? (requeridos ?? []).filter((r) => r !== "planilla") : null}
-        adjuntos={adjuntos}
-        puede={puedeRegistrar}
-        sistema={{ planilla: !!datosDoc.planilla, requerimiento: true, orden: (ordenes ?? []).some((o) => !(o as { anulado?: boolean }).anulado), conformidad: (conformidades ?? []).some((c) => !(c as { anulado?: boolean }).anulado), comprobante: (cps ?? []).some((c) => c.estado !== "anulado") }}
-      />
 
       <section className="panel vista-previa">
         <div className="panel-cab">
@@ -712,7 +662,7 @@ export default async function Expediente({ params, searchParams }: { params: Par
         )}
         <div className="mesa">
           {viendoAnexo ? (
-            <VisorAnexo anexo={viendoAnexo} expedienteId={id} />
+            <VisorAnexo anexo={viendoAnexo} expedienteId={id} puede={puedeRegistrar} />
           ) : (
           <EscalaA4>
             {viendoBorrador ? (

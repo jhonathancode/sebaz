@@ -68,6 +68,31 @@ export default function EditorSecretaria({
     if (f) f.textContent = textoFecha(v, mcp.nombre);
     sincronizar();
   }
+  /** Imprime la hoja tal como está en pantalla (aunque no se haya guardado), en una ventana aparte. */
+  function imprimir() {
+    const hoja = area.current?.cloneNode(true) as HTMLElement | undefined;
+    if (!hoja) return;
+    hoja.removeAttribute("contenteditable");
+    hoja.querySelectorAll("[data-sel]").forEach((n) => n.removeAttribute("data-sel"));
+    const w = window.open("", "_blank", "width=900,height=700");
+    if (!w) {
+      window.alert("El navegador bloqueó la ventana de impresión. Permítala e intente de nuevo.");
+      return;
+    }
+    const estilos = Array.from(document.querySelectorAll<HTMLElement>('link[rel="stylesheet"], style'))
+      .map((n) => (n instanceof HTMLLinkElement ? `<link rel="stylesheet" href="${n.href}">` : n.outerHTML))
+      .join("");
+    w.document.open();
+    w.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>Documento</title>${estilos}<style>html,body{background:#fff!important;color:#000;margin:0;padding:0}.hoja{box-shadow:none!important;margin:0 auto!important;max-width:none!important;border-color:#000!important;min-height:0!important}@page{size:A4;margin:12mm}</style></head><body>${hoja.outerHTML}</body></html>`);
+    w.document.close();
+    w.onload = () => {
+      setTimeout(() => {
+        w.focus();
+        w.print();
+        w.onafterprint = () => w.close();
+      }, 300);
+    };
+  }
   function insertarMembrete() {
     area.current?.insertAdjacentHTML("afterbegin", membreteHtml(mcp));
     sincronizar();
@@ -178,6 +203,7 @@ export default function EditorSecretaria({
       <div className="sec-barra-sup">
         <label className="campo">Fecha del documento<InputFecha name="fecha" defaultValue={fecha} required onChange={cambiarFecha} /></label>
         <p className="pequeno tenue">Escriba y cambie todo directamente sobre la hoja: membrete, destinatario, asunto, texto y firma. El número se asigna al emitir. Lo que está entre [CORCHETES] es lo que debe completar.</p>
+        <button type="button" className="btn" onClick={imprimir}>Imprimir</button>
         <button type="submit" className="btn">Guardar borrador</button>
         <BotonConfirmar formAction={emitir} className="btn primario" pregunta="¿Ya terminó el documento?" detalle="Se guardará tal como está y recibirá su número correlativo. Después ya no se puede editar." textoConfirmar="Sí, emitir">Ya terminé · Emitir</BotonConfirmar>
       </div>

@@ -96,19 +96,23 @@ export async function GET(req: NextRequest) {
 /** EF-1 y EF-2 con el mismo formato del modelo: cajas con borde, totales en amarillo y firmas. */
 function hojaEF(ws: ExcelJS.Worksheet, ef: FormatoEF, nombre: string, anio: number) {
   const dos = !!ef.der;
-  const negro = { style: "thin" as const, color: { argb: "FF000000" } };
+  const negro = { style: "thin" as const, color: { argb: "FF9DB9EA" } };
   const caja = { top: negro, bottom: negro, left: negro, right: negro };
-  const amarillo = { type: "pattern" as const, pattern: "solid" as const, fgColor: { argb: "FFFFF2A8" } };
+  const amarillo = { type: "pattern" as const, pattern: "solid" as const, fgColor: { argb: "FFECF3FE" } };
+  const azul = { type: "pattern" as const, pattern: "solid" as const, fgColor: { argb: "FF2B6FE6" } };
+  const tinta = { argb: "FF1F5BC7" };
   ws.columns = dos ? [{ width: 46 }, { width: 14 }, { width: 14 }, { width: 3 }, { width: 46 }, { width: 14 }, { width: 14 }] : [{ width: 54 }, { width: 16 }, { width: 16 }];
   const ultimaCol = dos ? 7 : 3;
   ws.mergeCells(1, 1, 1, ultimaCol - 1);
   ws.getCell(1, 1).value = nombre;
-  ws.getCell(1, 1).font = { bold: true, size: 12 };
+  ws.getCell(1, 1).font = { bold: true, size: 12, color: tinta };
   ws.getCell(1, ultimaCol).value = ef.codigo;
-  ws.getCell(1, ultimaCol).font = { bold: true, size: 14 };
+  ws.getCell(1, ultimaCol).font = { bold: true, size: 14, color: { argb: "FFFFFFFF" } };
+  ws.getCell(1, ultimaCol).fill = azul;
+  ws.getCell(1, ultimaCol).alignment = { horizontal: "center" };
   ws.mergeCells(3, 1, 3, ultimaCol);
   ws.getCell(3, 1).value = ef.titulo;
-  ws.getCell(3, 1).font = { bold: true, size: 14 };
+  ws.getCell(3, 1).font = { bold: true, size: 14, color: tinta };
   ws.getCell(3, 1).alignment = { horizontal: "center" };
   ws.mergeCells(4, 1, 4, ultimaCol);
   ws.getCell(4, 1).value = ef.codigo === "EF-1" ? `01 de Enero al 31 de Diciembre del ${anio}` : `Del 01 de Enero al 31 de Diciembre de ${anio}`;
@@ -126,13 +130,14 @@ function hojaEF(ws: ExcelJS.Worksheet, ef: FormatoEF, nombre: string, anio: numb
       if (l.tipo === "esp") { fila += 1; return; }
       const a = ws.getCell(fila, col);
       a.value = l.texto;
-      if (l.tipo === "titulo" || l.tipo === "total" || l.tipo === "gran" || l.tipo === "orden") a.font = { bold: true };
+      if (l.tipo === "titulo" || l.tipo === "total" || l.tipo === "gran" || l.tipo === "orden") a.font = { bold: true, color: tinta };
       if (l.tipo !== "titulo") {
         [1, 2].forEach((k) => {
           const c = ws.getCell(fila, col + k);
           if (l.tipo !== "orden") { c.value = (k === 1 ? l.a : l.b) ?? 0; c.numFmt = ef.codigo === "EF-2" ? '#,##0.00;(S/. #,##0.00)' : "#,##0.00"; }
           c.border = caja;
-          if (l.tipo === "total" || l.tipo === "gran" || l.tipo === "orden") { c.fill = amarillo; c.font = { bold: true }; }
+          if (l.tipo === "total" || l.tipo === "orden") { c.fill = amarillo; c.font = { bold: true, color: tinta }; }
+          if (l.tipo === "gran") { c.fill = azul; c.font = { bold: true, color: { argb: "FFFFFFFF" } }; }
         });
       }
       fila += 1;
@@ -140,8 +145,8 @@ function hojaEF(ws: ExcelJS.Worksheet, ef: FormatoEF, nombre: string, anio: numb
         [1, 2].forEach((k) => {
           const c = ws.getCell(fila, col + k);
           c.value = ef.anios[k - 1];
-          c.fill = amarillo;
-          c.font = { bold: true };
+          c.fill = azul;
+          c.font = { bold: true, color: { argb: "FFFFFFFF" } };
           c.border = caja;
           c.alignment = { horizontal: "center" };
         });
@@ -157,8 +162,8 @@ function hojaEF(ws: ExcelJS.Worksheet, ef: FormatoEF, nombre: string, anio: numb
     [1, 2].forEach((k) => {
       const c = ws.getCell(9, 1 + k);
       c.value = ef.anios[k - 1];
-      c.fill = amarillo;
-      c.font = { bold: true };
+      c.fill = azul;
+      c.font = { bold: true, color: { argb: "FFFFFFFF" } };
       c.border = caja;
       c.alignment = { horizontal: "center" };
     });

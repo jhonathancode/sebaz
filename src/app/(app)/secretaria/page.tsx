@@ -1,10 +1,14 @@
 import Link from "next/link";
 import Avisos, { type ParamsAviso } from "@/components/Avisos";
+import BotonConfirmar from "@/components/BotonConfirmar";
 import Estado from "@/components/Estado";
+import VentanaFlotante from "@/components/VentanaFlotante";
+import CampoArchivoEstado from "@/components/formularios/CampoArchivoEstado";
 import { contextoMcp, tiene } from "@/lib/contexto";
 import { fecha } from "@/lib/formato";
-import { TIPOS_SEC, tipoSec } from "@/lib/secretaria";
+import { MODELOS_BASE, TIPOS_SEC, tipoSec } from "@/lib/secretaria";
 import { supabaseServidor } from "@/lib/supabase/server";
+import { archivarModelo, crearDesdeModelo, importarModeloWord } from "./acciones";
 
 type Doc = { id: string; tipo: string; numero: number | null; anio: number; estado: string; fecha: string; destinatario: string | null; asunto: string | null; archivo_path: string | null };
 
@@ -70,6 +74,9 @@ export default async function Secretaria({ searchParams }: { searchParams: Param
   // ---------------------------------------------------------- dentro de una carpeta
   if (tipo) {
     const t = tipoSec(tipo);
+    const { data: mp } = await supabase.from("sec_modelos").select("id, nombre, asunto").eq("mcp_id", ctx.mcp.id).eq("tipo", tipo).eq("activo", true).order("nombre");
+    const propios = mp ?? [];
+    const base = MODELOS_BASE.filter((m) => m.tipo === tipo);
     const deTipo = todos.filter((d) => d.tipo === tipo);
     const filas = deTipo.filter((d) => (!estado || d.estado === estado) && (!q || coincide(d)));
     return (
@@ -78,9 +85,50 @@ export default async function Secretaria({ searchParams }: { searchParams: Param
         <div className="titulo-ventana">
           <h1>{t.plural}</h1>
           <span className="espacio" />
-          {puede && <Link className="btn primario" href={`/secretaria/nuevo?tipo=${tipo}`}>Nuevo: {t.nombre}</Link>}
+          {puede && (
+            <>
+              <VentanaFlotante boton="Subir modelo de Word" titulo={`Subir un modelo de ${t.nombre.toLowerCase()} desde Word`} accion={importarModeloWord} textoGuardar="Cargar modelo" claseBoton="btn">
+                <input type="hidden" name="tipo" value={tipo} />
+                <label className="campo">Nombre del modelo<input name="nombre" required placeholder={`Ej.: ${t.nombre} de audiencia pública`} /></label>
+                <CampoArchivoEstado etiqueta="Archivo de Word (.docx)" multiple={false} accept=".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document" ayuda="Solo .docx, máximo 4 MB. Quedará guardado en esta carpeta, en «Mis modelos»." />
+              </VentanaFlotante>
+              <form action={crearDesdeModelo}>
+                <input type="hidden" name="origen" value={`blanco:${tipo}`} />
+                <button type="submit" className="btn primario">{t.nombre} en blanco</button>
+              </form>
+            </>
+          )}
         </div>
         <Avisos ok={sp.ok} error={sp.error} />
+        {puede && (
+          <>
+            <h2 className="sec-grupo">Modelos · un clic crea el documento</h2>
+            <div className="sec-mods">
+              {propios.map((m) => (
+                <div key={m.id} className="sec-mod propio">
+                  <form action={crearDesdeModelo}>
+                    <input type="hidden" name="origen" value={`propio:${m.id}`} />
+                    <button type="submit" className="sec-mod-btn"><Hoja /><span><b>{m.nombre}</b><small>Mi modelo</small></span></button>
+                  </form>
+                  <form action={archivarModelo} className="sec-mod-x">
+                    <input type="hidden" name="id" value={m.id} />
+                    <input type="hidden" name="tipo" value={tipo} />
+                    <BotonConfirmar className="btn chico contorno" pregunta="¿Archivar este modelo?" detalle="Dejará de aparecer aquí. Los documentos ya hechos con él no cambian." textoConfirmar="Sí, archivar">Archivar</BotonConfirmar>
+                  </form>
+                </div>
+              ))}
+              {base.map((m) => (
+                <div key={m.id} className="sec-mod">
+                  <form action={crearDesdeModelo}>
+                    <input type="hidden" name="origen" value={`base:${m.id}`} />
+                    <button type="submit" className="sec-mod-btn"><Hoja /><span><b>{m.nombre}</b><small>{m.detalle}</small></span></button>
+                  </form>
+                </div>
+              ))}
+            </div>
+          </>
+        )}
+        <h2 className="sec-grupo">Documentos</h2>
         <form className="ing-filtros" method="get">
           <input type="hidden" name="tipo" value={tipo} />
           <input name="q" defaultValue={sp.q ?? ""} placeholder={`Buscar en ${t.plural.toLowerCase()}: asunto, destinatario o número`} aria-label="Buscar" />
@@ -95,7 +143,7 @@ export default async function Secretaria({ searchParams }: { searchParams: Param
         {filas.length === 0 ? (
           <div className="sec-vacia">
             <Carpeta />
-            <p>{deTipo.length ? "Ningún archivo coincide con la búsqueda." : `Esta carpeta está vacía. Pulse «Nuevo: ${t.nombre}» y elija un modelo.`}</p>
+            <p>{deTipo.length ? "Ningún archivo coincide con la búsqueda." : `Todavía no hay documentos. Pulse un modelo de arriba para crear el primero.`}</p>
           </div>
         ) : (
           <Archivos docs={filas} puede={puede} />

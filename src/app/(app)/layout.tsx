@@ -88,9 +88,11 @@ export default async function MarcoApp({ children }: { children: React.ReactNode
     ? [
         { href: "/", texto: "Inicio" },
         ...(tiene(ctx, "alcalde", "admin") && ctx.mcp?.exigir_aprobacion !== false ? [{ href: "/aprobaciones", texto: "Por aprobar", n: porAprobar }] : []),
-        { href: "/expedientes", texto: "Expedientes" },
+        ...GRUPOS_MODULOS.flatMap((g) => [
+          ...(g.clave === "tesoreria" ? [{ href: "/expedientes", texto: "Expedientes", grupo: g.texto }] : []),
+          ...menusDeGrupo(ctx.mcp, g).map((m) => ({ href: m.href, texto: m.texto.replace(/ \(.*\)$/, ""), grupo: g.texto })),
+        ]),
         { href: "/reportes", texto: "Reportes" },
-        ...GRUPOS_MODULOS.flatMap((g) => menusDeGrupo(ctx.mcp, g).map((m) => ({ href: m.href, texto: m.texto.replace(/ \(.*\)$/, ""), grupo: g.texto }))),
       ]
     : ctx.esSoporte
       ? [{ href: "/soporte", texto: "Panel de soporte" }]

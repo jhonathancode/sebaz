@@ -6,27 +6,27 @@ export const GRUPOS_MODULOS = [
   {
     clave: "tesoreria", texto: "Tesorería",
     menus: [
-      { clave: "caja_chica", texto: "Caja chica", href: "/caja-chica" },
-      { clave: "ingresos", texto: "Ingresos", href: "/ingresos" },
-      { clave: "almacen", texto: "Almacén (NEA, PECOSA, kardex)", href: "/almacen" },
       { clave: "rendicion", texto: "Rendición", href: "/rendicion" },
+      { clave: "ingresos", texto: "Ingresos", href: "/ingresos" },
+      { clave: "caja_chica", texto: "Caja chica", href: "/caja-chica" },
+      { clave: "almacen", texto: "Almacén (NEA, PECOSA, kardex)", href: "/almacen" },
     ],
   },
   {
-    clave: "contable", texto: "Contabilidad",
-    menus: [
-      { clave: "contabilidad", texto: "Libros y resumen", href: "/contabilidad" },
-      { clave: "balance_anual", texto: "Balance anual", href: "/contabilidad/balance-anual" },
-      { clave: "estados_cuenta", texto: "Estados de cuenta corriente", href: "/contabilidad/estados-cuenta" },
-    ],
+    clave: "registro_civil_mod", texto: "Registro Civil",
+    menus: [{ clave: "registro_civil", texto: "Registro Civil (padrón y partidas)", href: "/registro-civil" }],
   },
   {
     clave: "secretaria_mod", texto: "Secretaría",
     menus: [{ clave: "secretaria", texto: "Secretaría (oficios, cartas, acuerdos)", href: "/secretaria" }],
   },
   {
-    clave: "registro_civil_mod", texto: "Registro Civil",
-    menus: [{ clave: "registro_civil", texto: "Registro Civil (padrón y partidas)", href: "/registro-civil" }],
+    clave: "contable", texto: "Contabilidad",
+    menus: [
+      { clave: "estados_cuenta", texto: "Estados de cuenta corriente", href: "/contabilidad/estados-cuenta" },
+      { clave: "contabilidad", texto: "Libros y resumen", href: "/contabilidad" },
+      { clave: "balance_anual", texto: "Balance anual", href: "/contabilidad/balance-anual" },
+    ],
   },
 ] as const;
 

@@ -5148,3 +5148,5 @@ html.pdf-captura .sf-faltan { display: none; }
 :root[data-menu="oculto"] .lateral-menu ul li.lm-grupo span { font-size: 0; }
 .marco-app[data-menu="oculto"] .lateral-menu ul li.lm-grupo { padding: 8px 14px 2px; }
 .marco-app[data-menu="oculto"] .lateral-menu ul li.lm-grupo span { font-size: 0; }
+.lateral-menu ul li.lm-grupo.lm-sep { padding-top: 10px; }
+.lateral-menu ul li.lm-grupo.lm-sep span::after { margin-left: 0; }

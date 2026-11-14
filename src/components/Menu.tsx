@@ -310,6 +310,7 @@ export default function Menu({ items, abajo = [], mcp, panel }: { items: ItemMen
             return (
               <Fragment key={i.href}>
               {encabezado && <li className="lm-grupo" aria-hidden="true"><span>{encabezado}</span></li>}
+              {!i.grupo && idx > 0 && items[idx - 1].grupo && <li className="lm-grupo lm-sep" aria-hidden="true"><span /></li>}
               <li>
                 {i.sub ? (
                   // Con sub-menús: al pulsar solo se abren o cierran; se elige luego

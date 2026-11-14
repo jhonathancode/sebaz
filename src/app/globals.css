@@ -5140,16 +5140,21 @@ html.pdf-captura .sf-faltan { display: none; }
 .bal-hoja .rep-pie { color: #4a5565; }
 .bal-hoja .rep-tabla th.bal-n, .bal-hoja .rep-tabla td.bal-n { width: 1%; white-space: nowrap; text-align: center; padding-left: 6px; padding-right: 6px; }
 
-/* Encabezado de cada módulo en el menú lateral */
-.lateral-menu ul li.lm-grupo { list-style: none; padding: 14px 22px 4px; }
-.lateral-menu ul li.lm-grupo span { display: flex; align-items: center; gap: 8px; font-size: 10.5px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; color: var(--primario-texto); }
-.lateral-menu ul li.lm-grupo span::after { content: ""; flex: 1; height: 1px; background: linear-gradient(90deg, color-mix(in srgb, var(--primario) 30%, var(--borde)), transparent); }
-:root[data-menu="oculto"] .lateral-menu ul li.lm-grupo { padding: 8px 14px 2px; }
-:root[data-menu="oculto"] .lateral-menu ul li.lm-grupo span { font-size: 0; }
-.marco-app[data-menu="oculto"] .lateral-menu ul li.lm-grupo { padding: 8px 14px 2px; }
-.marco-app[data-menu="oculto"] .lateral-menu ul li.lm-grupo span { font-size: 0; }
+/* Encabezado de cada módulo en el menú lateral (se pliega y se despliega) */
+.lateral-menu ul li.lm-grupo { list-style: none; padding: 10px 14px 2px; }
+.lateral-menu ul li.lm-grupo button { display: flex; align-items: center; gap: 8px; width: 100%; padding: 4px 8px; border: 0; border-radius: 8px; background: transparent; font: inherit; font-size: 10.5px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; color: var(--primario-texto); cursor: pointer; text-align: left; }
+.lateral-menu ul li.lm-grupo button:hover { background: color-mix(in srgb, var(--primario) 8%, transparent); }
+.lateral-menu ul li.lm-grupo button::after { content: ""; order: 1; flex: 1; height: 1px; background: linear-gradient(90deg, color-mix(in srgb, var(--primario) 30%, var(--borde)), transparent); }
+.lateral-menu ul li.lm-grupo button svg { order: 2; flex: none; transition: transform .15s; transform: rotate(-90deg); }
+.lateral-menu ul li.lm-grupo button svg.abierta { transform: rotate(0); }
 .lateral-menu ul li.lm-grupo.lm-sep { padding-top: 10px; }
-.lateral-menu ul li.lm-grupo.lm-sep span::after { margin-left: 0; }
+.lateral-menu ul li.lm-grupo.lm-sep span { display: block; height: 1px; margin: 0 8px; background: linear-gradient(90deg, color-mix(in srgb, var(--primario) 30%, var(--borde)), transparent); }
+.lateral-menu ul li[data-plegado="1"] { display: none; }
+/* Con el menú en íconos no hay títulos: todo queda visible */
+:root[data-menu="oculto"] .lateral-menu ul li[data-plegado="1"], .marco-app[data-menu="oculto"] .lateral-menu ul li[data-plegado="1"] { display: list-item; }
+:root[data-menu="oculto"] .lateral-menu ul li.lm-grupo button, .marco-app[data-menu="oculto"] .lateral-menu ul li.lm-grupo button { font-size: 0; padding: 0 8px; gap: 0; cursor: default; pointer-events: none; }
+:root[data-menu="oculto"] .lateral-menu ul li.lm-grupo button svg, .marco-app[data-menu="oculto"] .lateral-menu ul li.lm-grupo button svg { display: none; }
+:root[data-menu="oculto"] .lateral-menu ul li.lm-grupo, .marco-app[data-menu="oculto"] .lateral-menu ul li.lm-grupo { padding: 6px 14px 2px; }
 
 /* Documentos adjuntos del expediente */
 .adj-resumen { font-size: 11px; font-weight: 800; letter-spacing: .04em; padding: 3px 10px; border-radius: 99px; background: var(--primario-fondo); color: var(--primario-texto); }

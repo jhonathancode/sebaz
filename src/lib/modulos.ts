@@ -14,11 +14,11 @@ export const GRUPOS_MODULOS = [
   },
   {
     clave: "registro_civil_mod", texto: "Registro Civil",
-    menus: [{ clave: "registro_civil", texto: "Registro Civil (padrón y partidas)", href: "/registro-civil" }],
+    menus: [{ clave: "registro_civil", texto: "Padrón (actas y partidas)", href: "/registro-civil" }],
   },
   {
     clave: "secretaria_mod", texto: "Secretaría",
-    menus: [{ clave: "secretaria", texto: "Secretaría (oficios, cartas, acuerdos)", href: "/secretaria" }],
+    menus: [{ clave: "secretaria", texto: "Documentación (oficios, cartas, acuerdos)", href: "/secretaria" }],
   },
   {
     clave: "contable", texto: "Contabilidad",

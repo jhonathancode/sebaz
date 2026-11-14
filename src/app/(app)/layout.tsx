@@ -10,7 +10,7 @@ import MenuUsuario, { type EnlaceMenu } from "@/components/MenuUsuario";
 import { COOKIE_MCP, obtenerContexto, tiene } from "@/lib/contexto";
 import LogoSebaz from "@/components/LogoSebaz";
 import { APP_NOMBRE, logoMcp } from "@/lib/formato";
-import { tieneModulo } from "@/lib/modulos";
+import { GRUPOS_MODULOS, menusDeGrupo, tieneModulo } from "@/lib/modulos";
 import { supabaseServidor } from "@/lib/supabase/server";
 import type { Aviso } from "@/lib/notificaciones";
 import { rendicionesAtrasadas, type Pendiente } from "@/lib/pendientes";
@@ -89,14 +89,8 @@ export default async function MarcoApp({ children }: { children: React.ReactNode
         { href: "/", texto: "Inicio" },
         ...(tiene(ctx, "alcalde", "admin") && ctx.mcp?.exigir_aprobacion !== false ? [{ href: "/aprobaciones", texto: "Por aprobar", n: porAprobar }] : []),
         { href: "/expedientes", texto: "Expedientes" },
-        ...(tieneModulo(ctx.mcp, "caja_chica") ? [{ href: "/caja-chica", texto: "Caja chica" }] : []),
-        ...(tieneModulo(ctx.mcp, "ingresos") ? [{ href: "/ingresos", texto: "Ingresos" }] : []),
-        ...(tieneModulo(ctx.mcp, "almacen") ? [{ href: "/almacen", texto: "Almacén" }] : []),
-        ...(tieneModulo(ctx.mcp, "rendicion") ? [{ href: "/rendicion", texto: "Rendición" }] : []),
-        ...(tieneModulo(ctx.mcp, "registro_civil") && ctx.mcp.modulos?.includes("registro_civil") ? [{ href: "/registro-civil", texto: "Registro Civil" }] : []),
-        ...(ctx.mcp.modulos?.includes("secretaria") ? [{ href: "/secretaria", texto: "Secretaría" }] : []),
         { href: "/reportes", texto: "Reportes" },
-        ...(tieneModulo(ctx.mcp, "contabilidad") ? [{ href: "/contabilidad", texto: "Contabilidad", sub: [{ href: "/contabilidad", texto: "Libros y resumen" }, { href: "/contabilidad/balance-anual", texto: "Balance anual" }, { href: "/contabilidad/estados-cuenta", texto: "Estados de cuenta corriente" }] }] : []),
+        ...GRUPOS_MODULOS.flatMap((g) => menusDeGrupo(ctx.mcp, g).map((m) => ({ href: m.href, texto: m.texto.replace(/ \(.*\)$/, ""), grupo: g.texto }))),
       ]
     : ctx.esSoporte
       ? [{ href: "/soporte", texto: "Panel de soporte" }]

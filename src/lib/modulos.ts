@@ -5,6 +5,7 @@ export const MODULOS = [
   { clave: "almacen", texto: "Almacén (NEA, PECOSA, kardex)", href: "/almacen" },
   { clave: "rendicion", texto: "Rendición", href: "/rendicion" },
   { clave: "contabilidad", texto: "Contabilidad", href: "/contabilidad" },
+  { clave: "registro_civil", texto: "Registro Civil (padrón y partidas)", href: "/registro-civil" },
 ] as const;
 
 export type ClaveModulo = (typeof MODULOS)[number]["clave"];

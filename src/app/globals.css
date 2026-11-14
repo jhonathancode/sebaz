@@ -4604,3 +4604,34 @@ html.pdf-captura .sf-faltan { display: none; }
 .rc-entrega-form > summary::-webkit-details-marker { display: none; }
 .rc-entrega-form[open] > summary { border-bottom: 1px solid var(--borde); }
 .rc-entrega-form .rc-form { padding: 14px; }
+
+/* ------------------------------------------------ recibo de ingreso */
+.hoja.rec { padding: 28px 32px 24px; max-width: 900px; color: #111; }
+.rec-cab { display: flex; justify-content: space-between; align-items: stretch; gap: 20px; padding-bottom: 16px; border-bottom: 2px solid #111; }
+.rec-ent { display: flex; gap: 14px; align-items: center; min-width: 0; }
+.rec-logo { height: 62px; width: auto; max-width: 110px; object-fit: contain; }
+.rec-nombre { font-size: 17px; font-weight: 700; text-transform: uppercase; letter-spacing: .01em; line-height: 1.2; }
+.rec-sub { font-size: 12px; color: #444; margin-top: 2px; }
+.rec-caja { border: 1.5px solid #111; border-radius: 6px; padding: 10px 18px; text-align: center; display: flex; flex-direction: column; justify-content: center; min-width: 210px; }
+.rec-titulo { font-size: 13px; font-weight: 700; letter-spacing: .08em; }
+.rec-num { font-size: 20px; font-weight: 700; margin-top: 4px; font-variant-numeric: tabular-nums; }
+.rec-monto-fila { display: flex; justify-content: space-between; align-items: stretch; gap: 16px; margin: 18px 0 6px; }
+.rec-fecha, .rec-importe { display: flex; flex-direction: column; gap: 2px; }
+.rec-fecha span, .rec-importe span { font-size: 10.5px; font-weight: 600; letter-spacing: .1em; color: #555; }
+.rec-fecha b { font-size: 15px; }
+.rec-importe { border: 1.5px solid #111; border-radius: 6px; padding: 8px 22px; text-align: center; min-width: 210px; }
+.rec-importe b { font-size: 24px; font-variant-numeric: tabular-nums; }
+.rec-datos { margin: 8px 0 0; }
+.rec-datos > div { display: grid; grid-template-columns: 150px 1fr; gap: 12px; padding: 10px 0; border-bottom: 1px solid #bbb; align-items: baseline; }
+.rec-datos dt { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .08em; color: #555; }
+.rec-datos dd { margin: 0; font-size: 14.5px; font-weight: 600; text-transform: uppercase; line-height: 1.4; }
+.rec-mono { font-variant-numeric: tabular-nums; letter-spacing: .04em; }
+.rec-firmas { display: flex; justify-content: space-around; gap: 40px; margin-top: 78px; }
+.rec-firmas > div { flex: 1; max-width: 300px; text-align: center; font-size: 12px; font-weight: 600; letter-spacing: .06em; }
+.rec-firmas span { display: block; border-top: 1.4px solid #111; margin-bottom: 5px; }
+.rec-firmas small { display: block; font-size: 10.5px; font-weight: 400; letter-spacing: 0; color: #444; margin-top: 2px; text-transform: uppercase; }
+@media (max-width: 640px) {
+  .rec-cab, .rec-monto-fila { flex-direction: column; }
+  .rec-datos > div { grid-template-columns: 1fr; gap: 2px; }
+  .rec-firmas { flex-direction: column; gap: 56px; }
+}

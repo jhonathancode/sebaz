@@ -289,54 +289,32 @@ export default async function Ingresos({ searchParams }: { searchParams: ParamsA
         </>
       ) : (
         <>
-      <div className="tarjetas">
-        <div className="tarjeta">
-          <span className="etiqueta">Total del período</span>
-          <span className="valor">S/ {soles(total)}</span>
-          <span className="detalle">{etiqueta}</span>
-        </div>
-        <div className="tarjeta">
-          <span className="etiqueta">Recibos emitidos</span>
-          <span className="valor">{vigentes.length}</span>
-          <span className="detalle">{anulados ? `${anulados} anulado(s) con motivo` : "Ninguno anulado"}</span>
-        </div>
-        <div className="tarjeta">
-          <span className="etiqueta">Recibos del mes</span>
-          <span className="valor">{rMes?.n ? `${codRec(rMes.del)} al ${codRec(rMes.al)}` : "—"}</span>
-          <span className="detalle">{rMes?.n ? `${rMes.n} recibo(s) vigentes` : "Sin recibos este mes"}</span>
-        </div>
-        <div className="tarjeta">
-          <span className="etiqueta">Siguiente recibo</span>
-          <span className="valor">N° {String(siguiente).padStart(4, "0")}</span>
-          <span className="detalle">{ultimo ? `Último emitido: ${String(ultimo.numero).padStart(4, "0")}-${ultimo.anio}` : "Aún no hay recibos"}</span>
-        </div>
+      <div className="ing-franja" aria-label="Resumen del mes">
+        <span><small>Total</small><b>S/ {soles(total)}</b></span>
+        <span><small>Recibos</small><b>{vigentes.length}</b>{anulados ? <em>{anulados} anulado(s)</em> : null}</span>
+        <span><small>Del mes</small><b>{rMes?.n ? `${codRec(rMes.del)} al ${codRec(rMes.al)}` : "—"}</b></span>
+        <span><small>Siguiente</small><b>N° {String(siguiente).padStart(4, "0")}</b></span>
       </div>
 
       <div className="columnas en-pila">
         <div className="principal">
-          <form className="barra barra-ing" method="get">
+          <form className="ing-filtros" method="get">
             <input type="hidden" name="vista" value="mes" />
             <input type="hidden" name="mes" value={periodo} />
-            <label className="campo">
-              Rubro
-              <select name="rubro" defaultValue={sp.rubro ?? ""}>
-                <option value="">Todos</option>
-                {RUBROS_INGRESO.map((r) => (
-                  <option key={r.codigo} value={r.codigo}>{r.nombre}</option>
-                ))}
-              </select>
-            </label>
-            <label className="campo">
-              Estado
-              <select name="estado" defaultValue={sp.estado ?? ""}>
-                <option value="">Todos</option>
-                <option value="emitido">Emitidos</option>
-                <option value="anulado">Anulados</option>
-              </select>
-            </label>
-            <label className="campo" style={{ flex: "1 1 180px" }}>Buscar<input name="q" defaultValue={sp.q ?? ""} placeholder="Nombre, DNI, concepto o N°" /></label>
+            <input name="q" defaultValue={sp.q ?? ""} placeholder="Buscar: nombre, DNI, concepto o N°" aria-label="Buscar" />
+            <select name="rubro" defaultValue={sp.rubro ?? ""} aria-label="Rubro">
+              <option value="">Todos los rubros</option>
+              {RUBROS_INGRESO.map((r) => (
+                <option key={r.codigo} value={r.codigo}>{r.nombre}</option>
+              ))}
+            </select>
+            <select name="estado" defaultValue={sp.estado ?? ""} aria-label="Estado">
+              <option value="">Todos los estados</option>
+              <option value="emitido">Emitidos</option>
+              <option value="anulado">Anulados</option>
+            </select>
             <button className="btn" type="submit">Filtrar</button>
-            <a className="btn contorno" href={`/exportar/ingresos?mes=${periodo}&desde=${desde}&hasta=${hasta}&estado=${sp.estado ?? ""}&rubro=${sp.rubro ?? ""}&q=${encodeURIComponent(sp.q ?? "")}`}>Descargar Excel</a>
+            <a className="btn contorno" href={`/exportar/ingresos?mes=${periodo}&desde=${desde}&hasta=${hasta}&estado=${sp.estado ?? ""}&rubro=${sp.rubro ?? ""}&q=${encodeURIComponent(sp.q ?? "")}`}>Excel</a>
           </form>
 
           <div className="cc-excel-marco">

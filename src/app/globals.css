@@ -4497,3 +4497,32 @@ html.pdf-captura .sf-faltan { display: none; }
 .rc-dato { display: flex; flex-direction: column; gap: 1px; }
 .rc-dato span { font-size: 12px; color: var(--tenue); }
 .rc-dato b { font-weight: 600; word-break: break-word; }
+
+/* Calendario: mes y año se eligen de una lista (sirve para fechas antiguas, como un nacimiento de 1960) */
+.if-selectores { flex-direction: row; gap: 4px; align-items: center; }
+.if-selectores select { appearance: none; border: 0; background: transparent; color: var(--texto); font: inherit; font-weight: 800; font-size: 15px; padding: 4px 6px; border-radius: 8px; cursor: pointer; text-align: center; }
+.if-selectores select:last-child { color: var(--primario-texto); }
+.if-selectores select:hover, .if-selectores select:focus-visible { background: var(--primario-fondo); outline: none; }
+.if-selectores select option { color: #111; font-weight: 400; }
+
+/* Formulario del padrón */
+.rc-form { display: flex; flex-direction: column; gap: 16px; }
+.rc-tipos-form { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 8px; }
+.rc-tipo-op { display: flex; align-items: center; justify-content: center; gap: 8px; padding: 11px 12px; border: 1px solid var(--borde); border-radius: 14px; background: var(--panel); color: var(--suave); font-weight: 600; cursor: pointer; transition: border-color .15s, background .15s, color .15s; }
+.rc-tipo-op input { position: absolute; opacity: 0; pointer-events: none; }
+.rc-tipo-op:hover { border-color: var(--primario-claro); color: var(--texto); }
+.rc-tipo-op.sel { border-color: var(--primario); background: var(--primario-fondo); color: var(--primario-texto); box-shadow: 0 0 0 1px var(--primario) inset; }
+.rc-tipo-op:has(input:focus-visible) { box-shadow: 0 0 0 3px color-mix(in srgb, var(--primario) 25%, transparent); }
+.rc-seccion { border: 1px solid var(--borde); border-radius: 16px; padding: 4px 16px 16px; margin: 0; background: var(--panel); min-width: 0; }
+.rc-seccion legend { padding: 0 8px; font-size: 12px; font-weight: 800; letter-spacing: .07em; text-transform: uppercase; color: var(--primario-texto); }
+.rc-ayuda { margin: 2px 0 10px; font-size: 12.5px; color: var(--tenue); }
+.rc-rejilla { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px 14px; }
+.rc-rejilla .campo { margin: 0; }
+.rc-ancho { grid-column: span 1; } .rc-ancho2 { grid-column: span 2; } .rc-ancho3 { grid-column: 1 / -1; }
+.rc-rejilla > .rc-ancho:only-child, .rc-seccion:has(input[name="padre"]) .rc-ancho { grid-column: span 1; }
+.rc-seccion:has(input[name="padre"]) .rc-rejilla { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+@media (max-width: 720px) { .rc-rejilla, .rc-seccion:has(input[name="padre"]) .rc-rejilla { grid-template-columns: minmax(0, 1fr); } .rc-ancho2, .rc-ancho3 { grid-column: auto; } }
+.rc-form input[type="file"] { width: 100%; padding: 12px; border: 1.5px dashed var(--borde-fuerte); border-radius: 14px; background: var(--panel-2); color: var(--suave); font: inherit; cursor: pointer; }
+.rc-form input[type="file"]:hover { border-color: var(--primario); }
+.rc-form input[type="file"]::file-selector-button { margin-right: 12px; padding: 8px 14px; border: 0; border-radius: 10px; background: var(--primario); color: #fff; font: inherit; font-weight: 700; cursor: pointer; }
+.rc-form textarea { border-radius: 12px; }

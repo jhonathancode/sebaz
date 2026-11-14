@@ -41,6 +41,8 @@ export default function InputFecha({
   const base = valida(v) ? v : hoyLima();
   const [vista, setVista] = useState({ a: Number(base.slice(0, 4)), m: Number(base.slice(5, 7)) - 1 });
   const [pos, setPos] = useState<{ x: number; y: number; arriba: boolean }>({ x: 0, y: 0, arriba: false });
+  // Dentro de una ventana flotante el calendario se ancla al campo (no se corta por los bordes de la ventana)
+  const [anclado, setAnclado] = useState<{ derecha: boolean; arriba: boolean } | null>(null);
   const caja = useRef<HTMLDivElement>(null);
   const boton = useRef<HTMLButtonElement>(null);
   const campo = useRef<HTMLInputElement>(null);
@@ -94,7 +96,14 @@ export default function InputFecha({
   function abrir() {
     if (disabled) return;
     const r = boton.current?.getBoundingClientRect();
-    if (r) {
+    const dlg = boton.current?.closest("dialog");
+    if (r && dlg) {
+      const d = dlg.getBoundingClientRect();
+      setAnclado({ derecha: r.left + 300 > d.right - 8, arriba: r.bottom + 360 > d.bottom && r.top - 360 > d.top });
+    } else {
+      setAnclado(null);
+    }
+    if (r && !dlg) {
       const alto = 330;
       const arriba = r.bottom + alto > window.innerHeight && r.top > alto;
       setPos({ x: Math.max(8, Math.min(r.left, window.innerWidth - 300)), y: arriba ? r.top - 6 : r.bottom + 6, arriba });
@@ -148,12 +157,16 @@ export default function InputFecha({
       {/* Campo real: es el que viaja con el formulario y el que valida «obligatorio» */}
       <input ref={campo} className="if-real" name={name} value={v} readOnly required={required} tabIndex={-1} aria-hidden="true" onFocus={() => boton.current?.focus()} />
       {abierto && (
-        <div className="if-pop" role="dialog" aria-label="Elegir fecha" style={{ left: pos.x, top: pos.y, transform: pos.arriba ? "translateY(-100%)" : undefined }}>
+        <div className="if-pop" role="dialog" aria-label="Elegir fecha" style={anclado ? { position: "absolute", zIndex: 400, [anclado.derecha ? "right" : "left"]: 0, [anclado.arriba ? "bottom" : "top"]: "calc(100% + 6px)" } : { left: pos.x, top: pos.y, transform: pos.arriba ? "translateY(-100%)" : undefined }}>
           <div className="if-cab">
             <button type="button" className="if-nav" onClick={() => mover(-1)} aria-label="Mes anterior">‹</button>
-            <div className="if-titulo">
-              <b>{MESES[vista.m]}</b>
-              <span>{vista.a}</span>
+            <div className="if-titulo if-selectores">
+              <select aria-label="Mes" value={vista.m} onChange={(e) => setVista((s2) => ({ ...s2, m: Number(e.target.value) }))}>
+                {MESES.map((nm, i) => <option key={nm} value={i}>{nm}</option>)}
+              </select>
+              <select aria-label="Año" value={vista.a} onChange={(e) => setVista((s2) => ({ ...s2, a: Number(e.target.value) }))}>
+                {Array.from({ length: Number(hoyLima().slice(0, 4)) + 11 - 1900 }, (_, i) => Number(hoyLima().slice(0, 4)) + 10 - i).map((an) => <option key={an} value={an}>{an}</option>)}
+              </select>
             </div>
             <button type="button" className="if-nav" onClick={() => mover(1)} aria-label="Mes siguiente">›</button>
           </div>

@@ -7,7 +7,7 @@ import sanitizeHtml from "sanitize-html";
 import { contextoMcp, tiene } from "@/lib/contexto";
 import { mensajeError, texto, volver } from "@/lib/acciones";
 import { hoyISO } from "@/lib/formato";
-import { lugarMcp, MODELOS_BASE, rellenar, TIPOS_SEC } from "@/lib/secretaria";
+import { esLibre, lugarMcp, MARCA_LIBRE, sinMarca, MODELOS_BASE, rellenar, TIPOS_SEC } from "@/lib/secretaria";
 import { supabaseServidor } from "@/lib/supabase/server";
 
 const TIPOS_ARCHIVO: Record<string, string> = { "application/pdf": "pdf", "image/jpeg": "jpg", "image/png": "png", "image/webp": "webp" };
@@ -25,8 +25,11 @@ async function permiso(destino: string) {
 function limpiar(html: string): string {
   const css = /^[\w\s#%(),.'"\/-]+$/;
   return sanitizeHtml(html, {
-    allowedTags: ["p", "br", "b", "strong", "i", "em", "u", "s", "strike", "span", "ul", "ol", "li", "div", "h1", "h2", "h3", "table", "thead", "tbody", "tr", "td", "th", "sub", "sup"],
-    allowedAttributes: { "*": ["style"], td: ["style", "colspan", "rowspan"], th: ["style", "colspan", "rowspan"] },
+    allowedTags: ["p", "br", "b", "strong", "i", "em", "u", "s", "strike", "span", "ul", "ol", "li", "div", "h1", "h2", "h3", "table", "thead", "tbody", "tr", "td", "th", "sub", "sup", "img", "hr"],
+    allowedAttributes: { "*": ["style", "class", "data-campo", "data-num"], img: ["src", "alt", "style", "width", "height", "class"], td: ["style", "colspan", "rowspan"], th: ["style", "colspan", "rowspan"] },
+    allowedClasses: { "*": ["sec-membrete", "sec-logo", "sec-mcp", "sec-sub", "sec-titulo", "sec-lugar", "sec-lugar-pie", "sec-dest", "sec-tabla-datos", "sec-sumilla", "sec-cuerpo", "sec-despedida", "sec-firma2", "sec-cc", "sec-linea"] },
+    allowedSchemes: ["http", "https"],
+    allowedSchemesByTag: { img: ["http", "https", "data"] },
     allowedStyles: {
       "*": {
         "text-align": [/^(left|right|center|justify)$/],
@@ -44,6 +47,10 @@ function limpiar(html: string): string {
         "border-collapse": [/^(collapse|separate)$/],
         padding: [css],
         width: [/^\d+(\.\d+)?(px|pt|%)$/],
+        height: [/^(auto|\d+(\.\d+)?(px|pt|%))$/],
+        "max-width": [/^\d+(\.\d+)?(px|pt|%)$/],
+        display: [/^(block|inline|inline-block)$/],
+        margin: [css],
       },
     },
   });
@@ -90,7 +97,7 @@ export async function crearDesdeModelo(fd: FormData) {
       anio: Number(fecha.slice(0, 4)),
       fecha,
       asunto: rellenar(asunto, vars),
-      cuerpo: limpiar(rellenar(cuerpo, vars)),
+      cuerpo: (esLibre(cuerpo) ? MARCA_LIBRE : "") + limpiar(rellenar(sinMarca(cuerpo), vars)),
       firmante: alcalde.toUpperCase() || null,
       firmante_cargo: alcalde ? "Alcalde" : null,
       modelo_origen: modelo,
@@ -109,20 +116,16 @@ export async function guardarBorrador(fd: FormData) {
   const supabase = await supabaseServidor();
   const fecha = texto(fd, "fecha");
   if (!fecha || !/^\d{4}-\d{2}-\d{2}$/.test(fecha)) volver(destino, "error", "Elija la fecha del documento.");
-  const asunto = texto(fd, "asunto");
-  if (!asunto) volver(destino, "error", "Escriba el asunto.");
+  const html = String(fd.get("cuerpo") ?? "");
+  if (html.length > 3_000_000) volver(destino, "error", "El documento es demasiado pesado (imágenes muy grandes). Use imágenes más pequeñas.");
+  const asunto = texto(fd, "asunto") || "SIN ASUNTO";
   const { error } = await supabase
     .from("sec_documentos")
     .update({
       fecha,
       destinatario: texto(fd, "destinatario"),
-      destinatario_cargo: texto(fd, "destinatario_cargo"),
       asunto,
-      referencia: texto(fd, "referencia"),
-      cuerpo: limpiar(String(fd.get("cuerpo") ?? "")),
-      firmante: texto(fd, "firmante")?.toUpperCase() ?? null,
-      firmante_cargo: texto(fd, "firmante_cargo"),
-      con_copia: texto(fd, "con_copia"),
+      cuerpo: MARCA_LIBRE + limpiar(html),
     })
     .eq("id", id)
     .eq("mcp_id", ctx.mcp.id)

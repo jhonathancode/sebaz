@@ -1,4 +1,4 @@
-import { MESES } from "@/lib/formato";
+import { logoMcp, MESES } from "@/lib/formato";
 
 /** Cómo se arma cada tipo de documento al imprimirse. */
 export type Diseno = "carta" | "memo" | "acuerdo";
@@ -41,6 +41,46 @@ export const fechaDocumento = (iso: string) => {
 };
 
 /** Cambia {{MUNICIPALIDAD}}, {{ALCALDE}}, {{LUGAR}}, {{FECHA}} y {{AÑO}} por sus valores. */
+/** Documento «hoja libre»: toda la hoja (membrete, número, fecha, destinatario, asunto, texto y firma) es un solo texto editable. */
+export const MARCA_LIBRE = "<!--libre-->";
+export const esLibre = (h: string | null | undefined) => !!h && h.startsWith(MARCA_LIBRE);
+export const sinMarca = (h: string) => h.replace(MARCA_LIBRE, "");
+const esc = (v: string | null | undefined) => (v ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+export const textoFecha = (iso: string, mcpNombre: string) => `${lugarMcp(mcpNombre)}, ${fechaDocumento(iso)}`;
+
+export function membreteHtml(mcp: { nombre: string; ruc?: string | null; distrito?: string | null; provincia?: string | null; logo_path?: string | null }): string {
+  const logo = logoMcp(mcp);
+  const sub = [mcp.distrito && `Distrito de ${mcp.distrito}`, mcp.provincia && `Provincia de ${mcp.provincia}`].filter(Boolean).join(" · ");
+  return `<div class="sec-membrete">${logo ? `<img class="sec-logo" src="${esc(logo)}" alt="">` : ""}<div><div class="sec-mcp">${esc(mcp.nombre)}</div>${sub ? `<div class="sec-sub">${esc(sub)}</div>` : ""}${mcp.ruc ? `<div class="sec-sub">RUC ${esc(mcp.ruc)}</div>` : ""}</div></div>`;
+}
+
+/** Arma la hoja completa en HTML a partir de los datos del documento (y del cuerpo, si venía de un modelo). */
+export function hojaLibreHtml(
+  d: { tipo: string; numero: number | null; anio: number; fecha: string; destinatario: string | null; destinatario_cargo: string | null; asunto: string | null; referencia: string | null; cuerpo: string; firmante: string | null; firmante_cargo: string | null; con_copia: string | null },
+  mcp: { nombre: string; ruc?: string | null; distrito?: string | null; provincia?: string | null; logo_path?: string | null },
+): string {
+  const t = tipoSec(d.tipo);
+  const fila = (k: string, v: string, campo?: string) => `<tr><td>${k}</td><td${campo ? ` data-campo="${campo}"` : ""}>${v}</td></tr>`;
+  const num = `<h1 class="sec-titulo"><span data-num="1">${esc(codigoSec(d.tipo, d.numero, d.anio, mcp.nombre))}</span></h1>`;
+  const fecha = `<span data-campo="fecha">${esc(textoFecha(d.fecha, mcp.nombre))}</span>`;
+  const firma = `<div class="sec-firma2"><b>${esc((d.firmante ?? "").toUpperCase()) || "[NOMBRE]"}</b><div>${esc(d.firmante_cargo) || "[CARGO]"}</div></div>`;
+  const cc = d.con_copia ? `<p class="sec-cc">c.c.: ${esc(d.con_copia)}</p>` : "";
+  const cuerpo = `<div class="sec-cuerpo">${d.cuerpo || "<p><br></p>"}</div>`;
+  let h = membreteHtml(mcp) + num;
+  if (t.diseno === "carta") {
+    h += `<p class="sec-lugar">${fecha}</p><div class="sec-dest"><span>Señor(a):</span><b data-campo="destinatario">${esc((d.destinatario ?? "").toUpperCase()) || "[DESTINATARIO]"}</b>${d.destinatario_cargo ? `<span>${esc(d.destinatario_cargo)}</span>` : ""}<span>Presente.-</span></div>`;
+    h += `<table class="sec-tabla-datos"><tbody>${fila("ASUNTO", esc(d.asunto), "asunto")}${d.referencia ? fila("REFERENCIA", esc(d.referencia)) : ""}</tbody></table>${cuerpo}<p class="sec-despedida">Atentamente,</p>${firma}${cc}`;
+  } else if (t.diseno === "memo") {
+    h += `<table class="sec-tabla-datos"><tbody>${fila("A", `<span data-campo="destinatario">${esc((d.destinatario ?? "").toUpperCase()) || "[DESTINATARIO]"}</span>${d.destinatario_cargo ? ` · ${esc(d.destinatario_cargo)}` : ""}`)}${fila("DE", `${esc((d.firmante ?? "").toUpperCase()) || "[NOMBRE]"}${d.firmante_cargo ? ` · ${esc(d.firmante_cargo)}` : ""}`)}${fila("ASUNTO", esc(d.asunto), "asunto")}${d.referencia ? fila("REFERENCIA", esc(d.referencia)) : ""}${fila("FECHA", fecha)}</tbody></table><hr class="sec-linea">${cuerpo}<p class="sec-despedida">Atentamente,</p>${firma}${cc}`;
+  } else {
+    h += `<p class="sec-sumilla" data-campo="asunto">${esc(d.asunto)}</p>${cuerpo}<p class="sec-lugar sec-lugar-pie">${fecha}</p>${firma}${cc}`;
+  }
+  return h;
+}
+
+/** Pone el número correlativo en el título cuando el documento ya fue emitido. */
+export const aplicarNumero = (html: string, codigo: string) => html.replace(/(<span[^>]*data-num="1"[^>]*>)[\s\S]*?(<\/span>)/, `$1${esc(codigo)}$2`);
+
 export function rellenar(texto: string, v: { municipalidad: string; alcalde: string; lugar: string; fecha: string }): string {
   return texto
     .replace(/\{\{MUNICIPALIDAD\}\}/g, v.municipalidad)

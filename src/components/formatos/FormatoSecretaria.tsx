@@ -1,6 +1,6 @@
 import type { Mcp } from "@/lib/contexto";
 import { logoMcp } from "@/lib/formato";
-import { codigoSec, fechaDocumento, lugarMcp, tipoSec } from "@/lib/secretaria";
+import { aplicarNumero, codigoSec, esLibre, fechaDocumento, lugarMcp, sinMarca, tipoSec } from "@/lib/secretaria";
 
 export type DatosSec = {
   tipo: string;
@@ -22,6 +22,9 @@ export type DatosSec = {
 export type EditorCuerpo = { ref: React.Ref<HTMLDivElement>; onInput: (html: string) => void; onPaste: (e: React.ClipboardEvent<HTMLDivElement>) => void };
 
 export default function FormatoSecretaria({ d, mcp, editor }: { d: DatosSec; mcp: Mcp; editor?: EditorCuerpo }) {
+  if (!editor && esLibre(d.cuerpo)) {
+    return <div className="hoja sec-hoja sec-libre" dangerouslySetInnerHTML={{ __html: aplicarNumero(sinMarca(d.cuerpo), codigoSec(d.tipo, d.numero, d.anio, mcp.nombre)) }} />;
+  }
   const logo = logoMcp(mcp);
   const t = tipoSec(d.tipo);
   const lugar = lugarMcp(mcp.nombre);

@@ -2,8 +2,8 @@
 
 import { useEffect, useRef, useState } from "react";
 import InputFecha from "@/components/InputFecha";
-import FormatoSecretaria, { type DatosSec } from "@/components/formatos/FormatoSecretaria";
-import { tipoSec } from "@/lib/secretaria";
+import { type DatosSec } from "@/components/formatos/FormatoSecretaria";
+import { esLibre, hojaLibreHtml, membreteHtml, sinMarca, textoFecha } from "@/lib/secretaria";
 import type { Mcp } from "@/lib/contexto";
 
 const FUENTES = ["Arial", "Times New Roman", "Calibri", "Cambria", "Georgia", "Verdana", "Tahoma", "Courier New"];
@@ -16,7 +16,6 @@ export default function EditorSecretaria({
   inicial,
   mcp,
   id,
-  numeroBorrador,
 }: {
   accion: (fd: FormData) => Promise<void>;
   inicial: DatosSec;
@@ -24,17 +23,22 @@ export default function EditorSecretaria({
   id: string;
   numeroBorrador?: string;
 }) {
-  const [d, setD] = useState<DatosSec>(inicial);
+  const [meta, setMeta] = useState({ cuerpo: "", asunto: inicial.asunto ?? "", destinatario: inicial.destinatario ?? "" });
+  const [fecha, setFecha] = useState(inicial.fecha);
   const area = useRef<HTMLDivElement>(null);
   const rango = useRef<Range | null>(null);
-  const t = tipoSec(d.tipo);
-  const memo = t.diseno === "memo";
-  const acuerdo = t.diseno === "acuerdo";
-  const campo = (k: keyof DatosSec) => (e: React.ChangeEvent<HTMLInputElement>) => setD((x) => ({ ...x, [k]: e.target.value }));
+  const imagen = useRef<HTMLImageElement | null>(null);
+  const archivoImg = useRef<HTMLInputElement>(null);
 
-  // El texto se carga una sola vez; después lo maneja el navegador (así React no borra el formato)
+  // La hoja completa se carga una sola vez; después la maneja el navegador (así React no borra el formato)
   useEffect(() => {
-    if (area.current) area.current.innerHTML = inicial.cuerpo;
+    const el = area.current;
+    if (!el) return;
+    el.innerHTML = esLibre(inicial.cuerpo) ? sinMarca(inicial.cuerpo) : hojaLibreHtml(inicial, mcp);
+    el.querySelectorAll('[data-num="1"]').forEach((n) => n.setAttribute("contenteditable", "false"));
+    const f = el.querySelector('[data-campo="fecha"]');
+    if (f) f.textContent = textoFecha(inicial.fecha, mcp.nombre);
+    sincronizar();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -49,7 +53,56 @@ export default function EditorSecretaria({
   }, []);
 
   function sincronizar() {
-    setD((x) => ({ ...x, cuerpo: area.current?.innerHTML ?? x.cuerpo }));
+    const el = area.current;
+    if (!el) return;
+    const txt = (sel: string) => el.querySelector(sel)?.textContent?.replace(/\s+/g, " ").trim() ?? "";
+    setMeta({ cuerpo: el.innerHTML, asunto: txt('[data-campo="asunto"]').replace(/^:\s*/, ""), destinatario: txt('[data-campo="destinatario"]') });
+  }
+  function cambiarFecha(v: string) {
+    if (!v) return;
+    setFecha(v);
+    const f = area.current?.querySelector('[data-campo="fecha"]');
+    if (f) f.textContent = textoFecha(v, mcp.nombre);
+    sincronizar();
+  }
+  function insertarMembrete() {
+    area.current?.insertAdjacentHTML("afterbegin", membreteHtml(mcp));
+    sincronizar();
+  }
+  function elegirImagen(e: React.ChangeEvent<HTMLInputElement>) {
+    const f = e.target.files?.[0];
+    e.target.value = "";
+    if (!f || !f.type.startsWith("image/")) return;
+    const lector = new FileReader();
+    lector.onload = () => {
+      const im = new Image();
+      im.onload = () => {
+        const k = Math.min(1, 800 / im.width);
+        const c = document.createElement("canvas");
+        c.width = Math.round(im.width * k);
+        c.height = Math.round(im.height * k);
+        c.getContext("2d")?.drawImage(im, 0, 0, c.width, c.height);
+        const png = f.type === "image/png";
+        orden("insertImage", c.toDataURL(png ? "image/png" : "image/jpeg", 0.85));
+      };
+      im.src = String(lector.result);
+    };
+    lector.readAsDataURL(f);
+  }
+  function tamanoImagen(factor: number) {
+    const im = imagen.current;
+    if (!im) return;
+    im.style.width = `${Math.max(24, Math.round(im.getBoundingClientRect().width * factor))}px`;
+    im.style.height = "auto";
+    sincronizar();
+  }
+  function marcarImagen(e: React.MouseEvent<HTMLDivElement>) {
+    imagen.current?.removeAttribute("data-sel");
+    const t = e.target as HTMLElement;
+    if (t.tagName === "IMG") {
+      imagen.current = t as HTMLImageElement;
+      t.setAttribute("data-sel", "1");
+    } else imagen.current = null;
   }
   function enfocar() {
     area.current?.focus();
@@ -114,29 +167,15 @@ export default function EditorSecretaria({
   );
 
   return (
-    <form action={accion} className="sec-editor">
+    <form action={accion} className="sec-editor1">
       <input type="hidden" name="id" value={id} />
-      <input type="hidden" name="cuerpo" value={d.cuerpo} />
-      <div className="sec-form">
-        <div className="sec-fila">
-          <label className="campo">Fecha<InputFecha name="fecha" defaultValue={d.fecha} required onChange={(v) => setD((x) => ({ ...x, fecha: v || x.fecha }))} /></label>
-          {numeroBorrador && <span className="sec-num">{numeroBorrador}</span>}
-        </div>
-        {!acuerdo && (
-          <>
-            <label className="campo">{memo ? "Para (A)" : "Destinatario"}<input name="destinatario" value={d.destinatario ?? ""} onChange={campo("destinatario")} placeholder="Nombre de la persona o institución" /></label>
-            <label className="campo">Cargo del destinatario<input name="destinatario_cargo" value={d.destinatario_cargo ?? ""} onChange={campo("destinatario_cargo")} placeholder="Ej.: Alcalde Distrital de Perené" /></label>
-          </>
-        )}
-        <label className="campo">{acuerdo ? "Título o sumilla" : "Asunto"}<input name="asunto" value={d.asunto ?? ""} onChange={campo("asunto")} required /></label>
-        {!acuerdo && <label className="campo">Referencia (opcional)<input name="referencia" value={d.referencia ?? ""} onChange={campo("referencia")} placeholder="Ej.: Oficio N° 004-2026" /></label>}
-        <label className="campo">{memo ? "De (firmante)" : "Firma de"}<input name="firmante" value={d.firmante ?? ""} onChange={campo("firmante")} /></label>
-        <label className="campo">Cargo de quien firma<input name="firmante_cargo" value={d.firmante_cargo ?? ""} onChange={campo("firmante_cargo")} /></label>
-        <label className="campo">Con copia a (opcional)<input name="con_copia" value={d.con_copia ?? ""} onChange={campo("con_copia")} placeholder="Ej.: Tesorería, Archivo" /></label>
-        <p className="pequeno tenue" style={{ margin: 0 }}>El texto se escribe directo sobre la hoja, con la barra de formato de arriba. Lo que está entre [CORCHETES] es lo que debe completar.</p>
-        <div className="sec-botones">
-          <button type="submit" className="btn primario">Guardar borrador</button>
-        </div>
+      <input type="hidden" name="cuerpo" value={meta.cuerpo} />
+      <input type="hidden" name="asunto" value={meta.asunto} />
+      <input type="hidden" name="destinatario" value={meta.destinatario} />
+      <div className="sec-barra-sup">
+        <label className="campo">Fecha del documento<InputFecha name="fecha" defaultValue={fecha} required onChange={cambiarFecha} /></label>
+        <p className="pequeno tenue">Escriba y cambie todo directamente sobre la hoja: membrete, destinatario, asunto, texto y firma. El número se asigna al emitir. Lo que está entre [CORCHETES] es lo que debe completar.</p>
+        <button type="submit" className="btn primario">Guardar borrador</button>
       </div>
 
       <div className="sec-vista">
@@ -187,21 +226,33 @@ export default function EditorSecretaria({
           </div>
           <div className="sw-grupo">
             <button type="button" title="Insertar tabla" aria-label="Insertar tabla" onMouseDown={(e) => e.preventDefault()} onClick={tabla}>▦ Tabla</button>
+            {b("Línea horizontal", "—", "insertHorizontalRule")}
             {b("Quitar formato", "Tx", "removeFormat")}
+          </div>
+          <div className="sw-grupo">
+            <button type="button" title="Insertar imagen o logo" onMouseDown={(e) => e.preventDefault()} onClick={() => archivoImg.current?.click()}>🖼 Imagen</button>
+            <button type="button" title="Achicar la imagen marcada" onMouseDown={(e) => e.preventDefault()} onClick={() => tamanoImagen(0.85)}>Img −</button>
+            <button type="button" title="Agrandar la imagen marcada" onMouseDown={(e) => e.preventDefault()} onClick={() => tamanoImagen(1.15)}>Img +</button>
+            <button type="button" title="Volver a poner el membrete arriba" onMouseDown={(e) => e.preventDefault()} onClick={insertarMembrete}>Membrete</button>
+            <input ref={archivoImg} type="file" accept="image/*" hidden onChange={elegirImagen} />
           </div>
         </div>
         <div className="mesa">
-          <FormatoSecretaria
-            d={d}
-            mcp={mcp}
-            editor={{
-              ref: area,
-              onInput: (html) => setD((x) => ({ ...x, cuerpo: html })),
-              onPaste: (e) => {
-                // Se pega solo el texto: así no entra el formato raro de Word
-                e.preventDefault();
-                document.execCommand("insertText", false, e.clipboardData.getData("text/plain"));
-              },
+          <div
+            ref={area}
+            className="hoja sec-hoja sec-libre sec-editable"
+            contentEditable
+            suppressContentEditableWarning
+            role="textbox"
+            aria-multiline="true"
+            aria-label="Documento"
+            spellCheck
+            onInput={sincronizar}
+            onClick={marcarImagen}
+            onPaste={(e) => {
+              // Se pega solo el texto: así no entra el formato raro de Word
+              e.preventDefault();
+              document.execCommand("insertText", false, e.clipboardData.getData("text/plain"));
             }}
           />
         </div>

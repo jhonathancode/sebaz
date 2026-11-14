@@ -5197,3 +5197,5 @@ html.pdf-captura .sf-faltan { display: none; }
 .pl-tabla th, .pl-tabla td { border: 1px solid #000; padding: 8px 10px; text-align: center; font-size: 12px; }
 .pl-tabla th { font-weight: 800; }
 .pl-tabla td { height: 38px; }
+.av-docs-fila { justify-content: center; margin-top: 14px; padding: 0; border: 0; background: transparent; flex-wrap: wrap; row-gap: 8px; align-items: center; }
+.av-docs-fila .doc-par { display: inline-flex; align-items: center; }

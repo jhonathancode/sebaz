@@ -1,130 +1,60 @@
-import Motivo from "@/components/Motivo";
+import Link from "next/link";
 import VentanaFlotante from "@/components/VentanaFlotante";
 import CampoArchivoEstado from "@/components/formularios/CampoArchivoEstado";
-import { fecha } from "@/lib/formato";
-import { nombreAdjunto, RECOMENDADOS, TIPOS_ADJUNTO } from "@/lib/adjuntosExpediente";
-import { anularAdjunto, subirAdjunto } from "@/app/(app)/expedientes/adjuntos";
+import { TIPOS_ADJUNTO } from "@/lib/adjuntosExpediente";
+import type { AnexoVista } from "@/lib/adjuntosVista";
+import { subirAdjunto } from "@/app/(app)/expedientes/adjuntos";
 
-export type Adjunto = { id: string; tipo: string; descripcion: string | null; archivo_nombre: string | null; archivo_tipo: string | null; anulado: boolean; anulado_motivo: string | null; creado_en: string; url?: string | null };
-
-const MOTIVOS = ["Se subió el documento equivocado", "La foto no se lee bien", "Se subió dos veces (duplicado)", "Corresponde a otro expediente"];
-
-/** Documentos que acompañan al expediente: lista guía (✔/○), archivos subidos y botón para adjuntar. */
+/** Fila compacta de documentos que acompañan al expediente (centrada) y botón para adjuntar. */
 export default function AdjuntosExpediente({
   id,
-  tipoGasto,
-  requeridos,
-  compartidos,
-  adjuntos,
-  sistema,
+  planilla,
+  anexos,
+  verClave,
   puede,
 }: {
   id: string;
-  tipoGasto: string;
-  /** Pago fijo: los documentos que se pidieron al crearlo. Otro gasto: null (se usa la lista guía). */
-  requeridos: string[] | null;
-  /** Documentos que vienen de otro lado: permanentes del pago fijo o subidos en otro mes del mismo gasto. */
-  compartidos: { tipo: string; nombre: string; url: string; origen: "permanente" | "heredado" }[];
-  adjuntos: Adjunto[];
-  sistema: { planilla: boolean; requerimiento: boolean; orden: boolean; conformidad: boolean; comprobante: boolean };
+  planilla: boolean;
+  anexos: AnexoVista[];
+  verClave: string;
   puede: boolean;
 }) {
-  const vigentes = adjuntos.filter((a) => !a.anulado);
-  const anulados = adjuntos.filter((a) => a.anulado);
-  const guia = requeridos ?? RECOMENDADOS[tipoGasto] ?? [];
-  const delSistema: { texto: string; ok: boolean }[] = [
-    { texto: "Requerimiento", ok: sistema.requerimiento },
-    { texto: tipoGasto === "compra" ? "Orden de compra" : "Orden de servicio", ok: sistema.orden },
-    { texto: "Conformidad", ok: sistema.conformidad },
-    ...(sistema.planilla ? [{ texto: "Planilla de remuneración", ok: true }] : []),
-    { texto: "Comprobante de pago", ok: sistema.comprobante },
+  const pendiente = anexos.find((a) => a.origen === "pendiente")?.tipo;
+  const items = [
+    ...(planilla ? [{ clave: "planilla", nombre: "Planilla de remuneración", hecho: true }] : []),
+    ...anexos.map((a) => ({ clave: a.clave, nombre: a.nombre, hecho: a.origen !== "pendiente" })),
   ];
-  const tienePerm = (g: string) => compartidos.some((x) => x.tipo === g);
-  const faltan = guia.filter((g) => !vigentes.some((a) => a.tipo === g) && !tienePerm(g)).length;
-
+  if (items.length === 0 && !puede) return null;
   return (
-    <section id="documentos" className="panel adj-panel no-imprimir">
-      <div className="panel-cab" style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
-        <span>Documentos del expediente</span>
-        <span className={`adj-resumen${faltan ? "" : " completo"}`}>{faltan ? `Faltan ${faltan} por adjuntar` : guia.length ? "Completo" : `${vigentes.length} adjunto(s)`}</span>
-        {puede && (
-          <span style={{ marginLeft: "auto" }}>
-            <VentanaFlotante boton="+ Adjuntar documento" titulo="Adjuntar documento al expediente" accion={subirAdjunto} textoGuardar="Adjuntar" claseBoton="btn primario">
-              <input type="hidden" name="id" value={id} />
-              <label className="campo">
-                ¿Qué documento es?
-                <select name="tipo" required defaultValue={guia.find((g) => !vigentes.some((a) => a.tipo === g)) ?? "otro"}>
-                  {TIPOS_ADJUNTO.map((t) => (
-                    <option key={t.clave} value={t.clave}>{t.texto}</option>
-                  ))}
-                </select>
-              </label>
-              <label className="campo">
-                Detalle (opcional)
-                <input name="descripcion" placeholder="EJ.: CONTRATO DE ENERO A DICIEMBRE 2026" style={{ textTransform: "uppercase" }} />
-              </label>
-              <CampoArchivoEstado etiqueta="Foto o PDF (puede elegir varios)" multiple ayuda="Foto del celular o PDF escaneado; máximo 4 MB cada uno." />
-            </VentanaFlotante>
-          </span>
-        )}
-      </div>
-      <div className="panel-cuerpo">
-        <div className="adj-lista">
-          {delSistema.map((d) => (
-            <div key={d.texto} className={`adj-fila ${d.ok ? "ok" : "falta"}`}>
-              <span className="adj-marca" aria-hidden="true">{d.ok ? "✔" : "○"}</span>
-              <span className="adj-nombre">{d.texto}</span>
-              <span className="adj-det tenue">{d.ok ? "Generado en el sistema" : "Aún no generado"}</span>
-            </div>
-          ))}
-          {guia.map((g) => {
-            const subidos = vigentes.filter((a) => a.tipo === g);
-            const perm = compartidos.find((x) => x.tipo === g);
-            const cumple = subidos.length > 0 || !!perm;
-            return (
-              <div key={g} className={`adj-fila ${cumple ? "ok" : "falta"}`}>
-                <span className="adj-marca" aria-hidden="true">{cumple ? "✔" : "○"}</span>
-                <span className="adj-nombre">{nombreAdjunto(g)}</span>
-                <span className="adj-det">
-                  {perm && (
-                    <span className="adj-arch">
-                      {perm.url ? <a href={perm.url} target="_blank" rel="noreferrer">{perm.nombre}</a> : <span>{perm.nombre}</span>}
-                      <span className="tenue">· {perm.origen === "permanente" ? "permanente, vale todos los meses" : "tomado de otro mes de este gasto"}</span>
-                    </span>
-                  )}
-                  {!cumple && <span className="tenue">Falta adjuntar</span>}
-                  {subidos.map((a) => (
-                    <span key={a.id} className="adj-arch">
-                      {a.url ? <a href={a.url} target="_blank" rel="noreferrer">{a.descripcion ?? a.archivo_nombre ?? "Ver"}</a> : <span>{a.descripcion ?? a.archivo_nombre}</span>}
-                      {puede && <Motivo chico accion={anularAdjunto} boton="Anular" titulo="Anular adjunto" ayuda="Motivo (mínimo 10 letras)" campos={{ id, adjunto_id: a.id }} motivos={MOTIVOS} />}
-                    </span>
-                  ))}
-                </span>
-              </div>
-            );
-          })}
-          {vigentes.filter((a) => !guia.includes(a.tipo as never)).map((a) => (
-            <div key={a.id} className="adj-fila ok">
-              <span className="adj-marca" aria-hidden="true">✔</span>
-              <span className="adj-nombre">{nombreAdjunto(a.tipo)}</span>
-              <span className="adj-det">
-                <span className="adj-arch">
-                  {a.url ? <a href={a.url} target="_blank" rel="noreferrer">{a.descripcion ?? a.archivo_nombre ?? "Ver"}</a> : <span>{a.descripcion ?? a.archivo_nombre}</span>}
-                  {puede && <Motivo chico accion={anularAdjunto} boton="Anular" titulo="Anular adjunto" ayuda="Motivo (mínimo 10 letras)" campos={{ id, adjunto_id: a.id }} motivos={MOTIVOS} />}
-                </span>
-              </span>
-            </div>
-          ))}
-        </div>
-        {anulados.length > 0 && (
-          <details className="pequeno" style={{ marginTop: 8 }}>
-            <summary className="tenue" style={{ cursor: "pointer" }}>{anulados.length} adjunto(s) anulado(s)</summary>
-            {anulados.map((a) => (
-              <div key={a.id} className="tenue">{nombreAdjunto(a.tipo)} · {a.descripcion ?? a.archivo_nombre} · {fecha(a.creado_en.slice(0, 10))} · Anulado: {a.anulado_motivo}</div>
-            ))}
-          </details>
-        )}
-      </div>
-    </section>
+    <div className="doc-nav av-docs-fila no-imprimir" role="tablist" aria-label="Documentos que acompañan al expediente">
+      {items.map((x, i) => (
+        <span key={x.clave} className="doc-par">
+          {i > 0 && <i className={`doc-sep${x.hecho ? " ok" : ""}`} aria-hidden="true" />}
+          <Link role="tab" aria-selected={x.clave === verClave} scroll={false} className={`doc-tab${x.hecho ? "" : " pendiente"}${x.clave === verClave ? " activo" : ""}`} href={`/expedientes/${id}?ver=${x.clave}`}>
+            <span className="ic" aria-hidden="true">{x.hecho ? "✓" : ""}</span>{x.nombre}
+          </Link>
+        </span>
+      ))}
+      {puede && (
+        <span className="doc-par">
+          <VentanaFlotante boton="+ Adjuntar" titulo="Adjuntar documento al expediente" accion={subirAdjunto} textoGuardar="Adjuntar" claseBoton="btn chico contorno">
+            <input type="hidden" name="id" value={id} />
+            <label className="campo">
+              ¿Qué documento es?
+              <select name="tipo" required defaultValue={pendiente ?? "otro"}>
+                {TIPOS_ADJUNTO.map((t) => (
+                  <option key={t.clave} value={t.clave}>{t.texto}</option>
+                ))}
+              </select>
+            </label>
+            <label className="campo">
+              Detalle (opcional)
+              <input name="descripcion" placeholder="EJ.: CONTRATO DE ENERO A DICIEMBRE 2026" style={{ textTransform: "uppercase" }} />
+            </label>
+            <CampoArchivoEstado etiqueta="Foto o PDF (puede elegir varios)" multiple ayuda="Foto del celular o PDF escaneado; máximo 4 MB cada uno." />
+          </VentanaFlotante>
+        </span>
+      )}
+    </div>
   );
 }

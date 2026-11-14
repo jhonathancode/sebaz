@@ -1,7 +1,11 @@
+import Motivo from "@/components/Motivo";
 import type { AnexoVista } from "@/lib/adjuntosVista";
+import { anularAdjunto } from "@/app/(app)/expedientes/adjuntos";
+
+const MOTIVOS = ["Se subió el documento equivocado", "La foto no se lee bien", "Se subió dos veces (duplicado)", "Corresponde a otro expediente"];
 
 /** Un archivo adjunto a página completa: la foto se ve y se imprime; el PDF se ve aquí y en papel sale una hoja de anexo. */
-export default function VisorAnexo({ anexo, expedienteId }: { anexo: AnexoVista; expedienteId?: string }) {
+export default function VisorAnexo({ anexo, expedienteId, puede = false }: { anexo: AnexoVista; expedienteId?: string; puede?: boolean }) {
   if (anexo.origen === "pendiente") {
     return (
       <div className="anexo-hoja">
@@ -17,6 +21,9 @@ export default function VisorAnexo({ anexo, expedienteId }: { anexo: AnexoVista;
       <div className="anexo-cab no-imprimir pequeno tenue">
         {anexo.nombre}{anexo.origen === "permanente" ? " · permanente (vale todos los meses)" : anexo.origen === "heredado" ? " · tomado de otro mes de este mismo gasto" : ""} ·{" "}
         <a href={anexo.url} target="_blank" rel="noreferrer">Abrir en otra pestaña</a>
+        {puede && expedienteId && anexo.origen === "propio" && anexo.clave.startsWith("adj-") && (
+          <> · <Motivo chico accion={anularAdjunto} boton="Anular" titulo="Anular adjunto" ayuda="Motivo (mínimo 10 letras)" campos={{ id: expedienteId, adjunto_id: anexo.clave.slice(4) }} motivos={MOTIVOS} /></>
+        )}
       </div>
       {pdf ? (
         <>

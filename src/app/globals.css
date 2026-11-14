@@ -5040,3 +5040,12 @@ html.pdf-captura .sf-faltan { display: none; }
   .barra-guiada .sigue-accion .btn.grande { min-height: 44px; width: 100%; }
   .barra-guiada .acciones-fila { flex-direction: column; }
 }
+
+/* Expedientes en celular: cabecera ordenada (selector de mes en su fila, botones debajo) */
+@media (max-width: 760px) {
+  .cab-vista .selector-mes { flex: 1 1 100%; justify-content: space-between; padding: 4px 4px 4px 12px; }
+  .cab-vista .selector-mes input { flex: 1 1 auto; min-width: 140px; min-height: 36px; }
+  .cab-vista .selector-mes .btn { min-height: 36px; padding: 0 16px; }
+  .cab-vista > .btn, .cab-vista > a.btn { flex: 1 1 calc(50% - 6px); min-height: 40px; display: inline-flex; align-items: center; justify-content: center; }
+  .cab-vista > button.btn.primario, .cab-vista > form { flex: 1 1 100%; }
+}

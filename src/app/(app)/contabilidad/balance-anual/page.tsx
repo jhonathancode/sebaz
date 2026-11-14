@@ -2,7 +2,8 @@ import Link from "next/link";
 import Avisos from "@/components/Avisos";
 import BotonConfirmar from "@/components/BotonConfirmar";
 import BotonPdf from "@/components/BotonPdf";
-import { hojasBalance } from "@/lib/balanceAnual";
+import { hojasBalance, type FormatoEF, type LineaEF } from "@/lib/balanceAnual";
+import BotonImprimir from "@/components/BotonImprimir";
 import { contextoMcp, tiene } from "@/lib/contexto";
 import { HOJAS } from "@/lib/planCuentas";
 import { hoyISO, soles } from "@/lib/formato";
@@ -17,7 +18,7 @@ export default async function BalanceAnual({ searchParams }: { searchParams: Pro
   const supabase = await supabaseServidor();
   const anio = /^\d{4}$/.test(sp.anio ?? "") ? Number(sp.anio) : Number(hoyISO().slice(0, 4));
   const hojas = await hojasBalance(ctx, supabase, anio);
-  const verApertura = sp.hoja === "apertura";
+  const verApertura = !sp.hoja || sp.hoja === "apertura";
   const h = hojas.find((x) => x.clave === sp.hoja) ?? hojas[4];
   const puede = tiene(ctx, "admin", "tesorero", "contador", "alcalde");
   const { data: apertura } = verApertura ? await supabase.from("saldos_apertura").select("cuenta, debe, haber").eq("mcp_id", ctx.mcp.id).eq("anio", anio).order("cuenta") : { data: [] as { cuenta: string; debe: number; haber: number }[] };
@@ -39,14 +40,15 @@ export default async function BalanceAnual({ searchParams }: { searchParams: Pro
           <Link className="cc-flecha" href={enlace(h.clave, anio + 1)} aria-label={`Año ${anio + 1}`}>›</Link>
         </div>
         <a className="btn contorno" href={`/exportar/balance-anual?anio=${anio}`}>Descargar Excel (todas las hojas)</a>
-        <BotonPdf nombre={`${h.pestana} ${anio}`} selector=".bal-hoja" texto="Descargar PDF" className="btn primario" horizontal />
+        {!verApertura && <BotonPdf nombre={`${h.pestana} ${anio}`} selector=".bal-hoja" texto="Descargar PDF" className="btn primario" horizontal={h.clave !== "ef2"} />}
+        {!verApertura && <BotonImprimir texto="Imprimir" />}
       </div>
 
       <nav className="cfg-tabs no-imprimir" role="tablist" aria-label="Hojas del balance">
-        {hojas.map((x) => (
-          <Link key={x.clave} role="tab" aria-selected={x.clave === h.clave} className={`cfg-tab${x.clave === h.clave ? " activa" : ""}`} href={enlace(x.clave)}>{x.pestana}</Link>
-        ))}
         <Link role="tab" aria-selected={verApertura} className={`cfg-tab${verApertura ? " activa" : ""}`} href={enlace("apertura")}>APERTURA</Link>
+        {hojas.map((x) => (
+          <Link key={x.clave} role="tab" aria-selected={!verApertura && x.clave === h.clave} className={`cfg-tab${!verApertura && x.clave === h.clave ? " activa" : ""}`} href={enlace(x.clave)}>{x.pestana}</Link>
+        ))}
       </nav>
       <Avisos ok={sp.ok} error={sp.error} />
 
@@ -93,6 +95,11 @@ export default async function BalanceAnual({ searchParams }: { searchParams: Pro
       ) : (
       <>
 
+      {h.ef ? (
+        <div className="rep-marco">
+          <FormatoEFVista ef={h.ef} nombre={ctx.mcp.nombre} anio={anio} />
+        </div>
+      ) : (
       <div className="rep-marco">
         <div className="hoja bal-hoja bal-ancha">
           <header className="rep-cab">
@@ -125,8 +132,83 @@ export default async function BalanceAnual({ searchParams }: { searchParams: Pro
           <footer className="rep-pie">Emitido el {fechaPe(hoyISO())}</footer>
         </div>
       </div>
+      )}
       </>
       )}
     </>
+  );
+}
+
+const num = (n: number | undefined, neg: boolean) => {
+  const v = n ?? 0;
+  const t = soles(Math.abs(v));
+  return v < 0 ? (neg ? `(S/. ${t})` : `-${t}`) : t;
+};
+
+function FilaEF({ l, ef }: { l: LineaEF; ef: FormatoEF }) {
+  if (l.tipo === "esp") return <div className="ef-fila esp" />;
+  if (l.tipo === "titulo") return <div className="ef-fila ef-tit"><span>{l.texto}</span></div>;
+  if (l.tipo === "orden") return <div className="ef-fila ef-orden"><span>{l.texto}</span><i className="ef-caja ef-amarillo" /><i className="ef-caja ef-amarillo" /></div>;
+  const negativos = ef.codigo === "EF-2";
+  return (
+    <div className={`ef-fila ef-${l.tipo}`}>
+      <span>{l.texto}</span>
+      <i className={`ef-caja${l.tipo === "total" || l.tipo === "gran" ? " ef-amarillo" : ""}`}>{l.texto === "" && !l.a ? "0.00" : num(l.a, negativos && l.tipo !== "gran")}</i>
+      <i className={`ef-caja${l.tipo === "total" || l.tipo === "gran" ? " ef-amarillo" : ""}`}>{num(l.b, negativos && l.tipo !== "gran")}</i>
+    </div>
+  );
+}
+
+function Lado({ lineas, ef, anioPrimero }: { lineas: LineaEF[]; ef: FormatoEF; anioPrimero: number }) {
+  const cuerpo = lineas.slice(0, -2);
+  const pie = lineas.slice(-2);
+  const cab = (
+    <div className="ef-fila ef-anios"><span /><i className="ef-caja ef-amarillo">{ef.anios[0]}</i><i className="ef-caja ef-amarillo">{ef.anios[1]}</i></div>
+  );
+  return (
+    <div className="ef-lado">
+      {cuerpo.map((l, i) => (
+        <div key={i} style={{ display: "contents" }}>
+          <FilaEF l={l} ef={ef} />
+          {i === anioPrimero && cab}
+        </div>
+      ))}
+      <div className="ef-pie-lado">
+        {pie.map((l, i) => <FilaEF key={i} l={l} ef={ef} />)}
+      </div>
+    </div>
+  );
+}
+
+function FormatoEFVista({ ef, nombre, anio }: { ef: FormatoEF; nombre: string; anio: number }) {
+  const mayus = nombre.toUpperCase();
+  const dos = ef.der ? ef.codigo === "EF-1" : false;
+  return (
+    <div className={`hoja bal-hoja ef-hoja ${dos ? "ef-1" : "ef-2"}`}>
+      <div className="ef-cab">
+        <div className="ef-ent">{mayus.replace(/(CENTRO POBLADO)\s+/, "$1\n")}</div>
+        <div className="ef-cod">{ef.codigo}</div>
+      </div>
+      <div className="ef-titulo">
+        <b>{ef.titulo}</b>
+        <span>{ef.codigo === "EF-1" ? `01 de Enero al 31 de Diciembre del ${anio}` : `Del 01 de Enero al 31 de Diciembre de ${anio}`}</span>
+        <span>(EN SOLES, A VALORES HISTÓRICOS)</span>
+      </div>
+      <div className="ef-entidad">Entidad: {mayus}</div>
+      {dos ? (
+        <div className="ef-dos">
+          <Lado lineas={ef.izq} ef={ef} anioPrimero={1} />
+          <Lado lineas={ef.der!} ef={ef} anioPrimero={1} />
+        </div>
+      ) : (
+        <div className="ef-uno">
+          <div className="ef-fila ef-anios"><span /><i className="ef-caja ef-amarillo">{ef.anios[0]}</i><i className="ef-caja ef-amarillo">{ef.anios[1]}</i></div>
+          {ef.izq.map((l, i) => <FilaEF key={i} l={l} ef={ef} />)}
+        </div>
+      )}
+      <div className="ef-firmas">
+        {ef.firmas.map((f) => <div key={f}><span /><small>{f}</small></div>)}
+      </div>
+    </div>
   );
 }

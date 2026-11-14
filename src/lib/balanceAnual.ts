@@ -17,7 +17,12 @@ export type HojaBal = {
   grupos?: { titulo: string; desde: number; hasta: number }[];
   filas: FilaBal[];
   nota?: string;
+  /** Formato oficial de los estados financieros (EF-1 y EF-2), para verlos e imprimirlos como el modelo. */
+  ef?: FormatoEF;
 };
+
+export type LineaEF = { tipo: "titulo" | "sub" | "fila" | "total" | "gran" | "esp" | "orden"; texto: string; a?: number; b?: number };
+export type FormatoEF = { codigo: string; titulo: string; anios: [number, number]; izq: LineaEF[]; der?: LineaEF[]; firmas: string[] };
 
 const r2 = (n: number) => Math.round(n * 100) / 100;
 const fechaPe = (f: string) => f.split("-").reverse().join("/");
@@ -236,6 +241,68 @@ export async function hojasBalance(ctx: Ctx, supabase: SupabaseClient, anio: num
       dos("TOTAL OTROS INGRESOS Y GASTOS", (x) => x.ingresos4("4505") - x.gastos5("5503"), "total"),
       dos("RESULTADO DEL EJERCICIO · SUPERÁVIT (DÉFICIT)", (x) => x.resultado, "destacado"),
     ],
+  };
+
+  const L = (texto: string, f: (x: ReturnType<typeof bal>) => number, tipo: LineaEF["tipo"] = "fila"): LineaEF => ({ tipo, texto, a: r2(f(A)), b: r2(f(B)) });
+  const cero = (texto: string): LineaEF => L(texto, () => 0);
+  const tit = (texto: string, tipo: LineaEF["tipo"] = "titulo"): LineaEF => ({ tipo, texto });
+  const pasivoCte = (x: ReturnType<typeof bal>) => x.pas("2103");
+  ef1.ef = {
+    codigo: "EF-1",
+    titulo: "ESTADO DE SITUACIÓN FINANCIERA",
+    anios: [anio - 1, anio],
+    izq: [
+      tit("ACTIVO"), tit("ACTIVO CORRIENTE"),
+      L("Efectivo y Equivalente de Efectivo", (x) => x.act("1101")), cero("Inversiones Disponibles"),
+      L("Cuentas por Cobrar (Neto)", (x) => x.act("1201") + x.act("1202")), cero("Otras Cuentas por Cobrar (Neto)"),
+      L("Existencias (Neto)", (x) => x.act("1301")), L("Gastos Pagados por Anticipado", (x) => x.act("1205")),
+      L("TOTAL ACTIVO CORRIENTE", totAC, "total"), { tipo: "esp", texto: "" },
+      tit("ACTIVO NO CORRIENTE"),
+      cero("Cuentas por Cobrar a Largo Plazo"), cero("Otras Ctas. por Cobrar a Largo Plazo"), cero("Inversiones (Neto)"),
+      L("Edificios y Estructuras y Act. no Prod. (Neto)", (x) => x.act("1501") + x.act("1502")),
+      L("Vehículos, Maquinarias y Otros (Neto)", (x) => x.act("1503") + x.act("1508")),
+      L("Otras Cuentas del Activo", (x) => x.act("1505") + x.act("1507")), cero("Otras Cuentas del Activo (Neto)"),
+      L("TOTAL ACTIVO NO CORRIENTE", totANC, "total"),
+      L("TOTAL ACTIVO", (x) => totAC(x) + totANC(x), "gran"),
+      { tipo: "orden", texto: "Cuentas de Orden" },
+    ],
+    der: [
+      tit("PASIVO Y PATRIMONIO"), tit("PASIVO CORRIENTE"),
+      cero("Obligaciones Tesoro Público"), cero("Sobregiros Bancarios"), L("Cuentas Por Pagar", pasivoCte),
+      cero("Operaciones de Crédito"), cero("Parte Cte. Deudas a Largo Plazo"), cero("Otras Cuentas del Pasivo"),
+      L("TOTAL PASIVO CORRIENTE", pasivoCte, "total"), { tipo: "esp", texto: "" },
+      tit("PASIVO NO CORRIENTE"),
+      cero("Deudas a Largo Plazo"), cero("Beneficios Sociales y Oblig. Prev."), cero("Ingresos Diferidos"), cero("Otras Cuentas del Pasivo"), cero("Provisiones"),
+      L("TOTAL PASIVO NO CORRIENTE", () => 0, "total"),
+      L("TOTAL PASIVO", pasivoCte, "total"),
+      tit("PATRIMONIO"),
+      cero("Hacienda Nacional"), L("Hacienda Nacional Adicional", (x) => x.pas("3201")), cero("Reservas"), L("Resultados Acumulados", (x) => x.acum + x.resultado),
+      L("TOTAL PATRIMONIO", totPat, "total"),
+      L("TOTAL PASIVO Y PATRIMONIO", (x) => pasivoCte(x) + totPat(x), "gran"),
+      { tipo: "orden", texto: "Cuentas de Orden" },
+    ],
+    firmas: ["CONTADOR", "DIRECTOR GENERAL DE ADMINISTRACIÓN", "TITULAR DE LA ENTIDAD"],
+  };
+  ef2.ef = {
+    codigo: "EF-2",
+    titulo: "ESTADO DE GESTIÓN",
+    anios: [anio - 1, anio],
+    izq: [
+      tit("INGRESOS"),
+      L("Ingresos Tributarios Netos", (x) => x.ingresos4("4102") + x.ingresos4("4105") + x.ingresos4("4106")), L("Ingresos No Tributarios", ingNoTrib),
+      cero("Traspasos y Remesas Recibidas"), L("Donaciones y Transferencias Recibidas", (x) => x.ingresos4("4401")),
+      { tipo: "esp", texto: "" }, L("TOTAL INGRESOS", totIng, "total"), { tipo: "esp", texto: "" },
+      tit("COSTOS Y GASTOS"),
+      cero("Costo de Ventas"), L("Gastos en Bienes y Servicios", (x) => -(x.gastos5("5301") + x.gastos5("5302"))), L("Gastos de Personal", (x) => -x.gastos5("5101")),
+      cero("Gastos por Pens.Prest.y Asistencia Social"), cero(""), cero("Traspasos y Remesas Otorgadas"), cero("Estimaciones y Provisiones del Ejercicio"),
+      { tipo: "esp", texto: "" }, L("TOTAL COSTOS Y GASTOS", (x) => -totGas(x), "total"), { tipo: "esp", texto: "" },
+      L("RESULTADO DE OPERACIÓN", (x) => totIng(x) - totGas(x), "total"), { tipo: "esp", texto: "" },
+      tit("OTROS INGRESOS Y GASTOS"),
+      cero("Ingresos Financieros"), cero("Gastos Financieros"), L("Otros Ingresos", (x) => x.ingresos4("4505")), L("Otros Gastos", (x) => -x.gastos5("5503")),
+      { tipo: "esp", texto: "" }, L("TOTAL OTROS INGRESOS Y GASTOS", (x) => x.ingresos4("4505") - x.gastos5("5503"), "total"), { tipo: "esp", texto: "" },
+      L("RESULTADO DEL EJERCICIO SUPERAVIT (DEFICIT)", (x) => x.resultado, "gran"),
+    ],
+    firmas: ["CONTADOR GENERAL", "TITULAR DE LA ENTIDAD"],
   };
 
   return [bancos, ingresos, comprobantes, cajaChica, constructivo, bc4, ef1, ef2];

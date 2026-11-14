@@ -73,7 +73,7 @@ export default async function Configuracion({ searchParams }: { searchParams: Pa
         <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
           {TIPOS_ADJUNTO.filter((t) => t.clave !== "otro").map((t) => {
             const ex = p ? archivosPF.get(`${p.id}|${t.clave}`) : undefined;
-            return <CasillaDocumento key={t.clave} clave={t.clave} texto={t.texto} marcado={!!p?.documentos.includes(t.clave)} existente={ex ? { nombre: ex.nombre, url: ex.url } : null} />;
+            return <CasillaDocumento key={t.clave} clave={t.clave} texto={t.clave === "planilla" ? "Planilla de remuneración del mes (la arma el sistema)" : t.texto} automatico={t.clave === "planilla"} marcado={!!p?.documentos.includes(t.clave)} existente={ex ? { nombre: ex.nombre, url: ex.url } : null} />;
           })}
         </div>
       </fieldset>

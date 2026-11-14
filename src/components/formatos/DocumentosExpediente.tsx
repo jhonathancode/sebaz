@@ -5,7 +5,7 @@ import { FormatoNea } from "@/components/formatos/FormatosAlmacen";
 import type { Mcp } from "@/lib/contexto";
 import type { cargarExpediente, Proveedor } from "@/lib/documentos";
 import LogoSebaz from "@/components/LogoSebaz";
-import { enLetras, fechaConAnio, logoMcp, nombreDelAnio, num3, soles } from "@/lib/formato";
+import { enLetras, fechaConAnio, logoMcp, MESES, nombreDelAnio, num3, soles } from "@/lib/formato";
 import { conceptoSinSeRequiere } from "@/lib/requerimiento";
 
 export type DatosExpediente = Awaited<ReturnType<typeof cargarExpediente>>;
@@ -36,6 +36,7 @@ export default function DocumentosExpediente({
       {mostrar("orden") && d.orden && <Orden d={d} mcp={mcp} tesorero={tesorero} cargo={cargo} />}
       {mostrar("conformidad") && d.conformidad && <Memorando d={d} mcp={mcp} tesorero={tesorero} cargo={cargo} alcalde={alcalde} />}
       {mostrar("nea") && d.nea && <FormatoNea mcp={mcp} n={neaDe(d)} />}
+      {mostrar("planilla") && d.planilla && <PlanillaMensual d={d} mcp={mcp} />}
       {mostrar("comprobante") && d.cp && (
         <FormatoComprobante c={{ ...d.cp, hecho_por: (d.cp.perfiles as { nombre: string } | null)?.nombre }} mcp={mcp} extra={extraDe(d.cp, d.e, d.orden)} anulado={d.anulado ?? (d.cp.estado === "anulado" ? { motivo: d.cp.anulado_motivo, en: d.cp.anulado_en } : null)} />
       )}
@@ -459,6 +460,36 @@ export function Memorando({ d, mcp, tesorero, cargo, alcalde }: { d: Datos; mcp:
         <span className="rq-sello"><LogoSebaz tamano={22} claro={false} /></span>
         <div className="mc-dir">{mcp.direccion ?? ""}</div>
       </div>
+    </div>
+  );
+}
+
+
+/** Planilla de remuneración del mes (dietas, personal): se arma sola con los datos del pago fijo. */
+export function PlanillaMensual({ d, mcp }: { d: Datos; mcp: Mcp }) {
+  const p = d.planilla!;
+  const logo = logoMcp(mcp);
+  const [anio, mes] = p.mes.split("-");
+  const lema = nombreDelAnio(Number(anio));
+  return (
+    <div className="hoja pl">
+      {d.anulado && <MarcaAnulado {...d.anulado} />}
+      <div className="pl-cab">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        {logo ? <img src={logo} alt="" /> : <span />}
+        <div className="pl-lema">{lema ? `“${lema.toUpperCase()}”` : ""}</div>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        {logo ? <img src={logo} alt="" /> : <span />}
+      </div>
+      <h1 className="pl-titulo"><u>PLANILLA DE REMUNERACIÓN MES DE {(MESES[Number(mes) - 1] ?? "").toUpperCase()} {anio}</u></h1>
+      <table className="pl-tabla">
+        <thead>
+          <tr><th>N°</th><th>NOMBRES Y APELLIDOS</th><th>CARGO</th><th>DNI</th><th>MONTO</th><th>FIRMA</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>01</td><td>{p.nombre}</td><td>{p.cargo}</td><td>{p.dni}</td><td>S/ {soles(p.monto)}</td><td /></tr>
+        </tbody>
+      </table>
     </div>
   );
 }

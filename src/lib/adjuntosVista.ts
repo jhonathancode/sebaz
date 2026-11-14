@@ -23,7 +23,8 @@ export async function cargarAnexos(supabase: Cliente, mcpId: string, expedienteI
     supabase.from("expediente_adjuntos").select("id, tipo, archivo_path, archivo_tipo, creado_en").eq("expediente_id", expedienteId).eq("anulado", false).order("creado_en"),
     pagoFijoId ? supabase.from("pagos_fijos").select("documentos").eq("id", pagoFijoId).maybeSingle() : Promise.resolve({ data: null }),
   ]);
-  const requeridos = ((pf as { documentos?: string[] } | null)?.documentos ?? []) as string[];
+  // La planilla la arma el sistema cada mes: no se sube
+  const requeridos = (((pf as { documentos?: string[] } | null)?.documentos ?? []) as string[]).filter((t) => t !== "planilla");
   type Crudo = { clave: string; tipo: string; path: string | null; mime: string | null; origen: OrigenAnexo };
   const crudos: Crudo[] = (propios ?? []).map((a) => ({ clave: `adj-${a.id}`, tipo: a.tipo, path: a.archivo_path, mime: a.archivo_tipo, origen: "propio" as const }));
 

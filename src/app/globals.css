@@ -4811,3 +4811,9 @@ html.pdf-captura .sf-faltan { display: none; }
 .sec-seccion { margin-bottom: 18px; }
 .sec-sub-grupo { font-size: 14px; margin: 14px 0 8px; display: flex; gap: 8px; align-items: center; }
 .sec-sub-grupo span { font-size: 12px; font-weight: 600; background: var(--panel-2); border: 1px solid var(--borde); border-radius: 999px; padding: 0 8px; color: var(--tenue); }
+.sec-archivo-caja { position: relative; }
+.sec-archivo-caja .sec-archivo { height: 100%; }
+.sec-archivo-op { position: absolute; right: 8px; bottom: 6px; display: flex; gap: 6px; padding: 4px; border: 1px solid var(--borde); border-radius: 10px; background: var(--panel); box-shadow: 0 4px 14px -6px rgba(0,0,0,.35); opacity: 0; pointer-events: none; }
+.sec-archivo-caja:hover .sec-archivo-op, .sec-archivo-op:focus-within { opacity: 1; pointer-events: auto; }
+@media (hover: none) { .sec-archivo-op { opacity: 1; pointer-events: auto; position: static; margin-top: 6px; box-shadow: none; justify-content: flex-end; } }
+.sec-numeracion { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: space-between; padding: 8px 12px; margin: 0 0 6px; border: 1px solid var(--borde); border-radius: 12px; background: var(--panel); font-size: 13.5px; }

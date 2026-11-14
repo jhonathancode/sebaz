@@ -154,6 +154,21 @@ export async function guardarYEmitir(fd: FormData) {
   redirect(`${ruta(id)}?emitido=1`);
 }
 
+/** Cambia desde qué número sigue la numeración de un tipo de documento (año actual). */
+export async function fijarNumeracion(fd: FormData) {
+  const tipo = texto(fd, "tipo") ?? "";
+  const destino = `/secretaria?tipo=${tipo}`;
+  if (!TIPOS_SEC.some((t) => t.clave === tipo)) volver("/secretaria", "error", "Tipo de documento no válido.");
+  const ctx = await permiso(destino);
+  const siguiente = Number(texto(fd, "siguiente"));
+  if (!Number.isInteger(siguiente)) volver(destino, "error", "Escriba el número con el que debe seguir.");
+  const supabase = await supabaseServidor();
+  const { error } = await supabase.rpc("sec_fijar_numero", { p_mcp: ctx.mcp.id, p_tipo: tipo, p_anio: Number(hoyISO().slice(0, 4)), p_siguiente: siguiente });
+  if (error) volver(destino, "error", falta(mensajeError(error)).replace(/sec_fijar_numero|sec_proximo/, "la numeración (ACTUALIZAR_BASE.sql)"));
+  revalidatePath("/secretaria");
+  volver(destino, "ok", `Listo: el próximo documento llevará el N° ${String(siguiente).padStart(3, "0")}.`);
+}
+
 /** Emite el documento: recibe su número correlativo y ya no se edita. */
 export async function emitirDocumento(fd: FormData) {
   const id = texto(fd, "id") ?? "";

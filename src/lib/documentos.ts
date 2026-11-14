@@ -49,7 +49,7 @@ export async function cargarExpediente(supabase: SupabaseClient, id: string) {
       const total = (items ?? []).reduce((s, i) => s + Number(i.total), 0);
       const concepto = String(pf.concepto ?? "");
       planilla = {
-        cargo: (concepto.match(/^DIETAS?\s+(?:DEL?|DE LA)\s+(.+)$/i)?.[1] ?? concepto).toUpperCase(),
+        cargo: cargoDePago(concepto),
         nombre: String(pf.beneficiario ?? "").toUpperCase(),
         dni: (pf.beneficiario_doc as string | null) ?? "",
         monto: total > 0 ? total : Number(pf.monto),
@@ -125,4 +125,10 @@ function listaBase(d: Awaited<ReturnType<typeof cargarExpediente>>) {
   if (e?.tipo !== "pago_fijo") return lista;
   // Pago fijo simple (dietas): solo requerimiento y comprobante. Con expediente completo: sin cuadro comparativo.
   return e.flujo_completo ? lista.filter((x) => x.clave !== "cotizaciones") : lista.filter((x) => x.clave === "requerimiento" || x.clave === "comprobante");
+}
+
+
+/** Cargo que sale en la planilla según el concepto del pago fijo: «DIETA DE ALCALDE» → «ALCALDE». */
+export function cargoDePago(concepto: string): string {
+  return (concepto.match(/^DIETAS?\s+(?:DEL?|DE LA)\s+(.+)$/i)?.[1] ?? concepto).toUpperCase();
 }

@@ -4971,3 +4971,11 @@ html.pdf-captura .sf-faltan { display: none; }
   .titulo-ventana h1 { font-size: 17px; }
   .titulo-ventana .btn { flex: 1 1 auto; text-align: center; }
 }
+
+/* Celular: nada debe ensanchar la página (la fila de meses y las cifras se deslizan dentro de su caja) */
+@media (max-width: 760px) {
+  .cc-selector .cc-fila { flex-wrap: wrap; }
+  .cc-selector, .cc-selector .cc-fila, .ing-franja, .cc-excel-marco, .principal { min-width: 0; max-width: 100%; box-sizing: border-box; }
+  .cc-selector .cc-meses { flex: 0 0 100%; max-width: 100%; min-width: 0; }
+  .ing-franja { width: 100%; }
+}

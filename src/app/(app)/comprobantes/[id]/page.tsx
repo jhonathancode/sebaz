@@ -10,6 +10,7 @@ import FormatoComprobante from "@/components/formatos/FormatoComprobante";
 import Estado from "@/components/Estado";
 import { MarcaAnuladaPagina } from "@/components/MarcaAnulado";
 import Motivo from "@/components/Motivo";
+import { reglasSustento, sustentosPara } from "@/lib/sustentos";
 import CamposEditarComprobante from "@/components/formularios/CamposEditarComprobante";
 import { contextoMcp, tiene } from "@/lib/contexto";
 import { cargarCierres, estadoGestion } from "@/lib/gestion";
@@ -65,7 +66,7 @@ export default async function Comprobante({ params, searchParams }: { params: P;
   ];
   const actual = pasos.findIndex((p) => !p.hecho);
 
-  const camposEditar = <CamposEditarComprobante id={id} c={c} />;
+  const camposEditar = <CamposEditarComprobante id={id} c={c} opciones={sustentosPara(reglasSustento(ctx.mcp.sustentos_gasto, []), "servicio")} />;
 
   return (
     <>

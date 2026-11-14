@@ -46,7 +46,7 @@ export default function SelectorPagoFijo({ pagos, periodo }: { pagos: PagoFijoCa
   function elegir(p: PagoFijoCatalogo, mes: string) {
     setAviso(null);
     setElegido({ id: p.id, mes });
-    window.dispatchEvent(new CustomEvent("sebaz:pago-fijo", { detail: { id: p.id, beneficiario: p.beneficiario, beneficiario_doc: p.beneficiario_doc, completo: p.expediente_completo, planilla: p.documentos.includes("planilla"), concepto: p.concepto } }));
+    window.dispatchEvent(new CustomEvent("sebaz:pago-fijo", { detail: { id: p.id, beneficiario: p.beneficiario, beneficiario_doc: p.beneficiario_doc, completo: p.expediente_completo, planilla: p.documentos.includes("planilla"), concepto: p.concepto, sustentos: p.sustentos } }));
     const form = caja.current?.closest("form");
     if (!form) return;
     const [a, m] = mes.split("-").map(Number);

@@ -9,6 +9,7 @@ import CamposProveedor, { type ProveedorConocido } from "@/components/formulario
 import { detalleFuente, nombreFuente, ORDEN_FUENTES } from "@/components/formularios/CamposRequerimiento";
 import { Memorando, Orden, PlanillaMensual, Requerimiento, type DatosExpediente } from "@/components/formatos/DocumentosExpediente";
 import { cargoDePago } from "@/lib/documentos";
+import { reglasSustento, sustentosPara } from "@/lib/sustentos";
 import FormatoComprobante from "@/components/formatos/FormatoComprobante";
 import { FormatoNea } from "@/components/formatos/FormatosAlmacen";
 import { SUSTENTOS } from "@/lib/catalogos";
@@ -25,7 +26,7 @@ export type Proximos = {
   nea: number | null;
   comprobante: number | null;
 };
-type PagoFijoInfo = { id: string; beneficiario: string | null; beneficiario_doc: string | null; completo: boolean; planilla?: boolean; concepto?: string } | null;
+type PagoFijoInfo = { id: string; beneficiario: string | null; beneficiario_doc: string | null; completo: boolean; planilla?: boolean; concepto?: string; sustentos?: string[] } | null;
 type Paso = "form" | "req" | "plan" | "prov" | "orden" | "conf" | "alm" | "comp";
 
 const TITULO: Record<Paso, string> = {
@@ -187,6 +188,10 @@ export default function AsistenteRequerimiento({
     </div>
   );
   const ordenTipo = L.tipo === "compra" ? "compra" : "servicio";
+  // Documento que entrega quien cobra: solo los que la MCP permite para este tipo de gasto (o para este pago fijo)
+  const opcionesSust = sustentosPara(reglasSustento(mcp.sustentos_gasto, pf ? [{ id: pf.id, sustentos: pf.sustentos }] : []), L.tipo, pf?.id);
+  const sustElegido = opcionesSust.some((o) => o.codigo === L.g("sustento_tipo")) ? L.g("sustento_tipo") : opcionesSust[0]?.codigo ?? "";
+  const numeroSustento = sustElegido === "PL" ? `PL-${L.g("mes_pagado") || L.fecha.slice(0, 7)}` : L.g("sustento_numero") || null;
   const pasos: Paso[] =
     L.tipo === "pago_fijo"
       ? !pf
@@ -442,7 +447,7 @@ export default function AsistenteRequerimiento({
                     fecha: fd("alm"),
                     origen: "compra",
                     proveedor: proveedor.razon_social || null,
-                    documento_ref: L.g("sustento_numero") || null,
+                    documento_ref: numeroSustento,
                     observacion: null,
                     orden: numOrden ? `O/C ${num3(numOrden)}-${L.anio}` : null,
                     expediente: proximos.expediente ? `Exp. ${num3(proximos.expediente)}-${L.anio}` : null,
@@ -471,13 +476,21 @@ export default function AsistenteRequerimiento({
                 <div className="rejilla-2">
                   <label className="campo">
                     Documento que entregó
-                    <select name="sustento_tipo" defaultValue={L.tipo === "pago_fijo" ? "REC" : "FAC"}>
-                      {SUSTENTOS.filter((s) => s.codigo !== "DJ" && s.codigo !== "PM").map((s) => (
+                    <select key={`${L.tipo}-${pf?.id ?? ""}`} name="sustento_tipo" defaultValue={opcionesSust[0]?.codigo}>
+                      {opcionesSust.map((s) => (
                         <option key={s.codigo} value={s.codigo}>{s.nombre}</option>
                       ))}
                     </select>
                   </label>
-                  <label className="campo">N° del documento<input name="sustento_numero" placeholder="Ej.: F001-45" /></label>
+                  {sustElegido === "PL" ? (
+                    <label className="campo">
+                      N° del documento
+                      <input value="Planilla simple: no lleva número" readOnly disabled aria-label="La planilla simple no lleva número" />
+                      <input type="hidden" name="sustento_numero" value={numeroSustento ?? ""} />
+                    </label>
+                  ) : (
+                    <label className="campo">N° del documento<input name="sustento_numero" placeholder="Ej.: F001-45" /></label>
+                  )}
                   <label className="campo">
                     N° de cheque (siguiente de la chequera)
                     <input name="cheque_previsto" inputMode="numeric" pattern="\d{4,12}" defaultValue={chequeSugerido} placeholder="Si ya lo giró; si no, después" />
@@ -507,8 +520,8 @@ export default function AsistenteRequerimiento({
                   extra={{
                     expediente: proximos.expediente ? `${num3(proximos.expediente)}-${L.anio}` : null,
                     orden: numOrden ? `${ordenTipo === "compra" ? "O/C" : "O/S"} N° ${num3(numOrden)}-${L.anio}` : null,
-                    sustentoTipo: L.g("sustento_tipo") || null,
-                    sustentoNumero: L.g("sustento_numero") || null,
+                    sustentoTipo: sustElegido || null,
+                    sustentoNumero: numeroSustento,
                     meta: L.may("meta") || null,
                     fuenteId: L.g("fuente_id") || L.g("fuente_final") || null,
                     tipoGasto: L.tipo,

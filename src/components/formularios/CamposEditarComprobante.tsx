@@ -15,7 +15,9 @@ export type ComprobanteEditable = {
 };
 
 /** Campos para corregir un comprobante en borrador (los usa la ventana «No, corregir»). */
-export default function CamposEditarComprobante({ id, c }: { id: string; c: ComprobanteEditable }) {
+export default function CamposEditarComprobante({ id, c, opciones }: { id: string; c: ComprobanteEditable; opciones?: { codigo: string; nombre: string }[] }) {
+  // Solo los documentos que la MCP permite para este gasto (más el que ya tiene, si es otro)
+  const lista = opciones ? [...opciones, ...SUSTENTOS.filter((x) => x.codigo === c.sustento_tipo && !opciones.some((o) => o.codigo === x.codigo))] : SUSTENTOS;
   return (
     <>
       <input type="hidden" name="id" value={id} />
@@ -25,7 +27,7 @@ export default function CamposEditarComprobante({ id, c }: { id: string; c: Comp
           Documento que entregó el proveedor
           <select name="sustento_tipo" defaultValue={c.sustento_tipo ?? ""}>
             <option value="">—</option>
-            {SUSTENTOS.map((x) => (
+            {lista.map((x) => (
               <option key={x.codigo} value={x.codigo}>{x.nombre}</option>
             ))}
           </select>

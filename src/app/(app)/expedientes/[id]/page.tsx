@@ -8,6 +8,7 @@ import AutoDocumento from "@/components/AutoDocumento";
 import Avisos from "@/components/Avisos";
 import VisorAnexo from "@/components/VisorAnexo";
 import { cargarAnexos } from "@/lib/adjuntosVista";
+import { reglasSustento, sustentosPara } from "@/lib/sustentos";
 import AdjuntosExpediente from "@/components/AdjuntosExpediente";
 import Estado from "@/components/Estado";
 import Motivo from "@/components/Motivo";
@@ -130,6 +131,15 @@ export default async function Expediente({ params, searchParams }: { params: Par
     .eq("expediente_id", id)
     .order("creado_en", { ascending: false });
 
+  // Documento que puede entregar quien cobra, según el tipo de gasto (o el pago fijo)
+  const pfSust = (e as { pago_fijo_id?: string | null }).pago_fijo_id
+    ? await supabase.from("pagos_fijos").select("sustentos").eq("id", (e as { pago_fijo_id: string }).pago_fijo_id).maybeSingle()
+    : { data: null };
+  const opcionesSust = sustentosPara(
+    reglasSustento(ctx.mcp.sustentos_gasto, (e as { pago_fijo_id?: string | null }).pago_fijo_id ? [{ id: (e as { pago_fijo_id: string }).pago_fijo_id, sustentos: ((pfSust.data as { sustentos?: string[] } | null)?.sustentos ?? []) }] : []),
+    e.tipo,
+    (e as { pago_fijo_id?: string | null }).pago_fijo_id,
+  );
   // Documentos que acompañan al expediente (subidos, permanentes del pago fijo o de otro mes)
   const anexos = await cargarAnexos(supabase, ctx.mcp.id, id, (e as { pago_fijo_id?: string | null }).pago_fijo_id ?? null);
 
@@ -398,7 +408,7 @@ export default async function Expediente({ params, searchParams }: { params: Par
           )}
           {puedeRegistrar && (
             <VentanaFlotante boton={puedeAprobar ? "No, corregir" : "Corregir"} titulo="Corregir el comprobante de pago" accion={editarComprobante} textoGuardar="Guardar cambios" claseBoton={puedeAprobar ? "btn peligro grande" : "btn contorno grande"} ancha>
-              <CamposEditarComprobante id={cp.id} c={cp} />
+              <CamposEditarComprobante id={cp.id} c={cp} opciones={opcionesSust} />
             </VentanaFlotante>
           )}
         </div>

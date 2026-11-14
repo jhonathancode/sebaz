@@ -19,6 +19,7 @@ export default function BotonConfirmar({
   peligro = false,
   pin = false,
   pinOpcionalSi,
+  formAction,
 }: {
   children: React.ReactNode;
   pregunta: string;
@@ -31,6 +32,8 @@ export default function BotonConfirmar({
   pin?: boolean;
   /** Selector: si el formulario lo cumple, el PIN se ofrece al final como opcional (para aprobar de una vez). */
   pinOpcionalSi?: string;
+  /** Si se da, al confirmar el formulario se envía a esta acción en vez de la propia del formulario. */
+  formAction?: (fd: FormData) => void | Promise<void>;
 }) {
   const nombre = usePrimerNombre();
   const pinActivo = useExigirPin();
@@ -38,6 +41,7 @@ export default function BotonConfirmar({
   const boton = useRef<HTMLButtonElement>(null);
   const dialogo = useRef<HTMLDialogElement>(null);
   const campoPin = useRef<HTMLInputElement>(null);
+  const enviar = useRef<HTMLButtonElement>(null);
   const [opcional, setOpcional] = useState(false);
   const pedirPin = (pin && pinActivo) || opcional;
   const [apertura, setApertura] = useState(0);
@@ -61,7 +65,8 @@ export default function BotonConfirmar({
       return;
     }
     dialogo.current?.close();
-    boton.current?.form?.requestSubmit();
+    if (formAction && enviar.current) boton.current?.form?.requestSubmit(enviar.current);
+    else boton.current?.form?.requestSubmit();
   }
 
   return (
@@ -69,6 +74,7 @@ export default function BotonConfirmar({
       <button ref={boton} type="button" className={className} onClick={abrir} disabled={disabled || pending} aria-busy={pending}>
         {pending ? "Procesando…" : children}
       </button>
+      {formAction && <button ref={enviar} type="submit" formAction={formAction} hidden tabIndex={-1} aria-hidden="true" />}
       <dialog ref={dialogo} className={`dialogo${pedirPin ? " dialogo-seguro" : ""}`} aria-label={pregunta}>
         {pedirPin ? (
           <div className="seguro-cab">

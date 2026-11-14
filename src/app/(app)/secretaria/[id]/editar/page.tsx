@@ -5,7 +5,7 @@ import EditorSecretaria from "@/components/secretaria/EditorSecretaria";
 import { contextoMcp, tiene } from "@/lib/contexto";
 import { tipoSec } from "@/lib/secretaria";
 import { supabaseServidor } from "@/lib/supabase/server";
-import { guardarBorrador } from "../../acciones";
+import { guardarBorrador, guardarYEmitir } from "../../acciones";
 
 export default async function EditarDocumento({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: ParamsAviso }) {
   const { id } = await params;
@@ -27,6 +27,7 @@ export default async function EditarDocumento({ params, searchParams }: { params
       <Avisos ok={sp.ok} error={sp.error} />
       <EditorSecretaria
         accion={guardarBorrador}
+        emitir={guardarYEmitir}
         id={id}
         mcp={ctx.mcp}
         inicial={{

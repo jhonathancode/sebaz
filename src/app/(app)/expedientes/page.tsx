@@ -403,11 +403,6 @@ export default async function Expedientes({ searchParams }: { searchParams: Para
                             </Link>
                           </>
                         )}
-                        {p === "comprobante" && dd.hayCp && (
-                          <span className={`doc-cheque${dd.cheque ? "" : " sin"}`} title={dd.cheque ? "Cheque con el que se pagó" : "Aún sin número de cheque"}>
-                            {dd.cheque ? `Cheque ${dd.cheque}` : "Sin cheque"}
-                          </span>
-                        )}
                       </span>
                     );
                   })}
@@ -432,6 +427,14 @@ export default async function Expedientes({ searchParams }: { searchParams: Para
                       </span>
                     ));
                   })()}
+                  {dd.hayCp && (
+                    <span className="doc-par">
+                      <i className="doc-sep ok" aria-hidden="true" />
+                      <span className={`doc-cheque${dd.cheque ? "" : " sin"}`} title={dd.cheque ? "Cheque con el que se pagó" : "Aún sin número de cheque"}>
+                        {dd.cheque ? `Cheque ${dd.cheque}` : "Sin cheque"}
+                      </span>
+                    </span>
+                  )}
                 </div>
                 {(() => {
                   const caja = cajaDe.get(e.id);

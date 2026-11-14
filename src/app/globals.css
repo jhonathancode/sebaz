@@ -5101,39 +5101,39 @@ html.pdf-captura .sf-faltan { display: none; }
 .bal-ancha .rep-tabla td { font-size: 11.5px; }
 .bal-hoja .bal-cuenta td { font-weight: 700; background: #f4f7fc; }
 
-/* ---------- Estados financieros EF-1 y EF-2 (formato oficial) ---------- */
-.hoja.ef-hoja { background: #fff; color: #000; font-family: Arial, Helvetica, sans-serif; font-size: 11px; padding: 28px 34px 22px; max-width: 1040px; margin: 0 auto; page: ef1; }
+/* ---------- Estados financieros EF-1 y EF-2 (mismo formato oficial, con el estilo del sistema) ---------- */
+.hoja.ef-hoja { background: #fff; color: #1b2430; font-family: inherit; font-size: 11.5px; padding: 28px 34px 22px; max-width: 1040px; margin: 0 auto; page: ef1; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
 .ef-hoja.ef-2 { max-width: 700px; page: ef2; }
 .ef-cab { display: flex; justify-content: space-between; align-items: flex-start; }
-.ef-ent { white-space: pre-line; text-align: center; font-weight: 700; font-size: 13px; line-height: 1.15; flex: 0 1 320px; }
-.ef-cod { font-weight: 800; font-size: 15px; }
-.ef-titulo { text-align: center; margin: 12px 0 8px; display: flex; flex-direction: column; gap: 1px; }
-.ef-titulo b { font-size: 15px; letter-spacing: .06em; }
-.ef-titulo span { font-size: 11px; }
-.ef-entidad { font-weight: 700; font-size: 10px; margin: 10px 0 12px; }
+.ef-ent { white-space: pre-line; text-align: center; font-weight: 700; font-size: 13px; line-height: 1.2; flex: 0 1 320px; color: #1f5bc7; }
+.ef-cod { font-weight: 800; font-size: 14px; color: #fff; background: #2b6fe6; border-radius: 8px; padding: 3px 12px; }
+.ef-titulo { text-align: center; margin: 12px 0 8px; display: flex; flex-direction: column; gap: 2px; padding-bottom: 8px; border-bottom: 2px solid #2b6fe6; }
+.ef-titulo b { font-size: 15px; letter-spacing: .06em; color: #1f5bc7; }
+.ef-titulo span { font-size: 11px; color: #4a5565; }
+.ef-entidad { font-weight: 700; font-size: 10.5px; margin: 10px 0 12px; color: #4a5565; }
 .ef-dos { display: grid; grid-template-columns: 1fr 1fr; gap: 0 34px; align-items: stretch; }
 .ef-lado { display: flex; flex-direction: column; }
-.ef-pie-lado { margin-top: auto; padding-top: 8px; display: flex; flex-direction: column; gap: 2px; }
-.ef-fila { display: grid; grid-template-columns: 1fr 88px 88px; align-items: center; gap: 0 2px; min-height: 17px; }
+.ef-pie-lado { margin-top: auto; padding-top: 8px; display: flex; flex-direction: column; gap: 3px; }
+.ef-fila { display: grid; grid-template-columns: 1fr 88px 88px; align-items: center; gap: 0 3px; min-height: 19px; }
 .ef-fila > span { padding-right: 6px; }
 .ef-fila.esp { min-height: 8px; }
-.ef-tit > span { grid-column: 1 / -1; font-weight: 700; margin-top: 4px; }
-.ef-caja { font-style: normal; text-align: right; border: 1px solid #000; padding: 1px 4px; font-variant-numeric: tabular-nums; min-height: 15px; }
-.ef-amarillo { background: #fff2a8; font-weight: 700; }
-.ef-total > span, .ef-gran > span { font-weight: 700; }
-.ef-gran .ef-caja { border-width: 2px; }
-.ef-gran > span { font-size: 12px; }
-.ef-anios .ef-caja { text-align: center; border-width: 2px; }
-.ef-orden > span { font-weight: 700; font-size: 12px; }
+.ef-tit > span { grid-column: 1 / -1; font-weight: 700; margin-top: 4px; color: #1f5bc7; }
+.ef-caja { font-style: normal; text-align: right; border: 1px solid #c7d6ee; border-radius: 6px; padding: 1px 6px; font-variant-numeric: tabular-nums; min-height: 16px; background: #fff; }
+.ef-amarillo { background: #ecf3fe; border-color: #9db9ea; font-weight: 700; color: #1f5bc7; }
+.ef-total > span { font-weight: 700; color: #1f5bc7; }
+.ef-gran > span { font-weight: 800; font-size: 12.5px; color: #1f5bc7; }
+.ef-gran .ef-caja { background: #2b6fe6; border-color: #2b6fe6; color: #fff; font-weight: 800; }
+.ef-anios .ef-caja { text-align: center; background: #2b6fe6; border-color: #2b6fe6; color: #fff; }
+.ef-orden > span { font-weight: 700; font-size: 12px; color: #1f5bc7; }
 .ef-orden .ef-caja { min-height: 18px; }
 .ef-firmas { display: flex; justify-content: space-around; gap: 24px; margin-top: 54px; }
 .ef-firmas div { display: flex; flex-direction: column; align-items: center; gap: 4px; min-width: 150px; text-align: center; }
-.ef-firmas span { display: block; width: 100%; border-top: 1px dotted #000; }
-.ef-firmas small { font-size: 9.5px; }
+.ef-firmas span { display: block; width: 100%; border-top: 1px solid #9db9ea; }
+.ef-firmas small { font-size: 10px; color: #4a5565; font-weight: 600; }
 .ef-2 .ef-fila { grid-template-columns: 1fr 96px 96px; }
 .ef-2 .ef-titulo { margin-bottom: 6px; }
 .ef-2 .ef-entidad { font-size: 12px; }
 .ef-2 .ef-tit > span { margin-top: 2px; letter-spacing: .08em; }
-.ef-2 .ef-total > span, .ef-2 .ef-gran > span { letter-spacing: .08em; }
+.ef-2 .ef-total > span, .ef-2 .ef-gran > span { letter-spacing: .06em; }
 @media (max-width: 900px) { .hoja.ef-hoja { min-width: 860px; } }
 @media print { .hoja.ef-hoja { box-shadow: none; padding: 6mm 4mm; max-width: none; } @page ef1 { size: A4 landscape; margin: 10mm; } @page ef2 { size: A4 portrait; margin: 12mm; } }

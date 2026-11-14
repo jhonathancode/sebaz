@@ -86,8 +86,7 @@ export default async function RegistroCivil({ searchParams }: { searchParams: Pa
                       <Link href={`/registro-civil/${r.id}`} className="rc-persona">
                         <span className="rc-avatar" aria-hidden="true">{(r.apellido_paterno[0] ?? "") + (r.nombres[0] ?? "")}</span>
                         <span className="rc-persona-txt">
-                          <b>{r.apellido_paterno} {r.apellido_materno ?? ""}</b>
-                          <span>{r.nombres}</span>
+                          <b>{[r.apellido_paterno, r.apellido_materno].filter(Boolean).join(" ")}, {r.nombres}</b>
                           {(filiacion || r.lugar) && <small>{filiacion ? `Hijo(a) de ${filiacion}` : r.lugar}</small>}
                         </span>
                       </Link>

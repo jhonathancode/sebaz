@@ -5150,3 +5150,15 @@ html.pdf-captura .sf-faltan { display: none; }
 .marco-app[data-menu="oculto"] .lateral-menu ul li.lm-grupo span { font-size: 0; }
 .lateral-menu ul li.lm-grupo.lm-sep { padding-top: 10px; }
 .lateral-menu ul li.lm-grupo.lm-sep span::after { margin-left: 0; }
+
+/* Documentos adjuntos del expediente */
+.adj-resumen { font-size: 11px; font-weight: 800; letter-spacing: .04em; padding: 3px 10px; border-radius: 99px; background: var(--primario-fondo); color: var(--primario-texto); }
+.adj-resumen.completo { background: color-mix(in srgb, #16a34a 16%, var(--panel)); color: #16a34a; }
+.adj-lista { display: flex; flex-direction: column; gap: 6px; }
+.adj-fila { display: grid; grid-template-columns: 22px minmax(150px, 260px) 1fr; align-items: center; gap: 10px; padding: 8px 12px; border: 1px solid var(--borde); border-radius: 12px; background: var(--panel-2); }
+.adj-fila.ok .adj-marca { color: var(--primario); font-weight: 800; }
+.adj-fila.falta .adj-marca { color: var(--tenue); }
+.adj-nombre { font-weight: 600; }
+.adj-det { display: flex; flex-wrap: wrap; gap: 6px 14px; align-items: center; font-size: 13px; }
+.adj-arch { display: inline-flex; align-items: center; gap: 8px; }
+@media (max-width: 700px) { .adj-fila { grid-template-columns: 22px 1fr; } .adj-det { grid-column: 2; } }

@@ -6,6 +6,7 @@ import EscalaA4 from "@/components/EscalaA4";
 import { notFound } from "next/navigation";
 import AutoDocumento from "@/components/AutoDocumento";
 import Avisos from "@/components/Avisos";
+import AdjuntosExpediente, { type Adjunto } from "@/components/AdjuntosExpediente";
 import Estado from "@/components/Estado";
 import Motivo from "@/components/Motivo";
 import CamposRequerimiento, { nombreFuente } from "@/components/formularios/CamposRequerimiento";
@@ -126,6 +127,17 @@ export default async function Expediente({ params, searchParams }: { params: Par
     .select("id, documento, fecha_anterior, fecha_nueva, motivo, creado_en, creado_por")
     .eq("expediente_id", id)
     .order("creado_en", { ascending: false });
+
+  // Documentos adjuntos (si la base aún no tiene la actualización, simplemente no hay)
+  const { data: adjData } = await supabase
+    .from("expediente_adjuntos")
+    .select("id, tipo, descripcion, archivo_path, archivo_nombre, archivo_tipo, anulado, anulado_motivo, creado_en")
+    .eq("expediente_id", id)
+    .order("creado_en");
+  const firmadasAdj = (adjData ?? []).filter((a) => !a.anulado).length
+    ? await supabase.storage.from("sustentos").createSignedUrls((adjData ?? []).filter((a) => !a.anulado).map((a) => a.archivo_path as string), 1800)
+    : { data: [] as { path: string | null; signedUrl: string }[] };
+  const adjuntos: Adjunto[] = (adjData ?? []).map((a) => ({ ...a, url: firmadasAdj.data?.find((f) => f.path === a.archivo_path)?.signedUrl }));
 
   // Lo que depende del expediente: nombres del historial y el beneficiario del pago fijo, también a la vez
   const pagoFijoId = (e as { pago_fijo_id?: string | null }).pago_fijo_id ?? null;
@@ -538,6 +550,7 @@ export default async function Expediente({ params, searchParams }: { params: Par
   const nombreTabla: Record<string, string> = {
     expedientes: "el expediente",
     expediente_items: "un ítem",
+    expediente_adjuntos: "un documento adjunto",
     cotizaciones: "una cotización",
     ordenes: "la orden",
     conformidades: "la conformidad",
@@ -857,6 +870,14 @@ export default async function Expediente({ params, searchParams }: { params: Par
           </div>
         </section>
       )}
+
+      <AdjuntosExpediente
+        id={id}
+        tipoGasto={e.tipo}
+        adjuntos={adjuntos}
+        puede={puedeRegistrar}
+        sistema={{ requerimiento: true, orden: (ordenes ?? []).some((o) => !(o as { anulado?: boolean }).anulado), conformidad: (conformidades ?? []).some((c) => !(c as { anulado?: boolean }).anulado), comprobante: (cps ?? []).some((c) => c.estado !== "anulado") }}
+      />
 
       <div>
         <section className="panel">

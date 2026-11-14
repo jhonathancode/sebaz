@@ -14,7 +14,7 @@ import { CAMPOS_CODIF, CODIF_FIJA, rubroSugerido, datosCPDe, faltantesCP, TIPO_O
 import { contextoMcp, tiene } from "@/lib/contexto";
 import { fechaHora, nombrePeriodo, periodoActual, monto2, soles, urlLogo } from "@/lib/formato";
 import { supabaseServidor } from "@/lib/supabase/server";
-import { agregarCuentaBancaria, agregarFuente, cerrarMes, desactivarCuentaBancaria, desactivarFuente, fijarNumeracion, guardarCapitulo1, guardarDatosCP, guardarDatosMcp, guardarFuente, reabrirMes, subirLogo, guardarPagoFijo, alternarPagoFijo, guardarExigirPin } from "./acciones";
+import { agregarCuentaBancaria, agregarFuente, cerrarMes, desactivarCuentaBancaria, desactivarFuente, fijarNumeracion, guardarCapitulo1, guardarDatosCP, guardarDatosMcp, guardarFuente, reabrirMes, subirLogo, guardarPagoFijo, alternarPagoFijo, guardarExigirPin, guardarExigirAprobacion } from "./acciones";
 
 export default async function Configuracion({ searchParams }: { searchParams: ParamsAviso }) {
   const sp = await searchParams;
@@ -598,6 +598,20 @@ export default async function Configuracion({ searchParams }: { searchParams: Pa
                 {puedeCambiar && (
                   <div className="cfg-pie">
                     <BotonConfirmar className="btn" pregunta="¿Guardar la configuración de seguridad?" textoConfirmar="Sí, guardar">Guardar</BotonConfirmar>
+                  </div>
+                )}
+              </form>
+              <form action={guardarExigirAprobacion} style={{ display: "flex", flexDirection: "column", gap: 12, marginTop: 18, paddingTop: 18, borderTop: "1px solid var(--borde)" }}>
+                <label className="cheque-marca">
+                  <input type="checkbox" name="exigir_aprobacion" value="1" defaultChecked={ctx.mcp.exigir_aprobacion !== false} disabled={!puedeCambiar} />
+                  <span>
+                    <b>Usar la pestaña «Por aprobar»</b>
+                    <small>Con ella, el alcalde aprueba cada requerimiento y comprobante. Sin ella, la pestaña se oculta y todo se aprueba automáticamente al registrarse. Por ahora está {ctx.mcp.exigir_aprobacion === false ? "desactivada" : "activada"}.</small>
+                  </span>
+                </label>
+                {puedeCambiar && (
+                  <div className="cfg-pie">
+                    <BotonConfirmar className="btn" pregunta="¿Guardar esta opción?" detalle="Los documentos que ya estén por aprobar seguirán esperando al alcalde." textoConfirmar="Sí, guardar">Guardar</BotonConfirmar>
                   </div>
                 )}
               </form>

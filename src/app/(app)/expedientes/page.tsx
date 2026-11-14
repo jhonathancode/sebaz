@@ -258,11 +258,13 @@ export default async function Expedientes({ searchParams }: { searchParams: Para
           <span className="k-val">S/ {soles(totalMes)}</span>
           <span className="k-det">{vigentes.length} expedientes vigentes</span>
         </div>
+        {!(ctx.mcp.exigir_aprobacion === false && porAprobar.length === 0) && (
         <Link className={`kpi${porAprobar.length ? " alerta" : ""}`} href={enlace({ estado: "borrador" })}>
           <span className="k-et">Por aprobar</span>
           <span className="k-val">{porAprobar.length}</span>
           <span className="k-det">S/ {soles(porAprobar.reduce((s, e) => s + e.monto, 0))} esperan al alcalde</span>
         </Link>
+        )}
         <Link className="kpi" href={enlace({ estado: "aprobado" })}>
           <span className="k-et">En proceso</span>
           <span className="k-val">{enProceso.length}</span>

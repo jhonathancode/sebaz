@@ -9,6 +9,7 @@ import { cargarCatalogoPagosFijos, estadoPagosFijos, mesPendiente, pasarAlMes, s
 import { exigirPin, verificarPin } from "@/lib/pin";
 import { comprobanteAutomatico } from "@/lib/comprobanteAuto";
 import { completarTodo } from "@/lib/completarTodo";
+import { aprobacionAutomatica, aprobarComprobanteSiAuto, aprobarExpedientesSiAuto } from "@/lib/aprobacion";
 import { conceptoSeRequiere, conceptoSinSeRequiere, resumenConcepto } from "@/lib/requerimiento";
 import { leerCheque } from "../comprobantes/acciones";
 
@@ -106,7 +107,8 @@ export async function crearExpediente(fd: FormData) {
   }
   revalidatePath("/expedientes");
   // Compra o servicio con «completar todo»: si quien registra puede aprobar, se aprueba y se completa de una vez.
-  if (completar && tiene(ctx, "alcalde", "admin") && ctx.mcp.exigir_pin) {
+  const auto = aprobacionAutomatica(ctx);
+  if (completar && ((tiene(ctx, "alcalde", "admin") && ctx.mcp.exigir_pin) || auto)) {
     const { error: eA } = await supabase.from("expedientes").update({ estado: "aprobado" }).eq("id", data.id);
     if (!eA) {
       const hecho = await completarTodo(supabase, ctx.mcp.id, ctx.mcp.nombre, data.id, await siguienteCheque(supabase, ctx.mcp.id));
@@ -115,7 +117,7 @@ export async function crearExpediente(fd: FormData) {
     }
   }
   // Pago fijo de la lista con cheque: si quien registra puede aprobar, todo queda listo de una vez.
-  if (pagoFijo && tiene(ctx, "alcalde", "admin") && ctx.mcp.exigir_pin) {
+  if (pagoFijo && ((tiene(ctx, "alcalde", "admin") && ctx.mcp.exigir_pin) || auto)) {
     const { error: eA } = await supabase.from("expedientes").update({ estado: "aprobado" }).eq("id", data.id);
     if (!eA) {
       if (await proveedorDelPagoFijo(supabase, ctx.mcp.id, data.id)) {
@@ -128,6 +130,10 @@ export async function crearExpediente(fd: FormData) {
         volver(ruta(data.id), "ok", `Listo: pago fijo aprobado y comprobante de pago generado${usado ? ` con el cheque N° ${usado}` : ""}. Ya puede entrar en la rendición.`);
       }
     }
+  }
+  if (auto) {
+    const { error: eA } = await supabase.from("expedientes").update({ estado: "aprobado" }).eq("id", data.id).eq("estado", "borrador");
+    if (!eA) volver(ruta(data.id), "ok", "Requerimiento registrado y aprobado. Siga con el siguiente documento.");
   }
   volver(
     ruta(data.id),
@@ -677,6 +683,7 @@ export async function generarComprobante(fd: FormData) {
   if (error || !data) volver(destino, "error", mensajeError(error));
   await supabase.from("expedientes").update({ fase: "comprobante" }).eq("id", id);
   revalidatePath("/comprobantes");
+  if (await aprobarComprobanteSiAuto(supabase, ctx, data.id)) volver(`/comprobantes/${data.id}`, "ok", "Comprobante de pago generado y aprobado.");
   volver(`/comprobantes/${data.id}`, "ok", "Comprobante de pago generado en borrador.");
 }
 
@@ -694,6 +701,7 @@ export async function copiarPagosFijos() {
     const [a, m] = periodo.split("-").map(Number);
     const mesTexto = `${MESES[m - 1].toUpperCase()} ${a}`;
     let hechos = 0;
+    const creados: string[] = [];
     for (const p of pendientes) {
       const texto = `${p.concepto} - ${mesTexto}`;
       const { data: nuevo, error } = await supabase
@@ -707,9 +715,14 @@ export async function copiarPagosFijos() {
       });
       if (e2) volver("/", "error", `Se registró «${p.concepto}» sin su monto: ${mensajeError(e2)}`);
       hechos++;
+      creados.push(nuevo.id as string);
     }
     revalidatePath("/");
     revalidatePath("/expedientes");
+    revalidatePath("/comprobantes");
+    if ((await aprobarExpedientesSiAuto(supabase, ctx, creados)) > 0) {
+      volver("/expedientes", "ok", `Se registraron y aprobaron ${hechos} pago(s) fijo(s) de ${mesTexto.toLowerCase()}, con su comprobante de pago.`);
+    }
     volver("/expedientes?estado=borrador", "ok", `Se registraron ${hechos} pago(s) fijo(s) de ${mesTexto.toLowerCase()}, en borrador. Revíselos y envíelos al alcalde para su aprobación.`);
   }
 
@@ -717,6 +730,7 @@ export async function copiarPagosFijos() {
   if (faltan.length === 0) volver("/", "ok", "Los pagos fijos de este mes ya están registrados.");
 
   let copiados = 0;
+  const copiadosIds: string[] = [];
   for (const p of faltan) {
     const { data: items } = await supabase
       .from("expediente_items")
@@ -753,9 +767,14 @@ export async function copiarPagosFijos() {
       if (e2) volver("/", "error", `Se copió «${p.descripcion}» sin sus ítems: ${mensajeError(e2)}`);
     }
     copiados++;
+    copiadosIds.push(nuevo.id as string);
   }
   revalidatePath("/");
   revalidatePath("/expedientes");
+  revalidatePath("/comprobantes");
+  if ((await aprobarExpedientesSiAuto(supabase, ctx, copiadosIds)) > 0) {
+    volver("/expedientes", "ok", `Se copiaron y aprobaron ${copiados} pago(s) fijo(s) del mes pasado, con su comprobante de pago.`);
+  }
   volver(
     "/expedientes?estado=borrador",
     "ok",

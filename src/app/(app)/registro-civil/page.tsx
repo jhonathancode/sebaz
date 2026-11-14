@@ -61,41 +61,56 @@ export default async function RegistroCivil({ searchParams }: { searchParams: Pa
 
       <section className="panel rc-panel">
         <BuscadorRC q={q} tipo={tipo} tipos={TIPOS_RC.map((t) => ({ codigo: t.codigo, nombre: t.nombre }))} />
-        <p className="tenue pequeno rc-resumen">
-          {q || tipo ? (
-            <>{count ?? 0} {count === 1 ? "resultado" : "resultados"}{(count ?? 0) > LIMITE ? ` (se muestran los primeros ${LIMITE}; escriba más letras para acotar)` : ""}</>
-          ) : (
-            <>{total ?? 0} registros en el padrón · {conPartida ?? 0} partidas adjuntas. Escriba un apellido o un DNI para buscar.</>
-          )}
-        </p>
-        <div className="tabla-marco" style={{ border: "none", borderRadius: 0 }}>
-          <table className="tabla">
+        <div className="rc-cifras">
+          <div><b>{total ?? 0}</b><span>Registros en el padrón</span></div>
+          <div><b>{conPartida ?? 0}</b><span>Partidas adjuntas</span></div>
+          <div><b>{q || tipo ? count ?? 0 : "—"}</b><span>{q || tipo ? ((count ?? 0) > LIMITE ? `Resultados (se muestran ${LIMITE})` : "Resultados de la búsqueda") : "Escriba para buscar"}</span></div>
+        </div>
+        <div className="rc-tabla-marco">
+          <table className="rc-tabla">
+            <colgroup><col className="c-persona" /><col className="c-dni" /><col className="c-tipo" /><col className="c-fecha" /><col className="c-acta" /><col className="c-partida" /><col className="c-acc" /></colgroup>
             <thead>
-              <tr><th>Apellidos y nombres</th><th>DNI</th><th>Tipo</th><th>Fecha</th><th>N° acta</th><th>Expediente</th><th>Partida</th><th></th></tr>
+              <tr><th>Persona</th><th>DNI</th><th>Tipo de acta</th><th>Fecha</th><th>Acta y expediente</th><th>Partida</th><th><span className="sr-solo">Acciones</span></th></tr>
             </thead>
             <tbody>
               {filas.length === 0 && (
-                <tr><td colSpan={8} className="tenue" style={{ textAlign: "center", padding: 26 }}>{q || tipo ? "Nada coincide. Pruebe con menos letras o solo el apellido." : "Todavía no hay registros. Use «+ Nuevo registro» o «Importar padrón»."}</td></tr>
+                <tr><td colSpan={7} className="rc-vacio">{q || tipo ? "Nada coincide. Pruebe con menos letras o solo el apellido." : "Todavía no hay registros. Use «+ Nuevo registro» o «Importar padrón»."}</td></tr>
               )}
               {filas.map((r) => {
                 const a = primero.get(r.id);
                 const url = a ? urlVer.get(a.archivo_path) : null;
+                const filiacion = [r.padre, r.madre].filter(Boolean).join(" y ");
                 return (
                   <tr key={r.id} className={r.estado === "anulado" ? "anulado" : undefined}>
-                    <td className="envolver"><Link href={`/registro-civil/${r.id}`}><b>{nombreCompleto(r)}</b></Link>{r.estado === "anulado" && <span className="tenue"> · ANULADO</span>}</td>
-                    <td>{r.dni ?? "—"}</td>
-                    <td>{NOMBRE_TIPO_RC[r.tipo] ?? r.tipo}</td>
-                    <td>{r.fecha_acto ? fecha(r.fecha_acto) : "—"}</td>
-                    <td>{r.numero_acta ?? "—"}</td>
-                    <td>{r.expediente ?? "—"}</td>
+                    <td>
+                      <Link href={`/registro-civil/${r.id}`} className="rc-persona">
+                        <span className="rc-avatar" aria-hidden="true">{(r.apellido_paterno[0] ?? "") + (r.nombres[0] ?? "")}</span>
+                        <span className="rc-persona-txt">
+                          <b>{r.apellido_paterno} {r.apellido_materno ?? ""}</b>
+                          <span>{r.nombres}</span>
+                          {(filiacion || r.lugar) && <small>{filiacion ? `Hijo(a) de ${filiacion}` : r.lugar}</small>}
+                        </span>
+                      </Link>
+                      {r.estado === "anulado" && <span className="rc-anulado">ANULADO</span>}
+                    </td>
+                    <td className="rc-num">{r.dni ?? <span className="tenue">—</span>}</td>
+                    <td><span className={`rc-chip rc-${r.tipo}`}>{NOMBRE_TIPO_RC[r.tipo] ?? r.tipo}</span></td>
+                    <td className="rc-num">{r.fecha_acto ? fecha(r.fecha_acto) : <span className="tenue">—</span>}</td>
+                    <td className="rc-acta">
+                      <span><i>Acta</i>{r.numero_acta ?? "—"}</span>
+                      <span><i>Exp.</i>{r.expediente ?? "—"}</span>
+                    </td>
                     <td>
                       {a && url ? (
-                        <VisorArchivo url={url} descarga={urlBajar.get(a.archivo_path) ?? url} nombre={a.archivo_nombre ?? "partida"} tipo={a.archivo_tipo ?? "application/pdf"} titulo={`Partida · ${nombreCompleto(r)}`} />
+                        <span className="rc-partida si">
+                          <span className="rc-ok">✓ Adjunta</span>
+                          <VisorArchivo url={url} descarga={urlBajar.get(a.archivo_path) ?? url} nombre={a.archivo_nombre ?? "partida"} tipo={a.archivo_tipo ?? "application/pdf"} titulo={`Partida · ${nombreCompleto(r)}`} />
+                        </span>
                       ) : (
-                        <span className="tenue pequeno">Sin adjuntar</span>
+                        <span className="rc-partida no">Sin adjuntar</span>
                       )}
                     </td>
-                    <td className="acc"><Link className="btn chico contorno" href={`/registro-civil/${r.id}`}>Ficha</Link></td>
+                    <td className="rc-der"><Link className="btn chico contorno" href={`/registro-civil/${r.id}`}>Ficha</Link></td>
                   </tr>
                 );
               })}

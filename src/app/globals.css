@@ -4817,3 +4817,8 @@ html.pdf-captura .sf-faltan { display: none; }
 .sec-archivo-caja:hover .sec-archivo-op, .sec-archivo-op:focus-within { opacity: 1; pointer-events: auto; }
 @media (hover: none) { .sec-archivo-op { opacity: 1; pointer-events: auto; position: static; margin-top: 6px; box-shadow: none; justify-content: flex-end; } }
 .sec-numeracion { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: space-between; padding: 8px 12px; margin: 0 0 6px; border: 1px solid var(--borde); border-radius: 12px; background: var(--panel); font-size: 13.5px; }
+.sec-pestanas { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 10px; border-bottom: 1px solid var(--borde); padding-bottom: 8px; }
+.sec-pestanas a { display: inline-flex; gap: 6px; align-items: center; padding: 5px 12px; border: 1px solid var(--borde); border-radius: 999px; background: var(--panel); color: inherit; text-decoration: none; font-size: 13px; }
+.sec-pestanas a span { font-size: 11.5px; color: var(--tenue); }
+.sec-pestanas a.activa { background: var(--primario); border-color: var(--primario); color: #fff; font-weight: 600; }
+.sec-pestanas a.activa span { color: #fff; opacity: .85; }

@@ -10,7 +10,7 @@ import { MODELOS_BASE, TIPOS_SEC, tipoSec } from "@/lib/secretaria";
 import { supabaseServidor } from "@/lib/supabase/server";
 import { archivarModelo, clonarDocumento, crearDesdeModelo, fijarNumeracion, importarModeloWord } from "./acciones";
 
-type Doc = { id: string; tipo: string; numero: number | null; anio: number; estado: string; fecha: string; destinatario: string | null; asunto: string | null; archivo_path: string | null };
+type Doc = { id: string; tipo: string; numero: number | null; anio: number; estado: string; fecha: string; destinatario: string | null; asunto: string | null; archivo_path: string | null; modelo_origen: string | null };
 
 const Carpeta = () => (
   <svg viewBox="0 0 64 52" aria-hidden="true" className="sec-ico-carpeta">
@@ -65,7 +65,7 @@ export default async function Secretaria({ searchParams }: { searchParams: Param
   const puede = tiene(ctx, "admin", "tesorero", "contador", "alcalde");
   const { data, error } = await supabase
     .from("sec_documentos")
-    .select("id, tipo, numero, anio, estado, fecha, destinatario, asunto, archivo_path")
+    .select("id, tipo, numero, anio, estado, fecha, destinatario, asunto, archivo_path, modelo_origen")
     .eq("mcp_id", ctx.mcp.id)
     .order("fecha", { ascending: false })
     .order("creado_en", { ascending: false })
@@ -73,11 +73,12 @@ export default async function Secretaria({ searchParams }: { searchParams: Param
   const todos = (data ?? []) as Doc[];
   const tipo = TIPOS_SEC.some((t) => t.clave === sp.tipo) ? (sp.tipo as string) : "";
   const estado = sp.estado ?? "";
+  const grupo = sp.grupo ?? "";
   const q = (sp.q ?? "").toLowerCase().trim();
   const coincide = (d: Doc) => `${d.destinatario ?? ""} ${d.asunto ?? ""} ${nombreArchivo(d)}`.toLowerCase().includes(q);
   const enlace = (extra: Record<string, string>) => {
     const p = new URLSearchParams();
-    const base: Record<string, string> = { tipo, q: sp.q ?? "", estado, ...extra };
+    const base: Record<string, string> = { tipo, q: sp.q ?? "", estado, grupo, ...extra };
     for (const [k, v] of Object.entries(base)) if (v) p.set(k, v);
     const s = p.toString();
     return `/secretaria${s ? `?${s}` : ""}`;
@@ -94,7 +95,9 @@ export default async function Secretaria({ searchParams }: { searchParams: Param
     const puedeNum = tiene(ctx, "admin", "contador");
     const base = MODELOS_BASE.filter((m) => m.tipo === tipo);
     const deTipo = todos.filter((d) => d.tipo === tipo);
-    const filas = deTipo.filter((d) => (!estado || d.estado === estado) && (!q || coincide(d)));
+    const claveGrupo = (d: Doc) => d.modelo_origen || "_blanco";
+    const grupos = Array.from(deTipo.reduce((m, d) => m.set(claveGrupo(d), (m.get(claveGrupo(d)) ?? 0) + 1), new Map<string, number>())).sort((a, b) => (a[0] === "_blanco" ? 1 : b[0] === "_blanco" ? -1 : a[0].localeCompare(b[0])));
+    const filas = deTipo.filter((d) => (!estado || d.estado === estado) && (!grupo || claveGrupo(d) === grupo) && (!q || coincide(d)));
     return (
       <>
         <nav className="sec-ruta" aria-label="Ubicación"><Link href="/secretaria">Secretaría</Link><span>›</span><b>{t.plural}</b></nav>
@@ -158,8 +161,17 @@ export default async function Secretaria({ searchParams }: { searchParams: Param
           </>
         )}
         <h2 className="sec-grupo">Documentos</h2>
+        {grupos.length > 1 && (
+          <div className="sec-pestanas" role="tablist" aria-label="Clases de documento">
+            <Link href={enlace({ grupo: "" })} className={!grupo ? "activa" : ""} role="tab">Todos <span>{deTipo.length}</span></Link>
+            {grupos.map(([k, n]) => (
+              <Link key={k} href={enlace({ grupo: k })} className={grupo === k ? "activa" : ""} role="tab">{k === "_blanco" ? "En blanco" : k} <span>{n}</span></Link>
+            ))}
+          </div>
+        )}
         <form className="ing-filtros" method="get">
           <input type="hidden" name="tipo" value={tipo} />
+          <input type="hidden" name="grupo" value={grupo} />
           <input name="q" defaultValue={sp.q ?? ""} placeholder={`Buscar en ${t.plural.toLowerCase()}: asunto, destinatario o número`} aria-label="Buscar" />
           <select name="estado" defaultValue={estado} aria-label="Estado">
             <option value="">Todos</option>

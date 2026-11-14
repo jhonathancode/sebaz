@@ -4481,3 +4481,19 @@ html.pdf-captura .sf-faltan { display: none; }
 .push-caja .push-txt { flex: 1 1 200px; min-width: 0; font-size: 14px; font-weight: 600; line-height: 1.35; }
 .push-caja .push-acc { display: flex; gap: 8px; flex-wrap: wrap; }
 @media (max-width: 760px) { .push-caja .push-acc, .push-caja .push-acc .btn { flex: 1 1 100%; justify-content: center; } }
+
+/* ------------------------------------------------------------ registro civil */
+.rc-panel { padding-bottom: 6px; }
+.rc-buscador { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; padding: 14px; }
+.rc-buscar-caja { flex: 1 1 340px; min-height: 52px; font-size: 18px; padding: 0 16px; border-radius: 12px; border: 1px solid var(--borde); background: var(--panel-2); color: var(--texto); }
+.rc-buscar-caja:focus { outline: 2px solid var(--primario); outline-offset: 0; border-color: var(--primario); }
+.rc-tipos { display: flex; flex-wrap: wrap; gap: 6px; }
+.rc-tipo { border: 1px solid var(--borde); background: var(--panel); color: var(--suave); border-radius: 999px; padding: 7px 14px; font: inherit; font-size: 13px; cursor: pointer; }
+.rc-tipo:hover { border-color: var(--primario); color: var(--texto); }
+.rc-tipo.sel { background: var(--primario-fondo); border-color: var(--primario); color: var(--primario); font-weight: 600; }
+.rc-estado { min-width: 70px; }
+.rc-resumen { margin: 0; padding: 0 16px 10px; }
+.rc-datos { display: flex; flex-direction: column; gap: 10px; }
+.rc-dato { display: flex; flex-direction: column; gap: 1px; }
+.rc-dato span { font-size: 12px; color: var(--tenue); }
+.rc-dato b { font-weight: 600; word-break: break-word; }

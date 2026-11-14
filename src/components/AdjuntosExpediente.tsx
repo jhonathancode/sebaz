@@ -14,7 +14,7 @@ export default function AdjuntosExpediente({
   id,
   tipoGasto,
   requeridos,
-  permanentes,
+  compartidos,
   adjuntos,
   sistema,
   puede,
@@ -23,8 +23,8 @@ export default function AdjuntosExpediente({
   tipoGasto: string;
   /** Pago fijo: los documentos que se pidieron al crearlo. Otro gasto: null (se usa la lista guía). */
   requeridos: string[] | null;
-  /** Documentos permanentes del pago fijo (se subieron una vez en Configuración). */
-  permanentes: { tipo: string; nombre: string; url: string | null }[];
+  /** Documentos que vienen de otro lado: permanentes del pago fijo o subidos en otro mes del mismo gasto. */
+  compartidos: { tipo: string; nombre: string; url: string; origen: "permanente" | "heredado" }[];
   adjuntos: Adjunto[];
   sistema: { requerimiento: boolean; orden: boolean; conformidad: boolean; comprobante: boolean };
   puede: boolean;
@@ -38,7 +38,7 @@ export default function AdjuntosExpediente({
     { texto: "Conformidad", ok: sistema.conformidad },
     { texto: "Comprobante de pago", ok: sistema.comprobante },
   ];
-  const tienePerm = (g: string) => permanentes.some((x) => x.tipo === g);
+  const tienePerm = (g: string) => compartidos.some((x) => x.tipo === g);
   const faltan = guia.filter((g) => !vigentes.some((a) => a.tipo === g) && !tienePerm(g)).length;
 
   return (
@@ -78,7 +78,7 @@ export default function AdjuntosExpediente({
           ))}
           {guia.map((g) => {
             const subidos = vigentes.filter((a) => a.tipo === g);
-            const perm = permanentes.find((x) => x.tipo === g);
+            const perm = compartidos.find((x) => x.tipo === g);
             const cumple = subidos.length > 0 || !!perm;
             return (
               <div key={g} className={`adj-fila ${cumple ? "ok" : "falta"}`}>
@@ -88,7 +88,7 @@ export default function AdjuntosExpediente({
                   {perm && (
                     <span className="adj-arch">
                       {perm.url ? <a href={perm.url} target="_blank" rel="noreferrer">{perm.nombre}</a> : <span>{perm.nombre}</span>}
-                      <span className="tenue">· permanente, vale todos los meses</span>
+                      <span className="tenue">· {perm.origen === "permanente" ? "permanente, vale todos los meses" : "tomado de otro mes de este gasto"}</span>
                     </span>
                   )}
                   {!cumple && <span className="tenue">Falta adjuntar</span>}

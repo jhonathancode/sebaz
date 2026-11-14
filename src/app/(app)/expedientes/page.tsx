@@ -277,7 +277,23 @@ export default async function Expedientes({ searchParams }: { searchParams: Para
         </Link>
       </div>
 
-      <div className="filtros">
+      <div className="filtros exp-filtros">
+        <form className="filtros-movil" method="get">
+          <input type="hidden" name="mes" value={modo === "mes" ? periodo : ""} />
+          <input type="hidden" name="q" value={q} />
+          <select name="estado" defaultValue={estado} aria-label="Estado">
+            {ESTADOS.map((x) => <option key={x.v} value={x.v}>{x.v === "" ? "Estado: todos" : `${x.t} (${cuenta(x.v)})`}</option>)}
+          </select>
+          <select name="tipo" defaultValue={tipo} aria-label="Tipo">
+            {[["", "Tipo: todos"], ["compra", "Compra"], ["servicio", "Servicio"], ["pago_fijo", "Pago fijo"], ["caja_chica", "Caja chica"]].map(([v, t]) => <option key={v} value={v}>{t}</option>)}
+          </select>
+          <select name="conc" defaultValue={conc} aria-label="Banco">
+            <option value="">Banco: todos</option>
+            <option value="si">Conciliados ({nConciliados})</option>
+            <option value="no">Sin conciliar ({nSinConciliar})</option>
+          </select>
+          <button className="btn chico" type="submit">Aplicar</button>
+        </form>
         <div className="grupo" role="group" aria-label="Estado">
           {ESTADOS.map((x) => (
             <Link key={x.v} className={`f-chip${estado === x.v ? " activo" : ""}${x.v === "anulado" ? " rojo" : ""}`} href={enlace(x.v === "anulado" ? { estado: x.v, conc: "" } : { estado: x.v })}>

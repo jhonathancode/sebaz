@@ -4808,3 +4808,6 @@ html.pdf-captura .sf-faltan { display: none; }
 .sec-mod-x { position: absolute; top: 6px; right: 6px; }
 .sec-mod-x .btn { padding: 1px 8px; font-size: 11px; opacity: 0; }
 .sec-mod:hover .sec-mod-x .btn, .sec-mod-x:focus-within .btn { opacity: 1; }
+.sec-seccion { margin-bottom: 18px; }
+.sec-sub-grupo { font-size: 14px; margin: 14px 0 8px; display: flex; gap: 8px; align-items: center; }
+.sec-sub-grupo span { font-size: 12px; font-weight: 600; background: var(--panel-2); border: 1px solid var(--borde); border-radius: 999px; padding: 0 8px; color: var(--tenue); }

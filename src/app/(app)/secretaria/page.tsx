@@ -35,8 +35,8 @@ function Archivos({ docs, puede }: { docs: Doc[]; puede: boolean }) {
         <Link key={d.id} href={d.estado === "borrador" && puede ? `/secretaria/${d.id}/editar` : `/secretaria/${d.id}`} className={`sec-archivo${d.estado === "anulado" ? " anulado" : ""}`}>
           <Hoja />
           <div className="sa-texto">
-            <b>{nombreArchivo(d)}</b>
-            <span className="sa-asunto">{d.asunto || "Sin asunto"}</span>
+            <b className="sa-asunto">{d.asunto || "Sin asunto"}</b>
+            <span>{nombreArchivo(d)}</span>
             <small>{fecha(d.fecha)}{d.destinatario ? ` · ${d.destinatario}` : ""}{d.archivo_path ? " · 📎 firmado" : ""}</small>
           </div>
           <Estado valor={d.estado} />
@@ -143,10 +143,23 @@ export default async function Secretaria({ searchParams }: { searchParams: Param
         {filas.length === 0 ? (
           <div className="sec-vacia">
             <Carpeta />
-            <p>{deTipo.length ? "Ningún archivo coincide con la búsqueda." : `Todavía no hay documentos. Pulse un modelo de arriba para crear el primero.`}</p>
+            <p>{deTipo.length ? "Ningún archivo coincide con la búsqueda." : "Todavía no hay documentos. Pulse un modelo de arriba para crear el primero."}</p>
           </div>
         ) : (
-          <Archivos docs={filas} puede={puede} />
+          [
+            { clave: "emitido", titulo: "Emitidos", vacio: `Aquí aparecerán los ${t.plural.toLowerCase()} que emita, con su número correlativo.` },
+            { clave: "borrador", titulo: "Borradores (aún sin número)", vacio: "" },
+            { clave: "anulado", titulo: "Anulados", vacio: "" },
+          ].map((g) => {
+            const lista = filas.filter((d) => d.estado === g.clave).sort((a, b) => (b.numero ?? 0) - (a.numero ?? 0) || b.fecha.localeCompare(a.fecha));
+            if (lista.length === 0 && (!g.vacio || estado)) return null;
+            return (
+              <section key={g.clave} className="sec-seccion">
+                <h3 className="sec-sub-grupo">{g.titulo} <span>{lista.length}</span></h3>
+                {lista.length === 0 ? <p className="tenue pequeno">{g.vacio}</p> : <Archivos docs={lista} puede={puede} />}
+              </section>
+            );
+          })
         )}
       </>
     );

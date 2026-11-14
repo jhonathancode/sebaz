@@ -22,7 +22,7 @@ export async function GET(req: NextRequest) {
   const borde = { style: "thin" as const, color: { argb: "FFD3D8DE" } };
 
   hojas.forEach((h) => {
-    const ws = libro.addWorksheet(h.pestana.replace("·", "-").slice(0, 30));
+    const ws = libro.addWorksheet(h.pestana.replace("·", "-").replace(/[\\/?*[\]:]/g, "").slice(0, 30));
     const n = h.columnas.length;
     ws.columns = h.columnas.map((c) => ({ width: c.ancho }));
     ws.mergeCells(1, 1, 1, n);
@@ -69,6 +69,7 @@ export async function GET(req: NextRequest) {
           c.value = v ?? null;
           if (h.columnas[i]?.tipo === "monto") c.numFmt = "#,##0.00";
           c.border = { top: borde, bottom: borde, left: borde, right: borde };
+          if (f.tipo === "grupo4") c.font = { bold: true };
           if (f.tipo === "total" || f.tipo === "destacado") { c.font = { bold: true }; c.fill = celeste; }
         });
       }

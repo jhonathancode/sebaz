@@ -5099,3 +5099,4 @@ html.pdf-captura .sf-faltan { display: none; }
 .hoja.bal-hoja.bal-ancha { max-width: none; min-width: 760px; width: 100%; }
 .bal-ancha .rep-tabla th { font-size: 10.5px; }
 .bal-ancha .rep-tabla td { font-size: 11.5px; }
+.bal-hoja .bal-cuenta td { font-weight: 700; background: #f4f7fc; }

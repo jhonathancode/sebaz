@@ -286,9 +286,10 @@ export async function construirHoja(lista: string, ctx: Awaited<ReturnType<typeo
         };
       } else if (ver === "balance") {
         const bc = (await hojasBalance(ctx, supabase, anio)).find((h) => h.clave === "constructivo")!;
+        const grupoDe = (i: number) => bc.grupos?.find((g) => i >= g.desde && i <= g.hasta)?.titulo ?? "";
         hoja = {
           titulo: bc.titulo,
-          columnas: bc.columnas.map((c, i) => ({ titulo: `${["", "", "APERTURA ", "APERTURA ", "MOV. ACUM. ", "MOV. ACUM. ", "SALDO ", "SALDO ", "", "", "", ""][i]}${c.titulo}`, ancho: c.ancho, tipo: c.tipo })),
+          columnas: bc.columnas.map((c, i) => ({ titulo: `${grupoDe(i)} ${c.titulo}`.trim(), ancho: c.ancho, tipo: c.tipo })),
           filas: bc.filas.map((f) => f.celdas),
         };
       } else if (ver === "acumulado") {

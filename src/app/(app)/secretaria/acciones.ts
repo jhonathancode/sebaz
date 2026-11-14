@@ -242,6 +242,7 @@ export async function importarModeloWord(fd: FormData) {
   if (!TIPOS_SEC.some((t) => t.clave === tipo)) volver(destino, "error", "Elija el tipo de documento.");
   const archivo = fd.get("archivo");
   if (!(archivo instanceof File) || archivo.size === 0) volver(destino, "error", "Elija el archivo de Word (.docx).");
+  if (/\.pdf$/i.test(archivo.name)) volver(destino, "error", "Un PDF no se puede convertir en texto editable. Suba el archivo de Word (.docx) del modelo; si solo tiene el PDF, copie su texto y péguelo en un documento en blanco.");
   if (!/\.docx$/i.test(archivo.name)) volver(destino, "error", "El archivo debe ser de Word en formato .docx. Si es un .doc antiguo, ábralo en Word y use «Guardar como .docx».");
   if (archivo.size > 4 * 1024 * 1024) volver(destino, "error", "El archivo pesa más de 4 MB.");
   let html = "";

@@ -4773,3 +4773,24 @@ html.pdf-captura .sf-faltan { display: none; }
 .sec-vacia { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 40px 10px; color: var(--tenue); text-align: center; }
 .sec-vacia .sec-ico-carpeta { opacity: .45; }
 @media (max-width: 640px) { .sec-archivos { grid-template-columns: 1fr; } .sec-carpetas { grid-template-columns: repeat(2, 1fr); } }
+
+/* Secretaría: hoja libre (todo editable como en Word) */
+.sec-editor1 { display: flex; flex-direction: column; gap: 10px; }
+.sec-barra-sup { display: flex; flex-wrap: wrap; gap: 12px; align-items: end; }
+.sec-barra-sup .campo { min-width: 170px; }
+.sec-barra-sup p { flex: 1 1 260px; margin: 0; }
+.hoja.sec-libre { display: block; }
+.sec-libre .sec-membrete { margin-bottom: 0; }
+.sec-libre img { max-width: 100%; }
+.sec-libre img[data-sel] { outline: 2px solid #3b82f6; }
+.sec-libre .sec-tabla-datos { border-collapse: collapse; margin: 0 0 14px; width: 100%; }
+.sec-libre .sec-tabla-datos td { border: 0 !important; padding: 2px 0 !important; vertical-align: top; background: none; }
+.sec-libre .sec-tabla-datos td:first-child { width: 110px; font-weight: 700; }
+.sec-libre .sec-tabla-datos td:nth-child(2)::before { content: ": "; }
+.sec-libre table:not(.sec-tabla-datos) { border-collapse: collapse; width: 100%; margin: 6px 0 12px; }
+.sec-libre table:not(.sec-tabla-datos) td, .sec-libre table:not(.sec-tabla-datos) th { border: 1px solid #111; padding: 4px 7px; vertical-align: top; }
+.sec-libre .sec-firma2 { margin: 70px auto 0; width: 300px; max-width: 100%; border-top: 1.4px solid #111; padding-top: 4px; text-align: center; }
+.sec-libre .sec-despedida { margin: 14px 0 0; }
+.sec-libre p { margin: 0 0 11px; }
+.sec-libre hr { border: 0; border-top: 1.4px solid #111; margin: 8px 0; }
+.sec-libre .sec-lugar { text-align: right; }

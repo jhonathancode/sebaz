@@ -8,6 +8,7 @@ import { contextoMcp, tiene } from "@/lib/contexto";
 import { cargarCierres, estadoGestion } from "@/lib/gestion";
 import { codigoCP, fecha, hoyISO, nombrePeriodo, num3, periodoActual, rangoPeriodo, soles } from "@/lib/formato";
 import { supabaseServidor } from "@/lib/supabase/server";
+import { nombreAdjunto } from "@/lib/adjuntosExpediente";
 import { cargarCatalogoPagosFijos, siguienteCheque } from "@/lib/pagosFijos";
 import { cargarAtajos } from "@/lib/atajos";
 import { anularExpedienteTotal, crearExpediente, registrarExpedienteCompleto } from "./acciones";
@@ -89,14 +90,22 @@ export default async function Expedientes({ searchParams }: { searchParams: Para
   const idsTodos = todosBase.map((e) => e.id);
   const idsQ = idsTodos.length ? idsTodos : ["00000000-0000-0000-0000-000000000000"];
   // Todo lo de los expedientes (comprobantes y demás documentos) se pide junto, en una sola vuelta
-  const [{ data: cpsAllRaw }, { data: ordsV }, { data: confV }, { data: cotsV }, { data: neasV }, { data: cajasV }] = await Promise.all([
+  const [{ data: cpsAllRaw }, { data: ordsV }, { data: confV }, { data: cotsV }, { data: neasV }, { data: cajasV }, { data: adjV }] = await Promise.all([
     supabase.from("comprobantes_pago").select("id, expediente_id, numero, origen, cheque, estado, creado_en, importe, deducciones").in("expediente_id", idsQ),
     supabase.from("ordenes").select("expediente_id, tipo, numero, anio, anulado, creado_en").in("expediente_id", idsQ),
     supabase.from("conformidades").select("expediente_id, memorando_numero, anio, anulado, creado_en").in("expediente_id", idsQ),
     supabase.from("cotizaciones").select("expediente_id, anulado").in("expediente_id", idsQ),
     supabase.from("notas_entrada").select("id, expediente_id, numero, anio, anulado, creado_en").in("expediente_id", idsQ),
     supabase.from("cajas_chicas").select("id, expediente_id, periodo, fuente_id, numero, estado").in("expediente_id", idsQ).neq("estado", "anulada"),
+    supabase.from("expediente_adjuntos").select("expediente_id, tipo").in("expediente_id", idsQ).eq("anulado", false),
   ]);
+  // Documentos adjuntos por expediente (planilla, DNI, contrato…): se muestran como etiquetas en la fila
+  const adjDe = new Map<string, Map<string, number>>();
+  for (const a of adjV ?? []) {
+    const m = adjDe.get(a.expediente_id) ?? new Map<string, number>();
+    m.set(a.tipo, (m.get(a.tipo) ?? 0) + 1);
+    adjDe.set(a.expediente_id, m);
+  }
   const cpsAll = cpsAllRaw;
   const cpsV = cpsAllRaw;
   const cpVigente = new Map<string, { id: string; cheque: string | null }>();
@@ -402,6 +411,15 @@ export default async function Expedientes({ searchParams }: { searchParams: Para
                       </span>
                     );
                   })}
+                  {[...(adjDe.get(e.id) ?? [])].map(([tipo, n]) => (
+                    <span key={tipo} className="doc-par">
+                      <i className="doc-sep ok" aria-hidden="true" />
+                      <Link className="doc-paso adj" href={`/expedientes/${e.id}#documentos`} title="Ver los documentos adjuntos">
+                        <span className="ic" aria-hidden="true">✓</span>{nombreAdjunto(tipo)}
+                        {n > 1 && <span className="doc-num">{n}</span>}
+                      </Link>
+                    </span>
+                  ))}
                 </div>
                 {(() => {
                   const caja = cajaDe.get(e.id);

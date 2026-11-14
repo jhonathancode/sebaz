@@ -3101,6 +3101,6 @@ end $$;
 
 -- Se activa para la Municipalidad Centro Poblado Puerto Yurinaki
 update mcps
-   set modulos = coalesce(modulos, array['caja_chica','ingresos','almacen','rendicion','contabilidad']::text[]) || 'secretaria'
+   set modulos = array_append(coalesce(modulos, array['caja_chica','ingresos','almacen','rendicion','contabilidad']::text[]), 'secretaria'::text)
  where nombre ilike '%yurinaki%'
    and not ('secretaria' = any (coalesce(modulos, '{}'::text[])));

@@ -8,7 +8,7 @@ import { contextoMcp, tiene } from "@/lib/contexto";
 import { fecha } from "@/lib/formato";
 import { MODELOS_BASE, TIPOS_SEC, tipoSec } from "@/lib/secretaria";
 import { supabaseServidor } from "@/lib/supabase/server";
-import { archivarModelo, clonarDocumento, crearDesdeModelo, fijarNumeracion, importarModeloWord } from "./acciones";
+import { archivarModelo, anularDocumento, clonarDocumento, crearDesdeModelo, eliminarBorrador, fijarNumeracion, importarModeloWord } from "./acciones";
 
 type Doc = { id: string; tipo: string; numero: number | null; anio: number; estado: string; fecha: string; destinatario: string | null; asunto: string | null; archivo_path: string | null; modelo_origen: string | null };
 
@@ -28,7 +28,7 @@ const Hoja = () => (
 
 const nombreArchivo = (d: Doc) => (d.numero ? `${tipoSec(d.tipo).nombre} N° ${String(d.numero).padStart(3, "0")}-${d.anio}` : `${tipoSec(d.tipo).nombre} · borrador`);
 
-function Archivos({ docs, puede }: { docs: Doc[]; puede: boolean }) {
+function Archivos({ docs, puede, volverA }: { docs: Doc[]; puede: boolean; volverA: string }) {
   return (
     <div className="sec-archivos">
       {docs.map((d) => (
@@ -51,6 +51,20 @@ function Archivos({ docs, puede }: { docs: Doc[]; puede: boolean }) {
                 <button type="submit" className="btn chico">Clonar</button>
               </form>
             )}
+            {puede && d.estado === "borrador" && (
+              <form action={eliminarBorrador}>
+                <input type="hidden" name="id" value={d.id} />
+                <input type="hidden" name="volver" value={volverA} />
+                <BotonConfirmar className="btn chico peligro" peligro pregunta="¿Eliminar este borrador?" detalle="Como aún no tiene número, se quita de la lista. Queda registrado en la auditoría del sistema." textoConfirmar="Sí, eliminar">Eliminar</BotonConfirmar>
+              </form>
+            )}
+            {puede && d.estado === "emitido" && (
+              <VentanaFlotante boton="Anular" titulo="Anular documento emitido" accion={anularDocumento} textoGuardar="Anular" claseBoton="btn chico peligro">
+                <input type="hidden" name="id" value={d.id} />
+                <label className="campo">Motivo de la anulación<input name="motivo" required minLength={10} placeholder="Ej.: Error en el destinatario; se emite otro oficio" /></label>
+                <p className="pequeno tenue" style={{ margin: 0 }}>Un documento emitido no se borra: queda anulado con su motivo y su número no se reutiliza.</p>
+              </VentanaFlotante>
+            )}
           </div>
         </div>
       ))}
@@ -70,7 +84,7 @@ export default async function Secretaria({ searchParams }: { searchParams: Param
     .order("fecha", { ascending: false })
     .order("creado_en", { ascending: false })
     .limit(1000);
-  const todos = (data ?? []) as Doc[];
+  const todos = ((data ?? []) as Doc[]).filter((d) => !(d.estado === "anulado" && d.numero === null)); // borradores eliminados no se listan
   const tipo = TIPOS_SEC.some((t) => t.clave === sp.tipo) ? (sp.tipo as string) : "";
   const estado = sp.estado ?? "";
   const grupo = sp.grupo ?? "";
@@ -197,7 +211,7 @@ export default async function Secretaria({ searchParams }: { searchParams: Param
             return (
               <section key={g.clave} className="sec-seccion">
                 <h3 className="sec-sub-grupo">{g.titulo} <span>{lista.length}</span></h3>
-                {lista.length === 0 ? <p className="tenue pequeno">{g.vacio}</p> : <Archivos docs={lista} puede={puede} />}
+                {lista.length === 0 ? <p className="tenue pequeno">{g.vacio}</p> : <Archivos docs={lista} puede={puede} volverA={enlace({})} />}
               </section>
             );
           })
@@ -226,7 +240,7 @@ export default async function Secretaria({ searchParams }: { searchParams: Param
       </form>
 
       {buscando ? (
-        hallados.length === 0 ? <div className="sec-vacia"><Carpeta /><p>No se encontró ningún documento.</p></div> : <Archivos docs={hallados} puede={puede} />
+        hallados.length === 0 ? <div className="sec-vacia"><Carpeta /><p>No se encontró ningún documento.</p></div> : <Archivos docs={hallados} puede={puede} volverA="/secretaria" />
       ) : (
         <>
           <div className="sec-carpetas">
@@ -246,7 +260,7 @@ export default async function Secretaria({ searchParams }: { searchParams: Param
           {todos.length > 0 && (
             <>
               <h2 className="sec-grupo">Recientes</h2>
-              <Archivos docs={todos.slice(0, 6)} puede={puede} />
+              <Archivos docs={todos.slice(0, 6)} puede={puede} volverA="/secretaria" />
             </>
           )}
         </>

@@ -5049,3 +5049,22 @@ html.pdf-captura .sf-faltan { display: none; }
   .cab-vista > .btn, .cab-vista > a.btn { flex: 1 1 calc(50% - 6px); min-height: 40px; display: inline-flex; align-items: center; justify-content: center; }
   .cab-vista > button.btn.primario, .cab-vista > form { flex: 1 1 100%; }
 }
+
+/* Expedientes en celular: filtros en desplegables y cabecera más baja */
+.filtros-movil { display: none; }
+@media (max-width: 760px) {
+  .exp-filtros .grupo { display: none; }
+  .exp-filtros .filtros-movil { display: grid; grid-template-columns: 1fr 1fr 1fr auto; gap: 6px; flex: 1 1 100%; }
+  .exp-filtros .filtros-movil select { min-width: 0; min-height: 38px; padding: 0 6px; font-size: 13px; border-radius: 10px; border: 1px solid var(--borde); background: var(--panel); color: var(--texto); }
+  .exp-filtros .filtros-movil .btn { min-height: 38px; }
+  .cab-vista { gap: 6px; margin-bottom: 6px; }
+  .cab-vista .selector-mes { flex: 1 1 0; min-width: 0; }
+  .cab-vista .selector-mes input { min-width: 0; }
+  .cab-vista .selector-mes .btn { padding: 0 10px; }
+  .cab-vista > a.btn { flex: 1 1 calc(33% - 6px); min-height: 36px; font-size: 12.5px; padding: 4px 6px; }
+  .cab-vista > a.btn:first-of-type { flex: 0 0 auto; }
+  .cab-vista > button.btn.primario { min-height: 40px; }
+  .kpis .kpi { min-width: 128px; padding: 6px 10px; }
+  .kpis .kpi .k-det { display: none; }
+  .kpis .kpi .k-val { font-size: 18px; }
+}

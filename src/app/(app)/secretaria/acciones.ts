@@ -1,0 +1,212 @@
+"use server";
+
+import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
+import sanitizeHtml from "sanitize-html";
+import { contextoMcp, tiene } from "@/lib/contexto";
+import { mensajeError, texto, volver } from "@/lib/acciones";
+import { hoyISO } from "@/lib/formato";
+import { lugarMcp, MODELOS_BASE, rellenar, TIPOS_SEC } from "@/lib/secretaria";
+import { supabaseServidor } from "@/lib/supabase/server";
+
+const TIPOS_ARCHIVO: Record<string, string> = { "application/pdf": "pdf", "image/jpeg": "jpg", "image/png": "png", "image/webp": "webp" };
+const ruta = (id: string) => `/secretaria/${id}`;
+const falta = (m: string) => (/sec_documentos|sec_modelos|sec_emitir|schema cache/.test(m) ? "Falta la actualización de la base (ACTUALIZAR_BASE.sql). Avise a soporte." : m);
+
+async function permiso(destino: string) {
+  const ctx = await contextoMcp();
+  if (!ctx.mcp.modulos?.includes("secretaria")) volver("/", "error", "El módulo de Secretaría no está habilitado.");
+  if (!tiene(ctx, "admin", "tesorero", "contador", "alcalde")) volver(destino, "error", "No tiene permiso para redactar documentos.");
+  return ctx;
+}
+
+/** Deja solo el formato sencillo del editor (negrita, listas, alineación): nada de scripts ni estilos de Word. */
+function limpiar(html: string): string {
+  return sanitizeHtml(html, {
+    allowedTags: ["p", "br", "b", "strong", "i", "em", "u", "ul", "ol", "li", "div"],
+    allowedAttributes: { p: ["style"], div: ["style"], li: ["style"] },
+    allowedStyles: { "*": { "text-align": [/^(left|right|center|justify)$/] } },
+  });
+}
+
+async function alcaldeDe(mcpId: string): Promise<string> {
+  const supabase = await supabaseServidor();
+  const { data } = await supabase.from("miembros").select("perfiles(nombre)").eq("mcp_id", mcpId).eq("rol", "alcalde").eq("activo", true).maybeSingle();
+  return (data?.perfiles as unknown as { nombre: string } | null)?.nombre ?? "";
+}
+
+/** Crea un borrador a partir de un modelo de ZEBAZ, uno propio o en blanco, y abre el editor. */
+export async function crearDesdeModelo(fd: FormData) {
+  const destino = "/secretaria/nuevo";
+  const ctx = await permiso(destino);
+  const supabase = await supabaseServidor();
+  const origen = texto(fd, "origen") ?? "";
+  const [clase, clave] = origen.split(":");
+  let tipo = "oficio";
+  let asunto = "";
+  let cuerpo = "";
+  let modelo: string | null = null;
+  if (clase === "base") {
+    const m = MODELOS_BASE.find((x) => x.id === clave);
+    if (!m) volver(destino, "error", "No se encontró el modelo.");
+    tipo = m.tipo; asunto = m.asunto; cuerpo = m.cuerpo; modelo = m.nombre;
+  } else if (clase === "propio") {
+    const { data: m } = await supabase.from("sec_modelos").select("tipo, nombre, asunto, cuerpo").eq("id", clave).eq("mcp_id", ctx.mcp.id).maybeSingle();
+    if (!m) volver(destino, "error", "No se encontró el modelo.");
+    tipo = m.tipo; asunto = m.asunto ?? ""; cuerpo = m.cuerpo; modelo = m.nombre;
+  } else if (clase === "blanco") {
+    if (!TIPOS_SEC.some((t) => t.clave === clave)) volver(destino, "error", "Elija el tipo de documento.");
+    tipo = clave; cuerpo = "<p><br></p>";
+  } else volver(destino, "error", "Elija un modelo.");
+
+  const fecha = hoyISO();
+  const alcalde = await alcaldeDe(ctx.mcp.id);
+  const vars = { municipalidad: ctx.mcp.nombre.toUpperCase(), alcalde: alcalde.toUpperCase(), lugar: lugarMcp(ctx.mcp.nombre), fecha };
+  const { data, error } = await supabase
+    .from("sec_documentos")
+    .insert({
+      mcp_id: ctx.mcp.id,
+      tipo,
+      anio: Number(fecha.slice(0, 4)),
+      fecha,
+      asunto: rellenar(asunto, vars),
+      cuerpo: limpiar(rellenar(cuerpo, vars)),
+      firmante: alcalde.toUpperCase() || null,
+      firmante_cargo: alcalde ? "Alcalde" : null,
+      modelo_origen: modelo,
+    })
+    .select("id")
+    .single();
+  if (error || !data) volver(destino, "error", falta(mensajeError(error)));
+  revalidatePath("/secretaria");
+  redirect(`${ruta(data.id)}/editar`);
+}
+
+export async function guardarBorrador(fd: FormData) {
+  const id = texto(fd, "id") ?? "";
+  const destino = `${ruta(id)}/editar`;
+  const ctx = await permiso(destino);
+  const supabase = await supabaseServidor();
+  const fecha = texto(fd, "fecha");
+  if (!fecha || !/^\d{4}-\d{2}-\d{2}$/.test(fecha)) volver(destino, "error", "Elija la fecha del documento.");
+  const asunto = texto(fd, "asunto");
+  if (!asunto) volver(destino, "error", "Escriba el asunto.");
+  const { error } = await supabase
+    .from("sec_documentos")
+    .update({
+      fecha,
+      destinatario: texto(fd, "destinatario"),
+      destinatario_cargo: texto(fd, "destinatario_cargo"),
+      asunto,
+      referencia: texto(fd, "referencia"),
+      cuerpo: limpiar(String(fd.get("cuerpo") ?? "")),
+      firmante: texto(fd, "firmante")?.toUpperCase() ?? null,
+      firmante_cargo: texto(fd, "firmante_cargo"),
+      con_copia: texto(fd, "con_copia"),
+    })
+    .eq("id", id)
+    .eq("mcp_id", ctx.mcp.id)
+    .eq("estado", "borrador");
+  if (error) volver(destino, "error", falta(mensajeError(error)));
+  revalidatePath("/secretaria");
+  volver(ruta(id), "ok", "Borrador guardado. Revíselo y, si está bien, emítalo.");
+}
+
+/** Emite el documento: recibe su número correlativo y ya no se edita. */
+export async function emitirDocumento(fd: FormData) {
+  const id = texto(fd, "id") ?? "";
+  await permiso(ruta(id));
+  const supabase = await supabaseServidor();
+  const { error } = await supabase.rpc("sec_emitir", { p_id: id });
+  if (error) volver(ruta(id), "error", falta(mensajeError(error)));
+  revalidatePath("/secretaria");
+  redirect(`${ruta(id)}?emitido=1`);
+}
+
+export async function anularDocumento(fd: FormData) {
+  const id = texto(fd, "id") ?? "";
+  const ctx = await permiso(ruta(id));
+  const supabase = await supabaseServidor();
+  const { error } = await supabase.from("sec_documentos").update({ estado: "anulado", anulado_motivo: texto(fd, "motivo") }).eq("id", id).eq("mcp_id", ctx.mcp.id);
+  if (error) volver(ruta(id), "error", falta(mensajeError(error)));
+  revalidatePath("/secretaria");
+  volver(ruta(id), "ok", "Documento anulado. Queda en el archivo con su motivo.");
+}
+
+/** Copia un documento (emitido o no) como borrador nuevo, para reutilizarlo y editarlo. */
+export async function clonarDocumento(fd: FormData) {
+  const id = texto(fd, "id") ?? "";
+  const ctx = await permiso(ruta(id));
+  const supabase = await supabaseServidor();
+  const { data: o } = await supabase.from("sec_documentos").select("*").eq("id", id).eq("mcp_id", ctx.mcp.id).maybeSingle();
+  if (!o) volver("/secretaria", "error", "No se encontró el documento.");
+  const fecha = hoyISO();
+  const { data, error } = await supabase
+    .from("sec_documentos")
+    .insert({
+      mcp_id: ctx.mcp.id,
+      tipo: o.tipo,
+      anio: Number(fecha.slice(0, 4)),
+      fecha,
+      destinatario: o.destinatario,
+      destinatario_cargo: o.destinatario_cargo,
+      asunto: o.asunto,
+      referencia: o.referencia,
+      cuerpo: o.cuerpo,
+      firmante: o.firmante,
+      firmante_cargo: o.firmante_cargo,
+      con_copia: o.con_copia,
+      modelo_origen: o.modelo_origen,
+    })
+    .select("id")
+    .single();
+  if (error || !data) volver(ruta(id), "error", falta(mensajeError(error)));
+  revalidatePath("/secretaria");
+  redirect(`${ruta(data.id)}/editar`);
+}
+
+/** Guarda el documento como modelo propio de la MCP, para usarlo otra vez. */
+export async function guardarComoModelo(fd: FormData) {
+  const id = texto(fd, "id") ?? "";
+  const ctx = await permiso(ruta(id));
+  const supabase = await supabaseServidor();
+  const nombre = texto(fd, "nombre");
+  if (!nombre) volver(ruta(id), "error", "Escriba un nombre para el modelo.");
+  const { data: o } = await supabase.from("sec_documentos").select("tipo, asunto, cuerpo").eq("id", id).eq("mcp_id", ctx.mcp.id).maybeSingle();
+  if (!o) volver(ruta(id), "error", "No se encontró el documento.");
+  const { error } = await supabase.from("sec_modelos").insert({ mcp_id: ctx.mcp.id, tipo: o.tipo, nombre, asunto: o.asunto, cuerpo: o.cuerpo });
+  if (error) volver(ruta(id), "error", falta(mensajeError(error)));
+  revalidatePath("/secretaria/nuevo");
+  volver(ruta(id), "ok", "Modelo guardado. Ya aparece en «Mis modelos».");
+}
+
+/** Un modelo propio no se borra: se archiva y deja de aparecer. */
+export async function archivarModelo(fd: FormData) {
+  const ctx = await permiso("/secretaria/nuevo");
+  const supabase = await supabaseServidor();
+  const { error } = await supabase.from("sec_modelos").update({ activo: false }).eq("id", texto(fd, "id") ?? "").eq("mcp_id", ctx.mcp.id);
+  if (error) volver("/secretaria/nuevo", "error", falta(mensajeError(error)));
+  revalidatePath("/secretaria/nuevo");
+  volver("/secretaria/nuevo", "ok", "Modelo archivado.");
+}
+
+/** Adjunta el escaneado del documento ya firmado y sellado. */
+export async function subirEscaneado(fd: FormData) {
+  const id = texto(fd, "id") ?? "";
+  const ctx = await permiso(ruta(id));
+  const supabase = await supabaseServidor();
+  const archivo = fd.get("archivo");
+  if (!(archivo instanceof File) || archivo.size === 0) volver(ruta(id), "error", "Elija el PDF o la foto del documento firmado.");
+  if (!TIPOS_ARCHIVO[archivo.type]) volver(ruta(id), "error", "Debe ser PDF o foto (JPG, PNG o WEBP).");
+  if (archivo.size > 4 * 1024 * 1024) volver(ruta(id), "error", "El archivo pesa más de 4 MB. Use una foto con menos calidad.");
+  const path = `${ctx.mcp.id}/secretaria/${id}/${Date.now()}.${TIPOS_ARCHIVO[archivo.type]}`;
+  const { error: eS } = await supabase.storage.from("sustentos").upload(path, archivo, { contentType: archivo.type });
+  if (eS) volver(ruta(id), "error", mensajeError(eS));
+  const { error } = await supabase.from("sec_documentos").update({ archivo_path: path, archivo_nombre: archivo.name.slice(0, 160), archivo_tipo: archivo.type }).eq("id", id).eq("mcp_id", ctx.mcp.id);
+  if (error) {
+    await supabase.storage.from("sustentos").remove([path]);
+    volver(ruta(id), "error", falta(mensajeError(error)));
+  }
+  revalidatePath("/secretaria");
+  volver(ruta(id), "ok", "Documento firmado adjuntado al archivo.");
+}

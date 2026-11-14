@@ -94,6 +94,7 @@ export default async function MarcoApp({ children }: { children: React.ReactNode
         ...(tieneModulo(ctx.mcp, "almacen") ? [{ href: "/almacen", texto: "Almacén" }] : []),
         ...(tieneModulo(ctx.mcp, "rendicion") ? [{ href: "/rendicion", texto: "Rendición" }] : []),
         ...(tieneModulo(ctx.mcp, "registro_civil") && ctx.mcp.modulos?.includes("registro_civil") ? [{ href: "/registro-civil", texto: "Registro Civil" }] : []),
+        ...(ctx.mcp.modulos?.includes("secretaria") ? [{ href: "/secretaria", texto: "Secretaría" }] : []),
         ...(tieneModulo(ctx.mcp, "contabilidad") ? [{ href: "/contabilidad", texto: "Contabilidad", sub: [{ href: "/contabilidad", texto: "Libros y resumen" }, { href: "/contabilidad/estados-cuenta", texto: "Estados de cuenta corriente" }] }] : []),
       ]
     : ctx.esSoporte

@@ -4,7 +4,7 @@ import { useRef, useState } from "react";
 import { reducirFoto } from "@/components/formularios/CampoArchivoEstado";
 
 /** Casilla de un documento del pago fijo: al marcarla se puede subir el archivo en el acto (queda para todos los meses). */
-export default function CasillaDocumento({ clave, texto, marcado, existente }: { clave: string; texto: string; marcado: boolean; existente?: { nombre: string; url?: string | null } | null }) {
+export default function CasillaDocumento({ clave, texto, marcado, existente, automatico = false }: { clave: string; texto: string; marcado: boolean; automatico?: boolean; existente?: { nombre: string; url?: string | null } | null }) {
   const [activo, setActivo] = useState(marcado);
   const [info, setInfo] = useState<string | null>(null);
   const entrada = useRef<HTMLInputElement>(null);
@@ -31,7 +31,12 @@ export default function CasillaDocumento({ clave, texto, marcado, existente }: {
         <span>{texto}</span>
         {activo && existente && <span className="casilla-doc-ok">✔ Subido{existente.url ? <> · <a href={existente.url} target="_blank" rel="noreferrer">ver</a></> : null}</span>}
       </label>
-      {activo && (
+      {activo && automatico && (
+        <div className="casilla-doc-sub">
+          <span className="pequeno tenue">El sistema la arma sola cada mes (con el nombre, cargo, DNI y monto de este pago fijo). No hay que subir nada.</span>
+        </div>
+      )}
+      {activo && !automatico && (
         <div className="casilla-doc-sub">
           <input ref={entrada} type="file" name={`archivo_${clave}`} accept="application/pdf,image/jpeg,image/png,image/webp" onChange={alElegir} />
           <span className="pequeno tenue">

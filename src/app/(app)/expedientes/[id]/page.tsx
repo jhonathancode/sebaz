@@ -453,6 +453,7 @@ export default async function Expediente({ params, searchParams }: { params: Par
           { clave: "conformidad", nombre: "Memorando de conformidad", listo: !!conformidad },
           { clave: "nea", nombre: "Entrada al almacén (NEA)", listo: !!nea },
         ]),
+    ...(datosDoc.planilla ? [{ clave: "planilla", nombre: "Planilla de remuneración", listo: true }] : []),
     { clave: "comprobante", nombre: "Comprobante de pago", listo: !!cp },
   ].filter((d) => d.listo);
   // Expediente anulado: todos sus documentos siguen disponibles, con el sello ANULADO
@@ -656,11 +657,46 @@ export default async function Expediente({ params, searchParams }: { params: Par
           })}
         </ol>
 
+        {(datosDoc.planilla || anexos.length > 0) && (
+          <ol className="av-pasos av-docs" aria-label="Documentos que acompañan al expediente" style={{ gridTemplateColumns: `repeat(${Math.min(4, (datosDoc.planilla ? 1 : 0) + anexos.length)}, minmax(0, 1fr))` }}>
+            {[
+              ...(datosDoc.planilla ? [{ clave: "planilla", nombre: "Planilla de remuneración", hecho: true, detalle: "Generada por el sistema" }] : []),
+              ...anexos.map((x) => ({ clave: x.clave, nombre: x.nombre, hecho: x.origen !== "pendiente", detalle: x.origen === "pendiente" ? "Falta subir" : x.origen === "propio" ? "Subido en este expediente" : x.origen === "permanente" ? "Permanente" : "Tomado de otro mes" })),
+            ].map((x) => (
+              <li key={x.clave} className={`av-paso ${x.hecho ? "hecho" : "pendiente"}${x.clave === verClave ? " visto" : ""}`}>
+                <Link href={`/expedientes/${id}?ver=${x.clave}`} scroll={false} aria-current={x.clave === verClave ? "step" : undefined}>
+                  <span className="av-icono" aria-hidden="true">
+                    {x.hecho ? (
+                      <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round"><path d="m5 12.5 4.5 4.5L19 7.5" /></svg>
+                    ) : (
+                      <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 3H6.5A1.5 1.5 0 0 0 5 4.5v15A1.5 1.5 0 0 0 6.5 21h11a1.5 1.5 0 0 0 1.5-1.5V8Z" /><path d="M14 3v5h5" /></svg>
+                    )}
+                  </span>
+                  <span className="av-texto">
+                    <span className="av-num">Documento</span>
+                    <span className="av-nombre">{x.nombre}</span>
+                    <span className="av-det">{x.detalle}</span>
+                  </span>
+                </Link>
+              </li>
+            ))}
+          </ol>
+        )}
       </section>
+
+      <AdjuntosExpediente
+        id={id}
+        tipoGasto={e.tipo}
+        compartidos={compartidos}
+        requeridos={(e as { pago_fijo_id?: string | null }).pago_fijo_id ? (requeridos ?? []).filter((r) => r !== "planilla") : null}
+        adjuntos={adjuntos}
+        puede={puedeRegistrar}
+        sistema={{ planilla: !!datosDoc.planilla, requerimiento: true, orden: (ordenes ?? []).some((o) => !(o as { anulado?: boolean }).anulado), conformidad: (conformidades ?? []).some((c) => !(c as { anulado?: boolean }).anulado), comprobante: (cps ?? []).some((c) => c.estado !== "anulado") }}
+      />
 
       <section className="panel vista-previa">
         <div className="panel-cab">
-          <span>{viendoBorrador ? `Así quedará: ${borrador!.nombre}` : "Así va su documento"}</span>
+          <span>{viendoBorrador ? `Así quedará: ${borrador!.nombre}` : `Así va su documento · ${viendoAnexo?.nombre ?? docs.find((x) => x.clave === verClave)?.nombre ?? ""}`}</span>
           <div className="acciones-fila" style={viendoBorrador ? { display: "none" } : undefined}>
             {(!viendoAnexo) && <BotonPdf nombre={`Expediente ${num3(e.numero)}-${e.anio} ${verClave}`} selector=".vista-previa .hoja" className="btn chico primario" />}
             {viendoAnexo?.origen !== "pendiente" && <Link className="btn chico contorno" href={`/expedientes/${id}/documentos?doc=${verClave}&imprimir=1`}>Imprimir</Link>}
@@ -669,50 +705,6 @@ export default async function Expediente({ params, searchParams }: { params: Par
             )}
           </div>
         </div>
-        <nav className="doc-nav vista-pestanas" role="tablist" aria-label="Documentos del expediente">
-          {docs.map((x, i) => (
-            <span key={x.clave} className="doc-par">
-              {i > 0 && <i className="doc-sep ok" aria-hidden="true" />}
-              <Link
-                role="tab"
-                aria-selected={x.clave === verClave}
-                scroll={false}
-                className={`doc-tab${x.clave === verClave ? " activo" : ""}`}
-                href={`/expedientes/${id}?ver=${x.clave}${sp.paso ? `&paso=${sp.paso}` : ""}`}
-              >
-                <span className="ic" aria-hidden="true">✓</span>{x.nombre}
-              </Link>
-            </span>
-          ))}
-          {anexos.map((x) => (
-            <span key={x.clave} className="doc-par">
-              <i className={`doc-sep${x.origen === "pendiente" ? "" : " ok"}`} aria-hidden="true" />
-              <Link
-                role="tab"
-                aria-selected={x.clave === verClave}
-                scroll={false}
-                className={`doc-tab${x.origen === "pendiente" ? " pendiente" : ""}${x.clave === verClave ? " activo" : ""}`}
-                href={`/expedientes/${id}?ver=${x.clave}${sp.paso ? `&paso=${sp.paso}` : ""}`}
-              >
-                <span className="ic" aria-hidden="true">{x.origen === "pendiente" ? "" : "✓"}</span>{x.nombre}
-              </Link>
-            </span>
-          ))}
-          {borrador && (
-            <span className="doc-par">
-              <i className="doc-sep" aria-hidden="true" />
-              <Link
-                role="tab"
-                aria-selected={viendoBorrador}
-                scroll={false}
-                className={`doc-tab pendiente siguiente${viendoBorrador ? " activo" : ""}`}
-                href={`/expedientes/${id}?ver=borrador${sp.paso ? `&paso=${sp.paso}` : ""}`}
-              >
-                <span className="ic" aria-hidden="true" />{borrador.nombre} · por emitir
-              </Link>
-            </span>
-          )}
-        </nav>
         {viendoBorrador && (
           <div className="aviso info" style={{ margin: "12px 14px 0" }}>
             Así quedará el documento. El número es el correlativo que le toca: se asigna solo al emitirlo.
@@ -899,16 +891,6 @@ export default async function Expediente({ params, searchParams }: { params: Par
           </div>
         </section>
       )}
-
-      <AdjuntosExpediente
-        id={id}
-        tipoGasto={e.tipo}
-        compartidos={compartidos}
-        requeridos={(e as { pago_fijo_id?: string | null }).pago_fijo_id ? requeridos ?? [] : null}
-        adjuntos={adjuntos}
-        puede={puedeRegistrar}
-        sistema={{ requerimiento: true, orden: (ordenes ?? []).some((o) => !(o as { anulado?: boolean }).anulado), conformidad: (conformidades ?? []).some((c) => !(c as { anulado?: boolean }).anulado), comprobante: (cps ?? []).some((c) => c.estado !== "anulado") }}
-      />
 
       <div>
         <section className="panel">

@@ -26,7 +26,7 @@ export default function AdjuntosExpediente({
   /** Documentos que vienen de otro lado: permanentes del pago fijo o subidos en otro mes del mismo gasto. */
   compartidos: { tipo: string; nombre: string; url: string; origen: "permanente" | "heredado" }[];
   adjuntos: Adjunto[];
-  sistema: { requerimiento: boolean; orden: boolean; conformidad: boolean; comprobante: boolean };
+  sistema: { planilla: boolean; requerimiento: boolean; orden: boolean; conformidad: boolean; comprobante: boolean };
   puede: boolean;
 }) {
   const vigentes = adjuntos.filter((a) => !a.anulado);
@@ -36,6 +36,7 @@ export default function AdjuntosExpediente({
     { texto: "Requerimiento", ok: sistema.requerimiento },
     { texto: tipoGasto === "compra" ? "Orden de compra" : "Orden de servicio", ok: sistema.orden },
     { texto: "Conformidad", ok: sistema.conformidad },
+    ...(sistema.planilla ? [{ texto: "Planilla de remuneración", ok: true }] : []),
     { texto: "Comprobante de pago", ok: sistema.comprobante },
   ];
   const tienePerm = (g: string) => compartidos.some((x) => x.tipo === g);

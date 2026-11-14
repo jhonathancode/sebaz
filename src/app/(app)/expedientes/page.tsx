@@ -432,7 +432,7 @@ export default async function Expedientes({ searchParams }: { searchParams: Para
                   {(() => {
                     const pf = pagosFijos.find((x) => x.id === (e as { pago_fijo_id?: string | null }).pago_fijo_id);
                     if (!pf || e.estado === "anulado") return null;
-                    const sinSubir = pf.documentos.filter((d) => !adjDe.get(e.id)?.has(d));
+                    const sinSubir = pf.documentos.filter((d) => d !== "planilla" && !adjDe.get(e.id)?.has(d));
                     return sinSubir.map((d) => {
                       const perm = archivosPF.has(`${pf.id}|${d}`) || !!tiposDePF.get(pf.id)?.has(d);
                       return (

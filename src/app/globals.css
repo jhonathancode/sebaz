@@ -4979,3 +4979,28 @@ html.pdf-captura .sf-faltan { display: none; }
   .cc-selector .cc-meses { flex: 0 0 100%; max-width: 100%; min-width: 0; }
   .ing-franja { width: 100%; }
 }
+
+/* ---------- Expedientes en celular: compacto, los expedientes deben verse de entrada ---------- */
+@media (max-width: 760px) {
+  .cab-vista { gap: 6px; }
+  .cab-vista > div:first-child { flex: 1 1 100%; }
+  .cab-vista h1 { font-size: 19px; }
+  .cab-vista .sub { display: none; }
+  .cab-vista .selector-mes { flex: 1 1 0; min-width: 0; padding: 2px 2px 2px 8px; }
+  .cab-vista .selector-mes input { flex: 1 1 auto; min-width: 0; font-size: 14px; }
+  .cab-vista > .btn { padding: 6px 12px; font-size: 13px; min-height: 0; flex: 1 1 auto; text-align: center; }
+  .cab-vista .espacio { display: none; }
+  .kpis { display: flex; overflow-x: auto; gap: 8px; scrollbar-width: none; max-width: 100%; }
+  .kpis::-webkit-scrollbar { display: none; }
+  .kpis .kpi { flex: 0 0 auto; min-width: 150px; padding: 8px 12px; gap: 0; }
+  .kpi .k-et { font-size: 10.5px; }
+  .kpi .k-val { font-size: 18px; }
+  .kpi .k-det { display: none; }
+  .filtros { gap: 6px; }
+  .filtros .grupo { flex-wrap: nowrap; overflow-x: auto; max-width: 100%; flex: 1 1 100%; scrollbar-width: none; padding-bottom: 2px; }
+  .filtros .grupo::-webkit-scrollbar { display: none; }
+  .filtros .grupo > * { flex: 0 0 auto; white-space: nowrap; }
+  .f-chip { padding: 4px 10px; font-size: 12.5px; }
+  .filtros .buscador { flex: 1 1 100%; }
+  .filtros .buscador input { min-width: 0; }
+}

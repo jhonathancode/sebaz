@@ -1,5 +1,5 @@
 import { codigoCP, nombrePeriodo, num3, periodoActual, rangoPeriodo } from "@/lib/formato";
-import { cargarContabilidad, libro as libroContable, libroDiario, matriz, MESES_CORTOS, nombreRubro } from "@/lib/contabilidad";
+import { balanceAnual, cargarContabilidad, libro as libroContable, libroDiario, matriz, MESES_CORTOS, nombreRubro } from "@/lib/contabilidad";
 import type { contextoMcp } from "@/lib/contexto";
 import { NOMBRE_TIPO_RC } from "@/lib/registroCivil";
 import { codigoSec, tipoSec } from "@/lib/secretaria";
@@ -282,6 +282,13 @@ export async function construirHoja(lista: string, ctx: Awaited<ReturnType<typeo
           columnas: [{ titulo: "Fecha", ancho: 12 }, { titulo: "Documento", ancho: 26 }, { titulo: "Detalle", ancho: 56 }, { titulo: "Ingreso S/", ancho: 14, tipo: "monto" }, { titulo: "Egreso S/", ancho: 14, tipo: "monto" }, { titulo: "Saldo S/", ancho: 14, tipo: "monto" }],
           filas,
           totales: ["TOTALES", null, "Saldo final", l.entradas, l.salidas, l.final],
+        };
+      } else if (ver === "balance") {
+        const b = balanceAnual(d);
+        hoja = {
+          titulo: `Balance anual ${anio}`,
+          columnas: [{ titulo: "Concepto", ancho: 70 }, { titulo: "Importe S/", ancho: 18, tipo: "monto" }],
+          filas: b.lineas.map((x) => [x.tipo === "titulo" ? x.texto : x.texto, x.monto ?? null]),
         };
       } else if (ver === "acumulado") {
         const cuadro = ["ingresos", "comprobantes", "caja"].includes(sp.get("cuadro") ?? "") ? sp.get("cuadro")! : "ingresos";

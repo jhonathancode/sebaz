@@ -5004,3 +5004,29 @@ html.pdf-captura .sf-faltan { display: none; }
   .filtros .buscador { flex: 1 1 100%; }
   .filtros .buscador input { min-width: 0; }
 }
+
+/* ---------- Reportes ---------- */
+.rep-tarjetas { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 10px; }
+.rep-tarjeta { display: flex; flex-direction: column; gap: 4px; padding: 12px 14px; border: 1px solid var(--borde); border-radius: 14px; background: var(--panel); color: inherit; text-decoration: none; }
+.rep-tarjeta:hover { border-color: var(--azul-borde); background: color-mix(in srgb, var(--primario) 5%, var(--panel)); }
+.rep-tarjeta b { font-size: 14.5px; }
+.rep-tarjeta small { color: var(--tenue); font-size: 12.5px; line-height: 1.35; }
+.rep-formatos { display: flex; gap: 6px; margin-top: 4px; }
+.rep-formatos i { font-style: normal; font-size: 11px; font-weight: 700; padding: 1px 8px; border-radius: 999px; border: 1px solid var(--borde); color: var(--tenue); }
+.rep-filtros { align-items: end; margin: 6px 0 10px; }
+.rep-filtros .campo { min-width: 140px; }
+.rep-marco { overflow-x: auto; border-radius: 6px; background: var(--panel-2); padding: 10px; }
+.hoja.rep-hoja { min-width: 860px; max-width: none; margin: 0 auto; padding: 22px 26px; color: #111; background: #fff; }
+.rep-cab { margin-bottom: 12px; border-bottom: 2px solid #111; padding-bottom: 8px; display: flex; flex-direction: column; gap: 2px; }
+.rep-cab b { font-size: 15px; }
+.rep-cab span { font-size: 12px; color: #444; }
+.rep-cab h2 { font-size: 15px; margin: 6px 0 0; font-weight: 700; }
+.rep-tabla { width: 100%; border-collapse: collapse; font-size: 11.5px; }
+.rep-tabla th { background: #2b6fe6; color: #fff; text-align: left; padding: 5px 7px; font-size: 11px; border: 1px solid #1f5bc7; }
+.rep-tabla td { padding: 4px 7px; border: 1px solid #d3d8de; vertical-align: top; }
+.rep-tabla th.d, .rep-tabla td.d { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.rep-tabla tfoot td { font-weight: 700; background: #ecf3fe; }
+.rep-tabla .rep-vacio { text-align: center; color: #666; padding: 18px; }
+.rep-pie { margin-top: 10px; font-size: 11px; color: #555; text-align: right; }
+@media (max-width: 760px) { .rep-filtros { display: grid; grid-template-columns: 1fr 1fr; } .rep-filtros .campo { min-width: 0; } .rep-filtros .btn { grid-column: 1 / -1; } .hoja.rep-hoja { padding: 14px; } }
+@media print { .rep-marco { padding: 0; background: none; overflow: visible; } .hoja.rep-hoja { min-width: 0; padding: 0; } }

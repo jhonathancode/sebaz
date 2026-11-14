@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { BANCOS, CAMPOS_CAPITULO1, CAMPOS_CAPITULO1_LARGOS } from "@/lib/catalogos";
 import { contextoMcp, tiene } from "@/lib/contexto";
+import { TIPOS_ADJUNTO } from "@/lib/adjuntosExpediente";
 import { mensajeError, numero, texto, volver } from "@/lib/acciones";
 import { supabaseServidor } from "@/lib/supabase/server";
 import { NUMERACIONES, ultimoEmitido } from "@/lib/numeracion";
@@ -141,9 +142,11 @@ export async function guardarPagoFijo(fd: FormData) {
     clasificador: texto(fd, "clasificador"),
     expediente_completo: texto(fd, "completo") === "1",
   };
-  const { error } = id
-    ? await supabase.from("pagos_fijos").update(datos).eq("id", id)
-    : await supabase.from("pagos_fijos").insert({ mcp_id: ctx.mcp.id, ...datos });
+  const documentos = fd.getAll("documentos").map(String).filter((d) => TIPOS_ADJUNTO.some((t) => t.clave === d));
+  const guardar = (d: Record<string, unknown>) => (id ? supabase.from("pagos_fijos").update(d).eq("id", id) : supabase.from("pagos_fijos").insert({ mcp_id: ctx.mcp.id, ...d }));
+  let { error } = await guardar({ ...datos, documentos });
+  // Si la base aún no tiene la columna de documentos, se guarda igual lo demás
+  if (error && /documentos|schema cache/.test(error.message)) ({ error } = await guardar(datos));
   if (error) volver(destino, "error", error.message.includes("duplicate") ? "Ya hay un pago fijo con ese concepto." : mensajeError(error));
   revalidatePath("/configuracion");
   revalidatePath("/expedientes");

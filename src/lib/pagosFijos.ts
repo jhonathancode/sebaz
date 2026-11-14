@@ -84,6 +84,8 @@ export type PagoFijoCatalogo = {
   /** true: lleva orden de servicio y conformidad; false (dietas): solo requerimiento y comprobante. */
   expediente_completo: boolean;
   mes_modelo: string | null;
+  /** Documentos que debe llevar el expediente de este pago (claves de adjuntosExpediente). */
+  documentos: string[];
 };
 
 /** Lista de pagos fijos y meses pagados (vacía si la base aún no tiene la actualización). */
@@ -114,6 +116,7 @@ export async function cargarCatalogoPagosFijos(supabase: Cliente, mcpId: string,
     descripcion_modelo: (p.descripcion_modelo as string | null | undefined) ?? null,
     expediente_completo: (p.expediente_completo as boolean | null | undefined) ?? true,
     mes_modelo: (p.mes_modelo as string | null | undefined) ?? null,
+    documentos: (p.documentos as string[] | null | undefined) ?? [],
   }));
 }
 

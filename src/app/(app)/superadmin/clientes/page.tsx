@@ -4,7 +4,7 @@ import Avisos, { type ParamsAviso } from "@/components/Avisos";
 import VentanaFlotante from "@/components/VentanaFlotante";
 import { obtenerContexto } from "@/lib/contexto";
 import { fecha, periodoActual, soles } from "@/lib/formato";
-import { MODULOS, modulosDe } from "@/lib/modulos";
+import { GRUPOS_MODULOS, MODULOS, modulosDe } from "@/lib/modulos";
 import { estadoCliente, mensual } from "@/lib/superadmin";
 import { supabaseServidor } from "@/lib/supabase/server";
 import { crearMcp } from "../../soporte/acciones";
@@ -105,13 +105,18 @@ export default async function Superadmin({ searchParams }: { searchParams: Param
             <input type="hidden" name="con_modulos" value="1" />
             <legend style={{ padding: "0 6px", fontWeight: 600 }}>Módulos que se le habilitan</legend>
             <div className="pequeno tenue" style={{ marginBottom: 8 }}>Expedientes (requerimientos, comprobantes y pagos fijos) siempre está incluido. Puede cambiar esto después.</div>
-            <div style={{ display: "flex", flexWrap: "wrap", gap: "8px 20px" }}>
-              {MODULOS.map((m) => (
-                <label key={m.clave} style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                  <input type="checkbox" name="modulos" value={m.clave} defaultChecked /> {m.texto}
-                </label>
-              ))}
-            </div>
+            {GRUPOS_MODULOS.map((g) => (
+              <div key={g.clave} style={{ marginBottom: 8 }}>
+                <div style={{ fontWeight: 700, fontSize: 13 }}>Módulo {g.texto}</div>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: "6px 20px", marginTop: 4 }}>
+                  {g.menus.map((m) => (
+                    <label key={m.clave} style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                      <input type="checkbox" name="modulos" value={m.clave} defaultChecked /> {m.texto}
+                    </label>
+                  ))}
+                </div>
+              </div>
+            ))}
           </fieldset>
         </VentanaFlotante>
       </div>
@@ -148,7 +153,7 @@ export default async function Superadmin({ searchParams }: { searchParams: Param
                 <span className="etq">{f.plan}</span>
                 <span>{[f.distrito, f.provincia].filter(Boolean).join(" · ")}</span>
                 <span>{f.usuarios} usuario(s)</span>
-                <span title={MODULOS.filter((m) => modulosDe(f).includes(m.clave)).map((m) => m.texto).join(", ") || "Solo expedientes"}>{modulosDe(f).length} de {MODULOS.length} módulos</span>
+                <span title={MODULOS.filter((m) => modulosDe(f).includes(m.clave)).map((m) => m.texto).join(", ") || "Solo expedientes"}>{MODULOS.filter((m) => modulosDe(f).includes(m.clave)).length} de {MODULOS.length} menús</span>
                 <span>Vence {fecha(f.s?.vence_el)}</span>
                 {f.ultimo && <span>Último pago {fecha(f.ultimo.fecha)} · S/ {soles(f.ultimo.monto)}</span>}
               </div>

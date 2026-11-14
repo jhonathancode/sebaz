@@ -7,7 +7,7 @@ import Motivo from "@/components/Motivo";
 import VentanaFlotante from "@/components/VentanaFlotante";
 import { NOMBRE_ROL, obtenerContexto, type Rol } from "@/lib/contexto";
 import { fecha, fechaHora, hoyISO, monto2, soles } from "@/lib/formato";
-import { MODULOS, modulosDe } from "@/lib/modulos";
+import { GRUPOS_MODULOS, MODULOS, modulosDe } from "@/lib/modulos";
 import { estadoCliente, mensual } from "@/lib/superadmin";
 import { supabaseServicio, supabaseServidor } from "@/lib/supabase/server";
 import { anularPago, cambiarEstadoCliente, guardarModulos, guardarSuscripcion, registrarPago } from "../../acciones";
@@ -176,12 +176,19 @@ export default async function Cliente({ params, searchParams }: { params: Promis
             <div className="panel-cab">Módulos habilitados</div>
             <form action={guardarModulos} className="panel-cuerpo">
               <input type="hidden" name="mcp_id" value={id} />
-              <span className="pequeno tenue">Expedientes (requerimientos, comprobantes y pagos fijos) siempre está incluido. Si quita un módulo, el cliente deja de verlo, pero sus datos se conservan.</span>
-              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                {MODULOS.map((mo) => (
-                  <label key={mo.clave} style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                    <input type="checkbox" name="modulos" value={mo.clave} defaultChecked={modulosDe(m).includes(mo.clave)} /> {mo.texto}
-                  </label>
+              <span className="pequeno tenue">Habilite los módulos que usa el cliente y marque los menús de cada uno; sus usuarios verán todos los módulos activos en el mismo menú. Expedientes (requerimientos, comprobantes y pagos fijos) siempre está incluido. Si quita un menú, el cliente deja de verlo, pero sus datos se conservan.</span>
+              <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                {GRUPOS_MODULOS.map((g) => (
+                  <fieldset key={g.clave} style={{ border: "1px solid var(--borde)", borderRadius: "var(--radio)", padding: "8px 14px 10px", margin: 0 }}>
+                    <legend style={{ padding: "0 6px", fontWeight: 700 }}>Módulo {g.texto}</legend>
+                    <div style={{ display: "flex", flexWrap: "wrap", gap: "6px 20px" }}>
+                      {g.menus.map((mo) => (
+                        <label key={mo.clave} style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                          <input type="checkbox" name="modulos" value={mo.clave} defaultChecked={modulosDe(m).includes(mo.clave)} /> {mo.texto}
+                        </label>
+                      ))}
+                    </div>
+                  </fieldset>
                 ))}
               </div>
               <BotonConfirmar className="btn primario" pregunta="¿Guardar los módulos de este cliente?" textoConfirmar="Sí, guardar">Guardar módulos</BotonConfirmar>

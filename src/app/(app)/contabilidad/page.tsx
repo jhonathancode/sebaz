@@ -5,7 +5,9 @@ import Avisos, { type ParamsAviso } from "@/components/Avisos";
 import BotonConfirmar from "@/components/BotonConfirmar";
 import Motivo from "@/components/Motivo";
 import VentanaFlotante from "@/components/VentanaFlotante";
+import ModuloNoHabilitado from "@/components/ModuloNoHabilitado";
 import { contextoMcp, tiene } from "@/lib/contexto";
+import { tieneModulo } from "@/lib/modulos";
 import { cargarContabilidad, chequesEnTransito, libro, libroDiario, matriz, MESES_CORTOS, nombreRubro } from "@/lib/contabilidad";
 import { fecha, hoyISO, nombrePeriodo, periodoActual, monto2, soles } from "@/lib/formato";
 import { supabaseServidor } from "@/lib/supabase/server";
@@ -28,6 +30,7 @@ const VISTAS = [
 export default async function Contabilidad({ searchParams }: { searchParams: ParamsAviso }) {
   const sp = await searchParams;
   const ctx = await contextoMcp();
+  if (!tieneModulo(ctx.mcp, "contabilidad")) return <ModuloNoHabilitado nombre="Libros y resumen" />;
   const supabase = await supabaseServidor();
   const mes = sp.mes ?? periodoActual();
   const anio = Number(mes.slice(0, 4));

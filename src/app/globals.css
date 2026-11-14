@@ -3581,9 +3581,6 @@ label.opcion:has(input:checked) { border-color: var(--primario); background: lin
 :root[data-theme="dark"] .muni-tab:nth-child(2) .m-monto { color: #9cc3ea; }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .muni-tab:nth-child(2) .m-monto { color: #9cc3ea; } }
 /* Etiqueta del módulo bajo el RUC */
-.lm-modulo { display: block; margin-top: 6px; font-style: normal; font-size: 10.5px; font-weight: 800; letter-spacing: .09em; text-transform: uppercase; color: var(--primario-texto); }
-.lm-modulo::before { content: ""; display: block; width: 28px; height: 2px; margin: 0 auto 6px; border-radius: 2px; background: linear-gradient(90deg, #2563eb, #60a5fa); }
-:root[data-menu="oculto"] .lm-modulo { display: none; }
 
 /* ===== Móvil: ajustes de limpieza (chips, barras de desplazamiento, tablas) ===== */
 /* Barras de desplazamiento finas y discretas en todo el sistema */
@@ -3668,20 +3665,8 @@ label.opcion:has(input:checked) { border-color: var(--primario); background: lin
 .fila .f-desc a.caja-enlace, .fila .f-desc .caja-enlace { display: inline-flex; width: fit-content; max-width: 100%; overflow: visible; margin-top: 8px; padding: 3px 11px; font-size: 11px; border-radius: 999px; line-height: 1.4; }
 
 /* Módulo activo: etiqueta destacada bajo el RUC */
-.lm-modulo { display: inline-flex; align-items: center; gap: 10px; margin-top: 10px; padding: 6px 16px 6px 7px; border-radius: 14px; background: linear-gradient(120deg, #1d4fb8, #3b82f6); color: #fff; font-style: normal; letter-spacing: 0; text-transform: none; box-shadow: 0 12px 20px -12px rgba(29, 79, 184, .85); }
-.lm-modulo::before { display: none; }
-.lm-modulo-ico { width: 32px; height: 32px; border-radius: 10px; display: grid; place-items: center; background: rgba(255, 255, 255, .2); color: #fff; flex: none; }
-.lm-modulo-txt { display: flex; flex-direction: column; align-items: flex-start; line-height: 1.1; text-align: left; }
-.lm-modulo-txt small { font-size: 9.5px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; opacity: .85; }
-.lm-modulo-txt b { font-size: 16px; font-weight: 800; letter-spacing: .01em; color: #fff; }
-.lm-mcp-texto .lm-modulo { display: inline-flex; }
 
 /* Módulo: una sola línea, mismo tamaño, ícono centrado con el texto */
-.lm-mcp-texto .lm-modulo { display: inline-flex; align-self: center; align-items: center; gap: 8px; margin-top: 10px; padding: 6px 16px 6px 7px; border-radius: 14px; background: linear-gradient(120deg, #1d4fb8, #3b82f6); color: #fff; box-shadow: 0 12px 20px -12px rgba(29, 79, 184, .85); }
-.lm-mcp-texto .lm-modulo-ico { width: 30px; height: 30px; border-radius: 10px; display: grid; place-items: center; background: rgba(255, 255, 255, .22); color: #fff; flex: none; }
-.lm-mcp-texto .lm-modulo-ico svg { display: block; }
-.lm-mcp-texto .lm-modulo-txt { display: block; font-size: 14px; line-height: 30px; font-weight: 600; letter-spacing: .02em; text-transform: uppercase; color: #fff; white-space: nowrap; }
-.lm-mcp-texto .lm-modulo-txt b { font-size: inherit; font-weight: 800; color: #fff; }
 
 /* ===== Cuadros más sobrios: el azul se usa de acento, no de relleno ===== */
 /* Tablas tipo Excel (caja chica, ingresos, etc.) */
@@ -3716,12 +3701,6 @@ label.opcion:has(input:checked) { border-color: var(--primario); background: lin
 @media (max-width: 760px) { .cc-excel caption { font-size: 15px; padding: 13px 14px; } }
 
 /* Módulo de Tesorería: efecto al apuntar (brillo que cruza y resplandor), sin zoom */
-.lm-mcp-texto .lm-modulo { position: relative; overflow: hidden; background-size: 200% 100%; background-position: 0 0; transition: background-position .5s ease, box-shadow .25s ease, filter .25s ease; }
-.lm-mcp-texto .lm-modulo::after { content: ""; position: absolute; top: 0; bottom: 0; left: -60%; width: 45%; background: linear-gradient(100deg, transparent, rgba(255, 255, 255, .38), transparent); transform: skewX(-18deg); transition: left .7s ease; pointer-events: none; }
-.lm-mcp-texto .lm-modulo:hover { background-position: 100% 0; box-shadow: 0 16px 28px -10px rgba(37, 99, 235, .9), 0 0 0 3px rgba(96, 165, 250, .35); filter: brightness(1.06); }
-.lm-mcp-texto .lm-modulo:hover::after { left: 120%; }
-.lm-mcp-texto .lm-modulo-ico { transition: background .25s ease; }
-.lm-mcp-texto .lm-modulo:hover .lm-modulo-ico { background: rgba(255, 255, 255, .34); }
 
 /* Fecha del expediente, arriba del requerimiento */
 .fecha-exp { display: flex; align-items: center; gap: 12px 18px; flex-wrap: wrap; padding: 12px 16px; margin-bottom: 12px; border-radius: 16px; border: 1px solid var(--borde); border-left: 5px solid var(--primario); background: var(--panel); }
@@ -5160,3 +5139,12 @@ html.pdf-captura .sf-faltan { display: none; }
 .bal-hoja .bal-cuadre.ok { color: #1f5bc7; }
 .bal-hoja .rep-pie { color: #4a5565; }
 .bal-hoja .rep-tabla th.bal-n, .bal-hoja .rep-tabla td.bal-n { width: 1%; white-space: nowrap; text-align: center; padding-left: 6px; padding-right: 6px; }
+
+/* Encabezado de cada módulo en el menú lateral */
+.lateral-menu ul li.lm-grupo { list-style: none; padding: 14px 22px 4px; }
+.lateral-menu ul li.lm-grupo span { display: flex; align-items: center; gap: 8px; font-size: 10.5px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; color: var(--primario-texto); }
+.lateral-menu ul li.lm-grupo span::after { content: ""; flex: 1; height: 1px; background: linear-gradient(90deg, color-mix(in srgb, var(--primario) 30%, var(--borde)), transparent); }
+:root[data-menu="oculto"] .lateral-menu ul li.lm-grupo { padding: 8px 14px 2px; }
+:root[data-menu="oculto"] .lateral-menu ul li.lm-grupo span { font-size: 0; }
+.marco-app[data-menu="oculto"] .lateral-menu ul li.lm-grupo { padding: 8px 14px 2px; }
+.marco-app[data-menu="oculto"] .lateral-menu ul li.lm-grupo span { font-size: 0; }

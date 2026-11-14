@@ -2,9 +2,9 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useState } from "react";
+import { Fragment, useEffect, useState } from "react";
 
-export type ItemMenu = { href: string; texto: string; n?: number; sub?: { href: string; texto: string }[] };
+export type ItemMenu = { href: string; texto: string; n?: number; grupo?: string; sub?: { href: string; texto: string }[] };
 
 /** Íconos de trazo fino (estilo lineal), dibujados aquí para no cargar librerías. */
 const ICONOS: Record<string, React.ReactNode> = {
@@ -68,6 +68,19 @@ const ICONOS: Record<string, React.ReactNode> = {
     <>
       <rect x="4" y="3" width="16" height="18" rx="2" />
       <path d="M8 7h8M8 11h2M12 11h2M16 11h0M8 15h2M12 15h2M8 18h2M12 18h2M16 15v3" />
+    </>
+  ),
+  "/contabilidad/balance-anual": (
+    <>
+      <path d="M12 4v16M5 20h14" />
+      <path d="M5 8h14" />
+      <path d="m5 8-2.5 6a3 3 0 0 0 5 0Zm14 0-2.5 6a3 3 0 0 0 5 0Z" />
+    </>
+  ),
+  "/contabilidad/estados-cuenta": (
+    <>
+      <path d="M5 4h14v16l-2.5-1.5L14 20l-2-1.5L10 20l-2.5-1.5L5 20Z" />
+      <path d="M8.5 9h7M8.5 13h7" />
     </>
   ),
   "/rendicion": (
@@ -272,16 +285,6 @@ export default function Menu({ items, abajo = [], mcp, panel }: { items: ItemMen
             <div className="lm-mcp-texto">
               <strong>{mcp.nombre}</strong>
               <span>RUC {mcp.ruc ?? "pendiente"}</span>
-              <div className="lm-modulo" title="Módulo de Tesorería">
-                <div className="lm-modulo-ico" aria-hidden="true">
-                  <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <rect x="3" y="6" width="18" height="13" rx="3" />
-                    <path d="M3 10h18" />
-                    <path d="M16 15h2" />
-                  </svg>
-                </div>
-                <div className="lm-modulo-txt">Módulo <b>Tesorería</b></div>
-              </div>
             </div>
           </div>
         )}
@@ -299,12 +302,15 @@ export default function Menu({ items, abajo = [], mcp, panel }: { items: ItemMen
 
         <div className="lm-titulo">{mcp ? "Trabajo diario" : "Administración"}</div>
         <ul>
-          {items.map((i) => {
+          {items.map((i, idx) => {
             const activo = actual === i.href;
             const dentro = ruta === i.href || ruta.startsWith(i.href + "/");
             const desplegado = abierto[i.href] ?? dentro;
+            const encabezado = i.grupo && i.grupo !== items[idx - 1]?.grupo ? i.grupo : null;
             return (
-              <li key={i.href}>
+              <Fragment key={i.href}>
+              {encabezado && <li className="lm-grupo" aria-hidden="true"><span>{encabezado}</span></li>}
+              <li>
                 {i.sub ? (
                   // Con sub-menús: al pulsar solo se abren o cierran; se elige luego
                   <button type="button" className={`lm-padre${dentro ? " activo" : ""}`} title={i.texto} aria-expanded={desplegado} onClick={() => {
@@ -346,6 +352,7 @@ export default function Menu({ items, abajo = [], mcp, panel }: { items: ItemMen
                   </ul>
                 )}
               </li>
+              </Fragment>
             );
           })}
         </ul>

@@ -4908,3 +4908,22 @@ html.pdf-captura .sf-faltan { display: none; }
   .de-botones > .btn { flex: 1 1 45%; }
   .doc-emitido .vf-cuerpo { padding: 4px; }
 }
+@media (max-width: 760px) {
+  /* Padrón en celular: tarjeta compacta y ordenada */
+  .rc-tabla tr { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; padding: 12px 14px; }
+  .rc-tabla td { font-size: 13px; padding: 0 !important; width: auto !important; }
+  .rc-tabla td:nth-child(1) { flex: 1 1 100%; }
+  .rc-tabla .rc-persona-txt b { white-space: normal; overflow: visible; text-overflow: clip; font-size: 14.5px; line-height: 1.25; }
+  .rc-tabla .rc-persona-txt small { white-space: normal; overflow: visible; font-size: 12px; }
+  .rc-tabla .rc-num { font-size: 13px; letter-spacing: 0; }
+  .rc-tabla td:nth-child(5) { flex: 1 1 100%; display: flex; flex-wrap: wrap; gap: 4px 14px; color: var(--tenue); font-size: 12.5px; }
+  .rc-tabla td:nth-child(5) span { display: inline-flex; gap: 5px; }
+  .rc-tabla td:nth-child(5) i { font-style: normal; font-size: 11px; letter-spacing: .05em; text-transform: uppercase; }
+  .rc-tabla td:nth-child(6) { flex: 1 1 auto; }
+  .rc-tabla td:nth-child(7) { flex: 0 0 auto; margin-left: auto; }
+  .rc-tabla .rc-partida { display: inline-flex; align-items: center; gap: 8px; font-size: 12.5px; }
+  .rc-tabla .btn.chico { padding: 4px 12px; font-size: 12.5px; }
+  .rc-cifras > div { padding: 10px 12px; }
+  .rc-cifras > div b { font-size: 20px; }
+  .rc-cifras > div span { font-size: 11.5px; line-height: 1.2; }
+}

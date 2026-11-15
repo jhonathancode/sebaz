@@ -5305,3 +5305,22 @@ html.pdf-captura .sf-faltan { display: none; }
 /* Tarjetas de municipalidad: sin la franja gruesa del lado izquierdo */
 .muni-tab::before, .muni-tab:nth-child(2)::before { display: none; }
 .muni-tab { padding-left: 20px; }
+
+/* ------------------------------------------------ Cuadros de Ingresos propios y Caja chica: sobrios y limpios */
+html:not(.pdf-captura) .cc-excel-marco { border: 1px solid var(--borde); border-radius: 18px; background: var(--panel); box-shadow: 0 1px 2px rgba(15, 23, 42, .04), 0 18px 36px -30px rgba(15, 23, 42, .35); overflow: hidden; }
+html:not(.pdf-captura) .cc-excel { border-collapse: separate; border-spacing: 0; font-size: 13.5px; }
+html:not(.pdf-captura) .cc-excel caption { background: transparent; box-shadow: none; text-align: left; font-size: 13px; font-weight: 700; letter-spacing: .1em; color: var(--suave); padding: 20px 24px 16px; border-bottom: 0; text-shadow: none; }
+html:not(.pdf-captura) .cc-excel th { background: var(--panel-2); color: var(--tenue); font-size: 10.5px; font-weight: 700; letter-spacing: .1em; padding: 11px 16px; border: 0; border-top: 1px solid var(--linea); border-bottom: 1px solid var(--linea); }
+html:not(.pdf-captura) .cc-excel td { padding: 13px 16px; border: 0; border-bottom: 1px solid var(--linea); font-weight: 500; color: var(--texto); }
+html:not(.pdf-captura) .cc-excel tbody tr:last-child td { border-bottom: 0; }
+html:not(.pdf-captura) .cc-excel tbody tr:nth-child(even) td { background: transparent; }
+html:not(.pdf-captura) .cc-excel tbody tr:hover td { background: color-mix(in srgb, var(--texto) 3.5%, var(--panel)); }
+html:not(.pdf-captura) .cc-excel td.m, html:not(.pdf-captura) .cc-excel td.num { font-weight: 700; letter-spacing: -.005em; }
+html:not(.pdf-captura) .cc-excel tfoot td { background: var(--panel-2); border: 0; border-top: 1px solid var(--borde); padding: 14px 16px; font-size: 13.5px; font-weight: 800; color: var(--texto); }
+html:not(.pdf-captura) .cc-excel tfoot td.m, html:not(.pdf-captura) .cc-excel tfoot td.num { color: var(--texto); font-size: 15px; }
+html:not(.pdf-captura) .cc-excel .acc, html:not(.pdf-captura) .cc-excel .cc-acc-th { border: 0 !important; border-bottom: 1px solid var(--linea) !important; padding: 8px 14px; }
+html:not(.pdf-captura) .cc-excel .cc-acc-th { background: var(--panel-2) !important; border-top: 1px solid var(--linea) !important; }
+html:not(.pdf-captura) .cc-excel tbody tr:last-child .acc { border-bottom: 0 !important; }
+html:not(.pdf-captura) .cc-excel tfoot .acc { background: var(--panel-2) !important; border-top: 1px solid var(--borde) !important; border-bottom: 0 !important; }
+html:not(.pdf-captura) .cc-excel tr.recien td { box-shadow: none; background: color-mix(in srgb, var(--primario) 7%, var(--panel)); }
+html:not(.pdf-captura) .cc-excel .btn.chico { font-weight: 600; }

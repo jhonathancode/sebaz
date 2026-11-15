@@ -353,7 +353,7 @@ export default async function Configuracion({ searchParams }: { searchParams: Pa
             <div className="panel-cuerpo">
               <div className="etiqueta">1.1 Generalidades</div>
               <div className="rejilla-2">
-                {CAMPOS_CAPITULO1.map((c) => (
+                {CAMPOS_CAPITULO1.filter((c) => c.clave === "fecha_creacion" || c.clave === "ubicacion").map((c) => (
                   <label key={c.clave} className="campo">
                     {c.titulo}
                     <input name={c.clave} defaultValue={cap1[c.clave] ?? ""} />
@@ -362,10 +362,10 @@ export default async function Configuracion({ searchParams }: { searchParams: Pa
               </div>
               <p className="pequeno tenue" style={{ margin: "6px 0 0" }}>Escriba un punto por guion: pulse <b>Enter</b> para agregar otro, o el botón «+ Agregar punto». En el informe salen como lista con guiones.</p>
               <div className="cfg-puntos">
-                {CAMPOS_CAPITULO1_LARGOS.map((c) => (
+                {[...CAMPOS_CAPITULO1.filter((c) => c.clave === "actividades" || c.clave === "necesidades"), ...CAMPOS_CAPITULO1_LARGOS].map((c) => (
                   <div key={c.clave} className="campo lp-campo">
                     <span>{c.titulo}</span>
-                    <ListaPuntos name={c.clave} valor={cap1[c.clave] ?? ""} disabled={!admin} ejemplo={c.clave === "objetivos" ? "Ej.: Se construyó el puente de la comunidad" : c.clave === "limitaciones" ? "Ej.: Falta de presupuesto para la obra" : "Ej.: Se gestionó apoyo ante la municipalidad"} />
+                    <ListaPuntos name={c.clave} valor={cap1[c.clave] ?? ""} disabled={!admin} ejemplo={({ actividades: "Ej.: Agricultura (café y cacao)", necesidades: "Ej.: Mejoramiento de la carretera", objetivos: "Ej.: Se construyó el puente de la comunidad", limitaciones: "Ej.: Falta de presupuesto para la obra", medidas: "Ej.: Se gestionó apoyo ante la municipalidad" } as Record<string, string>)[c.clave]} />
                   </div>
                 ))}
               </div>

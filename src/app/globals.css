@@ -5336,3 +5336,9 @@ html:not(.pdf-captura) .cc-excel-marco { border-color: color-mix(in srgb, var(--
 
 html:not(.pdf-captura) .cc-excel caption { text-align: center; padding: 22px 24px 16px; font-size: 14px; letter-spacing: .14em; }
 @media (max-width: 700px) { html:not(.pdf-captura) .cc-excel caption { text-align: left; } }
+
+/* Líneas verticales muy leves entre columnas (cuadros de ingresos y caja chica) */
+html:not(.pdf-captura) .cc-excel th:not(:last-child), html:not(.pdf-captura) .cc-excel td:not(:last-child) { border-right: 1px solid color-mix(in srgb, var(--primario) 10%, var(--linea)); }
+html:not(.pdf-captura) .cc-excel th:not(:last-child) { border-right-color: color-mix(in srgb, var(--primario) 14%, var(--linea)); }
+html:not(.pdf-captura) .cc-excel .acc, html:not(.pdf-captura) .cc-excel .cc-acc-th { border-left: 1px solid color-mix(in srgb, var(--primario) 10%, var(--linea)) !important; }
+html:not(.pdf-captura) .cc-excel tfoot td:not(:last-child) { border-right-color: color-mix(in srgb, var(--primario) 14%, var(--linea)); }

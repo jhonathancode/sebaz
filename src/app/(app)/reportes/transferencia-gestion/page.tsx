@@ -3,6 +3,7 @@ import BotonImprimir from "@/components/BotonImprimir";
 import BotonPdf from "@/components/BotonPdf";
 import Firmas from "@/components/Firmas";
 import { contextoMcp } from "@/lib/contexto";
+import { tieneModulo } from "@/lib/modulos";
 import { codigoCP, fecha, nombrePeriodo, soles } from "@/lib/formato";
 import { NUMERACIONES, ultimoEmitido } from "@/lib/numeracion";
 import { supabaseServidor } from "@/lib/supabase/server";
@@ -29,6 +30,15 @@ export default async function TransferenciaGestion() {
     supabase.from("ingresos").select("monto").eq("mcp_id", m).eq("estado", "emitido").gte("fecha", `${anio}-01-01`),
     ...NUMERACIONES.map((n) => ultimoEmitido(supabase, m, n.tipo, anio)),
   ]);
+  const conPatrimonio = tieneModulo(ctx.mcp, "patrimonio");
+  const [{ data: bienes }, { data: predios }, { data: invs }] = conPatrimonio
+    ? await Promise.all([
+        supabase.from("bienes_patrimonio").select("valor").eq("mcp_id", m).eq("estado", "activo"),
+        supabase.from("predios_mcp").select("nombre, direccion, partida, condicion").eq("mcp_id", m).eq("anulado", false).order("nombre"),
+        supabase.from("inventarios_patrimonio").select("anio, estado, fecha_cierre").eq("mcp_id", m).neq("estado", "anulado").order("anio", { ascending: false }).limit(1),
+      ])
+    : [{ data: null }, { data: null }, { data: null }];
+  const nPat = ((stock ?? []).length > 0 ? 9 : 8);
   const nombre = (x: { perfiles: unknown }) => (x.perfiles as { nombre: string } | null)?.nombre ?? "";
   const cargoDe = (rol: string) => (miembros ?? []).filter((x) => x.rol === rol).map(nombre).join(", ") || "—";
   const cobradosSet = new Set((cobrados ?? []).map((c) => c.comprobante_id));
@@ -129,6 +139,23 @@ export default async function TransferenciaGestion() {
             {NUMERACIONES.map((n, i) => <tr key={n.tipo}><td>{n.nombre}</td><td className="num" style={{ width: 120 }}>{ultimos[i] ? String(ultimos[i]).padStart(3, "0") : "—"}</td></tr>)}
           </tbody>
         </table>
+
+        {conPatrimonio && (
+          <>
+            <h3>{nPat}. Patrimonio</h3>
+            <p>
+              Bienes muebles activos: <b>{(bienes ?? []).length}</b> por un valor de <b>S/ {soles((bienes ?? []).reduce((s, b) => s + Number(b.valor), 0))}</b>.{" "}
+              {invs?.[0] ? `Último inventario: ${invs[0].anio} (${invs[0].estado === "cerrado" ? `cerrado el ${fecha(invs[0].fecha_cierre)}` : "en curso"}).` : "Aún no se ha hecho un inventario en el sistema."}
+            </p>
+            <table className="formato">
+              <thead><tr><th>Predio</th><th>Dirección</th><th>Partida</th><th>Condición</th></tr></thead>
+              <tbody>
+                {(predios ?? []).map((p) => <tr key={p.nombre}><td>{p.nombre}</td><td>{p.direccion ?? ""}</td><td>{p.partida ?? ""}</td><td>{String(p.condicion).toUpperCase()}</td></tr>)}
+                {(predios ?? []).length === 0 && <tr><td colSpan={4}>No hay predios registrados.</td></tr>}
+              </tbody>
+            </table>
+          </>
+        )}
 
         <Firmas nombres={["TESORERO(A) SALIENTE", "TESORERO(A) ENTRANTE", "ALCALDE"]} />
       </div>

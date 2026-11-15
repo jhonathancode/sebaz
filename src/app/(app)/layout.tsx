@@ -16,6 +16,7 @@ import { supabaseServidor } from "@/lib/supabase/server";
 import type { Aviso } from "@/lib/notificaciones";
 import { rendicionesAtrasadas, type Pendiente } from "@/lib/pendientes";
 import { alertasDeposito } from "@/lib/alertasDeposito";
+import { alertasInventario } from "@/lib/alertasInventario";
 import { abrirAviso, dejarPendiente, marcarLeida, marcarTodasLeidas } from "./mensajes/acciones";
 
 async function salir() {
@@ -61,11 +62,12 @@ export default async function MarcoApp({ children }: { children: React.ReactNode
       // Pendientes que no son mensajes (ej. rendición del mes pasado sin armar): también van en la campana
       if (!(ctx.mcp && !ctx.esSuperadmin)) return [];
       const mcp = ctx.mcp;
-      const [rend, dep] = await Promise.all([
+      const [rend, dep, inv] = await Promise.all([
         tieneModulo(mcp, "rendicion") ? rendicionesAtrasadas(sb, mcp.id, ctx.fuentes).catch(() => [] as Pendiente[]) : Promise.resolve([] as Pendiente[]),
         tieneModulo(mcp, "ingresos") && tiene(ctx, "admin", "tesorero", "alcalde") ? alertasDeposito(sb, mcp.id).catch(() => [] as Pendiente[]) : Promise.resolve([] as Pendiente[]),
+        tieneModulo(mcp, "patrimonio") && tiene(ctx, "admin", "tesorero") ? alertasInventario(sb, mcp.id).catch(() => [] as Pendiente[]) : Promise.resolve([] as Pendiente[]),
       ]);
-      return [...dep, ...rend];
+      return [...inv, ...dep, ...rend];
     })(),
   ]);
   const menuOculto = cookieStore.get("menu")?.value === "oculto";

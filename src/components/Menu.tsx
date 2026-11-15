@@ -55,6 +55,13 @@ const ICONOS: Record<string, React.ReactNode> = {
       <path d="M7 16.5h10" />
     </>
   ),
+  "/patrimonio": (
+    <>
+      <rect x="4" y="9" width="16" height="11" rx="1.5" />
+      <path d="M8 9V6.5A1.5 1.5 0 0 1 9.5 5h5A1.5 1.5 0 0 1 16 6.5V9" />
+      <path d="M4 14h16M11 14v2h2v-2" />
+    </>
+  ),
   "/registro-civil": (
     <>
       <path d="M14 3H6.5A1.5 1.5 0 0 0 5 4.5v15A1.5 1.5 0 0 0 6.5 21h11a1.5 1.5 0 0 0 1.5-1.5V8Z" />

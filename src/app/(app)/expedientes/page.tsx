@@ -11,6 +11,7 @@ import { supabaseServidor } from "@/lib/supabase/server";
 import { nombreAdjunto, TIPOS_OCULTOS } from "@/lib/adjuntosExpediente";
 import { cargarArchivosPagoFijo, cargarCatalogoPagosFijos, mesPendiente, pagoLlevaPlanilla, siguienteCheque } from "@/lib/pagosFijos";
 import { cargarAtajos } from "@/lib/atajos";
+import { FASES, faseGasto } from "@/lib/fasesGasto";
 import { anularExpedienteTotal, crearExpediente, generarPagosFijosMes, registrarExpedienteCompleto } from "./acciones";
 import { MESES } from "@/lib/formato";
 import AsistenteRequerimiento from "@/components/AsistenteRequerimiento";
@@ -395,6 +396,12 @@ export default async function Expedientes({ searchParams }: { searchParams: Para
                 <div className="f-meta">
                   <span className="etq">{TIPOS[e.tipo] ?? e.tipo}</span>
                   {e.area_usuaria && <span>{e.area_usuaria}</span>}
+                  {e.estado !== "anulado" && (() => {
+                    const f = faseGasto({ estado: e.estado, aprobado: e.estado === "aprobado" || e.estado === "rendido", tieneOrden: !!dd.orden, tieneConformidad: !!dd.conformidad, tieneComprobante: dd.hayCp, conciliado: dd.conciliado });
+                    if (f === "anulado") return null;
+                    const info = FASES.find((x) => x.clave === f)!;
+                    return <span className={`etq fase-${f}`} title={info.ayuda}>Fase: {info.texto}</span>;
+                  })()}
                   {(() => {
                     const g = estadoGestion(e.fecha, cierres, hoyISO());
                     return g ? <span className={`etq ${g.estado === "bloqueado" ? "rojo" : "ambar"}`} title={g.estado === "bloqueado" ? "De una gestión anterior: bloqueado" : `Gestión anterior: se bloquea el ${fecha(g.desde)}`}>{g.estado === "bloqueado" ? "🔒 Gestión anterior" : "Gestión anterior · en gracia"}</span> : null;

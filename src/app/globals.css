@@ -5489,3 +5489,12 @@ html:not(.pdf-captura) .cc-excel tfoot td:not(:last-child) { border-right-color:
 .tut-pasos { margin: 0; padding-left: 22px; display: flex; flex-direction: column; gap: 10px; font-size: 15px; line-height: 1.45; }
 .tut-nav { display: flex; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
 a.tut-card { text-decoration: none; }
+
+/* ---- Fases del gasto ---- */
+.fases-resumen { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 10px; }
+.fase-card { position: relative; display: flex; flex-direction: column; gap: 2px; padding: 12px 14px; border: 1px solid var(--borde); border-radius: 14px; background: var(--panel); }
+.fase-num { position: absolute; top: 10px; right: 12px; font-size: 11px; font-weight: 800; color: var(--tenue); }
+.fase-monto { font-size: 18px; font-weight: 800; color: var(--primario-texto); font-variant-numeric: tabular-nums; }
+.fase-card small { color: var(--tenue); font-size: 12px; }
+.fase-pagado { color: var(--primario-texto); border-color: var(--primario-claro); }
+.fase-requerido { opacity: .85; }

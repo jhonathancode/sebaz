@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { conceptoSinSeRequiere } from "@/lib/requerimiento";
 import { MESES, soles } from "@/lib/formato";
-import { mesPendiente, pasarAlMes, type PagoFijoCatalogo } from "@/lib/pagosFijos";
+import { mesPendiente, pagoLlevaPlanilla, pasarAlMes, type PagoFijoCatalogo } from "@/lib/pagosFijos";
 
 const CORTO = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Set", "Oct", "Nov", "Dic"];
 
@@ -46,7 +46,7 @@ export default function SelectorPagoFijo({ pagos, periodo }: { pagos: PagoFijoCa
   function elegir(p: PagoFijoCatalogo, mes: string) {
     setAviso(null);
     setElegido({ id: p.id, mes });
-    window.dispatchEvent(new CustomEvent("sebaz:pago-fijo", { detail: { id: p.id, beneficiario: p.beneficiario, beneficiario_doc: p.beneficiario_doc, completo: p.expediente_completo, planilla: p.documentos.includes("planilla"), concepto: p.concepto, sustentos: p.sustentos } }));
+    window.dispatchEvent(new CustomEvent("sebaz:pago-fijo", { detail: { id: p.id, beneficiario: p.beneficiario, beneficiario_doc: p.beneficiario_doc, completo: p.expediente_completo, planilla: pagoLlevaPlanilla(p), concepto: p.concepto, sustentos: p.sustentos } }));
     const form = caja.current?.closest("form");
     if (!form) return;
     const [a, m] = mes.split("-").map(Number);

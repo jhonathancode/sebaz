@@ -399,8 +399,14 @@ export default async function Expedientes({ searchParams }: { searchParams: Para
                   {e.estado !== "anulado" && (() => {
                     const f = faseGasto({ estado: e.estado, aprobado: e.estado === "aprobado" || e.estado === "rendido", tieneOrden: !!dd.orden, tieneConformidad: !!dd.conformidad, tieneComprobante: dd.hayCp, conciliado: dd.conciliado });
                     if (f === "anulado") return null;
-                    const info = FASES.find((x) => x.clave === f)!;
-                    return <span className={`etq fase-${f}`} title={info.ayuda}>Fase: {info.texto}</span>;
+                    const alcanzada = FASES.findIndex((x) => x.clave === f);
+                    return (
+                      <span className="fases-cinta" aria-label="Fases del gasto">
+                        {FASES.map((x, n) => (
+                          <span key={x.clave} className={`etq fase-pill${n <= alcanzada ? " azul" : ""}`} title={x.ayuda}>{x.texto}</span>
+                        ))}
+                      </span>
+                    );
                   })()}
                   {(() => {
                     const g = estadoGestion(e.fecha, cierres, hoyISO());

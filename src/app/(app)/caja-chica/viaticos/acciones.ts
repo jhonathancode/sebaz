@@ -7,32 +7,39 @@ import { supabaseServidor } from "@/lib/supabase/server";
 import { CONCEPTOS_VIAJE } from "@/lib/viaticos";
 
 const RUTA = "/caja-chica/viaticos";
+/** Vuelve a la pantalla del lugar si el formulario lo indica (solo rutas de viáticos). */
+const rutaDe = (fd: FormData) => {
+  const r = texto(fd, "volver_a");
+  return r && r.startsWith(RUTA) ? r : RUTA;
+};
 const concepto = (v: string | null) => (CONCEPTOS_VIAJE.some((c) => c.v === v) ? (v as string) : "otro");
 
 export async function guardarTarifaViaje(fd: FormData) {
+  const ruta = rutaDe(fd);
   const ctx = await contextoMcp();
-  if (!tiene(ctx, "admin", "tesorero")) volver(RUTA, "error", "Solo el tesorero o el administrador cambian el tarifario.");
+  if (!tiene(ctx, "admin", "tesorero")) volver(ruta, "error", "Solo el tesorero o el administrador cambian el tarifario.");
   const supabase = await supabaseServidor();
   const destino = texto(fd, "destino")?.toUpperCase();
   const monto = numero(fd, "monto");
-  if (!destino) volver(RUTA, "error", "Escriba el destino.");
-  if (!monto || monto <= 0) volver(RUTA, "error", "Escriba el monto de la tarifa.");
+  if (!destino) volver(ruta, "error", "Escriba el destino.");
+  if (!monto || monto <= 0) volver(ruta, "error", "Escriba el monto de la tarifa.");
   const u = texto(fd, "unidad");
   const datos = { destino, concepto: concepto(texto(fd, "concepto")), detalle: texto(fd, "detalle")?.toUpperCase() ?? null, unidad: u === "noche" || u === "dia" ? u : "viaje", monto };
   const id = texto(fd, "id");
   const { error } = id ? await supabase.from("tarifas_viaje").update(datos).eq("id", id) : await supabase.from("tarifas_viaje").insert({ ...datos, mcp_id: ctx.mcp.id });
-  if (error) volver(RUTA, "error", mensajeError(error));
+  if (error) volver(ruta, "error", mensajeError(error));
   revalidatePath(RUTA);
-  volver(RUTA, "ok", id ? "Tarifa corregida." : "Tarifa agregada.");
+  volver(ruta, "ok", id ? "Tarifa corregida." : "Tarifa agregada.");
 }
 
 export async function activarTarifaViaje(fd: FormData) {
+  const ruta = rutaDe(fd);
   await contextoMcp();
   const supabase = await supabaseServidor();
   const activo = texto(fd, "activo") === "1";
   const { error } = await supabase.from("tarifas_viaje").update({ activo }).eq("id", texto(fd, "id")!);
-  if (error) volver(RUTA, "error", mensajeError(error));
-  volver(RUTA, "ok", activo ? "Tarifa activada." : "Tarifa archivada. Las comisiones ya hechas no cambian.");
+  if (error) volver(ruta, "error", mensajeError(error));
+  volver(ruta, "ok", activo ? "Tarifa activada." : "Tarifa archivada. Las comisiones ya hechas no cambian.");
 }
 
 export async function crearComision(fd: FormData) {

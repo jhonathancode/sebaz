@@ -207,7 +207,7 @@ export default async function Informe({
             <tbody>
               <tr><th colSpan={2}>1.1 Generalidades</th></tr>
               {CAMPOS_CAPITULO1.map((c) => (
-                <tr key={c.clave}><td style={{ width: 240 }}>{c.titulo}</td><td>{cap1[c.clave] ?? ""}</td></tr>
+                <tr key={c.clave}><td style={{ width: 240 }}>{c.titulo}</td><td style={{ whiteSpace: "pre-line" }}>{cap1[c.clave] ?? ""}</td></tr>
               ))}
               <tr><th colSpan={2}>1.2 Objetivos alcanzados</th></tr>
               <tr><td colSpan={2} style={{ whiteSpace: "pre-line" }}>{cap1.objetivos ?? ""}</td></tr>

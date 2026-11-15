@@ -3,6 +3,8 @@ import BotonConfirmar from "@/components/BotonConfirmar";
 import { notFound } from "next/navigation";
 import Avisos from "@/components/Avisos";
 import BotonPdf from "@/components/BotonPdf";
+import BotonPaquete from "@/components/BotonPaquete";
+import PaqueteRendicion from "@/components/PaqueteRendicion";
 import BotonImprimir from "@/components/BotonImprimir";
 import Estado from "@/components/Estado";
 import Firmas from "@/components/Firmas";
@@ -15,6 +17,7 @@ import { anularRendicion, marcarEntregada } from "../acciones";
 
 type CP = {
   id: string;
+  expediente_id: string | null;
   numero: number;
   origen: string;
   fecha: string;
@@ -32,7 +35,7 @@ export default async function Informe({
   searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ ok?: string; error?: string }>;
+  searchParams: Promise<{ ok?: string; error?: string; paquete?: string }>;
 }) {
   const { id } = await params;
   const sp = await searchParams;
@@ -44,7 +47,7 @@ export default async function Informe({
 
   const { data: items } = await supabase
     .from("rendicion_items")
-    .select("activo, comprobantes_pago(id, numero, origen, fecha, cheque, beneficiario, concepto, importe, funcion, categoria, fuente_id)")
+    .select("activo, comprobantes_pago(id, expediente_id, numero, origen, fecha, cheque, beneficiario, concepto, importe, funcion, categoria, fuente_id)")
     .eq("rendicion_id", id);
   const cps = (items ?? [])
     .filter((i) => i.activo || r.estado === "anulada")
@@ -80,6 +83,7 @@ export default async function Informe({
   const cap1 = ctx.mcp.capitulo1 ?? {};
   const mes = nombrePeriodo(r.periodo).toUpperCase();
   const anulada = r.estado === "anulada";
+  const paquete = sp.paquete === "1";
 
   return (
     <>
@@ -100,7 +104,8 @@ export default async function Informe({
           <Motivo accion={anularRendicion} boton="Anular rendición" ayuda="Motivo de la anulación" campos={{ id }} />
         )}
         <a className="btn contorno no-imprimir" href={`/exportar/rendicion?id=${id}`}>Descargar Excel</a>
-        <BotonPdf nombre="Informe de rendicion" />
+        {paquete ? <BotonPaquete nombre={`Rendicion ${String(r.numero).padStart(3, "0")}-${r.anio} completa`} /> : <Link className="btn primario" href={`/rendicion/${id}?paquete=1`}>Paquete completo con anexos</Link>}
+        <BotonPdf nombre="Informe de rendicion" texto="PDF solo del informe" />
         <BotonImprimir texto="Imprimir informe" />
       </div>
       <div className="no-imprimir">
@@ -259,6 +264,14 @@ export default async function Informe({
           </table>
           <Firmas nombres={["TESORERO(A)", "ALCALDE"]} />
         </div>
+      )}
+      {paquete && (
+        <>
+          <div className="aviso info no-imprimir">
+            Paquete completo: el informe y, detrás, los documentos y anexos de cada comprobante en orden de fecha. Revíselo aquí y descárguelo en un solo PDF.
+          </div>
+          <PaqueteRendicion supabase={supabase} ctx={ctx} cps={cps} />
+        </>
       )}
       <p className="pequeno tenue no-imprimir">Generada el {fechaHora(r.creado_en)}.</p>
     </>

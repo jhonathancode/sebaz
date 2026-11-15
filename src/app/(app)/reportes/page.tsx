@@ -18,6 +18,16 @@ export default async function Reportes() {
       <p className="tenue pequeno" style={{ marginTop: 0 }}>Elija un reporte, escoja el período y descárguelo en PDF o Excel.</p>
       <div className="rep-grupos">
         <section className="rep-grupo">
+          <h2 className="rep-grupo-tit"><span aria-hidden="true">🧮</span> Fases del gasto</h2>
+          <Link href="/reportes/fases-gasto" className="rep-fila">
+            <span className="rep-fila-texto">
+              <b>Gastos por fase: comprometido, devengado, girado y pagado</b>
+              <small>Cuánto llegó a cada fase en el mes, como lo muestra el SIAF, y en qué fase está cada gasto.</small>
+            </span>
+            <span className="rep-formatos"><i>PDF</i></span>
+          </Link>
+        </section>
+        <section className="rep-grupo">
           <h2 className="rep-grupo-tit"><span aria-hidden="true">🔁</span> Cambio de gestión</h2>
           <Link href="/reportes/transferencia-gestion" className="rep-fila">
             <span className="rep-fila-texto">

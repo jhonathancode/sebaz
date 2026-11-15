@@ -95,6 +95,7 @@ export default async function MarcoApp({ children }: { children: React.ReactNode
           ...menusDeGrupo(ctx.mcp, g).map((m) => ({ href: m.href, texto: m.texto.replace(/ \(.*\)$/, ""), grupo: g.texto })),
         ]),
         { href: "/reportes", texto: "Reportes" },
+        { href: "/tutoriales", texto: "Tutoriales" },
       ]
     : ctx.esSoporte
       ? [{ href: "/soporte", texto: "Panel de soporte" }]

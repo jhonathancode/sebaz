@@ -5412,3 +5412,15 @@ html:not(.pdf-captura) .cc-excel tfoot td:not(:last-child) { border-right-color:
   .filas .fila .f-monto small { justify-content: flex-start; }
   .filas .fila .f-acc { grid-column: 2; }
 }
+
+/* ---- Tutoriales ---- */
+.tut { display: flex; flex-direction: column; gap: 14px; }
+.tut-mods { display: flex; flex-wrap: wrap; gap: 8px; }
+.tut-lista { display: flex; flex-direction: column; gap: 8px; }
+.tut-item { border: 1px solid var(--borde); border-radius: 12px; background: var(--panel); }
+.tut-item > summary { cursor: pointer; padding: 12px 16px; font-weight: 600; list-style: none; display: flex; justify-content: space-between; gap: 12px; }
+.tut-item > summary::-webkit-details-marker { display: none; }
+.tut-item > summary::after { content: "+"; color: var(--tenue); font-weight: 400; font-size: 18px; line-height: 1; }
+.tut-item[open] > summary::after { content: "–"; }
+.tut-item ol { margin: 0; padding: 0 18px 12px 38px; display: flex; flex-direction: column; gap: 6px; }
+.tut-consejo { margin: 0; padding: 10px 16px 14px; font-size: 13px; color: var(--tenue); border-top: 1px dashed var(--borde); }

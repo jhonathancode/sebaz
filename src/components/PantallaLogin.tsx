@@ -1,3 +1,4 @@
+import CampoClave from "@/components/CampoClave";
 import LogoSebaz from "@/components/LogoSebaz";
 import { logoMcp } from "@/lib/formato";
 import { ingresar } from "@/app/login/acciones";
@@ -36,7 +37,7 @@ export default function PantallaLogin({ error, mcp, desde }: { error?: string; m
           </label>
           <label className="campo">
             Contraseña
-            <input name="clave" type="password" required autoComplete="current-password" />
+            <CampoClave name="clave" autoComplete="current-password" />
           </label>
           <button className="btn primario grande" type="submit" style={{ justifyContent: "center" }}>
             Ingresar

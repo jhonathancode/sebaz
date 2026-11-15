@@ -1,3 +1,4 @@
+import CampoClave from "@/components/CampoClave";
 import Avisos, { type ParamsAviso } from "@/components/Avisos";
 import ActivarAvisos from "@/components/ActivarAvisos";
 import CampoPin from "@/components/CampoPin";
@@ -30,8 +31,8 @@ export default async function Cuenta({ searchParams }: { searchParams: ParamsAvi
       <form action={cambiarClave} className="panel" style={{ maxWidth: 420 }}>
         <div className="panel-cab">Cambiar clave</div>
         <div className="panel-cuerpo">
-          <label className="campo">Clave nueva (mínimo 10 caracteres)<input type="password" name="nueva" required minLength={10} autoComplete="new-password" /></label>
-          <label className="campo">Repetir clave nueva<input type="password" name="repetir" required minLength={10} autoComplete="new-password" /></label>
+          <label className="campo">Clave nueva (mínimo 10 caracteres)<CampoClave name="nueva" minLength={10} autoComplete="new-password" /></label>
+          <label className="campo">Repetir clave nueva<CampoClave name="repetir" minLength={10} autoComplete="new-password" /></label>
           <BotonConfirmar pregunta="¿Cambiar su contraseña?" textoConfirmar="Sí, cambiar">Cambiar clave</BotonConfirmar>
         </div>
       </form>

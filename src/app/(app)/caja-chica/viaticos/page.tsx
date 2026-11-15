@@ -100,7 +100,7 @@ export default async function Viaticos({ searchParams }: { searchParams: ParamsA
       )}
 
       <details className="panel" open={(comisiones ?? []).length === 0}>
-        <summary className="panel-cab" style={{ cursor: "pointer" }}>Tarifario por destino (precios que usan las salidas)</summary>
+        <summary className="panel-cab" style={{ cursor: "pointer" }}>TARIFARIO · pasajes, hospedaje y alimentación por destino</summary>
         <div className="panel-cab">
           Tarifas
           {puede && (

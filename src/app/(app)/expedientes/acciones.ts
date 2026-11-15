@@ -7,7 +7,7 @@ import { supabaseServidor } from "@/lib/supabase/server";
 import { MESES, num3, periodoActual } from "@/lib/formato";
 import { cargarCatalogoPagosFijos, estadoPagosFijos, mesPendiente, pasarAlMes, siguienteCheque } from "@/lib/pagosFijos";
 import { exigirPin, verificarPin } from "@/lib/pin";
-import { comprobanteAutomatico } from "@/lib/comprobanteAuto";
+import { chequeMasUno, comprobanteAutomatico } from "@/lib/comprobanteAuto";
 import { completarTodo } from "@/lib/completarTodo";
 import { aprobacionAutomatica, aprobarComprobanteSiAuto, aprobarExpedientesSiAuto } from "@/lib/aprobacion";
 import { conceptoSeRequiere, conceptoSinSeRequiere, resumenConcepto } from "@/lib/requerimiento";
@@ -802,4 +802,72 @@ export async function cambiarFechaDocumento(fd: FormData) {
   revalidatePath("/comprobantes");
   revalidatePath("/almacen");
   volver(destino, "ok", "Fecha cambiada. Quedó registrado el motivo, la fecha anterior y quién lo hizo.");
+}
+
+
+/** Pagos fijos del mes en lote: crea el requerimiento de cada mes vencido de los pagos elegidos (y lo aprueba y arma su comprobante si quien registra puede aprobar). */
+export async function generarPagosFijosMes(fd: FormData) {
+  const ctx = await contextoMcp();
+  const destino = "/expedientes";
+  if (!tiene(ctx, "admin", "tesorero", "contador", "alcalde")) volver(destino, "error", "No tiene permiso para registrar requerimientos.");
+  const ids = fd.getAll("pf").map(String);
+  if (ids.length === 0) volver(destino, "error", "Marque al menos un pago fijo.");
+  await exigirPin(ctx.userId, fd, destino);
+  const supabase = await supabaseServidor();
+  const catalogo = await cargarCatalogoPagosFijos(supabase, ctx.mcp.id, true);
+  const hoyP = periodoActual();
+  const auto = aprobacionAutomatica(ctx);
+  const apruebaYa = (tiene(ctx, "alcalde", "admin") && !!ctx.mcp.exigir_pin) || auto;
+  let cheque = (texto(fd, "cheque_inicial") ?? "").replace(/\D/g, "") || (await siguienteCheque(supabase, ctx.mcp.id));
+  let creados = 0;
+  let aprobados = 0;
+  const fallos: string[] = [];
+  for (const id of ids) {
+    const pf = catalogo.find((x) => x.id === id);
+    if (!pf) continue;
+    const pagados = [...pf.pagados];
+    for (let vuelta = 0; vuelta < 12; vuelta++) {
+      const mes = mesPendiente(pagados, hoyP);
+      if (mes > hoyP) break;
+      const [a, m] = mes.split("-").map(Number);
+      const nombreMes = `${MESES[m - 1].toLocaleUpperCase("es-PE")} ${a}`;
+      const base = pf.descripcion_modelo && pf.mes_modelo ? pasarAlMes(pf.descripcion_modelo, pf.mes_modelo, mes) : `${pf.concepto} - ${nombreMes}`;
+      const item = /\b20\d{2}\b/.test(base) ? base.replace(/^SE REQUIERE\s+/i, "").toLocaleUpperCase("es-PE") : `${pf.concepto} - ${nombreMes}`;
+      const { data: nuevo, error } = await supabase
+        .from("expedientes")
+        .insert({ mcp_id: ctx.mcp.id, tipo: "pago_fijo", descripcion: conceptoSeRequiere(`${pf.concepto} - ${nombreMes}`), fuente_id: pf.fuente_id, clasificador: pf.clasificador, pago_fijo_id: pf.id, mes_pagado: mes })
+        .select("id")
+        .single();
+      if (error || !nuevo) {
+        fallos.push(`${pf.concepto} ${nombreMes}: ${mensajeError(error)}`);
+        break;
+      }
+      const { error: eI } = await supabase.from("expediente_items").insert({ mcp_id: ctx.mcp.id, expediente_id: nuevo.id, item: 1, cantidad: 1, unidad: pf.unidad, descripcion: item, precio_unitario: pf.monto });
+      if (eI) {
+        await supabase.rpc("anular_expediente_total", { p_expediente: nuevo.id, p_motivo: "Registro incompleto: no se pudo guardar el detalle." });
+        fallos.push(`${pf.concepto} ${nombreMes}: ${mensajeError(eI)}`);
+        break;
+      }
+      creados++;
+      pagados.push(mes);
+      if (apruebaYa) {
+        const { error: eA } = await supabase.from("expedientes").update({ estado: "aprobado" }).eq("id", nuevo.id);
+        if (!eA) {
+          aprobados++;
+          if (!pf.expediente_completo) {
+            const usado = await comprobanteAutomatico(supabase, ctx.mcp.id, nuevo.id, cheque, true);
+            if (usado && usado === cheque) cheque = chequeMasUno(usado);
+          }
+        }
+      }
+    }
+  }
+  revalidatePath("/expedientes");
+  revalidatePath("/comprobantes");
+  if (creados === 0) volver(destino, "error", fallos[0] ?? "No había meses vencidos por registrar en los pagos elegidos.");
+  volver(
+    destino,
+    "ok",
+    `Se registraron ${creados} requerimiento(s) de pagos fijos${aprobados ? `, ${aprobados} aprobado(s) con su comprobante cuando corresponde` : ". Quedan por aprobar"}.${fallos.length ? ` No se pudo: ${fallos.join("; ")}` : ""}`,
+  );
 }

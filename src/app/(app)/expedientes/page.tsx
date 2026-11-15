@@ -9,9 +9,10 @@ import { cargarCierres, estadoGestion } from "@/lib/gestion";
 import { codigoCP, fecha, hoyISO, nombrePeriodo, num3, periodoActual, rangoPeriodo, soles } from "@/lib/formato";
 import { supabaseServidor } from "@/lib/supabase/server";
 import { nombreAdjunto, TIPOS_OCULTOS } from "@/lib/adjuntosExpediente";
-import { cargarArchivosPagoFijo, cargarCatalogoPagosFijos, pagoLlevaPlanilla, siguienteCheque } from "@/lib/pagosFijos";
+import { cargarArchivosPagoFijo, cargarCatalogoPagosFijos, mesPendiente, pagoLlevaPlanilla, siguienteCheque } from "@/lib/pagosFijos";
 import { cargarAtajos } from "@/lib/atajos";
-import { anularExpedienteTotal, crearExpediente, registrarExpedienteCompleto } from "./acciones";
+import { anularExpedienteTotal, crearExpediente, generarPagosFijosMes, registrarExpedienteCompleto } from "./acciones";
+import { MESES } from "@/lib/formato";
 import AsistenteRequerimiento from "@/components/AsistenteRequerimiento";
 import { CORRELATIVO, proximoNumero } from "@/lib/numeracion";
 
@@ -173,6 +174,18 @@ export default async function Expedientes({ searchParams }: { searchParams: Para
   // Anular desde la lista: mismas reglas que dentro del expediente
   const puedeRegistrar = tiene(ctx, "admin", "tesorero", "contador", "alcalde");
   const puedeAprobar = tiene(ctx, "alcalde", "admin");
+  // Pagos fijos con meses vencidos sin registrar (hasta el mes actual)
+  const vencidosPF = pagosFijos.flatMap((p) => {
+    const pag = [...p.pagados];
+    const meses: string[] = [];
+    for (let i = 0; i < 12; i++) {
+      const m = mesPendiente(pag, hoyP);
+      if (m > hoyP) break;
+      meses.push(m);
+      pag.push(m);
+    }
+    return meses.length ? [{ id: p.id, concepto: p.concepto, beneficiario: p.beneficiario, monto: p.monto, meses }] : [];
+  });
   const puedeAnular = (e: { estado: string; fase: string; fecha: string }) =>
     puedeRegistrar &&
     e.estado !== "anulado" &&
@@ -229,6 +242,26 @@ export default async function Expedientes({ searchParams }: { searchParams: Para
           <small>{vigentes.length} vigentes</small>
         </div>
         <span className="espacio" />
+        {puedeRegistrar && vencidosPF.length > 0 && (
+          <VentanaFlotante boton={`Pagos fijos del mes (${vencidosPF.length})`} titulo="Generar los pagos fijos del mes" accion={generarPagosFijosMes} textoGuardar="Generar requerimientos" claseBoton="btn chico contorno" confirmar="¿Generar los requerimientos marcados?" pin>
+            <p className="pequeno tenue" style={{ margin: 0 }}>
+              Se crea el requerimiento de cada mes vencido de los pagos fijos marcados, con su monto y su planilla. {tiene(ctx, "alcalde", "admin") && ctx.mcp.exigir_pin ? "Como usted aprueba con PIN, quedan aprobados y con su comprobante (en los pagos sin expediente completo)." : "Quedan listos para aprobar."}
+            </p>
+            <div className="pf-docs">
+              {vencidosPF.map((v) => (
+                <label key={v.id} className="pf-opcion" style={{ alignItems: "center" }}>
+                  <span className="pf-interruptor"><input type="checkbox" name="pf" value={v.id} defaultChecked /><span className="pf-pista" aria-hidden="true" /></span>
+                  <span className="pf-doc-texto">
+                    <b>{v.concepto}</b>
+                    <span>{v.meses.map((m) => `${MESES[Number(m.slice(5)) - 1]} ${m.slice(0, 4)}`.toLocaleUpperCase("es-PE")).join(" · ")}{v.beneficiario ? ` · ${v.beneficiario}` : ""}</span>
+                  </span>
+                  <b>S/ {soles(v.monto * v.meses.length)}</b>
+                </label>
+              ))}
+            </div>
+            <label className="campo">Primer cheque (opcional, los demás siguen en orden)<input name="cheque_inicial" inputMode="numeric" placeholder={chequeSugerido || "Se usa el siguiente de la chequera"} /></label>
+          </VentanaFlotante>
+        )}
         <a className="btn chico contorno exp-excel" href={`/exportar/expedientes?mes=${periodo}&estado=${estado}&tipo=${tipo}&q=${encodeURIComponent(q)}`}>Descargar Excel</a>
         {tiene(ctx, "alcalde", "admin") ? (
           <AsistenteRequerimiento

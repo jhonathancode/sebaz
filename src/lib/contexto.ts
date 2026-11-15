@@ -62,6 +62,8 @@ export type Contexto = {
 };
 
 export const COOKIE_MCP = "mcp_actual";
+/** MCP que el superadmin abrió para configurarla. */
+export const COOKIE_MCP_ADMIN = "mcp_admin";
 
 /** Usuario, MCP elegida y roles. Se calcula una vez por petición, con 2 consultas en paralelo. */
 export const obtenerContexto = cache(async (): Promise<Contexto> => {
@@ -92,9 +94,21 @@ export const obtenerContexto = cache(async (): Promise<Contexto> => {
     const mc = m.mcps as unknown as McpConFuentes | null;
     if (mc) mapa.set(mc.id, mc);
   }
+  // El superadmin puede abrir una MCP para configurarla: entra como administrador de ella
+  let mcpAbierta: McpConFuentes | null = null;
+  if (esSuperadmin) {
+    const abierta = cookieStore.get(COOKIE_MCP_ADMIN)?.value;
+    if (abierta && /^[0-9a-f-]{36}$/i.test(abierta)) {
+      const { data } = await supabase.from("mcps").select("*, fuentes(*)").eq("id", abierta).maybeSingle();
+      if (data) {
+        mcpAbierta = data as unknown as McpConFuentes;
+        mapa.set(mcpAbierta.id, mcpAbierta);
+      }
+    }
+  }
   const mcps = [...mapa.values()].map((m) => ({ id: m.id, nombre: m.nombre }));
 
-  const elegida = cookieStore.get(COOKIE_MCP)?.value;
+  const elegida = mcpAbierta ? mcpAbierta.id : cookieStore.get(COOKIE_MCP)?.value;
   const mcpId = mcps.find((m) => m.id === elegida)?.id ?? mcps[0]?.id ?? null;
   const completa = mcpId ? mapa.get(mcpId)! : null;
   let mcp: Mcp | null = null;
@@ -111,7 +125,7 @@ export const obtenerContexto = cache(async (): Promise<Contexto> => {
     const { data, error } = await supabaseServicio().from("perfil_seguridad").select("pin_hash, acepto_terminos_en, acepto_version").eq("user_id", userId).maybeSingle();
     if (!error) {
       const terminos = !data?.acepto_terminos_en || data.acepto_version !== VERSION_TERMINOS;
-      const pin = !data?.pin_hash && !!mcp?.exigir_pin;
+      const pin = !data?.pin_hash && !!mcp?.exigir_pin && !esSuperadmin;
       if (terminos || pin) ingresoPendiente = { terminos, pin };
     }
   } catch {
@@ -125,8 +139,8 @@ export const obtenerContexto = cache(async (): Promise<Contexto> => {
     esSuperadmin,
     mcp,
     mcps,
-    roles: vigentes.filter((m) => m.mcp_id === mcpId).map((m) => m.rol as Rol),
-    cargos: vigentes.filter((m) => m.mcp_id === mcpId).map((m) => m.cargo || NOMBRE_ROL[m.rol as Rol]),
+    roles: mcpAbierta ? (["admin"] as Rol[]) : vigentes.filter((m) => m.mcp_id === mcpId).map((m) => m.rol as Rol),
+    cargos: mcpAbierta ? ["Administrador del sistema"] : vigentes.filter((m) => m.mcp_id === mcpId).map((m) => m.cargo || NOMBRE_ROL[m.rol as Rol]),
     fuentes,
     ingresoPendiente,
   };

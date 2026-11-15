@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { cookies } from "next/headers";
 import { obtenerContexto } from "@/lib/contexto";
 import { modulosDeFormulario } from "@/lib/modulos";
+import { aplicarPlantilla } from "@/lib/plantilla";
 import { mensajeError, numero, texto, volver } from "@/lib/acciones";
 import { supabaseServicio, supabaseServidor } from "@/lib/supabase/server";
 
@@ -43,6 +44,8 @@ export async function crearMcp(fd: FormData) {
     .select("id")
     .single();
   if (error || !mcp) volver("/soporte", "error", mensajeError(error));
+  // La MCP nace con la plantilla de configuración (si el superadmin la armó)
+  await aplicarPlantilla(mcp.id).catch(() => null);
 
   const fuentes = [];
   const montoDistrito = numero(fd, "monto_distrito");

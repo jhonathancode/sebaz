@@ -218,26 +218,22 @@ export default async function Expedientes({ searchParams }: { searchParams: Para
 
   return (
     <>
-      <div className="cab-vista">
-        <div>
+      <div className="cab-vista exp-cab">
+        <div className="exp-tit">
           <h1>Expedientes</h1>
-          <div className="sub">{modo === "pendientes" ? "Lo pendiente de cualquier mes y lo de este mes · para el historial elija un mes" : `Historial de ${nombrePeriodo(periodo)}`}</div>
+          <div className="sub">{modo === "pendientes" ? "Lo pendiente de cualquier mes y lo reciente" : `Historial de ${nombrePeriodo(periodo)}`}</div>
         </div>
-        <form className="selector-mes" method="get">
-          <input type="hidden" name="estado" value={estado} />
-          <input type="hidden" name="tipo" value={tipo} />
-          <input type="hidden" name="conc" value={conc} />
-          <input type="month" name="mes" defaultValue={modo === "mes" ? periodo : ""} aria-label="Mes" />
-          <button className="btn chico" type="submit">Ver mes</button>
-        </form>
-        <Link className={`btn${modo === "pendientes" ? " primario" : " contorno"}`} href={enlace({ mes: "" })} title="Todo lo que sigue pendiente, de cualquier mes">Pendientes</Link>
+        <div className="exp-resumen" title={`${vigentes.length} expediente(s) vigentes · ${enProceso.length} en proceso · ${rendidos.length} rendidos`}>
+          <span>{modo === "mes" ? `Gasto de ${nombrePeriodo(periodo)}` : "Gasto pendiente y del mes"}</span>
+          <b>S/ {soles(totalMes)}</b>
+          <small>{vigentes.length} vigentes</small>
+        </div>
         <span className="espacio" />
-        <Link className="btn contorno" href={`/comprobantes?mes=${periodo}`}>Comprobantes de pago</Link>
-        <a className="btn contorno" href={`/exportar/expedientes?mes=${periodo}&estado=${estado}&tipo=${tipo}&q=${encodeURIComponent(q)}`}>Descargar Excel</a>
+        <a className="btn chico contorno exp-excel" href={`/exportar/expedientes?mes=${periodo}&estado=${estado}&tipo=${tipo}&q=${encodeURIComponent(q)}`}>Descargar Excel</a>
         {tiene(ctx, "alcalde", "admin") ? (
           <AsistenteRequerimiento
             boton="+ Nuevo requerimiento"
-            claseBoton="btn primario grande"
+            claseBoton="btn primario grande exp-nuevo"
             abierta={sp.nuevo === "1"}
             error={sp.nuevo === "1" ? sp.error : undefined}
             eventoAbrir="sebaz:abrir-nuevo-requerimiento"
@@ -257,7 +253,7 @@ export default async function Expedientes({ searchParams }: { searchParams: Para
         ) : (
         <VentanaFlotante
           boton="+ Nuevo requerimiento"
-          claseBoton="btn primario grande"
+          claseBoton="btn primario grande exp-nuevo"
           titulo="Nuevo requerimiento"
           accion={crearExpediente}
           textoGuardar="Guardar requerimiento"
@@ -274,31 +270,6 @@ export default async function Expedientes({ searchParams }: { searchParams: Para
         )}
       </div>
       <Avisos ok={sp.ok} error={sp.error} />
-
-      <div className="kpis">
-        <div className="kpi azul">
-          <span className="k-et">{modo === "mes" ? `Gasto de ${nombrePeriodo(periodo)}` : "Gasto de lo pendiente y del mes"}</span>
-          <span className="k-val">S/ {soles(totalMes)}</span>
-          <span className="k-det">{vigentes.length} expedientes vigentes</span>
-        </div>
-        {!(ctx.mcp.exigir_aprobacion === false && porAprobar.length === 0) && (
-        <Link className={`kpi${porAprobar.length ? " alerta" : ""}`} href={enlace({ estado: "borrador" })}>
-          <span className="k-et">Por aprobar</span>
-          <span className="k-val">{porAprobar.length}</span>
-          <span className="k-det">S/ {soles(porAprobar.reduce((s, e) => s + e.monto, 0))} esperan al alcalde</span>
-        </Link>
-        )}
-        <Link className="kpi" href={enlace({ estado: "aprobado" })}>
-          <span className="k-et">En proceso</span>
-          <span className="k-val">{enProceso.length}</span>
-          <span className="k-det">Aprobados, avanzando al pago</span>
-        </Link>
-        <Link className="kpi" href={enlace({ estado: "rendido" })}>
-          <span className="k-et">Rendidos</span>
-          <span className="k-val">{rendidos.length}</span>
-          <span className="k-det">Ya entraron en una rendición</span>
-        </Link>
-      </div>
 
       <div className="filtros exp-filtros">
         <form className="filtros-movil" method="get">
@@ -317,9 +288,20 @@ export default async function Expedientes({ searchParams }: { searchParams: Para
           </select>
           <button className="btn chico" type="submit">Aplicar</button>
         </form>
+        <div className="grupo exp-periodo" role="group" aria-label="Período">
+          <span className="grupo-et">Período</span>
+          <Link className={`f-chip${modo === "pendientes" ? " activo" : ""}`} href={enlace({ mes: "" })} title="Todo lo que sigue pendiente, de cualquier mes, y lo reciente">Pendientes</Link>
+          <form className={`selector-mes chico${modo === "mes" ? " activo" : ""}`} method="get">
+            <input type="hidden" name="estado" value={estado} />
+            <input type="hidden" name="tipo" value={tipo} />
+            <input type="hidden" name="conc" value={conc} />
+            <input type="month" name="mes" defaultValue={modo === "mes" ? periodo : ""} aria-label="Ver un mes" />
+            <button className="btn chico" type="submit">Ver mes</button>
+          </form>
+        </div>
         <div className="grupo" role="group" aria-label="Estado">
-          {ESTADOS.map((x) => (
-            <Link key={x.v} className={`f-chip${estado === x.v ? " activo" : ""}${x.v === "anulado" ? " rojo" : ""}`} href={enlace(x.v === "anulado" ? { estado: x.v, conc: "" } : { estado: x.v })}>
+          {ESTADOS.filter((x) => x.v !== "borrador" || ctx.mcp.exigir_aprobacion !== false || cuenta("borrador") > 0).map((x) => (
+            <Link key={x.v} className={`f-chip${estado === x.v ? " activo" : ""}${x.v === "anulado" ? " rojo" : ""}${x.v === "borrador" && cuenta("borrador") > 0 && ctx.mcp.exigir_aprobacion !== false ? " ambar" : ""}`} href={enlace(x.v === "anulado" ? { estado: x.v, conc: "" } : { estado: x.v })}>
               {x.t} <span className="n">{cuenta(x.v)}</span>
             </Link>
           ))}

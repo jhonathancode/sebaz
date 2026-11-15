@@ -5267,3 +5267,21 @@ html.pdf-captura .sf-faltan { display: none; }
 .pregunta:has(.if-pop), .fecha-doc-barra:has(.if-pop) { z-index: 60; overflow: visible; }
 .fecha-exp:has(.if-pop) { z-index: 61; }
 .fecha-doc-barra { position: relative; }
+
+/* ------------------------------------------------ Página de expedientes */
+.exp-cab { gap: 10px 18px; align-items: center; }
+.exp-tit h1 { margin: 0; }
+.exp-resumen { display: inline-flex; align-items: baseline; gap: 8px; padding: 7px 14px; border-radius: 12px; border: 1px solid var(--borde); background: var(--panel); font-size: 12.5px; color: var(--tenue); }
+.exp-resumen b { font-size: 16px; font-weight: 800; color: var(--primario-texto); letter-spacing: -.01em; }
+.exp-resumen small { font-size: 12px; }
+.exp-excel { min-height: 36px; }
+.cab-vista .btn.exp-nuevo, .btn.exp-nuevo { min-height: 54px; padding: 0 30px; font-size: 16.5px; font-weight: 800; letter-spacing: -.005em; border-radius: 14px; background: linear-gradient(135deg, #2f6df0, #1a4fc4); color: #fff; border: 0; box-shadow: 0 14px 28px -12px rgba(31, 95, 209, .85), 0 2px 0 rgba(255,255,255,.18) inset; transition: transform .12s, box-shadow .12s; }
+.btn.exp-nuevo:hover { box-shadow: 0 18px 32px -12px rgba(31, 95, 209, 1), 0 2px 0 rgba(255,255,255,.18) inset; filter: brightness(1.06); }
+.exp-filtros { padding: 12px 14px; border: 1px solid var(--borde); border-radius: 14px; background: var(--panel); row-gap: 10px; }
+.exp-filtros .buscador { flex: 1 1 100%; }
+.selector-mes.chico { padding: 2px 2px 2px 8px; border-radius: 999px; }
+.selector-mes.chico input { min-height: 28px; font-size: 13px; }
+.selector-mes.chico .btn { min-height: 28px; border-radius: 999px; }
+.selector-mes.chico.activo { border-color: var(--primario); box-shadow: 0 0 0 2px var(--primario-fondo); }
+.exp-periodo { padding-right: 6px; }
+@media (max-width: 700px) { .exp-resumen { order: 3; flex: 1 1 100%; } .btn.exp-nuevo { flex: 1 1 100%; } }

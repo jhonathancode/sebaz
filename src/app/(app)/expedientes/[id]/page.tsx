@@ -622,36 +622,20 @@ export default async function Expediente({ params, searchParams }: { params: Par
         </div>
         <div className="av-barra" aria-hidden="true"><div style={{ width: `${(listos / pasos.length) * 100}%` }} /></div>
 
-        <ol className="av-pasos" style={{ gridTemplateColumns: `repeat(${pasos.length}, minmax(0, 1fr))` }}>
-          {pasos.map((p, n) => {
-            const estado = anulado ? (p.existio ? "anulado" : "pendiente") : p.hecho ? "hecho" : p.id === actual ? "actual" : "pendiente";
-            return (
-              <li key={p.id} className={`av-paso ${estado}${p.id === visto ? " visto" : ""}`}>
-                <Link href={`/expedientes/${id}?paso=${p.id}${DOC_DE_PASO[p.id] ? `&ver=${DOC_DE_PASO[p.id]}` : ""}`} scroll={false} aria-current={p.id === visto ? "step" : undefined}>
-                  <span className="av-icono" aria-hidden="true">
-                    {estado === "anulado" ? (
-                      <span style={{ fontWeight: 800, fontSize: 18 }}>✕</span>
-                    ) : p.hecho ? (
-                      <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round"><path d="m5 12.5 4.5 4.5L19 7.5" /></svg>
-                    ) : (
-                      <IconoPaso id={p.id} />
-                    )}
-                  </span>
-                  <span className="av-texto">
-                    <span className="av-num">
-                      Paso {n + 1}
-                      {estado === "actual" && <span className="av-ahora">Ahora</span>}
-                    </span>
-                    <span className="av-nombre">{p.titulo}</span>
-                    <span className="av-det">{estado === "anulado" ? "Anulado" : p.hecho ? p.detalle : estado === "actual" ? ((p.id === "requerimiento" && e.estado === "borrador") || (p.id === "comprobante" && cp?.estado === "borrador") ? "Por aprobar" : "En curso") : "Pendiente"}</span>
-                  </span>
-                </Link>
-              </li>
-            );
-          })}
-        </ol>
 
-        <AdjuntosExpediente id={id} planilla={!!datosDoc.planilla} anexos={anexos} verClave={verClave} puede={puedeRegistrar} />
+        <AdjuntosExpediente
+          id={id}
+          pasos={pasos.map((p) => ({
+            id: p.id,
+            nombre: p.titulo,
+            hecho: p.hecho && !anulado,
+            anulado: anulado && !!p.existio,
+            actual: !anulado && p.id === actual,
+            visto: !viendoAnexo && p.id === visto,
+            href: `/expedientes/${id}?paso=${p.id}${DOC_DE_PASO[p.id] ? `&ver=${DOC_DE_PASO[p.id]}` : ""}`,
+            detalle: p.detalle,
+          }))}
+          planilla={!!datosDoc.planilla} anexos={anexos} verClave={verClave} puede={puedeRegistrar} />
       </section>
 
       <section className="panel vista-previa">

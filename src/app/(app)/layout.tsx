@@ -159,7 +159,7 @@ export default async function MarcoApp({ children }: { children: React.ReactNode
           {ctx.mcp && <BuscadorGlobal />}
           <Link className="bg-boton bg-tutoriales no-imprimir" href={ctx.esSuperadmin ? "/superadmin/tutoriales" : "/tutoriales"} title="Tutoriales: aprenda a usar el sistema">
             <span className="bg-tut-ic" aria-hidden="true">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5.5v13a1 1 0 0 0 1.5.86l10-6.5a1 1 0 0 0 0-1.72l-10-6.5A1 1 0 0 0 8 5.5z" /></svg>
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M2 9.5 12 5l10 4.5-10 4.5z" /><path d="M6 11.5V16c0 1.4 2.7 3 6 3s6-1.6 6-3v-4.5" /><path d="M22 9.5V15" /></svg>
             </span>
             <span className="bg-texto">Tutoriales</span>
           </Link>

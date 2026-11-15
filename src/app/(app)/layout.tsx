@@ -3,6 +3,7 @@ import { UsuarioProvider } from "@/components/UsuarioContexto";
 import { redirect } from "next/navigation";
 import Bienvenida from "@/components/Bienvenida";
 import Bandeja from "@/components/Bandeja";
+import Link from "next/link";
 import BotonTema from "@/components/BotonTema";
 import BarraInferior, { type PestanaInferior } from "@/components/BarraInferior";
 import Menu, { BotonMenu, type ItemMenu } from "@/components/Menu";
@@ -155,6 +156,10 @@ export default async function MarcoApp({ children }: { children: React.ReactNode
           </span>
         </div>
         <div className="acciones">
+          <Link className="bg-boton no-imprimir" href={ctx.esSuperadmin ? "/superadmin/tutoriales" : "/tutoriales"} title="Tutoriales: aprenda a usar el sistema">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M4 5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2z" /><path d="M4 19V5" /><path d="M9 8h6" /></svg>
+            <span className="bg-texto">Tutoriales</span>
+          </Link>
           {ctx.mcp && <BuscadorGlobal />}
           {(hayBandeja || pendientes.length > 0) && <Bandeja avisos={avisos} sinLeer={sinLeer} pendientes={pendientes} abrir={abrirAviso} marcarLeida={marcarLeida} dejarPendiente={dejarPendiente} marcarTodas={marcarTodasLeidas} />}
           <BotonTema inicial={tema === "dark" || tema === "light" ? tema : null} />

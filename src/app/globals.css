@@ -5301,3 +5301,7 @@ html.pdf-captura .sf-faltan { display: none; }
 .muni-tab:nth-child(2) .k-barra > div { background: linear-gradient(90deg, #0d9488, #5eead4); box-shadow: 0 0 10px rgba(13, 148, 136, .4); }
 .muni-tab:nth-child(2).activo { border-color: #0d9488; box-shadow: 0 22px 40px -26px rgba(13, 148, 136, .7), 0 0 0 4px color-mix(in srgb, #0d9488 14%, transparent); }
 :root[data-theme="dark"] .muni-tab:nth-child(2) .m-monto { color: #5eead4; }
+
+/* Tarjetas de municipalidad: sin la franja gruesa del lado izquierdo */
+.muni-tab::before, .muni-tab:nth-child(2)::before { display: none; }
+.muni-tab { padding-left: 20px; }

@@ -53,7 +53,7 @@ export default async function Comision({ params, searchParams }: { params: Promi
       </div>
       <Avisos ok={sp.ok} error={sp.error} />
       <div className="hoja">
-        <Encabezado mcp={ctx.mcp} titulo="PLANILLA DE VIÁTICOS · COMISIÓN DE SERVICIO" numero={`N° ${codigo}`} />
+        <Encabezado mcp={ctx.mcp} titulo={`PLANILLA DE VIÁTICOS · SALIDA A ${c.destino}`} numero={`N° ${codigo}`} />
         {c.anulado && <p style={{ color: "#a33", fontWeight: 600 }}>COMISIÓN ANULADA: {c.anulado_motivo}</p>}
         <table className="formato">
           <tbody>

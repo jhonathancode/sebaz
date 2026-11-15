@@ -16,7 +16,8 @@ import { cargarTupa } from "@/lib/tupa";
 import Motivo from "@/components/Motivo";
 import VisorArchivo from "@/components/VisorArchivo";
 import CampoArchivoEstado from "@/components/formularios/CampoArchivoEstado";
-import { anularVoucher, emitirRecibo, subirVoucher } from "./acciones";
+import { anularRecibo, anularVoucher, emitirRecibo, subirVoucher } from "./acciones";
+import VerRecibo from "@/components/VerRecibo";
 
 
 const MES_CORTO = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Set", "Oct", "Nov", "Dic"];
@@ -341,7 +342,14 @@ export default async function Ingresos({ searchParams }: { searchParams: ParamsA
                       {r.estado === "anulado" && <span className="cc-anulado-motivo"> · ANULADO: {r.anulado_motivo}</span>}
                     </td>
                     <td className="m tachar">S/ {soles(r.monto)}</td>
-                    <td className="acc"><div className="acciones-fila"><Link className="btn chico contorno" href={`/ingresos/${r.id}`}>Ver recibo</Link></div></td>
+                    <td className="acc"><div className="acciones-fila"><VerRecibo
+                      titulo={`Recibo de ingreso ${String(r.numero).padStart(4, "0")}`}
+                      nombrePdf={`Recibo de ingreso ${String(r.numero).padStart(4, "0")}`}
+                      acciones={r.estado === "emitido" && tiene(ctx, "admin", "tesorero", "contador") ? <Motivo chico accion={anularRecibo} boton="Anular" ayuda="Motivo de la anulación" campos={{ id: r.id }} /> : undefined}
+                    >
+                      {r.estado === "anulado" && <div className="aviso error">ANULADO · {r.anulado_motivo}</div>}
+                      <FormatoRecibo mcp={ctx.mcp} r={{ numero: r.numero, anio: r.anio, fecha: r.fecha, pagador_nombre: r.pagador_nombre, pagador_doc: r.pagador_doc, concepto: r.concepto, monto: Number(r.monto) }} />
+                    </VerRecibo></div></td>
                   </tr>
                 ))}
               </tbody>

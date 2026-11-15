@@ -1,35 +1,22 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import type { ModuloTutorial, Tutorial } from "@/lib/tutoriales";
+import Link from "next/link";
+import { useMemo, useState } from "react";
 
 const sinTildes = (t: string) => t.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
-type Abierto = { tutorial: Tutorial; modulo: ModuloTutorial };
+type Tarjeta = { slug: string; titulo: string; pasos: number; video: boolean; texto: string };
+type Modulo = { clave: string; texto: string; icono: string; tutoriales: Tarjeta[] };
 
-/** Módulos a la izquierda, guías como tarjetas pequeñas y el paso a paso en una ventana. */
-export default function PanelTutoriales({ modulos }: { modulos: ModuloTutorial[] }) {
+/** Módulos a la izquierda y guías como tarjetas; cada una abre su propia página con video y pasos. */
+export default function PanelTutoriales({ modulos, inicial }: { modulos: Modulo[]; inicial?: string }) {
   const [q, setQ] = useState("");
-  const [clave, setClave] = useState(modulos[0]?.clave ?? "");
-  const [abierto, setAbierto] = useState<Abierto | null>(null);
+  const [clave, setClave] = useState(modulos.some((m) => m.clave === inicial) ? inicial! : modulos[0]?.clave ?? "");
   const buscando = q.trim().length > 0;
-
   const tarjetas = useMemo(() => {
     const t = sinTildes(q.trim());
     const fuente = buscando ? modulos : modulos.filter((m) => m.clave === clave);
-    return fuente.flatMap((m) =>
-      m.tutoriales
-        .filter((x) => !t || sinTildes(`${x.titulo} ${x.pasos.join(" ")} ${x.consejo ?? ""}`).includes(t))
-        .map((x) => ({ tutorial: x, modulo: m })),
-    );
+    return fuente.flatMap((m) => m.tutoriales.filter((x) => !t || sinTildes(`${x.titulo} ${x.texto}`).includes(t)).map((x) => ({ x, m })));
   }, [modulos, q, clave, buscando]);
-
-  useEffect(() => {
-    if (!abierto) return;
-    const alTeclear = (e: KeyboardEvent) => e.key === "Escape" && setAbierto(null);
-    window.addEventListener("keydown", alTeclear);
-    return () => window.removeEventListener("keydown", alTeclear);
-  }, [abierto]);
-
   const actual = modulos.find((m) => m.clave === clave);
   return (
     <div className="tut">
@@ -51,26 +38,15 @@ export default function PanelTutoriales({ modulos }: { modulos: ModuloTutorial[]
           <div className="tut-tit">{buscando ? `Resultados (${tarjetas.length})` : `${actual?.icono ?? ""} ${actual?.texto ?? ""}`}</div>
           {tarjetas.length === 0 && <div className="aviso info">No hay guías con esa búsqueda. Pruebe con otra palabra.</div>}
           <div className="tut-grid">
-            {tarjetas.map((c) => (
-              <button key={`${c.modulo.clave}-${c.tutorial.titulo}`} type="button" className="tut-card" onClick={() => setAbierto(c)}>
-                <b>{c.tutorial.titulo}</b>
-                <small>{buscando ? `${c.modulo.texto} · ` : ""}{c.tutorial.pasos.length} pasos</small>
-              </button>
+            {tarjetas.map(({ x, m }) => (
+              <Link key={x.slug} href={`/tutoriales/${x.slug}`} className="tut-card">
+                <b>{x.titulo}</b>
+                <small>{buscando ? `${m.texto} · ` : ""}{x.video ? "▶ Video · " : ""}{x.pasos} pasos</small>
+              </Link>
             ))}
           </div>
         </div>
       </div>
-      {abierto && (
-        <div className="tut-velo" onClick={() => setAbierto(null)}>
-          <div className="tut-ventana" role="dialog" aria-modal="true" aria-label={abierto.tutorial.titulo} onClick={(e) => e.stopPropagation()}>
-            <button type="button" className="tut-x" onClick={() => setAbierto(null)} aria-label="Cerrar">×</button>
-            <small className="tenue">{abierto.modulo.icono} {abierto.modulo.texto}</small>
-            <h2>{abierto.tutorial.titulo}</h2>
-            <ol>{abierto.tutorial.pasos.map((p) => <li key={p}>{p}</li>)}</ol>
-            {abierto.tutorial.consejo && <p className="tut-consejo"><b>Consejo:</b> {abierto.tutorial.consejo}</p>}
-          </div>
-        </div>
-      )}
     </div>
   );
 }

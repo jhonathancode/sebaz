@@ -5333,3 +5333,6 @@ html:not(.pdf-captura) .cc-excel tbody tr:hover td { background: color-mix(in sr
 html:not(.pdf-captura) .cc-excel tfoot td, html:not(.pdf-captura) .cc-excel tfoot .acc { background: color-mix(in srgb, var(--primario) 7%, var(--panel)) !important; border-top: 1px solid color-mix(in srgb, var(--primario) 16%, var(--linea)); color: var(--primario-texto); }
 html:not(.pdf-captura) .cc-excel tfoot td.m, html:not(.pdf-captura) .cc-excel tfoot td.num { color: var(--primario-texto); }
 html:not(.pdf-captura) .cc-excel-marco { border-color: color-mix(in srgb, var(--primario) 18%, var(--borde)); }
+
+html:not(.pdf-captura) .cc-excel caption { text-align: center; padding: 22px 24px 16px; font-size: 14px; letter-spacing: .14em; }
+@media (max-width: 700px) { html:not(.pdf-captura) .cc-excel caption { text-align: left; } }

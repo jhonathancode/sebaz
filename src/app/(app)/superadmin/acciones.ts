@@ -3,7 +3,9 @@
 import { randomBytes } from "crypto";
 import { revalidatePath } from "next/cache";
 import { cookies } from "next/headers";
-import { obtenerContexto } from "@/lib/contexto";
+import { redirect } from "next/navigation";
+import { COOKIE_MCP_ADMIN, obtenerContexto } from "@/lib/contexto";
+import { aplicarPlantilla } from "@/lib/plantilla";
 import { mensajeError, numero, texto, volver } from "@/lib/acciones";
 import { modulosDeFormulario } from "@/lib/modulos";
 import { supabaseServicio, supabaseServidor } from "@/lib/supabase/server";
@@ -183,4 +185,50 @@ export async function enviarMensaje(fd: FormData) {
   if (e2) volver("/superadmin/mensajes", "error", mensajeError(e2));
   revalidatePath("/", "layout");
   volver("/superadmin/mensajes", "ok", `Mensaje enviado a ${destinos.size} persona(s).`);
+}
+
+/** Abre la configuración de un cliente como administrador de esa MCP. */
+export async function entrarConfiguracion(fd: FormData) {
+  await soloSuperadmin();
+  const id = texto(fd, "mcp_id")!;
+  (await cookies()).set(COOKIE_MCP_ADMIN, id, { httpOnly: true, sameSite: "lax", path: "/", maxAge: 60 * 60 * 8 });
+  redirect("/configuracion");
+}
+
+/** Cierra la configuración del cliente y vuelve a su ficha. */
+export async function salirConfiguracion(fd: FormData) {
+  await soloSuperadmin();
+  (await cookies()).delete(COOKIE_MCP_ADMIN);
+  redirect(texto(fd, "volver") ?? "/superadmin/clientes");
+}
+
+/** Toma la configuración de un cliente (pagos fijos tipo y comprobante por gasto) como plantilla para las MCP nuevas. */
+export async function guardarPlantillaDesde(fd: FormData) {
+  await soloSuperadmin();
+  const supabase = await supabaseServidor();
+  const mcp = texto(fd, "mcp_id")!;
+  const [{ data: m }, { data: pagos }] = await Promise.all([
+    supabase.from("mcps").select("nombre, sustentos_gasto").eq("id", mcp).single(),
+    supabase.from("pagos_fijos").select("concepto, unidad, clasificador, documentos, sustentos, expediente_completo").eq("mcp_id", mcp).order("concepto"),
+  ]);
+  if (!m) volver("/superadmin/plantilla", "error", "No se encontró el cliente.");
+  const { error } = await supabase.from("plantilla_config").upsert({
+    id: "general",
+    sustentos_gasto: m.sustentos_gasto ?? {},
+    pagos: pagos ?? [],
+    origen: m.nombre,
+    actualizado_en: new Date().toISOString(),
+  });
+  if (error) volver(cliente(mcp), "error", /plantilla_config|schema cache|does not exist/i.test(error.message) ? "Falta correr SUPERADMIN_PLANTILLA.sql en Supabase." : mensajeError(error));
+  revalidatePath("/superadmin/plantilla");
+  volver("/superadmin/plantilla", "ok", `Plantilla guardada con la configuración de ${m.nombre}.`);
+}
+
+/** Aplica la plantilla a un cliente que ya existe. */
+export async function aplicarPlantillaCliente(fd: FormData) {
+  await soloSuperadmin();
+  const mcp = texto(fd, "mcp_id")!;
+  const r = await aplicarPlantilla(mcp, { sobrescribirSustentos: fd.get("sobrescribir") === "1" });
+  if (!r) volver(cliente(mcp), "error", "Todavía no hay plantilla guardada (o falta SUPERADMIN_PLANTILLA.sql).");
+  volver(cliente(mcp), "ok", `Plantilla aplicada: ${r.ajustados} pago(s) fijo(s) ajustado(s), ${r.creados} creado(s) sin activar${r.sustentos ? ", comprobantes por gasto copiados" : ""}.`);
 }

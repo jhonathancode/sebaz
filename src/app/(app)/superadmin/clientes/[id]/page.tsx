@@ -10,7 +10,7 @@ import { fecha, fechaHora, hoyISO, monto2, soles } from "@/lib/formato";
 import { GRUPOS_MODULOS, MODULOS, modulosDe } from "@/lib/modulos";
 import { estadoCliente, mensual } from "@/lib/superadmin";
 import { supabaseServicio, supabaseServidor } from "@/lib/supabase/server";
-import { anularPago, cambiarEstadoCliente, guardarModulos, guardarSuscripcion, registrarPago } from "../../acciones";
+import { anularPago, aplicarPlantillaCliente, cambiarEstadoCliente, entrarConfiguracion, guardarModulos, guardarPlantillaDesde, guardarSuscripcion, registrarPago } from "../../acciones";
 
 const MEDIOS = [["transferencia", "Transferencia"], ["yape", "Yape"], ["plin", "Plin"], ["deposito", "Depósito"], ["efectivo", "Efectivo"], ["otro", "Otro"]];
 
@@ -53,6 +53,10 @@ export default async function Cliente({ params, searchParams }: { params: Promis
         </div>
         <span className={`estado ${est.clase}`} style={{ fontSize: 13 }}>{est.texto}</span>
         <span className="espacio" />
+        <form action={entrarConfiguracion}>
+          <input type="hidden" name="mcp_id" value={id} />
+          <button className="btn primario" type="submit">Configuración del cliente</button>
+        </form>
         <Link className="btn contorno" href={`/soporte?mcp=${id}`}>Usuarios y relevos</Link>
         {s && (
           <VentanaFlotante boton="+ Registrar pago" titulo={`Pago de ${m.nombre}`} accion={registrarPago} textoGuardar="Registrar pago" claseBoton="btn primario grande">
@@ -193,6 +197,23 @@ export default async function Cliente({ params, searchParams }: { params: Promis
               </div>
               <BotonConfirmar className="btn primario" pregunta="¿Guardar los módulos de este cliente?" textoConfirmar="Sí, guardar">Guardar módulos</BotonConfirmar>
             </form>
+          </section>
+
+          <section className="panel">
+            <div className="panel-cab">Plantilla de configuración</div>
+            <div className="panel-cuerpo">
+              <span className="pequeno tenue">La plantilla (pagos fijos tipo y comprobante por gasto) se copia a cada cliente nuevo. Aquí puede aplicarla a este cliente o tomar su configuración como nueva plantilla. No toca identidad, cuentas, numeración, montos ni beneficiarios.</span>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
+                <form action={aplicarPlantillaCliente}>
+                  <input type="hidden" name="mcp_id" value={id} />
+                  <BotonConfirmar className="btn contorno" pregunta="¿Aplicar la plantilla a este cliente?" detalle="Ajusta los documentos y comprobantes de sus pagos fijos del mismo nombre y crea (sin activar) los que falten." textoConfirmar="Sí, aplicar">Aplicar plantilla</BotonConfirmar>
+                </form>
+                <form action={guardarPlantillaDesde}>
+                  <input type="hidden" name="mcp_id" value={id} />
+                  <BotonConfirmar className="btn contorno" pregunta="¿Tomar la configuración de este cliente como plantilla?" detalle="Reemplaza la plantilla actual. Los clientes que ya existen no cambian." textoConfirmar="Sí, guardar plantilla">Usar este cliente como plantilla</BotonConfirmar>
+                </form>
+              </div>
+            </div>
           </section>
 
           <section className="panel">

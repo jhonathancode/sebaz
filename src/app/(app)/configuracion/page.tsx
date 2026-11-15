@@ -17,6 +17,7 @@ import { CAMPOS_CODIF, CODIF_FIJA, rubroSugerido, datosCPDe, faltantesCP, TIPO_O
 import { contextoMcp, tiene } from "@/lib/contexto";
 import { fechaHora, nombrePeriodo, periodoActual, monto2, soles, urlLogo } from "@/lib/formato";
 import { supabaseServidor } from "@/lib/supabase/server";
+import { salirConfiguracion } from "../superadmin/acciones";
 import { agregarCuentaBancaria, agregarFuente, cerrarMes, desactivarCuentaBancaria, desactivarFuente, fijarNumeracion, guardarCapitulo1, guardarDatosCP, guardarSustentosGasto, guardarDatosMcp, guardarFuente, reabrirMes, subirLogo, guardarPagoFijo, alternarPagoFijo, guardarExigirPin, guardarExigirAprobacion } from "./acciones";
 
 export default async function Configuracion({ searchParams }: { searchParams: ParamsAviso }) {
@@ -176,6 +177,16 @@ export default async function Configuracion({ searchParams }: { searchParams: Pa
         </div>
       </section>
 
+      {ctx.esSuperadmin && (
+        <div className="aviso" style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
+          <span>Está configurando a <b>{m.nombre}</b> como administrador del sistema. Los cambios son los mismos que vería el cliente.</span>
+          <span className="espacio" />
+          <form action={salirConfiguracion}>
+            <input type="hidden" name="volver" value={`/superadmin/clientes/${m.id}`} />
+            <button className="btn contorno" type="submit">Terminar y volver al cliente</button>
+          </form>
+        </div>
+      )}
       <Avisos ok={sp.ok} error={sp.error} />
       {!admin && <div className="aviso info">Solo el administrador de la MCP puede cambiar estos datos.</div>}
 

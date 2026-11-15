@@ -9,7 +9,7 @@ import { cargarCierres, estadoGestion } from "@/lib/gestion";
 import { codigoCP, fecha, hoyISO, nombrePeriodo, num3, periodoActual, rangoPeriodo, soles } from "@/lib/formato";
 import { supabaseServidor } from "@/lib/supabase/server";
 import { nombreAdjunto } from "@/lib/adjuntosExpediente";
-import { cargarArchivosPagoFijo, cargarCatalogoPagosFijos, siguienteCheque } from "@/lib/pagosFijos";
+import { cargarArchivosPagoFijo, cargarCatalogoPagosFijos, pagoLlevaPlanilla, siguienteCheque } from "@/lib/pagosFijos";
 import { cargarAtajos } from "@/lib/atajos";
 import { anularExpedienteTotal, crearExpediente, registrarExpedienteCompleto } from "./acciones";
 import AsistenteRequerimiento from "@/components/AsistenteRequerimiento";
@@ -433,7 +433,15 @@ export default async function Expedientes({ searchParams }: { searchParams: Para
                     const pf = pagosFijos.find((x) => x.id === (e as { pago_fijo_id?: string | null }).pago_fijo_id);
                     if (!pf || e.estado === "anulado") return null;
                     const sinSubir = pf.documentos.filter((d) => d !== "planilla" && !adjDe.get(e.id)?.has(d));
-                    return sinSubir.map((d) => {
+                    const planillaAuto = pagoLlevaPlanilla(pf) && !adjDe.get(e.id)?.has("planilla");
+                    return [planillaAuto && (
+                      <span key="req-planilla" className="doc-par">
+                        <i className="doc-sep ok" aria-hidden="true" />
+                        <Link className="doc-paso" href={`/expedientes/${e.id}#documentos`} title="La planilla del mes la arma el sistema">
+                          <span className="ic" aria-hidden="true">✓</span>Planilla de pago
+                        </Link>
+                      </span>
+                    ), ...sinSubir.map((d) => {
                       const perm = archivosPF.has(`${pf.id}|${d}`) || !!tiposDePF.get(pf.id)?.has(d);
                       return (
                         <span key={`req-${d}`} className="doc-par">
@@ -449,7 +457,7 @@ export default async function Expedientes({ searchParams }: { searchParams: Para
                           )}
                         </span>
                       );
-                    });
+                    })];
                   })()}
                   {dd.hayCp && (
                     <span className="doc-par">

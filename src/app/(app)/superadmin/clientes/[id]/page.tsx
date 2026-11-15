@@ -9,6 +9,7 @@ import { NOMBRE_ROL, obtenerContexto, type Rol } from "@/lib/contexto";
 import { fecha, fechaHora, hoyISO, monto2, soles } from "@/lib/formato";
 import { GRUPOS_MODULOS, MODULOS, modulosDe } from "@/lib/modulos";
 import { estadoCliente, mensual } from "@/lib/superadmin";
+import { saludCliente } from "@/lib/saludCliente";
 import { supabaseServicio, supabaseServidor } from "@/lib/supabase/server";
 import { anularPago, aplicarPlantillaCliente, cambiarEstadoCliente, entrarConfiguracion, guardarModulos, guardarPlantillaDesde, guardarSuscripcion, registrarPago } from "../../acciones";
 
@@ -38,6 +39,7 @@ export default async function Cliente({ params, searchParams }: { params: Promis
     /* sin clave de servicio: no se muestran los accesos */
   }
 
+  const salud = await saludCliente(supabase, m);
   const est = estadoCliente(m.estado, s?.vence_el ?? null, s?.dias_gracia ?? 10);
   const planActual = (planes ?? []).find((p) => p.id === s?.plan_id);
   const vigentes = (pagos ?? []).filter((p) => !p.anulado);
@@ -58,6 +60,7 @@ export default async function Cliente({ params, searchParams }: { params: Promis
           <button className="btn primario" type="submit">Configuración del cliente</button>
         </form>
         <Link className="btn contorno" href={`/soporte?mcp=${id}`}>Usuarios y relevos</Link>
+        <a className="btn contorno" href={`/exportar/respaldo?mcp=${id}`}>Descargar respaldo</a>
         {s && (
           <VentanaFlotante boton="+ Registrar pago" titulo={`Pago de ${m.nombre}`} accion={registrarPago} textoGuardar="Registrar pago" claseBoton="btn primario grande">
             <input type="hidden" name="mcp_id" value={id} />
@@ -85,6 +88,32 @@ export default async function Cliente({ params, searchParams }: { params: Promis
         <div className={`kpi${["vencida", "gracia"].includes(est.clave) ? " rojo" : est.clave === "por_vencer" ? " alerta" : ""}`}><span className="k-et">Vence</span><span className="k-val">{fecha(s?.vence_el)}</span><span className="k-det">{s?.dias_gracia ?? 10} días de gracia</span></div>
         <div className="kpi"><span className="k-et">Total pagado</span><span className="k-val">S/ {soles(totalPagado)}</span><span className="k-det">{vigentes.length} pago(s)</span></div>
         <div className="kpi"><span className="k-et">Usuarios activos</span><span className="k-val">{(miembros ?? []).filter((x) => x.activo).length}</span><span className="k-det">Cliente desde {fecha(m.creado_en?.slice(0, 10))}</span></div>
+      </div>
+
+      <div className="dos-columnas" style={{ marginBottom: 16 }}>
+        <section className="panel">
+          <div className="panel-cab">Puesta en marcha · {salud.pasos.filter((x) => x.ok).length} de {salud.pasos.length}</div>
+          <div className="panel-cuerpo" style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+            {salud.pasos.map((x) => (
+              <div key={x.texto} style={{ display: "flex", gap: 10, alignItems: "baseline" }}>
+                <b style={{ color: x.ok ? "var(--azul, #2b6fe6)" : "var(--rojo, #c0392b)" }}>{x.ok ? "✓" : "○"}</b>
+                <span>{x.texto}{!x.ok && x.detalle ? <small className="tenue"> · {x.detalle}</small> : null}</span>
+              </div>
+            ))}
+            {salud.pasos.some((x) => !x.ok) && <p className="pequeno tenue" style={{ margin: 0 }}>Lo que falta se completa en «Configuración del cliente» y «Usuarios y relevos».</p>}
+          </div>
+        </section>
+        <section className="panel">
+          <div className="panel-cab">Salud del cliente</div>
+          <div className="panel-cuerpo" style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+            {salud.senales.map((x) => (
+              <div key={x.texto} style={{ display: "flex", justifyContent: "space-between", gap: 12 }}>
+                <span>{x.texto}</span>
+                <b style={{ color: x.nivel === "mal" ? "var(--rojo, #c0392b)" : x.nivel === "alerta" ? "#b7791f" : "inherit" }}>{x.valor}</b>
+              </div>
+            ))}
+          </div>
+        </section>
       </div>
 
       <div className="dos-columnas">

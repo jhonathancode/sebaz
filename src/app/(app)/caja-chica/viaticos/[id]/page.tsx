@@ -33,7 +33,7 @@ export default async function Comision({ params, searchParams }: { params: Promi
   return (
     <>
       <div className="titulo-ventana no-imprimir">
-        <Link className="btn" href="/caja-chica/viaticos">← Volver a viáticos</Link>
+        <Link className="btn" href={`/caja-chica/viaticos/lugar?d=${encodeURIComponent(c.destino)}`}>← Volver a {c.destino}</Link>
         <span className="espacio" />
         {puede && !c.anulado && !c.gasto_id && (
           <form action={pasarComisionACaja} style={{ display: "flex", gap: 8, alignItems: "center" }}>

@@ -8,13 +8,15 @@ const soles = (n: number) => n.toLocaleString("es-PE", { minimumFractionDigits: 
 const hoy = () => new Date().toISOString().slice(0, 10);
 
 /** Comisión de servicio: elige el destino, las fechas, y el tarifario completa pasajes, hospedaje y alimentación. */
-export default function FormComision({ tarifas }: { tarifas: Tarifa[] }) {
+export default function FormComision({ tarifas, destinoInicial = "" }: { tarifas: Tarifa[]; destinoInicial?: string }) {
   const destinos = [...new Set(tarifas.map((t) => t.destino))].sort();
-  const [destino, setDestino] = useState("");
+  const [destino, setDestino] = useState(destinoInicial);
   const [salida, setSalida] = useState(hoy());
   const [retorno, setRetorno] = useState(hoy());
-  const [filas, setFilas] = useState<Fila[]>([]);
-  const [sig, setSig] = useState(1);
+  const [filas, setFilas] = useState<Fila[]>(() =>
+    tarifas.filter((t) => t.destino === destinoInicial).map((t, i) => ({ k: i + 1, concepto: t.concepto, detalle: t.detalle ?? "", cantidad: String(cantidadSugerida(t.unidad, hoy(), hoy())), precio: t.monto.toFixed(2) })),
+  );
+  const [sig, setSig] = useState(100);
   const cambiar = (k: number, p: Partial<Fila>) => setFilas((fs) => fs.map((f) => (f.k === k ? { ...f, ...p } : f)));
   const cargar = (d: string, s: string, r: string) => {
     const delDestino = tarifas.filter((t) => t.destino === d);
@@ -26,7 +28,7 @@ export default function FormComision({ tarifas }: { tarifas: Tarifa[] }) {
     <>
       <div className="rejilla-2">
         <label className="campo">Destino
-          <input name="destino" required list="destinos-viaje" value={destino} style={{ textTransform: "uppercase" }} placeholder="HUANCAYO, LIMA…"
+          <input name="destino" required list="destinos-viaje" value={destino} readOnly={!!destinoInicial} style={{ textTransform: "uppercase" }} placeholder="HUANCAYO, LIMA…"
             onChange={(e) => { const v = e.target.value.toUpperCase(); setDestino(v); if (destinos.includes(v)) cargar(v, salida, retorno); }} />
           <datalist id="destinos-viaje">{destinos.map((d) => <option key={d} value={d} />)}</datalist>
         </label>

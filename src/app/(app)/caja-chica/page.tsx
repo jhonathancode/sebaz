@@ -16,6 +16,8 @@ import { codigoCP, fecha, hoyISO, nombrePeriodo, periodoActual, soles } from "@/
 const MES_CORTO = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Set", "Oct", "Nov", "Dic"];
 import { CORRELATIVO, proximoNumero } from "@/lib/numeracion";
 import { supabaseServidor } from "@/lib/supabase/server";
+import FormArqueo from "@/components/FormArqueo";
+import { registrarArqueo, anularArqueo } from "./arqueo/acciones";
 import { enlazarExpediente, solicitarFondo, agregarGasto, anularGasto, cambiarCheque, editarGasto, liquidarCaja } from "./acciones";
 
 const NOMBRE_SUSTENTO = Object.fromEntries(SUSTENTOS.map((s) => [s.codigo, s.nombre]));
@@ -103,6 +105,9 @@ export default async function CajaChica({ searchParams }: { searchParams: Params
     .eq("mcp_id", ctx.mcp.id)
     .eq("activo", true);
 
+  const { data: arqueos } = caja
+    ? await supabase.from("arqueos_caja").select("id, numero, anio, fecha, efectivo, comprobantes, diferencia, anulado, anulado_motivo").eq("caja_id", caja.id).order("creado_en", { ascending: false })
+    : { data: [] as never[] };
   const abierta = caja?.estado === "abierta";
   // Requerimientos de apertura de este mes que aún esperan aprobación
   const { data: pedidos } = await supabase
@@ -198,6 +203,14 @@ export default async function CajaChica({ searchParams }: { searchParams: Params
         {vista === "anio" && <BotonPdf nombre={`Caja chica ${anio}`} selector=".cc-excel-marco" texto="Descargar PDF" className="btn contorno" horizontal />}
         {vista === "mes" && caja && <Link className="btn contorno" href={`/caja-chica/${caja.id}/requerimiento`}>Requerimiento</Link>}
         {vista === "mes" && caja && <Link className="btn contorno" href={`/caja-chica/${caja.id}/relacion`}>Relación de gastos</Link>}
+        <Link className="btn contorno" href="/caja-chica/movilidad">Movilidad</Link>
+        {vista === "mes" && caja && puede && (
+          <VentanaFlotante boton="Arqueo" titulo="Arqueo de caja chica" accion={registrarArqueo} textoGuardar="Registrar arqueo" claseBoton="btn contorno" ancha>
+            <input type="hidden" name="caja_id" value={caja.id} />
+            <input type="hidden" name="volver" value={`/caja-chica?mes=${periodo}&fuente=${fuenteId}&caja=${caja.id}`} />
+            <FormArqueo fondo={fondo} comprobantes={gastado} />
+          </VentanaFlotante>
+        )}
         {vista === "mes" && formGasto}
       </div>
       <Avisos ok={sp.ok} error={sp.error} />
@@ -491,6 +504,25 @@ export default async function CajaChica({ searchParams }: { searchParams: Params
               )}
             </table>
           </div>
+
+          {(arqueos ?? []).length > 0 && (
+            <section className="panel">
+              <div className="panel-cab">Arqueos de esta caja <span className="tenue pequeno">{(arqueos ?? []).filter((x) => !x.anulado).length} vigente(s)</span></div>
+              <div className="panel-cuerpo">
+                <div className="filas">
+                  {(arqueos ?? []).map((x) => (
+                    <div key={x.id} className="fila" style={x.anulado ? { opacity: 0.6 } : undefined}>
+                      <Link href={`/caja-chica/arqueo/${x.id}`}><b>Arqueo {String(x.numero).padStart(3, "0")}-{x.anio}</b></Link>
+                      <span className="tenue pequeno">{fecha(x.fecha)} · efectivo S/ {soles(x.efectivo)} + comprobantes S/ {soles(x.comprobantes)}</span>
+                      <span className="espacio" />
+                      {x.anulado ? <span className="etq">ANULADO: {x.anulado_motivo}</span> : Number(x.diferencia) === 0 ? <span className="etq">✓ Cuadra</span> : <span className="etq">{Number(x.diferencia) > 0 ? "Sobran" : "Faltan"} S/ {soles(Math.abs(Number(x.diferencia)))}</span>}
+                      {!x.anulado && puede && <Motivo chico accion={anularArqueo} boton="Anular" ayuda="Motivo" campos={{ id: x.id, volver: `/caja-chica?mes=${periodo}&fuente=${fuenteId}&caja=${caja.id}` }} />}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </section>
+          )}
 
           {abierta && puede && (
             <div className="kpi" style={{ flexDirection: "row", alignItems: "center", gap: 16, flexWrap: "wrap" }}>

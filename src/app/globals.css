@@ -5503,3 +5503,9 @@ a.tut-card { text-decoration: none; }
 .fases-cinta { display: inline-flex; flex-wrap: wrap; gap: 4px; }
 .etq.fase-pill { font-weight: 600; }
 .etq.fase-pill:not(.azul) { background: var(--panel-2); color: var(--tenue); }
+
+/* Botón Tutoriales de la barra superior: píldora con icono de reproducir, sin subrayado */
+.bg-tutoriales { text-decoration: none; font-weight: 700; color: var(--primario-texto); gap: 8px; padding: 0 14px 0 6px; border-radius: 999px; transition: box-shadow .15s, border-color .15s; }
+.bg-tutoriales:hover { text-decoration: none; color: var(--primario-texto); border-color: var(--primario); box-shadow: 0 6px 16px -8px rgba(37, 99, 235, .7); }
+.bg-tut-ic { width: 24px; height: 24px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; background: var(--primario); color: #fff; }
+.bg-tut-ic svg { margin-left: 1px; }

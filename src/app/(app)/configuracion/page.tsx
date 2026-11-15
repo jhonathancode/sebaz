@@ -19,6 +19,7 @@ import { fechaHora, nombrePeriodo, periodoActual, monto2, soles, urlLogo } from 
 import { supabaseServidor } from "@/lib/supabase/server";
 import { salirConfiguracion } from "../superadmin/acciones";
 import { agregarCuentaBancaria, agregarFuente, cerrarMes, desactivarCuentaBancaria, desactivarFuente, fijarNumeracion, guardarCapitulo1, guardarDatosCP, guardarSustentosGasto, guardarDatosMcp, guardarFuente, reabrirMes, subirLogo, guardarPagoFijo, alternarPagoFijo, guardarExigirPin, guardarExigirAprobacion } from "./acciones";
+import { crearEnlaceLectura, revocarEnlaceLectura } from "./enlaces";
 
 export default async function Configuracion({ searchParams }: { searchParams: ParamsAviso }) {
   const sp = await searchParams;
@@ -34,6 +35,9 @@ export default async function Configuracion({ searchParams }: { searchParams: Pa
     supabase.from("cuentas_bancarias").select("id, banco, numero, alias").eq("mcp_id", m.id).eq("activo", true).order("creado_en"),
     cargarArchivosPagoFijo(supabase, m.id, true),
   ]);
+  const { data: enlacesLectura } = admin && sp.seccion === "seguridad"
+    ? await supabase.from("enlaces_lectura").select("id, nombre, activo, revocado_motivo, ultimo_acceso, creado_en").eq("mcp_id", m.id).order("creado_en", { ascending: false })
+    : { data: [] as { id: string; nombre: string; activo: boolean; revocado_motivo: string | null; ultimo_acceso: string | null; creado_en: string }[] };
   const mesActual = periodoActual();
   const puedePagos = tiene(ctx, "admin", "tesorero", "contador", "alcalde");
   const anio = periodoActual().slice(0, 4);
@@ -651,6 +655,31 @@ export default async function Configuracion({ searchParams }: { searchParams: Pa
                 </article>
               );
             })}
+          </div>
+        </section>
+      )}
+
+      {seccion === "seguridad" && admin && (
+        <section className="panel cfg-panel" style={{ marginTop: 16 }}>
+          <div className="panel-cab">Acceso de solo lectura (alcalde, regidores, fiscalizador)</div>
+          <div className="panel-cuerpo">
+            <p className="pequeno tenue" style={{ marginTop: 0 }}>Cada persona recibe su propio enlace para ver rendiciones, comprobantes e ingresos sin crear cuenta ni poder cambiar nada. Puede revocarlo cuando quiera.</p>
+            <VentanaFlotante boton="+ Crear enlace de lectura" titulo="Nuevo enlace de solo lectura" accion={crearEnlaceLectura} textoGuardar="Crear enlace" claseBoton="btn primario">
+              <label className="campo">¿Para quién es?<input name="nombre" required placeholder="Ej.: REGIDOR JUAN PÉREZ" autoComplete="off" /></label>
+              <p className="pequeno tenue" style={{ margin: 0 }}>Al crearlo verá el enlace una sola vez: cópielo y envíelo por WhatsApp.</p>
+            </VentanaFlotante>
+            <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 14 }}>
+              {(enlacesLectura ?? []).length === 0 && <div className="aviso info">Aún no hay enlaces de lectura.</div>}
+              {(enlacesLectura ?? []).map((e) => (
+                <div key={e.id} className="pf-opcion" style={{ alignItems: "center", opacity: e.activo ? 1 : 0.6 }}>
+                  <span className="pf-doc-texto">
+                    <b>{e.nombre}</b>
+                    <span>{e.activo ? `Activo · creado ${fechaHora(e.creado_en)} · ${e.ultimo_acceso ? `último acceso ${fechaHora(e.ultimo_acceso)}` : "aún no lo abrió"}` : `Revocado: ${e.revocado_motivo ?? ""}`}</span>
+                  </span>
+                  {e.activo && <Motivo accion={revocarEnlaceLectura} boton="Revocar" titulo="Revocar enlace" ayuda="Motivo de la revocación" campos={{ id: e.id }} chico peligro motivos={["La persona ya no ocupa el cargo", "El enlace se compartió por error", "Cambio de gestión"]} />}
+                </div>
+              ))}
+            </div>
           </div>
         </section>
       )}

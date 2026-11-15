@@ -26,6 +26,10 @@ export default async function Viaticos({ searchParams }: { searchParams: ParamsA
   const porDestino = new Map<string, T[]>();
   todas.forEach((t) => porDestino.set(t.destino, [...(porDestino.get(t.destino) ?? []), t]));
 
+  type C = NonNullable<typeof comisiones>[number];
+  const salidasPorDestino = new Map<string, C[]>();
+  (comisiones ?? []).forEach((c) => salidasPorDestino.set(c.destino, [...(salidasPorDestino.get(c.destino) ?? []), c]));
+
   const campos = (t?: T) => (
     <>
       {t && <input type="hidden" name="id" value={t.id} />}
@@ -47,14 +51,14 @@ export default async function Viaticos({ searchParams }: { searchParams: ParamsA
     <>
       <div className="cab-vista">
         <div>
-          <h1>Viáticos y comisiones</h1>
-          <div className="sub">Viajes fuera de la localidad: pasajes, hospedaje, alimentación y movilidad por destino</div>
+          <h1>Viáticos</h1>
+          <div className="sub">Cada salida (por ejemplo a Huancayo) guarda junto sus pasajes, hospedaje, alimentación y movilidad</div>
         </div>
         <span className="espacio" />
-        <Link className="btn contorno" href="/caja-chica/movilidad">Movilidad local</Link>
+        <Link className="btn contorno" href="/caja-chica/movilidad">Movilidad local (planilla del mes)</Link>
         <Link className="btn contorno" href="/caja-chica">← Caja chica</Link>
         {puede && (
-          <VentanaFlotante boton="+ Nueva comisión" titulo="Comisión de servicio" accion={crearComision} textoGuardar="Guardar comisión" claseBoton="btn primario grande" ancha>
+          <VentanaFlotante boton="+ Nueva salida" titulo="Nueva salida: destino, fechas y gastos" accion={crearComision} textoGuardar="Guardar salida" claseBoton="btn primario grande" ancha>
             <div className="rejilla-2">
               <label className="campo">Comisionado<input name="comisionado" required style={{ textTransform: "uppercase" }} /></label>
               <label className="campo">DNI<input name="documento" inputMode="numeric" maxLength={11} /></label>
@@ -73,30 +77,32 @@ export default async function Viaticos({ searchParams }: { searchParams: ParamsA
       </div>
       <Avisos ok={sp.ok} error={sp.error} />
 
-      <section className="panel">
-        <div className="panel-cab">Comisiones de servicio <span className="tenue pequeno">{(comisiones ?? []).length}</span></div>
-        <div className="panel-cuerpo">
-          {(comisiones ?? []).length === 0 ? (
-            <p className="tenue" style={{ margin: 0 }}>Aún no hay comisiones. Primero llene el tarifario de abajo (por ejemplo Huancayo y Lima); después cada comisión se calcula sola según los días del viaje.</p>
-          ) : (
-            <div className="filas">
-              {(comisiones ?? []).map((c) => (
-                <div key={c.id} className="fila" style={c.anulado ? { opacity: 0.6 } : undefined}>
-                  <Link href={`/caja-chica/viaticos/${c.id}`}><b>Comisión V{String(c.numero).padStart(3, "0")}-{c.anio}</b></Link>
-                  <span className="tenue pequeno">{c.comisionado} · {c.destino} · {fecha(c.fecha_salida)} al {fecha(c.fecha_retorno)}</span>
-                  <span className="espacio" />
-                  <b>S/ {soles(c.total)}</b>
-                  {c.anulado ? <span className="etq">ANULADA</span> : c.gasto_id ? <span className="etq">En caja chica</span> : <span className="etq">Por pasar a caja</span>}
-                </div>
-              ))}
-            </div>
-          )}
+      {(comisiones ?? []).length === 0 ? (
+        <section className="panel"><div className="panel-cuerpo"><p className="tenue" style={{ margin: 0 }}>Aún no hay salidas. Pulse «+ Nueva salida», elija el destino (por ejemplo Huancayo) y las fechas: los pasajes, el hospedaje y la alimentación se calculan solos con el tarifario de abajo.</p></div></section>
+      ) : (
+        <div className="fu-grid">
+          {[...salidasPorDestino].map(([destino, cs]) => (
+            <article key={destino} className="fu-card">
+              <header className="fu-card-cab"><span className="fu-tipo">{destino}</span><span className="tenue pequeno">{cs.filter((c) => !c.anulado).length} salida(s) · S/ {soles(cs.filter((c) => !c.anulado).reduce((t, c) => t + Number(c.total), 0))}</span></header>
+              <div className="filas">
+                {cs.map((c) => (
+                  <Link key={c.id} href={`/caja-chica/viaticos/${c.id}`} className="fila" style={c.anulado ? { opacity: 0.6 } : undefined}>
+                    <span><b>{fecha(c.fecha_salida)} al {fecha(c.fecha_retorno)}</b><br /><span className="tenue pequeno">{c.comisionado} · {c.motivo}</span></span>
+                    <span className="espacio" />
+                    <b>S/ {soles(c.total)}</b>
+                    {c.anulado ? <span className="etq">ANULADA</span> : c.gasto_id ? <span className="etq azul">En caja chica</span> : <span className="etq">Por pasar a caja</span>}
+                  </Link>
+                ))}
+              </div>
+            </article>
+          ))}
         </div>
-      </section>
+      )}
 
-      <section className="panel">
+      <details className="panel" open={(comisiones ?? []).length === 0}>
+        <summary className="panel-cab" style={{ cursor: "pointer" }}>Tarifario por destino (precios que usan las salidas)</summary>
         <div className="panel-cab">
-          Tarifario por destino
+          Tarifas
           {puede && (
             <VentanaFlotante boton="+ Agregar tarifa" titulo="Nueva tarifa de viaje" accion={guardarTarifaViaje} textoGuardar="Guardar tarifa" claseBoton="btn chico contorno">
               {campos()}
@@ -132,7 +138,7 @@ export default async function Viaticos({ searchParams }: { searchParams: ParamsA
             ))}
           </div>
         </div>
-      </section>
+      </details>
     </>
   );
 }

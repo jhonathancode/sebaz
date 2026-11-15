@@ -203,7 +203,6 @@ export default async function CajaChica({ searchParams }: { searchParams: Params
         {vista === "anio" && <BotonPdf nombre={`Caja chica ${anio}`} selector=".cc-excel-marco" texto="Descargar PDF" className="btn contorno" horizontal />}
         {vista === "mes" && caja && <Link className="btn contorno" href={`/caja-chica/${caja.id}/requerimiento`}>Requerimiento</Link>}
         {vista === "mes" && caja && <Link className="btn contorno" href={`/caja-chica/${caja.id}/relacion`}>Relación de gastos</Link>}
-        <Link className="btn contorno" href="/caja-chica/movilidad">Movilidad</Link>
         <Link className="btn contorno" href="/caja-chica/viaticos">Viáticos</Link>
         {vista === "mes" && caja && puede && (
           <VentanaFlotante boton="Arqueo" titulo="Arqueo de caja chica" accion={registrarArqueo} textoGuardar="Registrar arqueo" claseBoton="btn contorno" ancha>

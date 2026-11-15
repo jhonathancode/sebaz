@@ -13,6 +13,7 @@ import { contextoMcp, tiene } from "@/lib/contexto";
 import { fecha, hoyISO, nombrePeriodo, periodoActual, soles } from "@/lib/formato";
 import { supabaseServidor } from "@/lib/supabase/server";
 import { cargarTupa } from "@/lib/tupa";
+import { alertasDeposito } from "@/lib/alertasDeposito";
 import Motivo from "@/components/Motivo";
 import VisorArchivo from "@/components/VisorArchivo";
 import CampoArchivoEstado from "@/components/formularios/CampoArchivoEstado";
@@ -129,6 +130,7 @@ export default async function Ingresos({ searchParams }: { searchParams: ParamsA
   );
   const siguiente = ultimo ? (ultimo.anio === Number(periodo.slice(0, 4)) ? ultimo.numero + 1 : 1) : 1;
   const puede = tiene(ctx, "admin", "tesorero", "contador");
+  const alertasDep = await alertasDeposito(supabase, ctx.mcp.id).catch(() => []);
   // TUPA para consultar costo y requisitos al emitir el recibo (vacío si todavía no se cargó)
   const tupa = puede ? await cargarTupa(supabase, ctx.mcp.id) : { procs: [], modelo: false, fuente: null };
 
@@ -187,6 +189,9 @@ export default async function Ingresos({ searchParams }: { searchParams: ParamsA
         )}
       </div>
       <Avisos ok={sp.ok} error={sp.error} />
+      {alertasDep.map((a) => (
+        <div key={a.id} className="aviso alerta"><span><strong>{a.titulo}.</strong> {a.detalle}</span></div>
+      ))}
 
       <section className="cc-selector" aria-label="Elegir el período">
         <ScrollMesActivo />

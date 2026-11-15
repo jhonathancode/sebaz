@@ -60,15 +60,14 @@ export default function CamposRequerimiento({ fuentes, valores, pagosFijos, cheq
   return (
     <>
             {!valores && <ReinicioPorTipo fuenteInicial={fuentePorDefecto} clasificadorInicial="2.3 Bienes y servicios" />}
-      <div className="fecha-exp">
-        <label className="campo fecha-exp-campo">
-          <span className="fecha-exp-et">Fecha del expediente</span>
-          <InputFecha name="fecha" defaultValue={valores?.fecha ?? hoyISO()} required />
-        </label>
-        <p className="pequeno tenue">Viene con la fecha de hoy; cámbiela solo si el expediente es de otro día. Los documentos saldrán con esa fecha, y cada uno se puede ajustar al generarlo.</p>
-      </div>
       <fieldset className="pregunta">
         <legend>¿Qué tipo de gasto es?</legend>
+        <div className="fecha-exp" title="Viene con la fecha de hoy; cámbiela solo si el expediente es de otro día. Los documentos saldrán con esa fecha y cada uno se puede ajustar al generarlo.">
+          <label className="campo fecha-exp-campo">
+            <span className="fecha-exp-et">Fecha</span>
+            <InputFecha name="fecha" defaultValue={valores?.fecha ?? hoyISO()} required />
+          </label>
+        </div>
         <div className="opciones compacta opciones-tipo">
           {TIPOS.map((t) => (
             <label key={t.valor} className="opcion" title={t.texto}>

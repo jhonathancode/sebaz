@@ -10,7 +10,6 @@ export const GRUPOS_MODULOS = [
       { clave: "ingresos", texto: "Ingresos", href: "/ingresos" },
       { clave: "caja_chica", texto: "Caja chica", href: "/caja-chica" },
       { clave: "almacen", texto: "Almacén (NEA, PECOSA, kardex)", href: "/almacen" },
-      { clave: "patrimonio", texto: "Patrimonio (bienes, inventario anual, predios)", href: "/patrimonio" },
     ],
   },
   {
@@ -27,6 +26,7 @@ export const GRUPOS_MODULOS = [
       { clave: "estados_cuenta", texto: "Estados de cuenta corriente", href: "/contabilidad/estados-cuenta" },
       { clave: "contabilidad", texto: "Libros y resumen", href: "/contabilidad" },
       { clave: "balance_anual", texto: "Balance anual", href: "/contabilidad/balance-anual" },
+      { clave: "patrimonio", texto: "Patrimonio (bienes, inventario anual, predios)", href: "/patrimonio" },
     ],
   },
 ] as const;

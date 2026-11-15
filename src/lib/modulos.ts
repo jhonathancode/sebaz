@@ -10,6 +10,7 @@ export const GRUPOS_MODULOS = [
       { clave: "ingresos", texto: "Ingresos", href: "/ingresos" },
       { clave: "caja_chica", texto: "Caja chica", href: "/caja-chica" },
       { clave: "almacen", texto: "Almacén (NEA, PECOSA, kardex)", href: "/almacen" },
+      { clave: "patrimonio", texto: "Patrimonio (bienes, inventario anual, predios)", href: "/patrimonio" },
     ],
   },
   {

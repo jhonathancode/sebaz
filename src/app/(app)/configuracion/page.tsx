@@ -37,58 +37,73 @@ export default async function Configuracion({ searchParams }: { searchParams: Pa
   const puedePagos = tiene(ctx, "admin", "tesorero", "contador", "alcalde");
   const anio = periodoActual().slice(0, 4);
   const camposPago = (p?: PagoFijoCatalogo) => (
-    <div className="rejilla-2">
+    <div className="pf-form">
       {p && <input type="hidden" name="id" value={p.id} />}
-      <label className="campo">Concepto<input name="concepto" required defaultValue={p?.concepto ?? ""} placeholder="Ej.: DIETA DEL ALCALDE, HONORARIOS DEL ASESOR CONTABLE" /></label>
-      <label className="campo">A quién se paga<input name="beneficiario" defaultValue={p?.beneficiario ?? ""} placeholder="Nombre completo" /></label>
-      <label className="campo">DNI o RUC<input name="beneficiario_doc" inputMode="numeric" maxLength={11} defaultValue={p?.beneficiario_doc ?? ""} /></label>
-      <AutoDocumento doc="beneficiario_doc" nombre="beneficiario" />
-      <label className="campo">Monto mensual S/<input name="monto" required inputMode="decimal" defaultValue={p ? monto2(p.monto) : ""} placeholder="0.00" /></label>
-      <label className="campo">
-        Se paga con
-        <select name="fuente_id" defaultValue={p?.fuente_id ?? ctx.fuentes[0]?.id}>
-          {ctx.fuentes.map((f) => (
-            <option key={f.id} value={f.id}>{nombreFuente(f)}</option>
-          ))}
-        </select>
-      </label>
-      <label className="campo">
-        Específica del gasto
-        <select name="clasificador" defaultValue={p?.clasificador ?? "2.3 Bienes y servicios"}>
-          {CLASIFICADORES.map((c) => (
-            <option key={c}>{c}</option>
-          ))}
-        </select>
-      </label>
-      <label className="campo">Unidad<input name="unidad" defaultValue={p?.unidad ?? "MES"} /></label>
-      <label className="campo" style={{ gridColumn: "1 / -1", flexDirection: "row", alignItems: "flex-start", gap: 10 }}>
-        <input type="checkbox" name="completo" value="1" defaultChecked={p ? p.expediente_completo : true} style={{ width: "auto", marginTop: 3 }} />
-        <span>
-          <b>Lleva expediente completo</b>
-          <span className="pequeno tenue" style={{ display: "block" }}>Con orden de servicio y memorando de conformidad antes del comprobante. Desmárquelo solo para las dietas del alcalde y regidores (solo requerimiento y comprobante).</span>
-        </span>
-      </label>
-      <fieldset className="campo" style={{ gridColumn: "1 / -1", border: "1px solid var(--borde)", borderRadius: "var(--radio)", padding: "8px 14px 10px", margin: 0 }}>
-        <legend style={{ padding: "0 6px", fontWeight: 600 }}>Comprobante que entrega quien cobra</legend>
-        <span className="pequeno tenue" style={{ display: "block", marginBottom: 6 }}>Ej.: dieta del alcalde o regidores = «Planilla simple» (el sistema arma la planilla de cada mes sola); asesor = «Recibo por honorarios». Si no marca ninguno, vale lo configurado para «Pagos fijos» en Datos del comprobante.</span>
-        <div style={{ display: "flex", flexWrap: "wrap", gap: "6px 18px" }}>
+      <section className="pf-sec">
+        <h3 className="pf-sec-tit"><span>1</span>Datos del pago</h3>
+        <div className="rejilla-2">
+          <label className="campo" style={{ gridColumn: "1 / -1" }}>Concepto<input name="concepto" required defaultValue={p?.concepto ?? ""} placeholder="Ej.: DIETA DEL ALCALDE, HONORARIOS DEL ASESOR CONTABLE" /></label>
+          <label className="campo">A quién se paga<input name="beneficiario" defaultValue={p?.beneficiario ?? ""} placeholder="Nombre completo" /></label>
+          <label className="campo">DNI o RUC<input name="beneficiario_doc" inputMode="numeric" maxLength={11} defaultValue={p?.beneficiario_doc ?? ""} /></label>
+          <AutoDocumento doc="beneficiario_doc" nombre="beneficiario" />
+          <label className="campo">Monto mensual S/<input name="monto" required inputMode="decimal" defaultValue={p ? monto2(p.monto) : ""} placeholder="0.00" /></label>
+          <label className="campo">Unidad<input name="unidad" defaultValue={p?.unidad ?? "MES"} /></label>
+          <label className="campo">
+            Se paga con
+            <select name="fuente_id" defaultValue={p?.fuente_id ?? ctx.fuentes[0]?.id}>
+              {ctx.fuentes.map((f) => (
+                <option key={f.id} value={f.id}>{nombreFuente(f)}</option>
+              ))}
+            </select>
+          </label>
+          <label className="campo">
+            Específica del gasto
+            <select name="clasificador" defaultValue={p?.clasificador ?? "2.3 Bienes y servicios"}>
+              {CLASIFICADORES.map((c) => (
+                <option key={c}>{c}</option>
+              ))}
+            </select>
+          </label>
+        </div>
+      </section>
+
+      <section className="pf-sec">
+        <h3 className="pf-sec-tit"><span>2</span>Cómo se tramita</h3>
+        <label className="pf-opcion">
+          <span className="pf-interruptor">
+            <input type="checkbox" name="completo" value="1" defaultChecked={p ? p.expediente_completo : true} />
+            <span className="pf-pista" aria-hidden="true" />
+          </span>
+          <span className="pf-doc-texto">
+            <b>Expediente completo</b>
+            <span>Con orden de servicio y memorando de conformidad antes del comprobante. Déjelo apagado para las dietas del alcalde y regidores (solo requerimiento y comprobante).</span>
+          </span>
+        </label>
+      </section>
+
+      <section className="pf-sec">
+        <h3 className="pf-sec-tit"><span>3</span>Comprobante que entrega quien cobra</h3>
+        <p className="pf-sec-ayuda">Dieta del alcalde o regidores: «Planilla simple» (el sistema arma la planilla de cada mes). Asesor: «Recibo por honorarios». Si no elige ninguno, vale lo configurado para «Pagos fijos» en Comprobante de pago.</p>
+        <div className="pf-chips">
           {SUSTENTOS_ELEGIBLES.map((x) => (
-            <label key={x.codigo} style={{ display: "flex", alignItems: "center", gap: 6, flexDirection: "row" }}>
-              <input type="checkbox" name="sustentos" value={x.codigo} defaultChecked={!!p?.sustentos.includes(x.codigo)} style={{ width: "auto" }} /> {x.nombre}
+            <label key={x.codigo} className="pf-chip">
+              <input type="checkbox" name="sustentos" value={x.codigo} defaultChecked={!!p?.sustentos.includes(x.codigo)} />
+              <span>{x.nombre}</span>
             </label>
           ))}
         </div>
-      </fieldset>
-      <fieldset className="campo" style={{ gridColumn: "1 / -1", border: "1px solid var(--borde)", borderRadius: "var(--radio)", padding: "8px 14px 10px", margin: 0 }}>
-        <legend style={{ padding: "0 6px", fontWeight: 600 }}>Documentos que debe llevar el expediente</legend>
-        <span className="pequeno tenue" style={{ display: "block", marginBottom: 6 }}>Marque cada documento que lleva el expediente de este gasto. Si es el mismo todos los meses (DNI, credencial), súbalo aquí una sola vez y los expedientes saldrán con él ya marcado.</span>
-        <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-          {TIPOS_ADJUNTO.filter((t) => t.clave !== "otro").map((t) => {
+      </section>
+
+      <section className="pf-sec">
+        <h3 className="pf-sec-tit"><span>4</span>Documentos que lleva el expediente</h3>
+        <p className="pf-sec-ayuda">Active cada documento que lleva este gasto. Los que son iguales todos los meses (DNI, credencial) se suben aquí una sola vez y cada expediente nuevo sale con ellos ya completos. Formatos: PDF, JPG, PNG o WEBP.</p>
+        <div className="pf-docs">
+          {[...TIPOS_ADJUNTO].filter((t) => t.clave !== "otro").sort((x, y) => (y.clave === "planilla" ? 1 : 0) - (x.clave === "planilla" ? 1 : 0)).map((t) => {
             const ex = p ? archivosPF.get(`${p.id}|${t.clave}`) : undefined;
-            return <CasillaDocumento key={t.clave} clave={t.clave} texto={t.clave === "planilla" ? "Planilla de remuneración del mes (la arma el sistema)" : t.texto} automatico={t.clave === "planilla"} marcado={!!p?.documentos.includes(t.clave)} existente={ex ? { nombre: ex.nombre, url: ex.url } : null} />;
+            return <CasillaDocumento key={t.clave} clave={t.clave} texto={t.clave === "planilla" ? "Planilla de remuneración del mes" : t.texto} automatico={t.clave === "planilla"} marcado={!!p?.documentos.includes(t.clave)} existente={ex ? { nombre: ex.nombre, url: ex.url } : null} />;
           })}
         </div>
-      </fieldset>
+      </section>
     </div>
   );
 

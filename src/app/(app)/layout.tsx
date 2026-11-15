@@ -156,8 +156,10 @@ export default async function MarcoApp({ children }: { children: React.ReactNode
           </span>
         </div>
         <div className="acciones">
-          <Link className="bg-boton no-imprimir" href={ctx.esSuperadmin ? "/superadmin/tutoriales" : "/tutoriales"} title="Tutoriales: aprenda a usar el sistema">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M4 5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2z" /><path d="M4 19V5" /><path d="M9 8h6" /></svg>
+          <Link className="bg-boton bg-tutoriales no-imprimir" href={ctx.esSuperadmin ? "/superadmin/tutoriales" : "/tutoriales"} title="Tutoriales: aprenda a usar el sistema">
+            <span className="bg-tut-ic" aria-hidden="true">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5.5v13a1 1 0 0 0 1.5.86l10-6.5a1 1 0 0 0 0-1.72l-10-6.5A1 1 0 0 0 8 5.5z" /></svg>
+            </span>
             <span className="bg-texto">Tutoriales</span>
           </Link>
           {ctx.mcp && <BuscadorGlobal />}

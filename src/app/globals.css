@@ -5262,3 +5262,8 @@ html.pdf-captura .sf-faltan { display: none; }
 .fecha-doc-barra input[type="date"] { min-width: 0; width: auto; min-height: 34px; font-size: 13px; }
 .fecha-doc-barra .if-caja { min-width: 0 !important; min-height: 34px; }
 @media (max-width: 640px) { .fecha-exp { position: static; margin: 0 0 8px; } .fecha-exp .fecha-exp-campo { width: auto; } .fecha-exp input[type="date"], .fecha-exp .campo input { width: auto; } }
+
+/* El calendario de la fecha se abre por encima de los bloques que siguen */
+.pregunta:has(.if-pop), .fecha-doc-barra:has(.if-pop) { z-index: 60; overflow: visible; }
+.fecha-exp:has(.if-pop) { z-index: 61; }
+.fecha-doc-barra { position: relative; }

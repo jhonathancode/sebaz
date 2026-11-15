@@ -6,6 +6,7 @@ import Bandeja from "@/components/Bandeja";
 import BotonTema from "@/components/BotonTema";
 import BarraInferior, { type PestanaInferior } from "@/components/BarraInferior";
 import Menu, { BotonMenu, type ItemMenu } from "@/components/Menu";
+import BuscadorGlobal from "@/components/BuscadorGlobal";
 import MenuUsuario, { type EnlaceMenu } from "@/components/MenuUsuario";
 import { COOKIE_MCP, obtenerContexto, tiene } from "@/lib/contexto";
 import LogoSebaz from "@/components/LogoSebaz";
@@ -148,6 +149,7 @@ export default async function MarcoApp({ children }: { children: React.ReactNode
           </span>
         </div>
         <div className="acciones">
+          {ctx.mcp && <BuscadorGlobal />}
           {(hayBandeja || pendientes.length > 0) && <Bandeja avisos={avisos} sinLeer={sinLeer} pendientes={pendientes} abrir={abrirAviso} marcarLeida={marcarLeida} dejarPendiente={dejarPendiente} marcarTodas={marcarTodasLeidas} />}
           <BotonTema inicial={tema === "dark" || tema === "light" ? tema : null} />
           <MenuUsuario

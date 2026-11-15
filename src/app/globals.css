@@ -5355,3 +5355,21 @@ html:not(.pdf-captura) .cc-excel tfoot td:not(:last-child) { border-right-color:
   html.imp-recibo .recibo-ventana .vf-marco, html.imp-recibo .recibo-ventana .rv-cuerpo { max-height: none; overflow: visible; background: #fff; }
   html.imp-recibo .recibo-ventana .no-imprimir { display: none !important; }
 }
+
+/* Búsqueda global */
+.bg-boton { display: inline-flex; align-items: center; gap: 8px; min-height: 36px; padding: 0 10px 0 12px; border-radius: 10px; border: 1px solid var(--borde); background: var(--panel); color: var(--suave); font: inherit; font-size: 13px; cursor: pointer; }
+.bg-boton:hover { border-color: var(--primario-claro); color: var(--texto); }
+.bg-boton kbd, .bg-caja kbd { font: 600 10.5px/1 inherit; padding: 3px 6px; border-radius: 6px; border: 1px solid var(--borde); background: var(--panel-2); color: var(--tenue); }
+@media (max-width: 760px) { .bg-boton .bg-texto, .bg-boton kbd { display: none; } .bg-boton { padding: 0 10px; } }
+.bg-dialogo { border: 0; padding: 0; margin: 10vh auto auto; width: min(680px, calc(100vw - 24px)); max-height: 76vh; border-radius: 18px; background: var(--panel); color: var(--texto); box-shadow: 0 40px 90px -30px rgba(10, 20, 60, .6); overflow: hidden; }
+.bg-dialogo::backdrop { background: rgba(10, 18, 30, .5); backdrop-filter: blur(2px); }
+.bg-marco { display: flex; flex-direction: column; max-height: 76vh; }
+.bg-caja { display: flex; align-items: center; gap: 10px; padding: 14px 18px; border-bottom: 1px solid var(--borde); color: var(--tenue); }
+.bg-caja input { flex: 1; min-width: 0; border: 0 !important; background: transparent !important; font-size: 16px; color: var(--texto); outline: none; box-shadow: none !important; padding: 0 !important; min-height: 32px; }
+.bg-lista { overflow: auto; padding: 8px; }
+.bg-vacio { padding: 22px 16px; color: var(--tenue); font-size: 13.5px; text-align: center; }
+.bg-grupo-et { padding: 10px 12px 4px; font-size: 10.5px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; color: var(--tenue); }
+.bg-item { display: flex; flex-direction: column; gap: 2px; width: 100%; text-align: left; padding: 9px 12px; border: 0; border-radius: 10px; background: transparent; color: var(--texto); font: inherit; cursor: pointer; }
+.bg-item.sel { background: var(--primario-fondo); }
+.bg-titulo { font-size: 14px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.bg-detalle { font-size: 12.5px; color: var(--tenue); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

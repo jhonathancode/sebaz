@@ -8,6 +8,12 @@ export type ItemMenu = { href: string; texto: string; n?: number; grupo?: string
 
 /** Íconos de trazo fino (estilo lineal), dibujados aquí para no cargar librerías. */
 const ICONOS: Record<string, React.ReactNode> = {
+  "/tutoriales": (
+    <>
+      <path d="M4 5.5A1.5 1.5 0 0 1 5.5 4H11v15H5.5A1.5 1.5 0 0 0 4 20.5Z" />
+      <path d="M20 5.5A1.5 1.5 0 0 0 18.5 4H13v15h5.5a1.5 1.5 0 0 1 1.5 1.5Z" />
+    </>
+  ),
   "/": (
     <>
       <path d="M3 10.5 12 3l9 7.5" />

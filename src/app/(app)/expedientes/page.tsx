@@ -8,7 +8,7 @@ import { contextoMcp, tiene } from "@/lib/contexto";
 import { cargarCierres, estadoGestion } from "@/lib/gestion";
 import { codigoCP, fecha, hoyISO, nombrePeriodo, num3, periodoActual, rangoPeriodo, soles } from "@/lib/formato";
 import { supabaseServidor } from "@/lib/supabase/server";
-import { nombreAdjunto } from "@/lib/adjuntosExpediente";
+import { nombreAdjunto, TIPOS_OCULTOS } from "@/lib/adjuntosExpediente";
 import { cargarArchivosPagoFijo, cargarCatalogoPagosFijos, pagoLlevaPlanilla, siguienteCheque } from "@/lib/pagosFijos";
 import { cargarAtajos } from "@/lib/atajos";
 import { anularExpedienteTotal, crearExpediente, registrarExpedienteCompleto } from "./acciones";
@@ -432,7 +432,7 @@ export default async function Expedientes({ searchParams }: { searchParams: Para
                   {(() => {
                     const pf = pagosFijos.find((x) => x.id === (e as { pago_fijo_id?: string | null }).pago_fijo_id);
                     if (!pf || e.estado === "anulado") return null;
-                    const sinSubir = pf.documentos.filter((d) => d !== "planilla" && !adjDe.get(e.id)?.has(d));
+                    const sinSubir = pf.documentos.filter((d) => d !== "planilla" && !TIPOS_OCULTOS.includes(d) && !adjDe.get(e.id)?.has(d));
                     const planillaAuto = pagoLlevaPlanilla(pf) && !adjDe.get(e.id)?.has("planilla");
                     return [planillaAuto && (
                       <span key="req-planilla" className="doc-par">

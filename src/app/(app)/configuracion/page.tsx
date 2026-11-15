@@ -8,7 +8,7 @@ import { BANCOS, CAMPOS_CAPITULO1, CAMPOS_CAPITULO1_LARGOS, CLASIFICADORES } fro
 import { FRECUENCIAS, MESES_LARGO, textoFrecuencia, tocaEnMes } from "@/lib/fuentes";
 import VentanaFlotante from "@/components/VentanaFlotante";
 import { nombreFuente } from "@/components/formularios/CamposRequerimiento";
-import { TIPOS_ADJUNTO } from "@/lib/adjuntosExpediente";
+import { TIPOS_ADJUNTABLES } from "@/lib/adjuntosExpediente";
 import { GASTOS_SUSTENTO, reglasSustento, SUSTENTOS_ELEGIBLES } from "@/lib/sustentos";
 import CasillaDocumento from "@/components/formularios/CasillaDocumento";
 import { cargarArchivosPagoFijo, cargarCatalogoPagosFijos, type PagoFijoCatalogo } from "@/lib/pagosFijos";
@@ -99,7 +99,7 @@ export default async function Configuracion({ searchParams }: { searchParams: Pa
         <h3 className="pf-sec-tit"><span>4</span>Documentos que lleva el expediente</h3>
         <p className="pf-sec-ayuda">Active cada documento que lleva este gasto. Los que son iguales todos los meses (DNI, credencial) se suben aquí una sola vez y cada expediente nuevo sale con ellos ya completos. Formatos: PDF, JPG, PNG o WEBP.</p>
         <div className="pf-docs">
-          {[...TIPOS_ADJUNTO].filter((t) => t.clave !== "otro").sort((x, y) => (y.clave === "planilla" ? 1 : 0) - (x.clave === "planilla" ? 1 : 0)).map((t) => {
+          {[...TIPOS_ADJUNTABLES].filter((t) => t.clave !== "otro").sort((x, y) => (y.clave === "planilla" ? 1 : 0) - (x.clave === "planilla" ? 1 : 0)).map((t) => {
             const ex = p ? archivosPF.get(`${p.id}|${t.clave}`) : undefined;
             return <CasillaDocumento key={t.clave} clave={t.clave} texto={t.clave === "planilla" ? "Planilla de remuneración del mes" : t.texto} automatico={t.clave === "planilla"} marcado={!!p?.documentos.includes(t.clave)} existente={ex ? { nombre: ex.nombre, url: ex.url } : null} />;
           })}

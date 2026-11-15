@@ -16,6 +16,16 @@ export default async function Reportes() {
         <h1>Reportes</h1>
       </div>
       <p className="tenue pequeno" style={{ marginTop: 0 }}>Elija un reporte, escoja el período y descárguelo en PDF o Excel.</p>
+      <section>
+        <h2 className="sec-grupo">🔁 Cambio de gestión</h2>
+        <div className="rep-tarjetas">
+          <Link href="/reportes/transferencia-gestion" className="rep-tarjeta">
+            <b>Informe de transferencia de gestión</b>
+            <small>Cuentas, cheques sin cobrar, requerimientos en trámite, compromisos mensuales, almacén y numeración, listo para firmar.</small>
+            <span className="rep-formatos"><i>PDF</i></span>
+          </Link>
+        </div>
+      </section>
       {grupos.map((g) => (
         <section key={g}>
           <h2 className="sec-grupo">{ICONO[g] ?? "📄"} {g}</h2>

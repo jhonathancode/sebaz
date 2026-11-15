@@ -85,7 +85,6 @@ export default async function MarcoApp({ children }: { children: React.ReactNode
         { href: "/superadmin/pagos", texto: "Pagos" },
         { href: "/superadmin/planes", texto: "Planes" },
         { href: "/superadmin/plantilla", texto: "Plantilla" },
-        { href: "/superadmin/tutoriales", texto: "Tutoriales" },
         { href: "/superadmin/usuarios", texto: "Usuarios" },
         { href: "/superadmin/web", texto: "Sitio web" },
         { href: "/superadmin/mensajes", texto: "Mensajes y novedades" },
@@ -101,7 +100,6 @@ export default async function MarcoApp({ children }: { children: React.ReactNode
           ...menusDeGrupo(ctx.mcp, g).map((m) => ({ href: m.href, texto: m.texto.replace(/ \(.*\)$/, ""), grupo: g.texto })),
         ]),
         { href: "/reportes", texto: "Reportes" },
-        { href: "/tutoriales", texto: "Tutoriales" },
       ]
     : ctx.esSoporte
       ? [{ href: "/soporte", texto: "Panel de soporte" }]

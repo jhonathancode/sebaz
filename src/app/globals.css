@@ -5342,3 +5342,16 @@ html:not(.pdf-captura) .cc-excel th:not(:last-child), html:not(.pdf-captura) .cc
 html:not(.pdf-captura) .cc-excel th:not(:last-child) { border-right-color: color-mix(in srgb, var(--primario) 14%, var(--linea)); }
 html:not(.pdf-captura) .cc-excel .acc, html:not(.pdf-captura) .cc-excel .cc-acc-th { border-left: 1px solid color-mix(in srgb, var(--primario) 10%, var(--linea)) !important; }
 html:not(.pdf-captura) .cc-excel tfoot td:not(:last-child) { border-right-color: color-mix(in srgb, var(--primario) 14%, var(--linea)); }
+
+/* Ventana emergente del recibo de ingreso */
+.recibo-ventana { width: min(960px, calc(100vw - 24px)); }
+.rv-acciones { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
+.rv-cuerpo { overflow: auto; padding: 0; background: var(--mesa, var(--panel-2)); }
+.rv-cuerpo .documentos.mesa { padding: 16px; }
+@media print {
+  html.imp-recibo body > *:not(dialog.recibo-ventana) { display: none !important; }
+  html.imp-recibo dialog.recibo-ventana { position: static !important; display: block; width: auto; max-width: none; max-height: none; margin: 0; border: 0; box-shadow: none; background: #fff; overflow: visible; animation: none; transform: none; }
+  html.imp-recibo dialog.recibo-ventana::backdrop { display: none; }
+  html.imp-recibo .recibo-ventana .vf-marco, html.imp-recibo .recibo-ventana .rv-cuerpo { max-height: none; overflow: visible; background: #fff; }
+  html.imp-recibo .recibo-ventana .no-imprimir { display: none !important; }
+}

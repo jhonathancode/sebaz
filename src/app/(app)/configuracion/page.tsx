@@ -4,6 +4,7 @@ import Avisos, { type ParamsAviso } from "@/components/Avisos";
 import BotonConfirmar from "@/components/BotonConfirmar";
 import Encabezado from "@/components/Encabezado";
 import Motivo from "@/components/Motivo";
+import ListaPuntos from "@/components/ListaPuntos";
 import SubirLogo from "@/components/SubirLogo";
 import { BANCOS, CAMPOS_CAPITULO1, CAMPOS_CAPITULO1_LARGOS, CLASIFICADORES } from "@/lib/catalogos";
 import { FRECUENCIAS, MESES_LARGO, textoFrecuencia, tocaEnMes } from "@/lib/fuentes";
@@ -359,12 +360,13 @@ export default async function Configuracion({ searchParams }: { searchParams: Pa
                   </label>
                 ))}
               </div>
-              <div className="cfg-dos-iguales">
+              <p className="pequeno tenue" style={{ margin: "6px 0 0" }}>Escriba un punto por guion: pulse <b>Enter</b> para agregar otro, o el botón «+ Agregar punto». En el informe salen como lista con guiones.</p>
+              <div className="cfg-puntos">
                 {CAMPOS_CAPITULO1_LARGOS.map((c) => (
-                  <label key={c.clave} className="campo">
-                    {c.titulo}
-                    <textarea name={c.clave} defaultValue={cap1[c.clave] ?? ""} rows={4} />
-                  </label>
+                  <div key={c.clave} className="campo lp-campo">
+                    <span>{c.titulo}</span>
+                    <ListaPuntos name={c.clave} valor={cap1[c.clave] ?? ""} disabled={!admin} ejemplo={c.clave === "objetivos" ? "Ej.: Se construyó el puente de la comunidad" : c.clave === "limitaciones" ? "Ej.: Falta de presupuesto para la obra" : "Ej.: Se gestionó apoyo ante la municipalidad"} />
+                  </div>
                 ))}
               </div>
               {admin && (

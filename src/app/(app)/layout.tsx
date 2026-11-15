@@ -80,6 +80,7 @@ export default async function MarcoApp({ children }: { children: React.ReactNode
         { href: "/superadmin/pagos", texto: "Pagos" },
         { href: "/superadmin/planes", texto: "Planes" },
         { href: "/superadmin/plantilla", texto: "Plantilla" },
+        { href: "/superadmin/tutoriales", texto: "Tutoriales" },
         { href: "/superadmin/usuarios", texto: "Usuarios" },
         { href: "/superadmin/web", texto: "Sitio web" },
         { href: "/superadmin/mensajes", texto: "Mensajes y novedades" },

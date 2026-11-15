@@ -5481,3 +5481,11 @@ html:not(.pdf-captura) .cc-excel tfoot td:not(:last-child) { border-right-color:
 .rep-fila-texto b { font-size: 14.5px; }
 .rep-fila-texto small { color: var(--tenue); font-size: 12.5px; line-height: 1.35; }
 .rep-fila .rep-formatos { margin: 0; flex: none; }
+
+/* ---- Página de un tutorial ---- */
+.tut-pag { display: flex; flex-direction: column; gap: 16px; max-width: 880px; }
+.tut-video { position: relative; width: 100%; aspect-ratio: 16 / 9; border-radius: 14px; overflow: hidden; background: #000; border: 1px solid var(--borde); }
+.tut-video iframe, .tut-video video { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
+.tut-pasos { margin: 0; padding-left: 22px; display: flex; flex-direction: column; gap: 10px; font-size: 15px; line-height: 1.45; }
+.tut-nav { display: flex; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+a.tut-card { text-decoration: none; }

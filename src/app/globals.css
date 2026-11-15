@@ -5498,3 +5498,8 @@ a.tut-card { text-decoration: none; }
 .fase-card small { color: var(--tenue); font-size: 12px; }
 .fase-pagado { color: var(--primario-texto); border-color: var(--primario-claro); }
 .fase-requerido { opacity: .85; }
+
+/* Cinta de fases del gasto en la lista de expedientes: alcanzadas en azul, las que faltan en gris */
+.fases-cinta { display: inline-flex; flex-wrap: wrap; gap: 4px; }
+.etq.fase-pill { font-weight: 600; }
+.etq.fase-pill:not(.azul) { background: var(--panel-2); color: var(--tenue); }

@@ -379,57 +379,72 @@ export default async function Configuracion({ searchParams }: { searchParams: Pa
         </form>
       )}
 
-      {seccion === "pagos" && (
-        <section className="panel cfg-panel" id="pagos-fijos">
-          <div className="panel-cab">
-            Pagos fijos de la MCP
-            {puedePagos && (
-              <VentanaFlotante boton="+ Agregar pago fijo" titulo="Nuevo pago fijo" accion={guardarPagoFijo} textoGuardar="Agregar a la lista" claseBoton="btn chico primario">
-                {camposPago()}
-              </VentanaFlotante>
+      {seccion === "pagos" && (() => {
+        const activosPF = pagosFijos.filter((x) => x.activo);
+        const totalMes = activosPF.reduce((t, x) => t + Number(x.monto), 0);
+        const MES3 = ["E", "F", "M", "A", "M", "J", "J", "A", "S", "O", "N", "D"];
+        return (
+          <section className="fu-seccion" id="pagos-fijos">
+            <div className="fu-cab">
+              <div>
+                <h2>Pagos fijos de la MCP</h2>
+                <p>Lo que se paga todos los meses: dietas, asesor contable, personal. Se escribe una vez y cada mes se genera con un clic desde Expedientes.</p>
+              </div>
+              {puedePagos && (
+                <VentanaFlotante boton="+ Agregar pago fijo" titulo="Nuevo pago fijo" accion={guardarPagoFijo} textoGuardar="Agregar a la lista" claseBoton="btn primario">
+                  {camposPago()}
+                </VentanaFlotante>
+              )}
+            </div>
+            {pagosFijos.length > 0 && (
+              <div className="ing-franja" aria-label="Resumen de pagos fijos">
+                <span><small>Pagos activos</small><b>{activosPF.length}</b></span>
+                <span><small>Total cada mes</small><b>S/ {soles(totalMes)}</b></span>
+                <span><small>Total al año</small><b>S/ {soles(totalMes * 12)}</b></span>
+              </div>
             )}
-          </div>
-          <div className="panel-cuerpo pequeno tenue" style={{ paddingBottom: 0 }}>
-            Lo que se paga todos los meses: dietas, asesor contable, personal. Al hacer un requerimiento de «Pago fijo» salen aquí con los meses ya pagados.
-          </div>
-          <div className="tabla-marco" style={{ border: "none", borderRadius: 0 }}>
-            <table className="tabla" style={{ minWidth: 720 }}>
-              <thead>
-                <tr><th>Concepto</th><th>A quién</th><th className="num">Monto S/</th><th>Pagados {anio}</th><th>Estado</th><th /></tr>
-              </thead>
-              <tbody>
-                {pagosFijos.length === 0 && <tr><td colSpan={6} className="tenue">Aún no hay pagos fijos. Agregue el primero con «+ Agregar pago fijo».</td></tr>}
-                {pagosFijos.map((p) => (
-                  <tr key={p.id} className={p.activo ? undefined : "anulado"}>
-                    <td className="envolver" style={{ fontWeight: 600 }}>{p.concepto}</td>
-                    <td className="envolver">{p.beneficiario ?? "—"}</td>
-                    <td className="num">{soles(p.monto)}</td>
-                    <td>{p.pagados.filter((x) => x.startsWith(`${anio}-`)).length} de 12</td>
-                    <td><span className={`estado ${p.activo ? "aprobado" : "anulado"}`}>{p.activo ? "Activo" : "Inactivo"}</span></td>
-                    <td>
-                      {puedePagos && (
-                        <div className="acciones-fila">
-                          <VentanaFlotante boton="Editar" titulo={`Editar · ${p.concepto}`} accion={guardarPagoFijo} textoGuardar="Guardar cambios" claseBoton="btn chico contorno">
-                            {camposPago(p)}
-                            <p className="pequeno tenue" style={{ margin: 0 }}>El cambio de monto vale para los próximos requerimientos; los ya hechos no cambian.</p>
-                          </VentanaFlotante>
-                          <form action={alternarPagoFijo}>
-                            <input type="hidden" name="id" value={p.id} />
-                            <input type="hidden" name="activo" value={p.activo ? "0" : "1"} />
-                            <BotonConfirmar className="btn chico" pregunta={p.activo ? "¿Desactivar este pago fijo?" : "¿Activar este pago fijo?"} detalle={p.activo ? "Ya no saldrá en los requerimientos. No se borra: puede activarlo después." : "Volverá a salir en los requerimientos."} textoConfirmar="Sí">
-                              {p.activo ? "Desactivar" : "Activar"}
-                            </BotonConfirmar>
-                          </form>
-                        </div>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </section>
-      )}
+            {pagosFijos.length === 0 && (
+              <div className="aviso info">Aún no hay pagos fijos. Agregue el primero (por ejemplo, la dieta del alcalde o el asesor contable) con «+ Agregar pago fijo».</div>
+            )}
+            <div className="fu-grid">
+              {pagosFijos.map((p) => {
+                const pagados = new Set(p.pagados.filter((x) => x.startsWith(`${anio}-`)).map((x) => Number(x.slice(5, 7))));
+                return (
+                  <article key={p.id} className="fu-card" style={p.activo ? undefined : { opacity: 0.6 }}>
+                    <header className="fu-card-cab">
+                      <span className="fu-tipo">{p.activo ? "Activo" : "Inactivo"}</span>
+                      <span className="fu-pill no">{pagados.size} de 12 pagados en {anio}</span>
+                    </header>
+                    <h3 style={{ margin: 0 }}>{p.concepto}</h3>
+                    <p className="tenue pequeno" style={{ margin: 0 }}>{p.beneficiario ?? "Sin beneficiario"}</p>
+                    <div style={{ fontSize: 22, fontWeight: 800 }}>S/ {soles(p.monto)} <span className="tenue pequeno" style={{ fontWeight: 400 }}>por mes</span></div>
+                    <div style={{ display: "flex", gap: 4 }} aria-label={`Meses pagados de ${anio}`}>
+                      {MES3.map((m, i) => (
+                        <span key={i} title={`${MESES_LARGO[i]}: ${pagados.has(i + 1) ? "pagado" : "pendiente"}`} style={{ flex: 1, textAlign: "center", fontSize: 11, padding: "4px 0", borderRadius: 6, fontWeight: 700, background: pagados.has(i + 1) ? "var(--primario)" : "var(--borde)", color: pagados.has(i + 1) ? "#fff" : "var(--tenue)" }}>{m}</span>
+                      ))}
+                    </div>
+                    {puedePagos && (
+                      <div className="acciones-fila">
+                        <VentanaFlotante boton="Editar" titulo={`Editar · ${p.concepto}`} accion={guardarPagoFijo} textoGuardar="Guardar cambios" claseBoton="btn chico contorno">
+                          {camposPago(p)}
+                          <p className="pequeno tenue" style={{ margin: 0 }}>El cambio de monto vale para los próximos requerimientos; los ya hechos no cambian.</p>
+                        </VentanaFlotante>
+                        <form action={alternarPagoFijo}>
+                          <input type="hidden" name="id" value={p.id} />
+                          <input type="hidden" name="activo" value={p.activo ? "0" : "1"} />
+                          <BotonConfirmar className="btn chico contorno" pregunta={p.activo ? "¿Desactivar este pago fijo?" : "¿Activar este pago fijo?"} detalle={p.activo ? "Ya no saldrá en los requerimientos. No se borra: puede activarlo después." : "Volverá a salir en los requerimientos."} textoConfirmar="Sí">
+                            {p.activo ? "Desactivar" : "Activar"}
+                          </BotonConfirmar>
+                        </form>
+                      </div>
+                    )}
+                  </article>
+                );
+              })}
+            </div>
+          </section>
+        );
+      })()}
 
       {seccion === "dinero" && (
         <section className="fu-seccion">

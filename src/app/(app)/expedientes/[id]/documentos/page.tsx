@@ -35,7 +35,7 @@ export default async function Documentos({
   ]);
   if (!d.e) notFound();
   const e = d.e;
-  const anexos = await cargarAnexos(supabase, ctx.mcp.id, id, (e as { pago_fijo_id?: string | null }).pago_fijo_id ?? null);
+  const anexos = await cargarAnexos(supabase, ctx.mcp.id, id, (e as { pago_fijo_id?: string | null }).pago_fijo_id ?? null, (e as { tipo?: string | null }).tipo ?? null);
   const anexoElegido = anexos.find((x) => x.clave === doc) ?? null;
   const lista = listaDocumentos(d);
   const nombreTesorero = (tesorero?.perfiles as unknown as { nombre: string } | null)?.nombre ?? "";

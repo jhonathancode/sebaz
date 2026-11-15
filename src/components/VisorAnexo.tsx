@@ -1,3 +1,4 @@
+import { SubirAdjunto } from "@/components/AdjuntosExpediente";
 import Motivo from "@/components/Motivo";
 import type { AnexoVista } from "@/lib/adjuntosVista";
 import { anularAdjunto } from "@/app/(app)/expedientes/adjuntos";
@@ -9,8 +10,9 @@ export default function VisorAnexo({ anexo, expedienteId, puede = false }: { ane
   if (anexo.origen === "pendiente") {
     return (
       <div className="anexo-hoja">
-        <div className="aviso alerta" style={{ margin: 0 }}>
-          Aún no hay archivo de «{anexo.nombre}». Súbalo en «Documentos del expediente»{expedienteId ? <> (<a href={`/expedientes/${expedienteId}#documentos`}>ir allí</a>)</> : null}: se copiará solo a los demás meses de este gasto.
+        <div className="aviso alerta" style={{ margin: 0, display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
+          <span>Aún no hay archivo de «{anexo.nombre}». {puede && expedienteId ? "Súbalo aquí: queda en este expediente." : "Pida a la tesorera que lo suba."}</span>
+          {puede && expedienteId && <SubirAdjunto id={expedienteId} tipo={anexo.tipo} boton={`Subir ${anexo.nombre.toLowerCase()}`} clase="btn chico primario" />}
         </div>
       </div>
     );

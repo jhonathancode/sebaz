@@ -141,7 +141,7 @@ export default async function Expediente({ params, searchParams }: { params: Par
     (e as { pago_fijo_id?: string | null }).pago_fijo_id,
   );
   // Documentos que acompañan al expediente (subidos, permanentes del pago fijo o de otro mes)
-  const anexos = await cargarAnexos(supabase, ctx.mcp.id, id, (e as { pago_fijo_id?: string | null }).pago_fijo_id ?? null);
+  const anexos = await cargarAnexos(supabase, ctx.mcp.id, id, (e as { pago_fijo_id?: string | null }).pago_fijo_id ?? null, (e as { tipo?: string | null }).tipo ?? null);
 
   // Lo que depende del expediente: nombres del historial y el beneficiario del pago fijo, también a la vez
   const pagoFijoId = (e as { pago_fijo_id?: string | null }).pago_fijo_id ?? null;

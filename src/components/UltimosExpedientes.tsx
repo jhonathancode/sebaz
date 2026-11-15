@@ -4,6 +4,9 @@ import { contextoMcp } from "@/lib/contexto";
 import { cargarCierres, estadoGestion } from "@/lib/gestion";
 import { codigoCP, fecha, hoyISO, nombrePeriodo, num3, soles } from "@/lib/formato";
 import { supabaseServidor } from "@/lib/supabase/server";
+import { nombreAdjunto, TIPOS_OCULTOS } from "@/lib/adjuntosExpediente";
+import { FASES, faseGasto } from "@/lib/fasesGasto";
+import { cargarArchivosPagoFijo, cargarCatalogoPagosFijos, pagoLlevaPlanilla } from "@/lib/pagosFijos";
 
 const ORDEN_FASES = ["requerimiento", "cotizacion", "orden", "conformidad", "comprobante"];
 const DOC_DE_FASE: Record<string, { clave: string; corto: string }> = {
@@ -24,7 +27,7 @@ export default async function UltimosExpedientes() {
   const supabase = await supabaseServidor();
   const { data: lista } = await supabase
     .from("expedientes")
-    .select("id, anio, numero, fecha, tipo, descripcion, area_usuaria, fase, estado, flujo_completo, expediente_items(total, anulado)")
+    .select("id, anio, numero, fecha, tipo, descripcion, area_usuaria, fase, estado, flujo_completo, pago_fijo_id, expediente_items(total, anulado)")
     .eq("mcp_id", ctx.mcp.id)
     .neq("estado", "anulado")
     .order("creado_en", { ascending: false })
@@ -36,7 +39,7 @@ export default async function UltimosExpedientes() {
   if (exps.length === 0) return <div className="vacio">Todavía no hay expedientes. Empiece con un nuevo requerimiento.</div>;
 
   const ids = exps.map((e) => e.id);
-  const [{ data: ords }, { data: confs }, { data: cots }, { data: cps }, { data: neas }, { data: cajas }, cierres] = await Promise.all([
+  const [{ data: ords }, { data: confs }, { data: cots }, { data: cps }, { data: neas }, { data: cajas }, cierres, { data: adjV }, pagosFijos, archivosPF] = await Promise.all([
     supabase.from("ordenes").select("expediente_id, tipo, numero, anio, anulado, creado_en").in("expediente_id", ids),
     supabase.from("conformidades").select("expediente_id, memorando_numero, anio, anulado, creado_en").in("expediente_id", ids),
     supabase.from("cotizaciones").select("expediente_id, anulado").in("expediente_id", ids),
@@ -44,7 +47,29 @@ export default async function UltimosExpedientes() {
     supabase.from("notas_entrada").select("id, expediente_id, numero, anio, anulado, creado_en").in("expediente_id", ids),
     supabase.from("cajas_chicas").select("id, expediente_id, periodo, fuente_id, numero, estado").in("expediente_id", ids).neq("estado", "anulada"),
     cargarCierres(supabase, ctx.mcp.id),
+    supabase.from("expediente_adjuntos").select("expediente_id, tipo").in("expediente_id", ids).eq("anulado", false),
+    cargarCatalogoPagosFijos(supabase, ctx.mcp.id),
+    cargarArchivosPagoFijo(supabase, ctx.mcp.id),
   ]);
+  // Documentos adjuntos por expediente (planilla, DNI, contrato…), como en la lista de Expedientes
+  const adjDe = new Map<string, Map<string, number>>();
+  for (const a of adjV ?? []) {
+    const m = adjDe.get(a.expediente_id) ?? new Map<string, number>();
+    m.set(a.tipo, (m.get(a.tipo) ?? 0) + 1);
+    adjDe.set(a.expediente_id, m);
+  }
+  // Lo subido en cualquier mes de un mismo pago fijo cuenta para todos sus meses
+  const pfIds = [...new Set(exps.map((x) => (x as { pago_fijo_id?: string | null }).pago_fijo_id).filter((x): x is string => !!x))];
+  const tiposDePF = new Map<string, Set<string>>();
+  if (pfIds.length) {
+    const { data: delPF } = await supabase.from("expedientes").select("id, pago_fijo_id").eq("mcp_id", ctx.mcp.id).in("pago_fijo_id", pfIds).neq("estado", "anulado");
+    const pfDeExp = new Map((delPF ?? []).map((x) => [x.id, x.pago_fijo_id as string]));
+    const { data: subidosPF } = pfDeExp.size ? await supabase.from("expediente_adjuntos").select("expediente_id, tipo").in("expediente_id", [...pfDeExp.keys()]).eq("anulado", false) : { data: [] as { expediente_id: string; tipo: string }[] };
+    for (const a of subidosPF ?? []) {
+      const pf = pfDeExp.get(a.expediente_id);
+      if (pf) tiposDePF.set(pf, (tiposDePF.get(pf) ?? new Set<string>()).add(a.tipo));
+    }
+  }
   const cajaDe = new Map((cajas ?? []).map((c) => [c.expediente_id as string, c]));
   const elegir = <T extends { creado_en: string }>(xs: T[], vigente: (x: T) => boolean) => {
     const orden = [...xs].sort((a, b) => b.creado_en.localeCompare(a.creado_en));
@@ -111,6 +136,16 @@ export default async function UltimosExpedientes() {
               <div className="f-meta">
                 <span className="etq">{TIPOS[e.tipo] ?? e.tipo}</span>
                 {e.area_usuaria && <span>{e.area_usuaria}</span>}
+                {(() => {
+                  const f = faseGasto({ estado: e.estado, aprobado: e.estado === "aprobado" || e.estado === "rendido", tieneOrden: !!o, tieneConformidad: !!c, tieneComprobante: !!cp, conciliado });
+                  if (f === "anulado") return null;
+                  const alcanzada = FASES.findIndex((x) => x.clave === f);
+                  return (
+                    <span className="fases-cinta" aria-label="Fases del gasto">
+                      {FASES.map((x, k) => <span key={x.clave} className={`etq fase-pill${k <= alcanzada ? " azul" : ""}`} title={x.ayuda}>{x.texto}</span>)}
+                    </span>
+                  );
+                })()}
                 {g && <span className={`etq ${g.estado === "bloqueado" ? "rojo" : "ambar"}`}>{g.estado === "bloqueado" ? "🔒 Gestión anterior" : "Gestión anterior · en gracia"}</span>}
               </div>
               <div className="doc-pasos" aria-label="Documentos del expediente">
@@ -143,14 +178,56 @@ export default async function UltimosExpedientes() {
                           </Link>
                         </>
                       )}
-                      {p === "comprobante" && cp && (
-                        <span className={`doc-cheque${cp.cheque ? "" : " sin"}`} title={cp.cheque ? "Cheque con el que se pagó" : "Aún sin número de cheque"}>
-                          {cp.cheque ? `Cheque ${cp.cheque}` : "Sin cheque"}
-                        </span>
-                      )}
                     </span>
                   );
                 })}
+                {[...(adjDe.get(e.id) ?? [])].map(([tipo, k]) => (
+                  <span key={tipo} className="doc-par">
+                    <i className="doc-sep ok" aria-hidden="true" />
+                    <Link className="doc-paso adj" href={`/expedientes/${e.id}#documentos`} title="Ver los documentos adjuntos">
+                      <span className="ic" aria-hidden="true">✓</span>{nombreAdjunto(tipo)}
+                      {k > 1 && <span className="doc-num">{k}</span>}
+                    </Link>
+                  </span>
+                ))}
+                {(() => {
+                  const pf = pagosFijos.find((x) => x.id === (e as { pago_fijo_id?: string | null }).pago_fijo_id);
+                  if (!pf) return null;
+                  const sinSubir = pf.documentos.filter((d) => d !== "planilla" && !TIPOS_OCULTOS.includes(d) && !adjDe.get(e.id)?.has(d));
+                  const planillaAuto = pagoLlevaPlanilla(pf) && !adjDe.get(e.id)?.has("planilla");
+                  return [planillaAuto && (
+                    <span key="req-planilla" className="doc-par">
+                      <i className="doc-sep ok" aria-hidden="true" />
+                      <Link className="doc-paso" href={`/expedientes/${e.id}#documentos`} title="La planilla del mes la arma el sistema">
+                        <span className="ic" aria-hidden="true">✓</span>Planilla de pago
+                      </Link>
+                    </span>
+                  ), ...sinSubir.map((d) => {
+                    const perm = archivosPF.has(`${pf.id}|${d}`) || !!tiposDePF.get(pf.id)?.has(d);
+                    return (
+                      <span key={`req-${d}`} className="doc-par">
+                        <i className={`doc-sep${perm ? " ok" : ""}`} aria-hidden="true" />
+                        {perm ? (
+                          <Link className="doc-paso" href={`/expedientes/${e.id}#documentos`} title="Ya está completo: viene de otro mes de este gasto o es permanente">
+                            <span className="ic" aria-hidden="true">✓</span>{nombreAdjunto(d)}
+                          </Link>
+                        ) : (
+                          <Link className="doc-paso pendiente" href={`/expedientes/${e.id}#documentos`} title="Falta adjuntar este documento">
+                            <span className="ic" aria-hidden="true" />{nombreAdjunto(d)}
+                          </Link>
+                        )}
+                      </span>
+                    );
+                  })];
+                })()}
+                {cp && (
+                  <span className="doc-par">
+                    <i className="doc-sep ok" aria-hidden="true" />
+                    <span className={`doc-cheque${cp.cheque ? "" : " sin"}`} title={cp.cheque ? "Cheque con el que se pagó" : "Aún sin número de cheque"}>
+                      {cp.cheque ? `Cheque ${cp.cheque}` : "Sin cheque"}
+                    </span>
+                  </span>
+                )}
               </div>
               {caja ? (
                 <Link className={`caja-enlace${caja.estado === "liquidada" ? " cerrada" : ""}`} href={`/caja-chica?mes=${caja.periodo}&fuente=${caja.fuente_id}&caja=${caja.id}`} title="Abrir esta caja chica">

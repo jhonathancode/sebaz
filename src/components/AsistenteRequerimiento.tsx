@@ -179,12 +179,11 @@ export default function AsistenteRequerimiento({
   const fd = (k: string) => fechasDoc[k] ?? L.fecha;
   /** Barra de fecha del documento que se está viendo (se puede cambiar; si no, sigue a la del expediente). */
   const barraFecha = (clave: string, etiqueta: string) => (
-    <div className="fecha-doc-barra">
+    <div className="fecha-doc-barra" title="Viene con la fecha del expediente; cámbiela si este documento es de otro día.">
       <label>
         <span className="fecha-exp-et">{etiqueta}</span>
         <InputFecha value={fd(clave)} onChange={(valor) => setFechasDoc((v) => ({ ...v, [clave]: valor }))} required />
       </label>
-      <span className="pequeno tenue">Viene con la fecha del expediente; cámbiela si este documento es de otro día.</span>
     </div>
   );
   const ordenTipo = L.tipo === "compra" ? "compra" : "servicio";
@@ -359,16 +358,15 @@ export default function AsistenteRequerimiento({
 
             {paso === "req" && (
               <>
-                <div className="fecha-doc-barra">
+                <div className="fecha-doc-barra" title="Cambiarla aquí cambia la fecha del expediente y, con ella, la de los demás documentos.">
                   <label>
-                    <span className="fecha-exp-et">Fecha del requerimiento (del expediente)</span>
+                    <span className="fecha-exp-et">Fecha del expediente</span>
                     <InputFecha
                       value={L.fecha}
                       onChange={(valor) => (form.current?.elements.namedItem("fecha") as HTMLElement | null)?.dispatchEvent(new CustomEvent("zebaz:fecha", { detail: { valor } }))}
                       required
                     />
                   </label>
-                  <span className="pequeno tenue">Cambiarla aquí cambia la fecha del expediente y, con ella, la de los demás documentos.</span>
                 </div>
                 {hoja(<Requerimiento d={dBase} mcp={mcp} />)}
               </>

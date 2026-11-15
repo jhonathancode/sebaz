@@ -5249,3 +5249,16 @@ html.pdf-captura .sf-faltan { display: none; }
 .pf-chip input:focus-visible + span { box-shadow: 0 0 0 4px rgba(31, 95, 209, .25); }
 @media (max-width: 560px) { .pf-doc-elegido { margin-left: 0; } .pf-doc-acciones { width: 100%; justify-content: flex-end; } }
 .vf-cuerpo { overflow-x: hidden; }
+
+/* Fecha compacta: una sola línea pequeña, sin tarjeta propia */
+.pregunta { position: relative; }
+.fecha-exp { position: absolute; top: 12px; right: 16px; display: flex; align-items: center; padding: 0; margin: 0; border: 0; background: transparent; border-radius: 0; gap: 0; z-index: 1; }
+.fecha-exp .fecha-exp-campo { flex-direction: row; align-items: center; gap: 8px; width: auto; }
+.fecha-exp .fecha-exp-et { font-size: 11px; }
+.fecha-exp input[type="date"], .fecha-exp .campo input { min-width: 0; width: auto; min-height: 34px !important; font-size: 13px !important; padding: 0 8px !important; border-radius: 10px !important; }
+.fecha-exp .if-caja { min-width: 0 !important; min-height: 34px; }
+.fecha-doc-barra { display: flex; justify-content: flex-end; padding: 0; margin: 0 0 8px; border: 0; background: transparent; border-radius: 0; }
+.fecha-doc-barra label { flex-direction: row; align-items: center; gap: 8px; }
+.fecha-doc-barra input[type="date"] { min-width: 0; width: auto; min-height: 34px; font-size: 13px; }
+.fecha-doc-barra .if-caja { min-width: 0 !important; min-height: 34px; }
+@media (max-width: 640px) { .fecha-exp { position: static; margin: 0 0 8px; } .fecha-exp .fecha-exp-campo { width: auto; } .fecha-exp input[type="date"], .fecha-exp .campo input { width: auto; } }

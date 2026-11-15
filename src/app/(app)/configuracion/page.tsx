@@ -661,6 +661,15 @@ export default async function Configuracion({ searchParams }: { searchParams: Pa
 
       {seccion === "seguridad" && admin && (
         <section className="panel cfg-panel" style={{ marginTop: 16 }}>
+          <div className="panel-cab">Respaldo de su información</div>
+          <div className="panel-cuerpo">
+            <p className="pequeno tenue" style={{ marginTop: 0 }}>Descargue un Excel con todo lo registrado (requerimientos, comprobantes, rendiciones, ingresos, proveedores, historial). Guárdelo en un lugar seguro, por ejemplo al cerrar cada año o al cambiar de gestión.</p>
+            <a className="btn primario" href="/exportar/respaldo" download>Descargar respaldo (Excel)</a>
+          </div>
+        </section>
+      )}
+      {seccion === "seguridad" && admin && (
+        <section className="panel cfg-panel" style={{ marginTop: 16 }}>
           <div className="panel-cab">Acceso de solo lectura (alcalde, regidores, fiscalizador)</div>
           <div className="panel-cuerpo">
             <p className="pequeno tenue" style={{ marginTop: 0 }}>Cada persona recibe su propio enlace para ver rendiciones, comprobantes e ingresos sin crear cuenta ni poder cambiar nada. Puede revocarlo cuando quiera.</p>

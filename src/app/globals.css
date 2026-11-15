@@ -5415,17 +5415,23 @@ html:not(.pdf-captura) .cc-excel tfoot td:not(:last-child) { border-right-color:
 
 /* ---- Tutoriales ---- */
 .tut { display: flex; flex-direction: column; gap: 14px; }
-.tut .tut-buscar { flex: none; width: 100%; max-width: 460px; padding: 2px 6px 2px 12px; }
-.tut-cuerpo { display: grid; grid-template-columns: 230px minmax(0, 1fr); gap: 18px; align-items: start; }
+.tut .tut-buscar { flex: none; width: 100%; max-width: 640px; padding: 2px 6px 2px 12px; }
+.tut-cuerpo { display: grid; grid-template-columns: 250px minmax(0, 1fr); gap: 18px; align-items: start; }
 .tut-mods { display: flex; flex-direction: column; gap: 2px; padding: 8px; border: 1px solid var(--borde); border-radius: 14px; background: var(--panel); position: sticky; top: 12px; }
 .tut-mod { display: flex; align-items: center; gap: 10px; padding: 9px 10px; border: 0; border-radius: 10px; background: transparent; color: var(--texto); font: inherit; font-size: 13.5px; text-align: left; cursor: pointer; }
 .tut-mod span:nth-child(2) { flex: 1; }
 .tut-mod small { color: var(--tenue); font-size: 11.5px; }
 .tut-mod:hover { background: var(--panel-2); }
 .tut-mod.activo { background: var(--primario-fondo); color: var(--primario-texto); font-weight: 700; }
-.tut-tit { font-size: 15px; font-weight: 700; margin-bottom: 10px; }
-.tut-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 10px; }
-.tut-card { display: flex; flex-direction: column; gap: 4px; padding: 12px 14px; border: 1px solid var(--borde); border-radius: 12px; background: var(--panel); color: var(--texto); font: inherit; text-align: left; cursor: pointer; transition: border-color .12s, background .12s; }
+.tut-tit { display: flex; align-items: center; gap: 8px; font-size: 15px; font-weight: 700; margin-bottom: 10px; }
+.tut-tit small { font-weight: 600; color: var(--tenue); font-size: 12px; }
+.tut-der { display: flex; flex-direction: column; gap: 26px; }
+.tut-seccion { min-width: 0; }
+.tut-play { flex: none; width: 36px; height: 36px; border-radius: 10px; display: inline-flex; align-items: center; justify-content: center; background: var(--primario-fondo); color: var(--primario-texto); font-size: 13px; }
+.tut-card-t { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.tut-card:hover .tut-play { background: var(--primario); color: #fff; }
+.tut-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); gap: 12px; }
+.tut-card { display: flex; flex-direction: row; align-items: center; gap: 12px; padding: 14px 16px; border: 1px solid var(--borde); border-radius: 12px; background: var(--panel); color: var(--texto); font: inherit; text-align: left; cursor: pointer; transition: border-color .12s, background .12s; }
 .tut-card b { font-size: 13.5px; line-height: 1.3; font-weight: 600; }
 .tut-card small { color: var(--tenue); font-size: 11.5px; }
 .tut-card:hover { border-color: var(--primario); background: var(--primario-fondo); }

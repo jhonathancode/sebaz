@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { codigoCP, num3 } from "@/lib/formato";
+import { pagoLlevaPlanilla } from "@/lib/pagosFijos";
 
 export type Proveedor = { razon_social: string; num_doc: string; direccion: string | null; telefono: string | null };
 
@@ -44,8 +45,7 @@ export async function cargarExpediente(supabase: SupabaseClient, id: string) {
   const pfId = (e as { pago_fijo_id?: string | null } | null)?.pago_fijo_id;
   if (e && pfId) {
     const { data: pf } = await supabase.from("pagos_fijos").select("*").eq("id", pfId).maybeSingle();
-    const docs = ((pf as { documentos?: string[] } | null)?.documentos ?? []) as string[];
-    if (pf && docs.includes("planilla")) {
+    if (pf && pagoLlevaPlanilla(pf as { concepto?: string; documentos?: string[]; sustentos?: string[] })) {
       const total = (items ?? []).reduce((s, i) => s + Number(i.total), 0);
       const concepto = String(pf.concepto ?? "");
       planilla = {

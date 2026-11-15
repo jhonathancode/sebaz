@@ -178,3 +178,9 @@ export async function cargarArchivosPagoFijo(supabase: Cliente, mcpId: string, c
   }
   return mapa;
 }
+
+
+/** Si el pago fijo lleva la planilla de remuneración que arma el sistema: dietas, o cuando su comprobante es «Planilla simple». */
+export function pagoLlevaPlanilla(p: { concepto?: string | null; documentos?: string[] | null; sustentos?: string[] | null }): boolean {
+  return !!p.sustentos?.includes("PL") || !!p.documentos?.includes("planilla") || /^DIETAS?\b/i.test((p.concepto ?? "").trim());
+}

@@ -70,7 +70,7 @@ export default async function Configuracion({ searchParams }: { searchParams: Pa
       </label>
       <fieldset className="campo" style={{ gridColumn: "1 / -1", border: "1px solid var(--borde)", borderRadius: "var(--radio)", padding: "8px 14px 10px", margin: 0 }}>
         <legend style={{ padding: "0 6px", fontWeight: 600 }}>Comprobante que entrega quien cobra</legend>
-        <span className="pequeno tenue" style={{ display: "block", marginBottom: 6 }}>Ej.: dieta del alcalde o regidores = «Planilla simple»; asesor = «Recibo por honorarios». Si no marca ninguno, vale lo configurado para «Pagos fijos» en Datos del comprobante.</span>
+        <span className="pequeno tenue" style={{ display: "block", marginBottom: 6 }}>Ej.: dieta del alcalde o regidores = «Planilla simple» (el sistema arma la planilla de cada mes sola); asesor = «Recibo por honorarios». Si no marca ninguno, vale lo configurado para «Pagos fijos» en Datos del comprobante.</span>
         <div style={{ display: "flex", flexWrap: "wrap", gap: "6px 18px" }}>
           {SUSTENTOS_ELEGIBLES.map((x) => (
             <label key={x.codigo} style={{ display: "flex", alignItems: "center", gap: 6, flexDirection: "row" }}>

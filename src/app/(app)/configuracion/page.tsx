@@ -4,6 +4,7 @@ import Avisos, { type ParamsAviso } from "@/components/Avisos";
 import BotonConfirmar from "@/components/BotonConfirmar";
 import Encabezado from "@/components/Encabezado";
 import Motivo from "@/components/Motivo";
+import SubirLogo from "@/components/SubirLogo";
 import { BANCOS, CAMPOS_CAPITULO1, CAMPOS_CAPITULO1_LARGOS, CLASIFICADORES } from "@/lib/catalogos";
 import { FRECUENCIAS, MESES_LARGO, textoFrecuencia, tocaEnMes } from "@/lib/fuentes";
 import VentanaFlotante from "@/components/VentanaFlotante";
@@ -126,15 +127,17 @@ export default async function Configuracion({ searchParams }: { searchParams: Pa
   const completos = checks.filter((c) => c.ok).length;
   const pct = Math.round((completos / checks.length) * 100);
 
-  const SECCIONES = [
-    { v: "identidad", t: "Identidad y logo" },
-    { v: "informe", t: "Capítulo I del informe" },
-    { v: "pagos", t: "Pagos fijos" },
-    { v: "dinero", t: "Dinero y plazos" },
-    { v: "numeracion", t: "Numeración" },
-    { v: "comprobante", t: "Comprobante de pago" },
-    { v: "seguridad", t: "Seguridad y cierre de mes" },
+  const okIdentidad = checks.slice(0, 5).every((c) => c.ok) && !!m.logo_path;
+  const SECCIONES: { v: string; t: string; d: string; ok?: boolean }[] = [
+    { v: "identidad", t: "Identidad y logo", d: "Nombre, RUC, dirección, cuenta bancaria y logo: salen en el encabezado de todos los formatos.", ok: okIdentidad },
+    { v: "informe", t: "Capítulo I del informe", d: "Se escribe una sola vez y se copia en cada rendición.", ok: checks[7].ok && checks[8].ok },
+    { v: "pagos", t: "Pagos fijos", d: "Dietas, personal y servicios de todos los meses: se generan en un clic.", ok: pagosFijos.length > 0 },
+    { v: "dinero", t: "Dinero y plazos", d: "Quién transfiere a la MCP, cuánto, cada cuánto y hasta qué día se rinde.", ok: ctx.fuentes.length > 0 },
+    { v: "numeracion", t: "Numeración", d: "Por qué número va cada documento (requerimientos, órdenes, comprobantes, recibos)." },
+    { v: "comprobante", t: "Comprobante de pago", d: "Los datos que pide el formato del comprobante de cada fuente.", ok: checks[6].ok },
+    { v: "seguridad", t: "Seguridad y cierre de mes", d: "PIN, aprobaciones, cierre de mes, acceso de solo lectura y respaldo." },
   ];
+  const siguiente = SECCIONES.find((x) => x.ok === false);
   const seccion = SECCIONES.some((x) => x.v === sp.seccion) ? (sp.seccion as string) : "identidad";
   const puedeCambiar = admin || ctx.esSoporte;
   const faltan = checks.filter((c) => !c.ok);
@@ -169,6 +172,9 @@ export default async function Configuracion({ searchParams }: { searchParams: Pa
             <span>{completos} de {checks.length} datos completos</span>
           </div>
           <div className="barra-progreso" aria-hidden="true"><div style={{ width: `${pct}%` }} /></div>
+          {siguiente && (
+            <Link className="btn primario chico cfg-sig" href={`/configuracion?seccion=${siguiente.v}`}>Siguiente paso: {siguiente.t} →</Link>
+          )}
           {faltan.length > 0 ? (
             <div className="cfg-faltan">
               {faltan.map((c) => (
@@ -198,9 +204,11 @@ export default async function Configuracion({ searchParams }: { searchParams: Pa
         {SECCIONES.map((x) => (
           <Link key={x.v} href={`/configuracion?seccion=${x.v}`} className={`cfg-tab${seccion === x.v ? " activa" : ""}`} aria-current={seccion === x.v ? "page" : undefined}>
             {x.t}
+            {x.ok !== undefined && <i className={`cfg-tab-est ${x.ok ? "ok" : "falta"}`} aria-label={x.ok ? "Completo" : "Falta completar"}>{x.ok ? "✓" : "!"}</i>}
           </Link>
         ))}
       </nav>
+      <p className="cfg-intro">{SECCIONES.find((x) => x.v === seccion)?.d}</p>
 
       {seccion === "identidad" && (
         <div className="cfg-dos">
@@ -305,26 +313,19 @@ export default async function Configuracion({ searchParams }: { searchParams: Pa
             <section className="panel cfg-panel">
               <div className="panel-cab">Logo de la MCP</div>
               <div className="panel-cuerpo">
-                <div className="logo-muestra">
-                  {logo ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img src={logo} alt="Logo actual" />
-                  ) : (
-                    <span className="tenue pequeno">Sin logo</span>
-                  )}
-                </div>
                 {puedeCambiar ? (
                   <form action={subirLogo} className="cfg-form-logo">
-                    <label className="campo">
-                      Imagen (PNG, JPG o WEBP, máximo 900 KB)
-                      <input type="file" name="logo" accept="image/png,image/jpeg,image/webp" required />
-                    </label>
+                    <SubirLogo actual={logo} />
                     <BotonConfirmar className="btn" pregunta="¿Guardar este logo?" detalle="Aparecerá en el menú y en todos los formatos impresos." textoConfirmar="Sí, guardar">
                       {m.logo_path ? "Cambiar logo" : "Subir logo"}
                     </BotonConfirmar>
                   </form>
                 ) : (
-                  <span className="pequeno tenue">Solo el administrador puede cambiar el logo.</span>
+                  <>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    {logo ? <img src={logo} alt="Logo" style={{ maxWidth: 120 }} /> : <span className="tenue pequeno">Sin logo.</span>}
+                    <span className="pequeno tenue">Solo el administrador puede cambiar el logo.</span>
+                  </>
                 )}
               </div>
             </section>

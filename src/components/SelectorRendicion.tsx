@@ -141,7 +141,7 @@ export default function SelectorRendicion({
                     )}
                   </div>
                 </div>
-                <div className="c-monto">S/ {fmt(f.importe)}{m && acumulado.has(f.id) && <small className="cp-acum">suma S/ {fmt(acumulado.get(f.id)!)}</small>}</div>
+                <div className="c-monto">S/ {fmt(f.importe)}</div>
                 <div className="c-estado">
                   {f.disponible ? <span className="estado aprobado">Listo</span> : <span className="estado anulado">{f.motivo}</span>}
                 </div>
@@ -149,17 +149,6 @@ export default function SelectorRendicion({
             );
           })}
         </div>
-        {nMarcados > 0 && (
-          <div className={`rend-suma${cuadra ? " ok" : saldo < 0 ? " mal" : ""}`} role="status" aria-live="polite">
-            <div className="rs-main">
-              <span>{nMarcados} marcado{nMarcados === 1 ? "" : "s"}</span>
-              <b>S/ {fmt(total)}</b>
-              <span>de S/ {fmt(transferencia)} transferidos</span>
-            </div>
-            <div className="rs-barra" aria-hidden="true"><div style={{ width: `${ancho}%` }} /></div>
-            <div className="rs-estado">{cuadra ? "✓ Cuadra: ya puede generar la rendición" : saldo < 0 ? `Se pasó por S/ ${fmt(-saldo)}: desmarque algún comprobante` : `Faltan S/ ${fmt(saldo)} para cuadrar`}</div>
-          </div>
-        )}
         {pendientes.length > 0 && (
           <p className="pequeno tenue" style={{ margin: 0 }}>
             Los que dicen «Falta aprobar» o «Falta el cheque» no se pueden marcar: complételos en su comprobante de pago.
@@ -168,21 +157,19 @@ export default function SelectorRendicion({
       </div>
 
       <aside className="rend-cuadro" aria-live="polite">
-        <span className="r-et">{cuadra ? "¡Cuadra!" : saldo < 0 ? "Se pasa de lo transferido" : "Falta para cuadrar"}</span>
-        <span className={`r-saldo ${cuadra ? "ok" : saldo < 0 ? "mal" : ""}`}>S/ {fmt(Math.abs(saldo))}</span>
+        <span className="r-et">Cuadre de la rendición</span>
+        <div className="r-marcado">
+          <span className={`r-saldo ${cuadra ? "ok" : saldo < 0 ? "mal" : ""}`}>S/ {fmt(total)}</span>
+          <span className="r-de">marcado ({nMarcados}) de S/ {fmt(transferencia)} transferidos</span>
+        </div>
         <div className="r-barra"><div className={saldo < 0 ? "pasa" : undefined} style={{ width: `${ancho}%` }} /></div>
-        <dl>
-          <dt>Transferencia</dt><dd>{fmt(transferencia)}</dd>
-          <dt>Marcado ({[...marcados].filter((id) => !filas.find((x) => x.id === id)?.propio).length})</dt><dd>{fmt(total)}</dd>
-          {hayPropios && (<><dt>Ingresos propios <span className="tenue pequeno">(aparte)</span></dt><dd>{fmt(totalPropios)}</dd></>)}
-          <dt>Avance</dt><dd>{pct} %</dd>
-        </dl>
-        {cuadra ? (
-          <div className="aviso ok" style={{ margin: 0 }}>Lo marcado es igual a lo transferido de {municipalidad}. Ya puede generar la rendición.</div>
-        ) : saldo < 0 ? (
-          <div className="aviso error" style={{ margin: 0 }}>Desmarque comprobantes por S/ {fmt(-saldo)}.</div>
-        ) : (
-          <div className="aviso info" style={{ margin: 0 }}>La rendición se arma cuando lo marcado llega exacto a lo transferido.</div>
+        <div className={`r-estado ${cuadra ? "ok" : saldo < 0 ? "mal" : "falta"}`} role="status">
+          {cuadra ? "✓ Cuadra: ya puede generar la rendición" : saldo < 0 ? `Se pasó por S/ ${fmt(-saldo)}: desmarque comprobantes` : nMarcados === 0 ? `Marque comprobantes hasta llegar a S/ ${fmt(transferencia)}` : `Faltan S/ ${fmt(saldo)} para cuadrar`}
+        </div>
+        {hayPropios && (
+          <dl>
+            <dt>Ingresos propios <span className="tenue pequeno">(aparte)</span></dt><dd>{fmt(totalPropios)}</dd>
+          </dl>
         )}
         {puedeGenerar && (
           <BotonConfirmar
@@ -196,7 +183,7 @@ export default function SelectorRendicion({
             Generar rendición
           </BotonConfirmar>
         )}
-        <span className="pequeno tenue">Al generar, los comprobantes quedan como rendidos. Para corregir se anula la rendición con motivo.</span>
+        <span className="pequeno tenue">La rendición se arma cuando lo marcado llega exacto a lo transferido. Al generar, los comprobantes quedan como rendidos; para corregir se anula con motivo.</span>
       </aside>
     {mover && cambiarDestino && typeof document !== "undefined" && createPortal(
         <div className="mover-fondo" role="dialog" aria-modal="true" onClick={() => setMover(null)}>

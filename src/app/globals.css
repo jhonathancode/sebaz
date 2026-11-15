@@ -5285,3 +5285,11 @@ html.pdf-captura .sf-faltan { display: none; }
 .selector-mes.chico.activo { border-color: var(--primario); box-shadow: 0 0 0 2px var(--primario-fondo); }
 .exp-periodo { padding-right: 6px; }
 @media (max-width: 700px) { .exp-resumen { order: 3; flex: 1 1 100%; } .btn.exp-nuevo { flex: 1 1 100%; } }
+
+/* Cuadre de la rendición: todo en un solo recuadro */
+.rend-cuadro .r-marcado { display: flex; flex-direction: column; gap: 2px; }
+.rend-cuadro .r-de { font-size: 13px; color: var(--suave); }
+.rend-cuadro .r-estado { padding: 10px 14px; border-radius: 12px; font-size: 14px; font-weight: 800; text-align: center; }
+.rend-cuadro .r-estado.falta { background: var(--primario-fondo); color: var(--primario-texto); }
+.rend-cuadro .r-estado.ok { background: rgba(34, 197, 94, .14); color: #15803d; }
+.rend-cuadro .r-estado.mal { background: rgba(220, 38, 38, .12); color: var(--rojo); }

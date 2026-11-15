@@ -5415,12 +5415,29 @@ html:not(.pdf-captura) .cc-excel tfoot td:not(:last-child) { border-right-color:
 
 /* ---- Tutoriales ---- */
 .tut { display: flex; flex-direction: column; gap: 14px; }
-.tut-mods { display: flex; flex-wrap: wrap; gap: 8px; }
-.tut-lista { display: flex; flex-direction: column; gap: 8px; }
-.tut-item { border: 1px solid var(--borde); border-radius: 12px; background: var(--panel); }
-.tut-item > summary { cursor: pointer; padding: 12px 16px; font-weight: 600; list-style: none; display: flex; justify-content: space-between; gap: 12px; }
-.tut-item > summary::-webkit-details-marker { display: none; }
-.tut-item > summary::after { content: "+"; color: var(--tenue); font-weight: 400; font-size: 18px; line-height: 1; }
-.tut-item[open] > summary::after { content: "–"; }
-.tut-item ol { margin: 0; padding: 0 18px 12px 38px; display: flex; flex-direction: column; gap: 6px; }
-.tut-consejo { margin: 0; padding: 10px 16px 14px; font-size: 13px; color: var(--tenue); border-top: 1px dashed var(--borde); }
+.tut-buscar { max-width: 520px; }
+.tut-cuerpo { display: grid; grid-template-columns: 230px minmax(0, 1fr); gap: 18px; align-items: start; }
+.tut-mods { display: flex; flex-direction: column; gap: 2px; padding: 8px; border: 1px solid var(--borde); border-radius: 14px; background: var(--panel); position: sticky; top: 12px; }
+.tut-mod { display: flex; align-items: center; gap: 10px; padding: 9px 10px; border: 0; border-radius: 10px; background: transparent; color: var(--texto); font: inherit; font-size: 13.5px; text-align: left; cursor: pointer; }
+.tut-mod span:nth-child(2) { flex: 1; }
+.tut-mod small { color: var(--tenue); font-size: 11.5px; }
+.tut-mod:hover { background: var(--panel-2); }
+.tut-mod.activo { background: var(--primario-fondo); color: var(--primario-texto); font-weight: 700; }
+.tut-tit { font-size: 15px; font-weight: 700; margin-bottom: 10px; }
+.tut-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 10px; }
+.tut-card { display: flex; flex-direction: column; gap: 4px; padding: 12px 14px; border: 1px solid var(--borde); border-radius: 12px; background: var(--panel); color: var(--texto); font: inherit; text-align: left; cursor: pointer; transition: border-color .12s, background .12s; }
+.tut-card b { font-size: 13.5px; line-height: 1.3; font-weight: 600; }
+.tut-card small { color: var(--tenue); font-size: 11.5px; }
+.tut-card:hover { border-color: var(--primario); background: var(--primario-fondo); }
+.tut-velo { position: fixed; inset: 0; z-index: 200; display: grid; place-items: center; padding: 16px; background: rgba(8, 12, 22, .55); }
+.tut-ventana { position: relative; width: min(560px, 100%); max-height: 86vh; overflow: auto; padding: 22px 24px; border-radius: 16px; background: var(--panel); border: 1px solid var(--borde); box-shadow: 0 24px 60px -20px rgba(0, 0, 0, .5); }
+.tut-ventana h2 { margin: 4px 0 12px; font-size: 18px; }
+.tut-ventana ol { margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 8px; font-size: 14px; }
+.tut-x { position: absolute; top: 10px; right: 12px; border: 0; background: transparent; color: var(--tenue); font-size: 24px; line-height: 1; cursor: pointer; }
+.tut-consejo { margin: 14px 0 0; padding-top: 12px; font-size: 13px; color: var(--tenue); border-top: 1px dashed var(--borde); }
+@media (max-width: 800px) {
+  .tut-cuerpo { grid-template-columns: 1fr; }
+  .tut-mods { flex-direction: row; overflow-x: auto; position: static; }
+  .tut-mod { white-space: nowrap; flex: none; }
+  .tut-mod small { display: none; }
+}

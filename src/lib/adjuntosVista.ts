@@ -18,7 +18,7 @@ const orden = (t: string) => TIPOS_ADJUNTO.findIndex((x) => x.clave === t);
  * se completa solo: primero lo subido en este expediente, luego lo permanente del pago fijo y, si no, lo último
  * subido en otro mes del mismo pago. Lo que aún no tiene archivo sale como pendiente.
  */
-export async function cargarAnexos(supabase: Cliente, mcpId: string, expedienteId: string, pagoFijoId: string | null): Promise<AnexoVista[]> {
+export async function cargarAnexos(supabase: Cliente, mcpId: string, expedienteId: string, pagoFijoId: string | null, tipoGasto?: string | null): Promise<AnexoVista[]> {
   const [{ data: propios }, { data: pf }] = await Promise.all([
     supabase.from("expediente_adjuntos").select("id, tipo, archivo_path, archivo_tipo, creado_en").eq("expediente_id", expedienteId).eq("anulado", false).order("creado_en"),
     pagoFijoId ? supabase.from("pagos_fijos").select("documentos").eq("id", pagoFijoId).maybeSingle() : Promise.resolve({ data: null }),
@@ -46,6 +46,12 @@ export async function cargarAnexos(supabase: Cliente, mcpId: string, expedienteI
         else if (otro) crudos.push({ clave: `her-${t}`, tipo: t, path: otro.archivo_path, mime: otro.archivo_tipo, origen: "heredado" });
         else crudos.push({ clave: `falta-${t}`, tipo: t, path: null, mime: null, origen: "pendiente" });
       }
+    }
+  }
+  // Servicio externo suelto (p. ej. el pintado del local): el contrato y el informe se suben desde el propio expediente
+  if (!pagoFijoId && tipoGasto === "servicio") {
+    for (const t of ["contrato", "informe"]) {
+      if (!crudos.some((c) => c.tipo === t)) crudos.push({ clave: `falta-${t}`, tipo: t, path: null, mime: null, origen: "pendiente" });
     }
   }
   if (crudos.length === 0) return [];

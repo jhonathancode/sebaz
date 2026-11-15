@@ -49,24 +49,31 @@ export default function AdjuntosExpediente({
       ))}
       {puede && (
         <span className="doc-par">
-          <VentanaFlotante boton="+ Adjuntar" titulo="Adjuntar documento al expediente" accion={subirAdjunto} textoGuardar="Adjuntar" claseBoton="btn chico contorno">
-            <input type="hidden" name="id" value={id} />
-            <label className="campo">
-              ¿Qué documento es?
-              <select name="tipo" required defaultValue={pendiente ?? "otro"}>
-                {TIPOS_ADJUNTABLES.map((t) => (
-                  <option key={t.clave} value={t.clave}>{t.texto}</option>
-                ))}
-              </select>
-            </label>
-            <label className="campo">
-              Detalle (opcional)
-              <input name="descripcion" placeholder="EJ.: CONTRATO DE ENERO A DICIEMBRE 2026" style={{ textTransform: "uppercase" }} />
-            </label>
-            <CampoArchivoEstado etiqueta="Foto o PDF (puede elegir varios)" multiple ayuda="Foto del celular o PDF escaneado; máximo 4 MB cada uno." />
-          </VentanaFlotante>
+          <SubirAdjunto id={id} tipo={pendiente} />
         </span>
       )}
     </div>
+  );
+}
+
+/** Ventana para adjuntar un documento al expediente (con el tipo ya elegido si se conoce). */
+export function SubirAdjunto({ id, tipo, boton = "+ Adjuntar", clase = "btn chico contorno" }: { id: string; tipo?: string; boton?: string; clase?: string }) {
+  return (
+    <VentanaFlotante boton={boton} titulo="Adjuntar documento al expediente" accion={subirAdjunto} textoGuardar="Adjuntar" claseBoton={clase}>
+      <input type="hidden" name="id" value={id} />
+      <label className="campo">
+        ¿Qué documento es?
+        <select name="tipo" required defaultValue={tipo ?? "otro"}>
+          {TIPOS_ADJUNTABLES.map((t) => (
+            <option key={t.clave} value={t.clave}>{t.texto}</option>
+          ))}
+        </select>
+      </label>
+      <label className="campo">
+        Detalle (opcional)
+        <input name="descripcion" placeholder="EJ.: CONTRATO DEL PINTADO DEL PALACIO MUNICIPAL" style={{ textTransform: "uppercase" }} />
+      </label>
+      <CampoArchivoEstado etiqueta="Foto o PDF (puede elegir varios)" multiple ayuda="Foto del celular o PDF escaneado; máximo 4 MB cada uno." />
+    </VentanaFlotante>
   );
 }

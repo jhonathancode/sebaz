@@ -3,6 +3,7 @@
 import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import BotonConfirmar from "@/components/BotonConfirmar";
 import BotonPdf from "@/components/BotonPdf";
+import { leerExtractoArchivo } from "@/lib/importarExtracto";
 import { aNum, fmt, idsEnlace, igual, r2, sugerir, tipoLinea, type Candidatos, type Enlace, type LineaExtracto, type Sugerencia } from "@/lib/extracto";
 
 export type { LineaExtracto } from "@/lib/extracto";
@@ -500,6 +501,35 @@ export default function ConciliarEstado({
   const usados = useMemo(() => new Set(lineas.flatMap((l) => idsEnlace(l.enlace))), [lineas]);
   const infoCp = useMemo(() => new Map(candidatos.cps.map((c) => [c.id, c])), [candidatos.cps]);
 
+  const [importando, setImportando] = useState<string | null>(null);
+  async function importarArchivo(e: React.ChangeEvent<HTMLInputElement>) {
+    const archivo = e.target.files?.[0];
+    e.target.value = "";
+    if (!archivo) return;
+    setImportando("Leyendo el archivo…");
+    try {
+      const nuevas = await leerExtractoArchivo(archivo, periodo.slice(0, 4));
+      const hay = lineas.some((l) => tipoLinea(l) !== "vacia");
+      if (hay && !window.confirm(`El archivo trae ${nuevas.length} movimientos. ¿Reemplazar las líneas que ya escribió?`)) {
+        setImportando(null);
+        return;
+      }
+      tocado.current = true;
+      const ocupados = new Set<string>();
+      setLineas(
+        nuevas.map((l) => {
+          const s = sugerir(l, candidatos, ocupados);
+          if (!s) return l;
+          idsEnlace(s.enlace).forEach((x) => ocupados.add(x));
+          return { ...l, enlace: s.enlace };
+        }),
+      );
+      setImportando(`Se importaron ${nuevas.length} movimientos y se enlazaron los que coinciden. Revise los que quedaron sin enlace.`);
+    } catch (err) {
+      setImportando(err instanceof Error ? err.message : "No se pudo leer el archivo.");
+    }
+  }
+
   function enlazarAutomatico() {
     tocado.current = true;
     setLineas((ls) => {
@@ -590,7 +620,14 @@ export default function ConciliarEstado({
         </label>
 
         <div className="cj-herr">
+          {puede && (
+            <label className="btn contorno" style={{ cursor: "pointer" }}>
+              Importar estado de cuenta (Excel o CSV)
+              <input type="file" accept=".xlsx,.csv,.txt" hidden onChange={importarArchivo} />
+            </label>
+          )}
           {puede && <button type="button" className="btn primario" onClick={enlazarAutomatico}>✨ Enlazar automático</button>}
+          {importando && <span className="pequeno tenue">{importando}</span>}
           <span className="espacio" />
           <BotonPdf nombre={`Estado de cuenta ${info.mes} conciliado`} selector=".cj-pdf-hoja" texto="⬇ Descargar PDF" className="btn contorno" horizontal />
         </div>

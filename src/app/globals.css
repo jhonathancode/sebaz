@@ -5324,3 +5324,12 @@ html:not(.pdf-captura) .cc-excel tbody tr:last-child .acc { border-bottom: 0 !im
 html:not(.pdf-captura) .cc-excel tfoot .acc { background: var(--panel-2) !important; border-top: 1px solid var(--borde) !important; border-bottom: 0 !important; }
 html:not(.pdf-captura) .cc-excel tr.recien td { box-shadow: none; background: color-mix(in srgb, var(--primario) 7%, var(--panel)); }
 html:not(.pdf-captura) .cc-excel .btn.chico { font-weight: 600; }
+
+/* Cuadros de ingresos y caja chica: banda superior y total en azul muy suave */
+html:not(.pdf-captura) .cc-excel caption { background: linear-gradient(180deg, color-mix(in srgb, var(--primario) 10%, var(--panel)), color-mix(in srgb, var(--primario) 7%, var(--panel))); color: var(--primario-texto); font-size: 13.5px; font-weight: 800; padding: 20px 24px 14px; }
+html:not(.pdf-captura) .cc-excel th { background: color-mix(in srgb, var(--primario) 7%, var(--panel)); color: color-mix(in srgb, var(--primario-texto) 80%, var(--tenue)); border-top: 0; border-bottom: 1px solid color-mix(in srgb, var(--primario) 16%, var(--linea)); }
+html:not(.pdf-captura) .cc-excel .cc-acc-th { background: color-mix(in srgb, var(--primario) 7%, var(--panel)) !important; border-top: 0 !important; border-bottom: 1px solid color-mix(in srgb, var(--primario) 16%, var(--linea)) !important; }
+html:not(.pdf-captura) .cc-excel tbody tr:hover td { background: color-mix(in srgb, var(--primario) 4%, var(--panel)); }
+html:not(.pdf-captura) .cc-excel tfoot td, html:not(.pdf-captura) .cc-excel tfoot .acc { background: color-mix(in srgb, var(--primario) 7%, var(--panel)) !important; border-top: 1px solid color-mix(in srgb, var(--primario) 16%, var(--linea)); color: var(--primario-texto); }
+html:not(.pdf-captura) .cc-excel tfoot td.m, html:not(.pdf-captura) .cc-excel tfoot td.num { color: var(--primario-texto); }
+html:not(.pdf-captura) .cc-excel-marco { border-color: color-mix(in srgb, var(--primario) 18%, var(--borde)); }

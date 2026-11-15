@@ -14,12 +14,16 @@ export const TIPOS_ADJUNTO = [
   { clave: "otro", texto: "Otro documento" },
 ] as const;
 
+/** Ya no se piden ni se ofrecen: la orden la arma el sistema en su paso, y el comprobante del proveedor (recibo, factura, boleta) lo adjunta la tesorera al imprimir. */
+export const TIPOS_OCULTOS: string[] = ["orden_firmada", "recibo_honorarios", "factura"];
+export const TIPOS_ADJUNTABLES = TIPOS_ADJUNTO.filter((t) => !TIPOS_OCULTOS.includes(t.clave));
+
 export type ClaveAdjunto = (typeof TIPOS_ADJUNTO)[number]["clave"];
 
 /** Lo que suele pedirse en cada tipo de gasto (la lista guía; se puede adjuntar cualquier otro). */
 export const RECOMENDADOS: Record<string, ClaveAdjunto[]> = {
-  servicio: ["contrato", "orden_firmada", "informe", "recibo_honorarios", "planilla", "dni"],
-  compra: ["cotizacion", "orden_firmada", "guia", "factura", "conformidad"],
+  servicio: ["contrato", "informe", "planilla", "dni"],
+  compra: ["cotizacion", "guia", "conformidad"],
 };
 
 export const nombreAdjunto = (clave: string) => TIPOS_ADJUNTO.find((t) => t.clave === clave)?.texto ?? clave;

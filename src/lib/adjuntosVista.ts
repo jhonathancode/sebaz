@@ -1,4 +1,4 @@
-import { nombreAdjunto, TIPOS_ADJUNTO } from "@/lib/adjuntosExpediente";
+import { nombreAdjunto, TIPOS_ADJUNTO, TIPOS_OCULTOS } from "@/lib/adjuntosExpediente";
 import { cargarArchivosPagoFijo } from "@/lib/pagosFijos";
 import type { supabaseServidor } from "@/lib/supabase/server";
 
@@ -24,7 +24,7 @@ export async function cargarAnexos(supabase: Cliente, mcpId: string, expedienteI
     pagoFijoId ? supabase.from("pagos_fijos").select("documentos").eq("id", pagoFijoId).maybeSingle() : Promise.resolve({ data: null }),
   ]);
   // La planilla la arma el sistema cada mes: no se sube
-  const requeridos = (((pf as { documentos?: string[] } | null)?.documentos ?? []) as string[]).filter((t) => t !== "planilla");
+  const requeridos = (((pf as { documentos?: string[] } | null)?.documentos ?? []) as string[]).filter((t) => t !== "planilla" && !TIPOS_OCULTOS.includes(t));
   type Crudo = { clave: string; tipo: string; path: string | null; mime: string | null; origen: OrigenAnexo };
   const crudos: Crudo[] = (propios ?? []).map((a) => ({ clave: `adj-${a.id}`, tipo: a.tipo, path: a.archivo_path, mime: a.archivo_tipo, origen: "propio" as const }));
 

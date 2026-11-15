@@ -1,7 +1,7 @@
 import Link from "next/link";
 import VentanaFlotante from "@/components/VentanaFlotante";
 import CampoArchivoEstado from "@/components/formularios/CampoArchivoEstado";
-import { TIPOS_ADJUNTO } from "@/lib/adjuntosExpediente";
+import { TIPOS_ADJUNTABLES } from "@/lib/adjuntosExpediente";
 import type { AnexoVista } from "@/lib/adjuntosVista";
 import { subirAdjunto } from "@/app/(app)/expedientes/adjuntos";
 
@@ -54,7 +54,7 @@ export default function AdjuntosExpediente({
             <label className="campo">
               ¿Qué documento es?
               <select name="tipo" required defaultValue={pendiente ?? "otro"}>
-                {TIPOS_ADJUNTO.map((t) => (
+                {TIPOS_ADJUNTABLES.map((t) => (
                   <option key={t.clave} value={t.clave}>{t.texto}</option>
                 ))}
               </select>

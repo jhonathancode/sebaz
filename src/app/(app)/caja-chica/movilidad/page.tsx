@@ -43,6 +43,7 @@ export default async function Movilidad({ searchParams }: { searchParams: Params
           <div className="sub">Tarifario y planillas de movilidad local de la caja chica</div>
         </div>
         <span className="espacio" />
+        <Link className="btn contorno" href="/caja-chica/viaticos">Viáticos (Huancayo, Lima…)</Link>
         <Link className="btn contorno" href="/caja-chica">← Caja chica</Link>
         {puede && (
           <VentanaFlotante boton="+ Nueva planilla" titulo="Planilla de movilidad" accion={crearPlanilla} textoGuardar="Guardar planilla" claseBoton="btn primario grande" ancha>

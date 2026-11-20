@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { conceptoSinSeRequiere } from "@/lib/requerimiento";
 import { MESES, soles } from "@/lib/formato";
-import { mesPendiente, pagoLlevaPlanilla, pasarAlMes, type PagoFijoCatalogo } from "@/lib/pagosFijos";
+import { ciclosDe, detalleDeClave, pagoLlevaPlanilla, pasarAlMes, pendienteDe, type PagoFijoCatalogo } from "@/lib/pagosFijos";
 
 const CORTO = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Set", "Oct", "Nov", "Dic"];
 
@@ -49,16 +49,16 @@ export default function SelectorPagoFijo({ pagos, periodo }: { pagos: PagoFijoCa
     window.dispatchEvent(new CustomEvent("sebaz:pago-fijo", { detail: { id: p.id, beneficiario: p.beneficiario, beneficiario_doc: p.beneficiario_doc, completo: p.expediente_completo, planilla: pagoLlevaPlanilla(p), concepto: p.concepto, sustentos: p.sustentos } }));
     const form = caja.current?.closest("form");
     if (!form) return;
-    const [a, m] = mes.split("-").map(Number);
     // Si este pago ya se registró antes, se usa su redacción guardada, cambiando solo el mes y el año
-    const guardada = p.descripcion_modelo && p.mes_modelo ? pasarAlMes(p.descripcion_modelo, p.mes_modelo, mes) : null;
-    const texto = guardada ?? `${p.concepto} - ${MESES[m - 1].toUpperCase()} ${a}`;
+    const det = detalleDeClave(p, mes);
+    const guardada = !det.ciclo && p.descripcion_modelo && p.mes_modelo ? pasarAlMes(p.descripcion_modelo, p.mes_modelo, mes) : null;
+    const texto = guardada ?? `${p.concepto} - ${det.etiqueta}`;
     escribir(form.querySelector<HTMLInputElement>('input[name="descripcion"]'), texto);
     if (guardada) window.dispatchEvent(new CustomEvent("sebaz:redaccion-guardada", { detail: { texto } }));
     if (p.fuente_id) form.querySelector<HTMLInputElement>(`input[name="fuente_id"][value="${p.fuente_id}"]`)?.click();
     if (p.clasificador) escribir(form.querySelector<HTMLSelectElement>('select[name="clasificador"]'), p.clasificador);
     window.dispatchEvent(
-      new CustomEvent("sebaz:llenar-items", { detail: [{ cantidad: "1", unidad: p.unidad || "MES", descripcion: conceptoSinSeRequiere(texto), precio: String(p.monto) }] }),
+      new CustomEvent("sebaz:llenar-items", { detail: [{ cantidad: "1", unidad: p.unidad || "MES", descripcion: conceptoSinSeRequiere(texto), precio: String(det.monto) }] }),
     );
   }
 
@@ -74,8 +74,16 @@ export default function SelectorPagoFijo({ pagos, periodo }: { pagos: PagoFijoCa
     });
   }
 
+  /** Cómo se llama lo que se paga: «Mar 2026» (pago fijo simple) o «18/03 al 17/04» (ciclo de un contrato). */
+  function rotulo(p: PagoFijoCatalogo, clave: string) {
+    const c = ciclosDe(p).find((x) => x.clave === clave);
+    if (c) return `${c.desde.slice(8, 10)}/${c.desde.slice(5, 7)} al ${c.hasta.slice(8, 10)}/${c.hasta.slice(5, 7)}`;
+    const [ya, ym] = clave.split("-").map(Number);
+    return ym ? `${CORTO[ym - 1]} ${ya}` : clave;
+  }
+
   const info = pagos.map((p) => {
-    const pendiente = mesPendiente(p.pagados, periodo);
+    const pendiente = pendienteDe(p, periodo);
     return { p, pendiente, atrasado: pendiente <= periodo };
   });
   const q = busqueda.trim().toLocaleLowerCase("es-PE");
@@ -114,8 +122,8 @@ export default function SelectorPagoFijo({ pagos, periodo }: { pagos: PagoFijoCa
               {sel.beneficiario && <span className="pfx-quien">A: {sel.beneficiario}{sel.beneficiario_doc ? ` · ${sel.beneficiario_doc}` : ""}</span>}
             </div>
             <div className="pfx-elegido-mes">
-              <span className="pfx-estado">{MESES[em - 1].toUpperCase()} {ea}</span>
-              <span className="pfx-elegido-monto">S/ {soles(sel.monto)}</span>
+              <span className="pfx-estado">{ciclosDe(sel).length ? rotulo(sel, elegido.mes) : `${MESES[em - 1].toUpperCase()} ${ea}`}</span>
+              <span className="pfx-elegido-monto">S/ {soles(detalleDeClave(sel, elegido.mes).monto)}</span>
             </div>
           </div>
           <button type="button" className="btn chico contorno" onClick={cambiarPago}>Cambiar pago</button>
@@ -165,8 +173,11 @@ export default function SelectorPagoFijo({ pagos, periodo }: { pagos: PagoFijoCa
             {visibles.map(({ p, pendiente, atrasado }) => {
               const esElegido = elegido?.id === p.id;
               const expandido = abierto === p.id || esElegido;
-              const pagadosAnio = p.pagados.filter((x) => x.startsWith(`${anio}-`)).length;
-              const [pa, pm] = pendiente.split("-").map(Number);
+              const ciclos = ciclosDe(p);
+              const pagadosAnio = ciclos.length ? ciclos.filter((c) => p.pagados.includes(c.clave)).length : p.pagados.filter((x) => x.startsWith(`${anio}-`)).length;
+              const totalAnio = ciclos.length || 12;
+              const terminado = pendiente === "9999-12";
+              const [, pm] = pendiente.split("-").map(Number);
               return (
                 <div key={p.id} className={`pfx-fila${esElegido ? " elegido" : ""}`}>
                   <div className="pfx-linea">
@@ -175,11 +186,11 @@ export default function SelectorPagoFijo({ pagos, periodo }: { pagos: PagoFijoCa
                       {p.beneficiario && <span className="pfx-quien">{p.beneficiario}</span>}
                     </div>
                     <span className={`pfx-estado ${atrasado ? "pend" : "ok"}`} title={atrasado ? "Falta pagar este mes" : "Está al día; el siguiente es de un mes futuro"}>
-                      {atrasado ? "Pendiente" : "Al día"} · {CORTO[pm - 1]} {pa}
+                      {terminado ? "Contrato pagado" : `${atrasado ? "Pendiente" : "Al día"} · ${rotulo(p, pendiente)}`}
                     </span>
-                    <span className="pfx-monto">S/ {soles(p.monto)}</span>
-                    <button type="button" className={`btn chico${esElegido ? "" : " primario"}`} onClick={() => elegir(p, pendiente)}>
-                      {esElegido ? "✓ Elegido" : `Pagar ${CORTO[pm - 1]}`}
+                    <span className="pfx-monto">S/ {soles(terminado ? p.monto : detalleDeClave(p, pendiente).monto)}</span>
+                    <button type="button" className={`btn chico${esElegido ? "" : " primario"}`} disabled={terminado} onClick={() => elegir(p, pendiente)}>
+                      {esElegido ? "✓ Elegido" : terminado ? "Sin ciclos" : ciclos.length ? "Pagar ciclo" : `Pagar ${CORTO[pm - 1]}`}
                     </button>
                     <button type="button" className="pfx-abrir" aria-expanded={expandido} aria-label={`Ver los meses de ${p.concepto}`} title="Ver los meses" onClick={() => setAbierto(expandido && !esElegido ? null : p.id)}>
                       <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{ transform: expandido ? "rotate(180deg)" : undefined }}><path d="m6 9 6 6 6-6" /></svg>
@@ -188,12 +199,11 @@ export default function SelectorPagoFijo({ pagos, periodo }: { pagos: PagoFijoCa
                   {expandido && (
                     <div className="pfx-detalle">
                       <div className="pf-avance">
-                        <div className="pf-barra"><div style={{ width: `${(pagadosAnio / 12) * 100}%` }} /></div>
-                        <span>{pagadosAnio} de 12 pagados en {anio}</span>
+                        <div className="pf-barra"><div style={{ width: `${(pagadosAnio / totalAnio) * 100}%` }} /></div>
+                        <span>{ciclos.length ? `${pagadosAnio} de ${totalAnio} ciclos pagados · contrato ${p.fecha_inicio?.slice(8, 10)}/${p.fecha_inicio?.slice(5, 7)} al ${p.fecha_fin?.slice(8, 10)}/${p.fecha_fin?.slice(5, 7)}/${p.fecha_fin?.slice(0, 4)}` : `${pagadosAnio} de 12 pagados en ${anio}`}</span>
                       </div>
                       <div className="pf-meses" role="group" aria-label={`Meses de ${p.concepto}`}>
-                        {CORTO.map((c, i) => {
-                          const mes = `${anio}-${String(i + 1).padStart(2, "0")}`;
+                        {(ciclos.length ? ciclos.map((c) => ({ mes: c.clave, c: rotulo(p, c.clave), i: Number(c.clave.slice(5, 7)) - 1 })) : CORTO.map((c, i) => ({ mes: `${anio}-${String(i + 1).padStart(2, "0")}`, c, i }))).map(({ mes, c, i }) => {
                           const pagado = p.pagados.includes(mes);
                           const esPendiente = mes === pendiente;
                           const activo = esElegido && elegido?.mes === mes;
@@ -202,7 +212,7 @@ export default function SelectorPagoFijo({ pagos, periodo }: { pagos: PagoFijoCa
                               key={mes}
                               type="button"
                               disabled={pagado}
-                              title={pagado ? `${MESES[i]}: ya pagado` : esPendiente ? `Pagar ${nombreMes(mes)}` : `Falta pagar antes ${nombreMes(pendiente)}`}
+                              title={pagado ? `${MESES[i]}: ya pagado` : esPendiente ? `Pagar ${nombreMes(mes)}` : `Falta pagar antes ${rotulo(p, pendiente)}`}
                               className={`pf-mes${pagado ? " pagado" : ""}${esPendiente ? " pendiente" : ""}${activo ? " activo" : ""}${!pagado && !esPendiente ? " bloqueado" : ""}`}
                               onClick={() => tocarMes(p, mes, pendiente)}
                             >
@@ -213,7 +223,7 @@ export default function SelectorPagoFijo({ pagos, periodo }: { pagos: PagoFijoCa
                         })}
                       </div>
                       {aviso?.id === p.id && <div className="aviso alerta pfx-aviso" role="alert" style={{ margin: 0 }}>{aviso.texto}</div>}
-                      {!pendiente.startsWith(`${anio}-`) && <div className="pequeno tenue">El mes pendiente es {nombreMes(pendiente)}, de otro año: cambie el año de arriba para verlo.</div>}
+                      {!terminado && !ciclos.length && !pendiente.startsWith(`${anio}-`) && <div className="pequeno tenue">El mes pendiente es {nombreMes(pendiente)}, de otro año: cambie el año de arriba para verlo.</div>}
                     </div>
                   )}
                 </div>

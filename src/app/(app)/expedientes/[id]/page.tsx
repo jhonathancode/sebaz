@@ -145,6 +145,10 @@ export default async function Expediente({ params, searchParams }: { params: Par
 
   // Lo que depende del expediente: nombres del historial y el beneficiario del pago fijo, también a la vez
   const pagoFijoId = (e as { pago_fijo_id?: string | null }).pago_fijo_id ?? null;
+  // Contrato por ciclos: la orden lleva la fecha de inicio del ciclo; la conformidad y el comprobante, la del fin (sin pasar de hoy)
+  const cicloDe = e as { ciclo_desde?: string | null; ciclo_hasta?: string | null };
+  const fechaOrdenCiclo = cicloDe.ciclo_desde ?? hoyISO();
+  const fechaCierreCiclo = cicloDe.ciclo_hasta ? (cicloDe.ciclo_hasta > hoyISO() ? hoyISO() : cicloDe.ciclo_hasta) : hoyISO();
   const ids = [...new Set((historial ?? []).map((h) => h.user_id).filter(Boolean))];
   const [{ data: pagoFijo }, { data: perfilesHist }] = await Promise.all([
     pagoFijoId
@@ -299,7 +303,7 @@ export default async function Expediente({ params, searchParams }: { params: Par
         <div className="acciones-fila">
         <form action={emitirOrden}>
           <input type="hidden" name="expediente_id" value={id} />
-          <input type="hidden" name="fecha" value={hoyISO()} />
+          <input type="hidden" name="fecha" value={fechaOrdenCiclo} />
           <input type="hidden" name="concepto" value={conceptoSinSeRequiere(e.descripcion)} />
           <BotonConfirmar className="btn primario grande" pregunta={`¿Emitir la ${nombreOrden}?`} detalle={`A ${prov(elegida?.proveedores)?.razon_social ?? ""} por S/ ${soles(elegida?.monto)}.`} textoConfirmar="Sí, emitir">Sí, emitir orden</BotonConfirmar>
         </form>
@@ -307,7 +311,7 @@ export default async function Expediente({ params, searchParams }: { params: Par
           <input type="hidden" name="expediente_id" value={id} />
           <p style={{ margin: 0 }}>Proveedor: <b>{prov(elegida?.proveedores)?.razon_social}</b> · Monto: <b>S/ {soles(elegida?.monto)}</b></p>
           <div className="rejilla-2">
-            <label className="campo">Fecha de la orden<InputFecha name="fecha" defaultValue={hoyISO()} required /></label>
+            <label className="campo">Fecha de la orden<InputFecha name="fecha" defaultValue={fechaOrdenCiclo} required /></label>
             <label className="campo">Plazo para entregar<input name="plazo" placeholder="Ej.: 3 días, 1 mes" /></label>
           </div>
           <label className="campo">Concepto<input name="concepto" defaultValue={conceptoSinSeRequiere(e.descripcion)} /></label>
@@ -330,13 +334,13 @@ export default async function Expediente({ params, searchParams }: { params: Par
         <div className="acciones-fila">
         <form action={emitirConformidad}>
           <input type="hidden" name="expediente_id" value={id} />
-          <input type="hidden" name="fecha" value={hoyISO()} />
+          <input type="hidden" name="fecha" value={fechaCierreCiclo} />
           <input type="hidden" name="texto" value={textoConformidad} />
           <BotonConfirmar className="btn primario grande" pregunta="¿Emitir el memorando de conformidad?" detalle="Confirma que lo recibido está conforme." textoConfirmar="Sí, emitir">Sí, emitir memorando</BotonConfirmar>
         </form>
         <VentanaFlotante boton="No, cambiar texto" titulo="Memorando de conformidad" accion={emitirConformidad} textoGuardar="Emitir memorando" claseBoton="btn peligro grande">
           <input type="hidden" name="expediente_id" value={id} />
-          <label className="campo">Fecha<InputFecha name="fecha" defaultValue={hoyISO()} required /></label>
+          <label className="campo">Fecha<InputFecha name="fecha" defaultValue={fechaCierreCiclo} required /></label>
           <label className="campo">
             Texto del memorando
             <textarea
@@ -376,7 +380,7 @@ export default async function Expediente({ params, searchParams }: { params: Par
                 <label className="campo">DNI o RUC<input name="beneficiario_doc" inputMode="numeric" maxLength={11} defaultValue={pagoFijo?.beneficiario_doc ?? ""} /></label>
               </>
             )}
-            <label className="campo">Fecha<InputFecha name="fecha" defaultValue={hoyISO()} required /></label>
+            <label className="campo">Fecha<InputFecha name="fecha" defaultValue={fechaCierreCiclo} required /></label>
             <label className="campo">
               Documento que entregó
               <select name="sustento_tipo" defaultValue={fijo ? "REC" : "FAC"}>

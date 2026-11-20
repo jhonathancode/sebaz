@@ -9,7 +9,7 @@ import { cargarCierres, estadoGestion } from "@/lib/gestion";
 import { codigoCP, fecha, hoyISO, nombrePeriodo, num3, periodoActual, rangoPeriodo, soles } from "@/lib/formato";
 import { supabaseServidor } from "@/lib/supabase/server";
 import { nombreAdjunto, TIPOS_OCULTOS } from "@/lib/adjuntosExpediente";
-import { cargarArchivosPagoFijo, cargarCatalogoPagosFijos, mesPendiente, pagoLlevaPlanilla, siguienteCheque } from "@/lib/pagosFijos";
+import { cargarArchivosPagoFijo, cargarCatalogoPagosFijos, pagoLlevaPlanilla, pendienteDe, siguienteCheque } from "@/lib/pagosFijos";
 import { cargarAtajos } from "@/lib/atajos";
 import { FASES, faseGasto } from "@/lib/fasesGasto";
 import { anularExpedienteTotal, crearExpediente, generarPagosFijosMes, registrarExpedienteCompleto } from "./acciones";
@@ -180,7 +180,7 @@ export default async function Expedientes({ searchParams }: { searchParams: Para
     const pag = [...p.pagados];
     const meses: string[] = [];
     for (let i = 0; i < 12; i++) {
-      const m = mesPendiente(pag, hoyP);
+      const m = pendienteDe({ ...p, pagados: pag }, hoyP);
       if (m > hoyP) break;
       meses.push(m);
       pag.push(m);

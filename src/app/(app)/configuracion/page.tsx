@@ -13,7 +13,9 @@ import { nombreFuente } from "@/components/formularios/CamposRequerimiento";
 import { TIPOS_ADJUNTABLES } from "@/lib/adjuntosExpediente";
 import { GASTOS_SUSTENTO, reglasSustento, SUSTENTOS_ELEGIBLES } from "@/lib/sustentos";
 import CasillaDocumento from "@/components/formularios/CasillaDocumento";
-import { cargarArchivosPagoFijo, cargarCatalogoPagosFijos, type PagoFijoCatalogo } from "@/lib/pagosFijos";
+import { PERIODICIDADES } from "@/lib/ciclosContrato";
+import { ContratoCiclos } from "@/components/formularios/ContratoCiclos";
+import { cargarArchivosPagoFijo, cargarCatalogoPagosFijos, ciclosDe, type PagoFijoCatalogo } from "@/lib/pagosFijos";
 import { NUMERACIONES, proximoNumero } from "@/lib/numeracion";
 import { CAMPOS_CODIF, CODIF_FIJA, rubroSugerido, datosCPDe, faltantesCP, TIPO_OPERACION_BS, TIPO_OPERACION_OTRO } from "@/lib/datosCP";
 import { contextoMcp, tiene } from "@/lib/contexto";
@@ -22,6 +24,8 @@ import { supabaseServidor } from "@/lib/supabase/server";
 import { salirConfiguracion } from "../superadmin/acciones";
 import { agregarCuentaBancaria, agregarFuente, cerrarMes, desactivarCuentaBancaria, desactivarFuente, fijarNumeracion, guardarCapitulo1, guardarDatosCP, guardarSustentosGasto, guardarDatosMcp, guardarFuente, reabrirMes, subirLogo, guardarPagoFijo, alternarPagoFijo, guardarExigirPin, guardarExigirAprobacion } from "./acciones";
 import { crearEnlaceLectura, revocarEnlaceLectura } from "./enlaces";
+
+const PERIODICIDAD_TEXTO: Record<number, string> = Object.fromEntries(PERIODICIDADES.map((x) => [x.v, x.t.toLowerCase()]));
 
 export default async function Configuracion({ searchParams }: { searchParams: ParamsAviso }) {
   const sp = await searchParams;
@@ -53,7 +57,7 @@ export default async function Configuracion({ searchParams }: { searchParams: Pa
           <label className="campo">A quién se paga<input name="beneficiario" defaultValue={p?.beneficiario ?? ""} placeholder="Nombre completo" /></label>
           <label className="campo">DNI o RUC<input name="beneficiario_doc" inputMode="numeric" maxLength={11} defaultValue={p?.beneficiario_doc ?? ""} /></label>
           <AutoDocumento doc="beneficiario_doc" nombre="beneficiario" />
-          <label className="campo">Monto mensual S/<input name="monto" required inputMode="decimal" defaultValue={p ? monto2(p.monto) : ""} placeholder="0.00" /></label>
+          <label className="campo">Monto por ciclo S/<input name="monto" required inputMode="decimal" defaultValue={p ? monto2(p.monto) : ""} placeholder="0.00" /></label>
           <label className="campo">Unidad<input name="unidad" defaultValue={p?.unidad ?? "MES"} /></label>
           <label className="campo">
             Se paga con
@@ -75,7 +79,12 @@ export default async function Configuracion({ searchParams }: { searchParams: Pa
       </section>
 
       <section className="pf-sec">
-        <h3 className="pf-sec-tit"><span>2</span>Cómo se tramita</h3>
+        <h3 className="pf-sec-tit"><span>2</span>Contrato por ciclos (opcional)</h3>
+        <ContratoCiclos inicio={p?.fecha_inicio} fin={p?.fecha_fin} meses={p?.periodicidad_meses} />
+      </section>
+
+      <section className="pf-sec">
+        <h3 className="pf-sec-tit"><span>3</span>Cómo se tramita</h3>
         <label className="pf-opcion">
           <span className="pf-interruptor">
             <input type="checkbox" name="completo" value="1" defaultChecked={p ? p.expediente_completo : true} />
@@ -89,7 +98,7 @@ export default async function Configuracion({ searchParams }: { searchParams: Pa
       </section>
 
       <section className="pf-sec">
-        <h3 className="pf-sec-tit"><span>3</span>Comprobante que entrega quien cobra</h3>
+        <h3 className="pf-sec-tit"><span>4</span>Comprobante que entrega quien cobra</h3>
         <p className="pf-sec-ayuda">Dieta del alcalde o regidores: «Planilla simple» (el sistema arma la planilla de cada mes). Asesor: «Recibo por honorarios». Si no elige ninguno, vale lo configurado para «Pagos fijos» en Comprobante de pago.</p>
         <div className="pf-chips">
           {SUSTENTOS_ELEGIBLES.map((x) => (
@@ -102,7 +111,7 @@ export default async function Configuracion({ searchParams }: { searchParams: Pa
       </section>
 
       <section className="pf-sec">
-        <h3 className="pf-sec-tit"><span>4</span>Documentos que lleva el expediente</h3>
+        <h3 className="pf-sec-tit"><span>5</span>Documentos que lleva el expediente</h3>
         <p className="pf-sec-ayuda">Active cada documento que lleva este gasto. Los que son iguales todos los meses (DNI, credencial) se suben aquí una sola vez y cada expediente nuevo sale con ellos ya completos. Formatos: PDF, JPG, PNG o WEBP.</p>
         <div className="pf-docs">
           {[...TIPOS_ADJUNTABLES].filter((t) => t.clave !== "otro").sort((x, y) => (y.clave === "planilla" ? 1 : 0) - (x.clave === "planilla" ? 1 : 0)).map((t) => {
@@ -409,20 +418,31 @@ export default async function Configuracion({ searchParams }: { searchParams: Pa
             <div className="fu-grid">
               {pagosFijos.map((p) => {
                 const pagados = new Set(p.pagados.filter((x) => x.startsWith(`${anio}-`)).map((x) => Number(x.slice(5, 7))));
+                const ciclos = ciclosDe(p);
+                const ciclosPagados = ciclos.filter((c) => p.pagados.includes(c.clave)).length;
                 return (
                   <article key={p.id} className="fu-card" style={p.activo ? undefined : { opacity: 0.6 }}>
                     <header className="fu-card-cab">
                       <span className="fu-tipo">{p.activo ? "Activo" : "Inactivo"}</span>
-                      <span className="fu-pill no">{pagados.size} de 12 pagados en {anio}</span>
+                      <span className="fu-pill no">{ciclos.length ? `${ciclosPagados} de ${ciclos.length} ciclos pagados` : `${pagados.size} de 12 pagados en ${anio}`}</span>
                     </header>
                     <h3 style={{ margin: 0 }}>{p.concepto}</h3>
                     <p className="tenue pequeno" style={{ margin: 0 }}>{p.beneficiario ?? "Sin beneficiario"}</p>
-                    <div style={{ fontSize: 22, fontWeight: 800 }}>S/ {soles(p.monto)} <span className="tenue pequeno" style={{ fontWeight: 400 }}>por mes</span></div>
-                    <div style={{ display: "flex", gap: 4 }} aria-label={`Meses pagados de ${anio}`}>
+                    <div style={{ fontSize: 22, fontWeight: 800 }}>S/ {soles(p.monto)} <span className="tenue pequeno" style={{ fontWeight: 400 }}>{ciclos.length ? `por ciclo ${PERIODICIDAD_TEXTO[p.periodicidad_meses] ?? ""}`.trim() : "por mes"}</span></div>
+                    {ciclos.length > 0 && <p className="tenue pequeno" style={{ margin: 0 }}>Contrato del {p.fecha_inicio?.slice(8, 10)}/{p.fecha_inicio?.slice(5, 7)} al {p.fecha_fin?.slice(8, 10)}/{p.fecha_fin?.slice(5, 7)}/{p.fecha_fin?.slice(0, 4)}{p.requerimiento_numero ? ` · Requerimiento N° ${String(p.requerimiento_numero).padStart(3, "0")}-${p.requerimiento_anio}` : ""}</p>}
+                    {ciclos.length === 0 && <div style={{ display: "flex", gap: 4 }} aria-label={`Meses pagados de ${anio}`}>
                       {MES3.map((m, i) => (
                         <span key={i} title={`${MESES_LARGO[i]}: ${pagados.has(i + 1) ? "pagado" : "pendiente"}`} style={{ flex: 1, textAlign: "center", fontSize: 11, padding: "4px 0", borderRadius: 6, fontWeight: 700, background: pagados.has(i + 1) ? "var(--primario)" : "var(--borde)", color: pagados.has(i + 1) ? "#fff" : "var(--tenue)" }}>{m}</span>
                       ))}
-                    </div>
+                    </div>}
+                    {ciclos.length > 0 && (
+                      <div style={{ display: "flex", gap: 4, flexWrap: "wrap" }} aria-label="Ciclos del contrato">
+                        {ciclos.map((c) => {
+                          const pagado = p.pagados.includes(c.clave);
+                          return <span key={c.n} title={`${c.desde} al ${c.hasta}: ${pagado ? "pagado" : "pendiente"}`} style={{ flex: "1 0 44px", textAlign: "center", fontSize: 11, padding: "4px 0", borderRadius: 6, fontWeight: 700, background: pagado ? "var(--primario)" : "var(--borde)", color: pagado ? "#fff" : "var(--tenue)" }}>{c.n}</span>;
+                        })}
+                      </div>
+                    )}
                     {puedePagos && (
                       <div className="acciones-fila">
                         <VentanaFlotante boton="Editar" titulo={`Editar · ${p.concepto}`} accion={guardarPagoFijo} textoGuardar="Guardar cambios" claseBoton="btn chico contorno">

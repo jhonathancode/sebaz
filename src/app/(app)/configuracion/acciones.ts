@@ -133,6 +133,15 @@ export async function guardarPagoFijo(fd: FormData) {
   const concepto = (texto(fd, "concepto") ?? "").toUpperCase();
   if (!concepto) volver(destino, "error", "Escriba el concepto del pago fijo.");
   if (!monto || monto <= 0) volver(destino, "error", "Escriba el monto mensual.");
+  const inicio = texto(fd, "fecha_inicio");
+  const fin = texto(fd, "fecha_fin");
+  const periodicidad = Number(texto(fd, "periodicidad_meses") ?? "1");
+  if (inicio || fin) {
+    if (!inicio || !fin || !/^\d{4}-\d{2}-\d{2}$/.test(inicio) || !/^\d{4}-\d{2}-\d{2}$/.test(fin)) volver(destino, "error", "Para un contrato escriba la fecha de inicio y la de fin.");
+    if (fin < inicio) volver(destino, "error", "La fecha de fin del contrato debe ser posterior a la de inicio.");
+    if (fin.slice(0, 4) !== inicio.slice(0, 4)) volver(destino, "error", "El contrato vale un solo año: debe terminar como máximo el 31 de diciembre. Al año siguiente se renueva.");
+  }
+  if (![1, 2, 3, 4, 6, 12].includes(periodicidad)) volver(destino, "error", "Elija cada cuánto se paga el contrato.");
   const datos = {
     concepto,
     beneficiario: texto(fd, "beneficiario")?.toUpperCase() ?? null,
@@ -146,8 +155,13 @@ export async function guardarPagoFijo(fd: FormData) {
   const sustentos = fd.getAll("sustentos").map(String).filter((c) => SUSTENTOS.some((x) => x.codigo === c));
   const documentos = fd.getAll("documentos").map(String).filter((d) => TIPOS_ADJUNTO.some((t) => t.clave === d));
   const guardar = (d: Record<string, unknown>) => (id ? supabase.from("pagos_fijos").update(d).eq("id", id) : supabase.from("pagos_fijos").insert({ mcp_id: ctx.mcp.id, ...d }));
-  let { error } = await guardar({ ...datos, documentos, sustentos });
-  // Si la base aún no tiene las columnas nuevas, se guarda igual lo demás
+  const contrato = { periodicidad_meses: periodicidad, fecha_inicio: inicio, fecha_fin: fin };
+  let { error } = await guardar({ ...datos, documentos, sustentos, ...contrato });
+  // Si la base aún no tiene las columnas nuevas, se guarda igual lo demás (el contrato exige la actualización)
+  if (error && /periodicidad|fecha_inicio|fecha_fin|vigencia/.test(error.message)) {
+    if (inicio) volver(destino, "error", "Falta la actualización de la base para guardar contratos por ciclos (CONTRATOS_CICLOS.sql).");
+    ({ error } = await guardar({ ...datos, documentos, sustentos }));
+  }
   if (error && /documentos|sustentos|schema cache/.test(error.message)) ({ error } = await guardar(datos));
   if (error) volver(destino, "error", error.message.includes("duplicate") ? "Ya hay un pago fijo con ese concepto." : mensajeError(error));
   // Archivos permanentes (DNI, credencial…): se suben una vez y valen para todos los meses

@@ -4,8 +4,8 @@ import { revalidatePath } from "next/cache";
 import { contextoMcp, tiene } from "@/lib/contexto";
 import { mensajeError, numero, texto, volver } from "@/lib/acciones";
 import { supabaseServidor } from "@/lib/supabase/server";
-import { MESES, num3, periodoActual } from "@/lib/formato";
-import { cargarCatalogoPagosFijos, estadoPagosFijos, mesPendiente, pasarAlMes, siguienteCheque } from "@/lib/pagosFijos";
+import { MESES, hoyISO, num3, periodoActual } from "@/lib/formato";
+import { cargarCatalogoPagosFijos, detalleDeClave, faltaEnPeriodo, estadoPagosFijos, pasarAlMes, pendienteDe, siguienteCheque } from "@/lib/pagosFijos";
 import { exigirPin, verificarPin } from "@/lib/pin";
 import { chequeMasUno, comprobanteAutomatico } from "@/lib/comprobanteAuto";
 import { completarTodo } from "@/lib/completarTodo";
@@ -58,6 +58,15 @@ function leerCabecera(fd: FormData, items: { descripcion: string }[]) {
   };
 }
 
+/** Si el pago fijo es un contrato por ciclos, las fechas del ciclo que se registra (la base les copia el requerimiento del contrato). */
+async function columnasCiclo(supabase: Awaited<ReturnType<typeof supabaseServidor>>, mcpId: string, pagoFijoId: string, mes: string | null) {
+  if (!mes) return {};
+  const catalogo = await cargarCatalogoPagosFijos(supabase, mcpId, false);
+  const pf = catalogo.find((x) => x.id === pagoFijoId);
+  const c = pf ? detalleDeClave(pf, mes).ciclo : undefined;
+  return c ? { ciclo_desde: c.desde, ciclo_hasta: c.hasta } : {};
+}
+
 export async function crearExpediente(fd: FormData) {
   const ctx = await contextoMcp();
   const supabase = await supabaseServidor();
@@ -71,7 +80,7 @@ export async function crearExpediente(fd: FormData) {
     const catalogo = await cargarCatalogoPagosFijos(supabase, ctx.mcp.id, false);
     const elegido = catalogo.find((p) => p.id === pagoFijo);
     if (elegido) {
-      const pendiente = mesPendiente(elegido.pagados, periodoActual());
+      const pendiente = pendienteDe(elegido, periodoActual());
       if (mesPagado !== pendiente) {
         const [a, m] = pendiente.split("-").map(Number);
         volver("/expedientes?nuevo=1", "error", `No se puede pagar ese mes todavía: está pendiente el mes de ${MESES[m - 1].toUpperCase()} ${a}. Pague primero ese.`);
@@ -90,7 +99,7 @@ export async function crearExpediente(fd: FormData) {
   if (chequePrevisto && !/^\d{4,12}$/.test(chequePrevisto)) volver("/expedientes?nuevo=1", "error", "El número de cheque debe tener de 4 a 12 dígitos.");
   const { data, error } = await supabase
     .from("expedientes")
-    .insert({ mcp_id: ctx.mcp.id, ...cabecera, ...(pagoFijo ? { pago_fijo_id: pagoFijo, mes_pagado: mesPagado } : {}), ...(chequePrevisto ? { cheque_previsto: chequePrevisto } : {}), ...(conProveedor ? { completar_todo: completar, con_conformidad: texto(fd, "con_conformidad") === "1", sustento_tipo: texto(fd, "sustento_tipo"), sustento_numero: texto(fd, "sustento_numero") } : {}) })
+    .insert({ mcp_id: ctx.mcp.id, ...cabecera, ...(pagoFijo ? { pago_fijo_id: pagoFijo, mes_pagado: mesPagado, ...(await columnasCiclo(supabase, ctx.mcp.id, pagoFijo, mesPagado)) } : {}), ...(chequePrevisto ? { cheque_previsto: chequePrevisto } : {}), ...(conProveedor ? { completar_todo: completar, con_conformidad: texto(fd, "con_conformidad") === "1", sustento_tipo: texto(fd, "sustento_tipo"), sustento_numero: texto(fd, "sustento_numero") } : {}) })
     .select("id")
     .single();
   if (error || !data) volver("/expedientes?nuevo=1", "error", mensajeError(error));
@@ -173,7 +182,7 @@ export async function registrarExpedienteCompleto(fd: FormData): Promise<{ error
     const catalogo = await cargarCatalogoPagosFijos(supabase, ctx.mcp.id, false);
     const elegido = catalogo.find((p) => p.id === pagoFijo);
     if (elegido) {
-      const pendiente = mesPendiente(elegido.pagados, periodoActual());
+      const pendiente = pendienteDe(elegido, periodoActual());
       if (mesPagado !== pendiente) {
         const [a, m] = pendiente.split("-").map(Number);
         return { error: `No se puede pagar ese mes todavía: está pendiente el mes de ${MESES[m - 1].toUpperCase()} ${a}. Pague primero ese.` };
@@ -203,7 +212,7 @@ export async function registrarExpedienteCompleto(fd: FormData): Promise<{ error
     .insert({
       mcp_id: ctx.mcp.id,
       ...cab,
-      ...(pagoFijo ? { pago_fijo_id: pagoFijo, mes_pagado: mesPagado } : {}),
+      ...(pagoFijo ? { pago_fijo_id: pagoFijo, mes_pagado: mesPagado, ...(await columnasCiclo(supabase, ctx.mcp.id, pagoFijo, mesPagado)) } : {}),
       ...(chequePrevisto ? { cheque_previsto: chequePrevisto } : {}),
       completar_todo: true,
       con_conformidad: hasta === "todo",
@@ -696,22 +705,23 @@ export async function copiarPagosFijos() {
   // Con la lista de pagos fijos de la MCP: se registran los que faltan este mes.
   const catalogo = await cargarCatalogoPagosFijos(supabase, ctx.mcp.id);
   if (catalogo.length > 0) {
-    const pendientes = catalogo.filter((p) => !p.pagados.includes(periodo));
+    const pendientes = catalogo.filter((p) => faltaEnPeriodo(p, periodo));
     if (pendientes.length === 0) volver("/", "ok", "Los pagos fijos de este mes ya están registrados.");
     const [a, m] = periodo.split("-").map(Number);
     const mesTexto = `${MESES[m - 1].toUpperCase()} ${a}`;
     let hechos = 0;
     const creados: string[] = [];
     for (const p of pendientes) {
-      const texto = `${p.concepto} - ${mesTexto}`;
+      const det = detalleDeClave(p, periodo);
+      const texto = `${p.concepto} - ${det.etiqueta}`;
       const { data: nuevo, error } = await supabase
         .from("expedientes")
-        .insert({ mcp_id: ctx.mcp.id, tipo: "pago_fijo", descripcion: conceptoSeRequiere(texto), fuente_id: p.fuente_id, clasificador: p.clasificador, pago_fijo_id: p.id, mes_pagado: periodo })
+        .insert({ mcp_id: ctx.mcp.id, tipo: "pago_fijo", descripcion: conceptoSeRequiere(texto), fuente_id: p.fuente_id, clasificador: p.clasificador, pago_fijo_id: p.id, mes_pagado: periodo, ...(det.ciclo ? { ciclo_desde: det.ciclo.desde, ciclo_hasta: det.ciclo.hasta } : {}) })
         .select("id")
         .single();
       if (error || !nuevo) volver("/", "error", `Se registraron ${hechos}. Falló «${p.concepto}»: ${mensajeError(error)}`);
       const { error: e2 } = await supabase.from("expediente_items").insert({
-        mcp_id: ctx.mcp.id, expediente_id: nuevo.id, item: 1, cantidad: 1, unidad: p.unidad || "MES", descripcion: texto, precio_unitario: p.monto,
+        mcp_id: ctx.mcp.id, expediente_id: nuevo.id, item: 1, cantidad: 1, unidad: p.unidad || "MES", descripcion: texto, precio_unitario: det.monto,
       });
       if (e2) volver("/", "error", `Se registró «${p.concepto}» sin su monto: ${mensajeError(e2)}`);
       hechos++;
@@ -827,22 +837,22 @@ export async function generarPagosFijosMes(fd: FormData) {
     if (!pf) continue;
     const pagados = [...pf.pagados];
     for (let vuelta = 0; vuelta < 12; vuelta++) {
-      const mes = mesPendiente(pagados, hoyP);
+      const mes = pendienteDe({ ...pf, pagados }, hoyP);
       if (mes > hoyP) break;
-      const [a, m] = mes.split("-").map(Number);
-      const nombreMes = `${MESES[m - 1].toLocaleUpperCase("es-PE")} ${a}`;
-      const base = pf.descripcion_modelo && pf.mes_modelo ? pasarAlMes(pf.descripcion_modelo, pf.mes_modelo, mes) : `${pf.concepto} - ${nombreMes}`;
-      const item = /\b20\d{2}\b/.test(base) ? base.replace(/^SE REQUIERE\s+/i, "").toLocaleUpperCase("es-PE") : `${pf.concepto} - ${nombreMes}`;
+      const det = detalleDeClave(pf, mes);
+      const nombreMes = det.etiqueta;
+      const base = !det.ciclo && pf.descripcion_modelo && pf.mes_modelo ? pasarAlMes(pf.descripcion_modelo, pf.mes_modelo, mes) : `${pf.concepto} - ${nombreMes}`;
+      const item = !det.ciclo && /\b20\d{2}\b/.test(base) ? base.replace(/^SE REQUIERE\s+/i, "").toLocaleUpperCase("es-PE") : `${pf.concepto} - ${nombreMes}`;
       const { data: nuevo, error } = await supabase
         .from("expedientes")
-        .insert({ mcp_id: ctx.mcp.id, tipo: "pago_fijo", descripcion: conceptoSeRequiere(`${pf.concepto} - ${nombreMes}`), fuente_id: pf.fuente_id, clasificador: pf.clasificador, pago_fijo_id: pf.id, mes_pagado: mes })
+        .insert({ mcp_id: ctx.mcp.id, tipo: "pago_fijo", descripcion: conceptoSeRequiere(`${pf.concepto} - ${nombreMes}`), fuente_id: pf.fuente_id, clasificador: pf.clasificador, pago_fijo_id: pf.id, mes_pagado: mes, ...(det.ciclo ? { ciclo_desde: det.ciclo.desde, ciclo_hasta: det.ciclo.hasta } : {}) })
         .select("id")
         .single();
       if (error || !nuevo) {
         fallos.push(`${pf.concepto} ${nombreMes}: ${mensajeError(error)}`);
         break;
       }
-      const { error: eI } = await supabase.from("expediente_items").insert({ mcp_id: ctx.mcp.id, expediente_id: nuevo.id, item: 1, cantidad: 1, unidad: pf.unidad, descripcion: item, precio_unitario: pf.monto });
+      const { error: eI } = await supabase.from("expediente_items").insert({ mcp_id: ctx.mcp.id, expediente_id: nuevo.id, item: 1, cantidad: 1, unidad: pf.unidad, descripcion: item, precio_unitario: det.monto });
       if (eI) {
         await supabase.rpc("anular_expediente_total", { p_expediente: nuevo.id, p_motivo: "Registro incompleto: no se pudo guardar el detalle." });
         fallos.push(`${pf.concepto} ${nombreMes}: ${mensajeError(eI)}`);
@@ -855,7 +865,7 @@ export async function generarPagosFijosMes(fd: FormData) {
         if (!eA) {
           aprobados++;
           if (!pf.expediente_completo) {
-            const usado = await comprobanteAutomatico(supabase, ctx.mcp.id, nuevo.id, cheque, true);
+            const usado = await comprobanteAutomatico(supabase, ctx.mcp.id, nuevo.id, cheque, true, det.ciclo ? (det.ciclo.hasta > hoyISO() ? hoyISO() : det.ciclo.hasta) : undefined);
             if (usado && usado === cheque) cheque = chequeMasUno(usado);
           }
         }

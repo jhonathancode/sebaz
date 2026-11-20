@@ -1,4 +1,5 @@
 import { MESES, periodoAnterior, rangoPeriodo } from "./formato";
+import { ciclosDelContrato, cicloPendiente, etiquetaCiclo, type Ciclo } from "./ciclosContrato";
 import type { supabaseServidor } from "./supabase/server";
 
 const NOMBRES_MES = [...MESES, "septiembre"];
@@ -88,6 +89,13 @@ export type PagoFijoCatalogo = {
   documentos: string[];
   /** Documentos que puede entregar el beneficiario (vacío: los del tipo de gasto «pago fijo»). */
   sustentos: string[];
+  /** Contrato por ciclos: vigencia (máx. 31 de diciembre) y cada cuántos meses se paga. Sin fecha de inicio, el pago fijo sigue mes a mes. */
+  periodicidad_meses: number;
+  fecha_inicio: string | null;
+  fecha_fin: string | null;
+  requerimiento_numero: number | null;
+  requerimiento_fecha: string | null;
+  requerimiento_anio: number | null;
 };
 
 /** Lista de pagos fijos y meses pagados (vacía si la base aún no tiene la actualización). */
@@ -120,6 +128,12 @@ export async function cargarCatalogoPagosFijos(supabase: Cliente, mcpId: string,
     mes_modelo: (p.mes_modelo as string | null | undefined) ?? null,
     documentos: (p.documentos as string[] | null | undefined) ?? [],
     sustentos: (p.sustentos as string[] | null | undefined) ?? [],
+    periodicidad_meses: Number(p.periodicidad_meses ?? 1) || 1,
+    fecha_inicio: (p.fecha_inicio as string | null | undefined) ?? null,
+    fecha_fin: (p.fecha_fin as string | null | undefined) ?? null,
+    requerimiento_numero: (p.requerimiento_numero as number | null | undefined) ?? null,
+    requerimiento_fecha: (p.requerimiento_fecha as string | null | undefined) ?? null,
+    requerimiento_anio: (p.requerimiento_anio as number | null | undefined) ?? null,
   }));
 }
 
@@ -183,4 +197,41 @@ export async function cargarArchivosPagoFijo(supabase: Cliente, mcpId: string, c
 /** Si el pago fijo lleva la planilla de remuneración que arma el sistema: dietas, o cuando su comprobante es «Planilla simple». */
 export function pagoLlevaPlanilla(p: { concepto?: string | null; documentos?: string[] | null; sustentos?: string[] | null }): boolean {
   return !!p.sustentos?.includes("PL") || !!p.documentos?.includes("planilla") || /^DIETAS?\b/i.test((p.concepto ?? "").trim());
+}
+
+
+type ContratoBasico = Pick<PagoFijoCatalogo, "monto" | "periodicidad_meses" | "fecha_inicio" | "fecha_fin">;
+
+/** Ciclos del contrato (vacío si el pago fijo no tiene fecha de inicio: se paga mes a mes). */
+export function ciclosDe(p: ContratoBasico): Ciclo[] {
+  if (!p.fecha_inicio || !p.fecha_fin) return [];
+  return ciclosDelContrato({ inicio: p.fecha_inicio, fin: p.fecha_fin, meses: p.periodicidad_meses, monto: p.monto });
+}
+
+/** El ciclo que corresponde a una clave ("2026-03") del contrato, o undefined si es un pago fijo sin contrato. */
+export function cicloDeClave(p: ContratoBasico, clave: string): Ciclo | undefined {
+  return ciclosDe(p).find((c) => c.clave === clave);
+}
+
+/** Lo que toca pagar ahora: el mes pendiente (pago fijo simple) o el inicio del ciclo pendiente (contrato). Con el contrato terminado devuelve un mes lejano. */
+export function pendienteDe(p: ContratoBasico & { pagados: string[] }, periodo: string): string {
+  const ciclos = ciclosDe(p);
+  if (ciclos.length === 0) return mesPendiente(p.pagados, periodo);
+  const r = cicloPendiente(ciclos, p.pagados, `${periodo}-31`);
+  return r ? r.ciclo.clave : "9999-12";
+}
+
+/** Si al pago fijo le falta registrar algo del mes dado (contrato: si un ciclo empieza ese mes y no está registrado). */
+export function faltaEnPeriodo(p: ContratoBasico & { pagados: string[] }, periodo: string): boolean {
+  const ciclos = ciclosDe(p);
+  if (ciclos.length === 0) return !p.pagados.includes(periodo);
+  return ciclos.some((c) => c.clave === periodo && !p.pagados.includes(c.clave));
+}
+
+/** Texto y monto de lo que se paga en una clave: el ciclo del contrato (monto prorrateado si es el último, más corto) o el mes del pago fijo simple. */
+export function detalleDeClave(p: ContratoBasico & { concepto: string }, clave: string): { etiqueta: string; monto: number; ciclo?: Ciclo } {
+  const ciclo = cicloDeClave(p, clave);
+  if (ciclo) return { etiqueta: etiquetaCiclo(ciclo, p.periodicidad_meses), monto: ciclo.monto, ciclo };
+  const [a, m] = clave.split("-").map(Number);
+  return { etiqueta: `${MESES[m - 1].toLocaleUpperCase("es-PE")} ${a}`, monto: p.monto };
 }

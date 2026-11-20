@@ -19,7 +19,7 @@ import {
   soles,
 } from "@/lib/formato";
 import { tieneModulo } from "@/lib/modulos";
-import { cargarCatalogoPagosFijos, estadoPagosFijos } from "@/lib/pagosFijos";
+import { cargarCatalogoPagosFijos, estadoPagosFijos, faltaEnPeriodo } from "@/lib/pagosFijos";
 import { supabaseServidor } from "@/lib/supabase/server";
 import { copiarPagosFijos } from "../expedientes/acciones";
 import { etiquetaFuente, montoDelMes } from "@/lib/fuentes";
@@ -68,7 +68,7 @@ export default async function Inicio() {
     estadoPagosFijos(supabase, mcpId, periodo),
     cargarCatalogoPagosFijos(supabase, mcpId),
   ]);
-  const faltanCatalogo = catalogo.filter((p) => !p.pagados.includes(periodo));
+  const faltanCatalogo = catalogo.filter((p) => faltaEnPeriodo(p, periodo));
   const lista = cps ?? [];
   const transferencias = ctx.fuentes.filter((f) => f.tipo !== "propios");
   const cpPorAprobar = lista.filter((c) => c.estado === "borrador").length;

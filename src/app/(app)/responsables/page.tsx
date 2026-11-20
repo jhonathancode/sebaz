@@ -1,3 +1,4 @@
+import CampoDocumento from "@/components/CampoDocumento";
 import Link from "next/link";
 import Avisos, { type ParamsAviso } from "@/components/Avisos";
 import InputFecha from "@/components/InputFecha";
@@ -63,7 +64,7 @@ export default async function Responsables({ searchParams }: { searchParams: Par
                   <div className="rejilla-2">
                     <label className="campo">Cargo<input name="cargo" required placeholder="TESORERA" style={{ textTransform: "uppercase" }} /></label>
                     <label className="campo">Nombre completo<input name="nombre" required style={{ textTransform: "uppercase" }} /></label>
-                    <label className="campo">DNI<input name="documento" inputMode="numeric" maxLength={11} /></label>
+                    <label className="campo">DNI<CampoDocumento name="documento" inputMode="numeric" maxLength={11} /></label>
                     <label className="campo">N° de resolución<input name="resolucion" required placeholder="RESOLUCIÓN DE ALCALDÍA N° 012-2026" style={{ textTransform: "uppercase" }} /></label>
                     <label className="campo">Fecha de la resolución<InputFecha name="fecha_resolucion" required /></label>
                     <label className="campo">Rige desde<InputFecha name="desde" required /></label>

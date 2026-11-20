@@ -1,4 +1,5 @@
 "use client";
+import CampoDocumento from "@/components/CampoDocumento";
 
 import { useState } from "react";
 import AutoDocumento from "@/components/AutoDocumento";
@@ -46,7 +47,7 @@ export default function CamposRegistro({ r, conArchivo }: { r?: RegistroCivil; c
         <label className="campo">Apellido paterno<input name="apellido_paterno" required defaultValue={r?.apellido_paterno ?? ""} style={MAY} autoComplete="off" autoFocus={!r} /></label>
         <label className="campo">Apellido materno<input name="apellido_materno" defaultValue={r?.apellido_materno ?? ""} style={MAY} autoComplete="off" /></label>
         <label className="campo">Nombres<input name="nombres" required defaultValue={r?.nombres ?? ""} style={MAY} autoComplete="off" /></label>
-        <label className="campo">DNI<input name="dni" defaultValue={r?.dni ?? ""} inputMode="numeric" maxLength={8} pattern="[0-9]{8}" title="El DNI tiene 8 dígitos" placeholder="8 dígitos" autoComplete="off" /></label>
+        <label className="campo">DNI<CampoDocumento name="dni" defaultValue={r?.dni ?? ""} inputMode="numeric" maxLength={8} pattern="[0-9]{8}" title="El DNI tiene 8 dígitos" placeholder="8 dígitos" autoComplete="off" /></label>
         <label className="campo">Sexo
           <select name="sexo" defaultValue={r?.sexo ?? ""}>
             <option value="">No indica</option>
@@ -60,7 +61,7 @@ export default function CamposRegistro({ r, conArchivo }: { r?: RegistroCivil; c
 
       {tipo === "matrimonio" && (
         <Seccion titulo="Cónyuge" ayuda="Si escribe el DNI, el nombre se completa solo cuando la consulta está activada.">
-          <label className="campo">DNI del cónyuge<input name="conyuge_dni" defaultValue={r?.conyuge_dni ?? ""} inputMode="numeric" maxLength={8} pattern="[0-9]{8}" title="El DNI tiene 8 dígitos" placeholder="8 dígitos" autoComplete="off" /></label>
+          <label className="campo">DNI del cónyuge<CampoDocumento name="conyuge_dni" defaultValue={r?.conyuge_dni ?? ""} inputMode="numeric" maxLength={8} pattern="[0-9]{8}" title="El DNI tiene 8 dígitos" placeholder="8 dígitos" autoComplete="off" /></label>
           <label className="campo rc-ancho2">Apellidos y nombres del cónyuge<input name="conyuge_nombre" defaultValue={r?.conyuge_nombre ?? ""} style={MAY} autoComplete="off" /></label>
           <div className="rc-ancho3"><AutoDocumento doc="conyuge_dni" nombre="conyuge_nombre" /></div>
         </Seccion>

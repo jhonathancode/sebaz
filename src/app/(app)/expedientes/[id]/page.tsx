@@ -1,3 +1,4 @@
+import CampoDocumento from "@/components/CampoDocumento";
 import Link from "next/link";
 import InputFecha from "@/components/InputFecha";
 import BotonConfirmar from "@/components/BotonConfirmar";
@@ -377,7 +378,7 @@ export default async function Expediente({ params, searchParams }: { params: Par
               <>
                 <label className="campo">A quién se paga<input name="beneficiario" required placeholder="Nombre completo" defaultValue={pagoFijo?.beneficiario ?? ""} /></label>
                 <AutoDocumento doc="beneficiario_doc" nombre="beneficiario" />
-                <label className="campo">DNI o RUC<input name="beneficiario_doc" inputMode="numeric" maxLength={11} defaultValue={pagoFijo?.beneficiario_doc ?? ""} /></label>
+                <label className="campo">DNI o RUC<CampoDocumento name="beneficiario_doc" inputMode="numeric" maxLength={11} defaultValue={pagoFijo?.beneficiario_doc ?? ""} /></label>
               </>
             )}
             <label className="campo">Fecha<InputFecha name="fecha" defaultValue={fechaCierreCiclo} required /></label>

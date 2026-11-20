@@ -1,5 +1,6 @@
 "use client";
 
+import CampoDocumento from "@/components/CampoDocumento";
 import AutoDocumento from "@/components/AutoDocumento";
 import { useRef, useState } from "react";
 
@@ -42,7 +43,7 @@ export default function CamposProveedor({ proveedores, prefijo = "prov", opciona
       </datalist>
       <label className="campo">
         RUC o DNI del proveedor
-        <input
+        <CampoDocumento
           name="num_doc"
           required={!opcional}
           inputMode="numeric"

@@ -1,3 +1,4 @@
+import CampoDocumento from "@/components/CampoDocumento";
 import ScrollMesActivo from "@/components/ScrollMesActivo";
 import Link from "next/link";
 import InputFecha from "@/components/InputFecha";
@@ -171,7 +172,7 @@ export default async function Ingresos({ searchParams }: { searchParams: ParamsA
                     ))}
                   </select>
                 </label>
-                <label className="campo s2">DNI o RUC<input name="pagador_doc" inputMode="numeric" maxLength={11} placeholder="8 u 11 dígitos" /></label>
+                <label className="campo s2">DNI o RUC<CampoDocumento name="pagador_doc" inputMode="numeric" maxLength={11} placeholder="8 u 11 dígitos" /></label>
                 <label className="campo s4">Nombre o razón social<input name="pagador_nombre" required /></label>
                 <CampoConceptoIngreso historial={(delAnio ?? []).map((r) => ({ rubro: r.rubro, concepto: r.concepto }))} />
                 <label className="campo s3 rc-monto">Monto S/<input name="monto" required inputMode="decimal" placeholder="0.00" /></label>

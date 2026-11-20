@@ -1,3 +1,4 @@
+import CampoDocumento from "@/components/CampoDocumento";
 import ScrollMesActivo from "@/components/ScrollMesActivo";
 import Link from "next/link";
 import InputFecha from "@/components/InputFecha";
@@ -179,7 +180,7 @@ export default async function CajaChica({ searchParams }: { searchParams: Params
           </select>
         </label>
         <NumeroSustento automatico={`${String(proxDj ?? "").padStart(3, "0") || "—"}-${periodo.slice(0, 4)}`} />
-        <label className="campo">DNI, RUC u otro documento<input name="razon_doc" inputMode="numeric" maxLength={11} placeholder="8 u 11 dígitos" /></label>
+        <label className="campo">DNI, RUC u otro documento<CampoDocumento name="razon_doc" inputMode="numeric" maxLength={11} placeholder="8 u 11 dígitos" /></label>
         <AutoDocumento doc="razon_doc" nombre="razon_social" />
         <label className="campo">Razón social o comisionado<input name="razon_social" required /></label>
         <label className="campo ancho">Concepto<input name="concepto" required placeholder="Salida a Perené: verificación de documentos para la rendición" /></label>
@@ -475,7 +476,7 @@ export default async function CajaChica({ searchParams }: { searchParams: Params
                                     </select>
                                   </label>
                                   <NumeroSustento automatico={g.sustento_tipo === "DJ" && g.sustento_numero ? g.sustento_numero : `${String(proxDj ?? "").padStart(3, "0") || "—"}-${periodo.slice(0, 4)}`} defaultValue={g.sustento_tipo === "DJ" ? "" : g.sustento_numero ?? ""} />
-                                  <label className="campo">DNI, RUC u otro documento<input name="razon_doc" inputMode="numeric" maxLength={11} defaultValue={g.razon_doc ?? ""} /></label>
+                                  <label className="campo">DNI, RUC u otro documento<CampoDocumento name="razon_doc" inputMode="numeric" maxLength={11} defaultValue={g.razon_doc ?? ""} /></label>
                                   <AutoDocumento doc="razon_doc" nombre="razon_social" />
                                   <label className="campo">Razón social o comisionado<input name="razon_social" required defaultValue={g.razon_social} /></label>
                                   <label className="campo ancho">Concepto<input name="concepto" required defaultValue={g.concepto} /></label>

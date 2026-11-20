@@ -1,3 +1,4 @@
+import CampoDocumento from "@/components/CampoDocumento";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import Avisos, { type ParamsAviso } from "@/components/Avisos";
@@ -172,7 +173,7 @@ export default async function FichaRegistro({ params, searchParams }: { params: 
                     <input type="hidden" name="registro_id" value={id} />
                     <div className="rc-rejilla">
                       <label className="campo rc-ancho2">Quién pidió la copia<input name="solicitante_nombre" required style={{ textTransform: "uppercase" }} autoComplete="off" /></label>
-                      <label className="campo">DNI<input name="solicitante_dni" inputMode="numeric" maxLength={8} pattern="[0-9]{8}" title="El DNI tiene 8 dígitos" autoComplete="off" /></label>
+                      <label className="campo">DNI<CampoDocumento name="solicitante_dni" inputMode="numeric" maxLength={8} pattern="[0-9]{8}" title="El DNI tiene 8 dígitos" autoComplete="off" /></label>
                       <label className="campo rc-ancho3">Para qué<input name="motivo" placeholder="Ej.: MATRÍCULA, TRÁMITE DE DNI" style={{ textTransform: "uppercase" }} autoComplete="off" /></label>
                     </div>
                     <div><button className="btn primario" type="submit">Registrar entrega</button></div>

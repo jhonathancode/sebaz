@@ -1,3 +1,4 @@
+import CampoDocumento from "@/components/CampoDocumento";
 import Link from "next/link";
 import Avisos, { type ParamsAviso } from "@/components/Avisos";
 import BotonConfirmar from "@/components/BotonConfirmar";
@@ -49,7 +50,7 @@ export default async function Movilidad({ searchParams }: { searchParams: Params
           <VentanaFlotante boton="+ Nueva planilla" titulo="Planilla de movilidad" accion={crearPlanilla} textoGuardar="Guardar planilla" claseBoton="btn primario grande" ancha>
             <div className="rejilla-2">
               <label className="campo">Comisionado<input name="comisionado" required style={{ textTransform: "uppercase" }} /></label>
-              <label className="campo">DNI<input name="documento" inputMode="numeric" maxLength={11} /></label>
+              <label className="campo">DNI<CampoDocumento name="documento" inputMode="numeric" maxLength={11} /></label>
               <label className="campo">Cargo<input name="cargo" style={{ textTransform: "uppercase" }} /></label>
               <label className="campo">Pasar a la caja chica (opcional)
                 <select name="caja_id" defaultValue="">

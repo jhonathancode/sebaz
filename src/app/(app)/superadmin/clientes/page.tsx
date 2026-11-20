@@ -1,3 +1,4 @@
+import CampoDocumento from "@/components/CampoDocumento";
 import AutoDocumento from "@/components/AutoDocumento";
 import Link from "next/link";
 import Avisos, { type ParamsAviso } from "@/components/Avisos";
@@ -75,7 +76,7 @@ export default async function Superadmin({ searchParams }: { searchParams: Param
           <div className="aviso info" style={{ margin: 0 }}>La MCP empieza con 3 meses de prueba. Después de darla de alta, cree sus usuarios en «Activaciones y relevos».</div>
           <div className="rejilla-2">
             <label className="campo">Nombre<input name="nombre" required placeholder="Municipalidad del Centro Poblado ..." /></label>
-            <label className="campo">RUC<input name="ruc" inputMode="numeric" maxLength={11} /></label>
+            <label className="campo">RUC<CampoDocumento name="ruc" inputMode="numeric" maxLength={11} /></label>
             <AutoDocumento doc="ruc" nombre="nombre" />
             <label className="campo">Distrito<input name="distrito" defaultValue="Perené" /></label>
             <label className="campo">Provincia<input name="provincia" defaultValue="Chanchamayo" /></label>

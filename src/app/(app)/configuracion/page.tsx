@@ -1,3 +1,4 @@
+import CampoDocumento from "@/components/CampoDocumento";
 import Link from "next/link";
 import AutoDocumento from "@/components/AutoDocumento";
 import Avisos, { type ParamsAviso } from "@/components/Avisos";
@@ -55,7 +56,7 @@ export default async function Configuracion({ searchParams }: { searchParams: Pa
         <div className="rejilla-2">
           <label className="campo" style={{ gridColumn: "1 / -1" }}>Concepto<input name="concepto" required defaultValue={p?.concepto ?? ""} placeholder="Ej.: DIETA DEL ALCALDE, HONORARIOS DEL ASESOR CONTABLE" /></label>
           <label className="campo">A quién se paga<input name="beneficiario" defaultValue={p?.beneficiario ?? ""} placeholder="Nombre completo" /></label>
-          <label className="campo">DNI o RUC<input name="beneficiario_doc" inputMode="numeric" maxLength={11} defaultValue={p?.beneficiario_doc ?? ""} /></label>
+          <label className="campo">DNI o RUC<CampoDocumento name="beneficiario_doc" inputMode="numeric" maxLength={11} defaultValue={p?.beneficiario_doc ?? ""} /></label>
           <AutoDocumento doc="beneficiario_doc" nombre="beneficiario" />
           <label className="campo">Monto por ciclo S/<input name="monto" required inputMode="decimal" defaultValue={p ? monto2(p.monto) : ""} placeholder="0.00" /></label>
           <label className="campo">Unidad<input name="unidad" defaultValue={p?.unidad ?? "MES"} /></label>
@@ -233,7 +234,7 @@ export default async function Configuracion({ searchParams }: { searchParams: Pa
                 <div className="cfg-ruc">
                   <label className="campo">
                     <span className="cfg-paso"><i>1</i> RUC de la MCP</span>
-                    <input name="ruc" defaultValue={m.ruc ?? ""} inputMode="numeric" maxLength={11} placeholder="Escriba los 11 dígitos" autoComplete="off" />
+                    <CampoDocumento name="ruc" defaultValue={m.ruc ?? ""} inputMode="numeric" maxLength={11} placeholder="Escriba los 11 dígitos" autoComplete="off" />
                   </label>
                   <AutoDocumento doc="ruc" nombre="nombre" direccion="direccion" distrito="distrito" provincia="provincia" departamento="departamento" />
                   <span className="pequeno tenue">Al completar el RUC se buscan solos el nombre, la dirección, el distrito, la provincia y el departamento. Puede corregirlos.</span>
@@ -478,7 +479,7 @@ export default async function Configuracion({ searchParams }: { searchParams: Pa
                 <div className="rejilla-2">
                   <label className="campo ancho">
                     <span className="cfg-paso"><i>1</i> RUC o DNI de quien transfiere</span>
-                    <input name="documento" inputMode="numeric" maxLength={11} placeholder="11 dígitos (RUC) u 8 (DNI)" autoComplete="off" />
+                    <CampoDocumento name="documento" inputMode="numeric" maxLength={11} placeholder="11 dígitos (RUC) u 8 (DNI)" autoComplete="off" />
                   </label>
                   <AutoDocumento doc="documento" nombre="municipalidad" />
                   <label className="campo ancho">
@@ -527,7 +528,7 @@ export default async function Configuracion({ searchParams }: { searchParams: Pa
                       <fieldset disabled={!puedeCambiar}>
                         <label className="campo">
                           RUC o DNI
-                          <input name="documento" inputMode="numeric" maxLength={11} defaultValue={f.documento ?? ""} placeholder="Opcional" autoComplete="off" />
+                          <CampoDocumento name="documento" inputMode="numeric" maxLength={11} defaultValue={f.documento ?? ""} placeholder="Opcional" autoComplete="off" />
                         </label>
                         <AutoDocumento doc="documento" nombre="municipalidad" />
                         <label className="campo">

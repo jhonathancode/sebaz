@@ -5515,3 +5515,8 @@ a.tut-card { text-decoration: none; }
 .bg-tutoriales:hover { text-decoration: none; color: var(--primario-texto); border-color: var(--primario); box-shadow: 0 6px 16px -8px rgba(37, 99, 235, .7); }
 .bg-tut-ic { width: 24px; height: 24px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; background: var(--primario); color: #fff; }
 .bg-tut-ic svg { margin-left: 1px; }
+
+/* Campo de DNI/RUC con botón Buscar */
+.campo-doc { display: flex; gap: 6px; align-items: stretch; }
+.campo-doc > input { flex: 1; min-width: 0; }
+.campo-doc-buscar { display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; }
